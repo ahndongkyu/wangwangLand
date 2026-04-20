@@ -62,16 +62,34 @@ export default function ContactPage() {
       </section>
 
       <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-lg font-semibold text-foreground">오시는 길</h2>
-          <a
-            href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline"
-          >
-            카카오맵에서 열기 →
-          </a>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <a
+              href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-border bg-card px-3 py-1 font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+            >
+              카카오맵 →
+            </a>
+            <a
+              href={`https://map.naver.com/p/search/${encodeURIComponent(SITE.contact.mapQuery)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-border bg-card px-3 py-1 font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+            >
+              네이버 지도 →
+            </a>
+            <a
+              href={`https://www.google.com/maps/search/${encodeURIComponent(SITE.contact.mapQuery)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full border border-border bg-card px-3 py-1 font-medium text-foreground/80 transition-colors hover:border-primary hover:text-primary"
+            >
+              구글맵 →
+            </a>
+          </div>
         </div>
         <div className="overflow-hidden rounded-lg border border-border">
           <iframe
