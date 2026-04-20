@@ -26,26 +26,28 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+      <div className="mx-auto flex h-20 w-full max-w-6xl items-center gap-6 px-4 md:px-6 lg:gap-10">
+        <Link href="/" className="flex items-center gap-3">
           <Image
             src={SITE.logo}
             alt={`${SITE.name} 로고`}
-            width={36}
-            height={36}
-            className="size-9 rounded-full"
+            width={52}
+            height={52}
+            className="size-12 rounded-full md:size-13"
             priority
           />
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            {SITE.name}
-          </span>
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {SITE.subtitle}
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-xl font-bold tracking-tight text-foreground">
+              {SITE.name}
+            </span>
+            <span className="hidden text-xs text-muted-foreground sm:inline">
+              {SITE.subtitle}
+            </span>
+          </div>
         </Link>
 
         <nav className="hidden md:flex">
-          <ul className="flex items-center gap-1">
+          <ul className="flex items-center gap-0.5">
             {MAIN_NAV.map((item) => (
               <li key={item.href}>
                 <Link
@@ -64,7 +66,7 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <Link
             href="/adopt"
             className={cn(

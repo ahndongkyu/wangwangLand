@@ -1,9 +1,12 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import type { Dog, DogSize, DogStatus } from "@/shared/types/database"
 
+export type DogSort = "latest" | "name"
+
 export interface ListDogsOptions {
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
+  sort?: DogSort
   limit?: number
   offset?: number
 }
@@ -11,16 +14,21 @@ export interface ListDogsOptions {
 export async function listDogs({
   status,
   size,
+  sort = "latest",
   limit = 12,
   offset = 0,
 }: ListDogsOptions = {}): Promise<Dog[]> {
   const supabase = await createClient()
 
-  let query = supabase
-    .from("dogs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1)
+  let query = supabase.from("dogs").select("*")
+
+  if (sort === "name") {
+    query = query.order("name", { ascending: true })
+  } else {
+    query = query.order("created_at", { ascending: false })
+  }
+
+  query = query.range(offset, offset + limit - 1)
 
   if (status && status !== "전체") {
     query = query.eq("status", status)

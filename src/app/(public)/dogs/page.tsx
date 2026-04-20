@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 
 import { DogGrid, listDogs } from "@/features/dogs"
+import type { DogSort } from "@/features/dogs/api/queries"
 import { cn } from "@/shared/lib/utils"
 import type { DogSize, DogStatus } from "@/shared/types/database"
 
@@ -30,6 +31,11 @@ const SIZE_FILTERS: Array<{ label: string; value: DogSize | "전체" }> = [
   { label: "대대", value: "대대" },
 ]
 
+const SORT_OPTIONS: Array<{ label: string; value: DogSort }> = [
+  { label: "최신순", value: "latest" },
+  { label: "이름순", value: "name" },
+]
+
 function parseStatus(value: string | undefined): DogStatus | "전체" {
   if (!value) return "보호중"
   const found = STATUS_FILTERS.find((f) => f.value === value)
@@ -42,10 +48,15 @@ function parseSize(value: string | undefined): DogSize | "전체" {
   return found ? found.value : "전체"
 }
 
-function buildHref(status: string, size: string) {
+function parseSort(value: string | undefined): DogSort {
+  return value === "name" ? "name" : "latest"
+}
+
+function buildHref(status: string, size: string, sort: DogSort) {
   const params = new URLSearchParams()
   if (status !== "보호중") params.set("status", status)
   if (size !== "전체") params.set("size", size)
+  if (sort !== "latest") params.set("sort", sort)
   const qs = params.toString()
   return qs ? `/dogs?${qs}` : "/dogs"
 }
@@ -53,25 +64,32 @@ function buildHref(status: string, size: string) {
 export default async function DogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; size?: string }>
+  searchParams: Promise<{ status?: string; size?: string; sort?: string }>
 }) {
   const params = await searchParams
   const activeStatus = parseStatus(params.status)
   const activeSize = parseSize(params.size)
+  const activeSort = parseSort(params.sort)
   const dogs = await listDogs({
     status: activeStatus,
     size: activeSize,
+    sort: activeSort,
     limit: 100,
   })
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground md:text-4xl">
-          입양 대기 강아지
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          왕왕랜드에서 새 가족을 기다리고 있는 친구들입니다.
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground md:text-4xl">
+            입양 대기 강아지
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            왕왕랜드에서 새 가족을 기다리고 있는 친구들입니다.
+          </p>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          총 <span className="font-bold text-foreground">{dogs.length}</span>마리
         </p>
       </header>
 
@@ -82,7 +100,7 @@ export default async function DogsPage({
             label: f.label,
             value: String(f.value),
             active: activeStatus === f.value,
-            href: buildHref(String(f.value), String(activeSize)),
+            href: buildHref(String(f.value), String(activeSize), activeSort),
           }))}
         />
         <FilterGroup
@@ -91,7 +109,16 @@ export default async function DogsPage({
             label: f.label,
             value: String(f.value),
             active: activeSize === f.value,
-            href: buildHref(String(activeStatus), String(f.value)),
+            href: buildHref(String(activeStatus), String(f.value), activeSort),
+          }))}
+        />
+        <FilterGroup
+          label="정렬"
+          options={SORT_OPTIONS.map((o) => ({
+            label: o.label,
+            value: o.value,
+            active: activeSort === o.value,
+            href: buildHref(String(activeStatus), String(activeSize), o.value),
           }))}
         />
       </div>

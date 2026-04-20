@@ -12,8 +12,8 @@ export const SITE = {
     kakaoTalk: "",
   },
   sns: {
-    instagram: "",
-    naverCafe: "",
+    instagram: "https://www.instagram.com/wangwangland_?igsh=aWIycTZwcHZsMDhj",
+    naverCafe: "https://cafe.naver.com/wangwangland",
     youtube: "",
   },
   donation: {
