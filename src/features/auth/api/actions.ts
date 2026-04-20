@@ -17,19 +17,36 @@ export async function login(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data: signInData, error: signInError } =
+    await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) {
+  if (signInError || !signInData.user) {
     return { error: "이메일 또는 비밀번호가 올바르지 않습니다." }
   }
 
-  // 운영진 테이블에 등록된 계정인지 확인
-  const { data: admin } = await supabase
+  const userId = signInData.user.id
+
+  const { data: admin, error: adminError } = await supabase
     .from("admins")
-    .select("id")
+    .select("id, role")
+    .eq("user_id", userId)
     .maybeSingle()
 
+  if (adminError) {
+    console.error("[login] admin lookup error:", adminError, "userId:", userId)
+    await supabase.auth.signOut()
+    return {
+      error: `권한 확인 중 오류: ${adminError.message}`,
+    }
+  }
+
   if (!admin) {
+    console.error(
+      "[login] no admin record for user",
+      userId,
+      "email:",
+      signInData.user.email
+    )
     await supabase.auth.signOut()
     return { error: "운영진 권한이 없는 계정입니다." }
   }
