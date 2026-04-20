@@ -28,7 +28,12 @@ export default async function HomePage() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-20 text-center md:px-6 md:py-28">
+        <div className="absolute inset-0 bg-[url('/images/Banner.jpeg')] bg-cover bg-center" />
+
+        <div className="absolute inset-0 bg-background opacity-70" />
+
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-20 text-center md:px-6 md:py-28">
+
           <span className="rounded-full bg-accent/30 px-4 py-1 text-xs font-semibold text-accent-foreground">
             {SITE.subtitle}
           </span>
@@ -42,20 +47,21 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/dogs"
-              className={cn(buttonVariants({ size: "lg" }))}
+                href="/dogs"
+                className={cn(buttonVariants({ size: "lg" }))}
             >
               입양 대기 아이들 보기
             </Link>
             <Link
-              href="/about"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+                href="/about"
+                className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
             >
               {SITE.name} 소개
             </Link>
           </div>
         </div>
       </section>
+
 
       <section className="border-t border-border/60 bg-card">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
