@@ -4,16 +4,18 @@ import Image from "next/image"
 import { useState, useTransition } from "react"
 import { Loader2, Upload, X } from "lucide-react"
 
-import { Button } from "@/shared/components/ui/button"
 import { createClient } from "@/shared/lib/supabase/client"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
+  /** Supabase Storage 내 상위 폴더 (예: "dogs", "cats", "daily") */
+  folder: string
   initialImages?: string[]
   initialThumbnailIndex?: number
 }
 
-export function DogImageUploader({
+export function AnimalImageUploader({
+  folder,
   initialImages = [],
   initialThumbnailIndex = 0,
 }: Props) {
@@ -33,7 +35,7 @@ export function DogImageUploader({
 
       for (const file of Array.from(files)) {
         const ext = file.name.split(".").pop() ?? "jpg"
-        const path = `dogs/${crypto.randomUUID()}.${ext}`
+        const path = `${folder}/${crypto.randomUUID()}.${ext}`
 
         const { error: uploadError } = await supabase.storage
           .from("public-images")

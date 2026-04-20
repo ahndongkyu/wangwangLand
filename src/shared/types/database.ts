@@ -1,5 +1,6 @@
 export type DogStatus = "보호중" | "임시보호중" | "입양완료" | "무지개다리"
 export type DogGender = "수컷" | "암컷" | "미상"
+export type DogSize = "소" | "중소" | "중" | "중대" | "대" | "대대"
 export type ApplicationStatus = "접수" | "검토중" | "승인" | "반려"
 export type AdminRole = "admin" | "editor"
 export type VolunteerActivity = "산책" | "목욕·미용" | "청소·정리" | "홍보·촬영"
@@ -15,7 +16,7 @@ export interface Admin {
   created_at: string
 }
 
-export interface Dog {
+interface AnimalBase {
   id: string
   name: string
   breed: string | null
@@ -27,12 +28,20 @@ export interface Dog {
   description: string | null
   personality: string | null
   health_info: string | null
+  kennel_location: string | null
+  neutered: boolean | null
   images: string[]
   thumbnail_index: number
   created_at: string
   updated_at: string
   created_by: string | null
 }
+
+export interface Dog extends AnimalBase {
+  size: DogSize | null
+}
+
+export interface Cat extends AnimalBase {}
 
 export interface Notice {
   id: string
@@ -69,6 +78,7 @@ export interface AdoptionStory {
 export interface AdoptionApplication {
   id: string
   dog_id: string | null
+  cat_id: string | null
   applicant_name: string
   phone: string
   email: string

@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { countCatsByStatus } from "@/features/cats"
 import { countDogsByStatus } from "@/features/dogs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -27,8 +28,9 @@ async function getApplicationCounts() {
 }
 
 export default async function AdminDashboardPage() {
-  const [dogCounts, appCounts] = await Promise.all([
+  const [dogCounts, catCounts, appCounts] = await Promise.all([
     countDogsByStatus(),
+    countCatsByStatus(),
     getApplicationCounts(),
   ])
 
@@ -45,7 +47,7 @@ export default async function AdminDashboardPage() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          유기견 현황
+          🐶 강아지 현황
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatCard label="보호중" value={dogCounts["보호중"]} />
@@ -57,7 +59,19 @@ export default async function AdminDashboardPage() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          처리 대기중인 신청
+          🐱 고양이 현황
+        </h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatCard label="보호중" value={catCounts["보호중"]} />
+          <StatCard label="임시보호중" value={catCounts["임시보호중"]} />
+          <StatCard label="입양완료" value={catCounts["입양완료"]} />
+          <StatCard label="무지개다리" value={catCounts["무지개다리"]} />
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+          📋 처리 대기중인 신청
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <Link href="/admin/applications?type=adoption" className="block">
@@ -71,13 +85,13 @@ export default async function AdminDashboardPage() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          빠른 작업
+          ⚡ 빠른 작업
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <QuickLink href="/admin/dogs" label="유기견 등록" />
+          <QuickLink href="/admin/dogs/new" label="강아지 등록" />
+          <QuickLink href="/admin/cats/new" label="고양이 등록" />
           <QuickLink href="/admin/notices" label="공지 작성" />
           <QuickLink href="/admin/daily" label="일상 사진" />
-          <QuickLink href="/admin/stories" label="입양 후기" />
         </div>
       </section>
     </div>

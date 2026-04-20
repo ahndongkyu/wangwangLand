@@ -4,13 +4,12 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
-import type { DogGender, DogSize, DogStatus } from "@/shared/types/database"
+import type { DogGender, DogStatus } from "@/shared/types/database"
 
-export interface DogMutationInput {
+export interface CatMutationInput {
   name: string
   breed: string
   gender: DogGender
-  size: DogSize | null
   age_months: number | null
   weight_kg: number | null
   rescue_date: string | null
@@ -29,7 +28,7 @@ export interface MutationResult {
   id?: string
 }
 
-function parseFormData(formData: FormData): DogMutationInput {
+function parseFormData(formData: FormData): CatMutationInput {
   const ageStr = String(formData.get("age_months") ?? "")
   const weightStr = String(formData.get("weight_kg") ?? "")
   const rescueDate = String(formData.get("rescue_date") ?? "")
@@ -38,7 +37,6 @@ function parseFormData(formData: FormData): DogMutationInput {
     .map((s) => s.trim())
     .filter(Boolean)
   const thumbnailIndex = Number(formData.get("thumbnail_index") ?? 0)
-  const sizeRaw = String(formData.get("size") ?? "").trim()
   const kennelLocation = String(formData.get("kennel_location") ?? "").trim()
   const neuteredRaw = String(formData.get("neutered") ?? "")
 
@@ -46,7 +44,6 @@ function parseFormData(formData: FormData): DogMutationInput {
     name: String(formData.get("name") ?? "").trim(),
     breed: String(formData.get("breed") ?? "").trim(),
     gender: (String(formData.get("gender") ?? "미상") as DogGender),
-    size: sizeRaw ? (sizeRaw as DogSize) : null,
     age_months: ageStr ? Number(ageStr) : null,
     weight_kg: weightStr ? Number(weightStr) : null,
     rescue_date: rescueDate || null,
@@ -66,7 +63,7 @@ function parseFormData(formData: FormData): DogMutationInput {
   }
 }
 
-export async function createDog(formData: FormData): Promise<MutationResult> {
+export async function createCat(formData: FormData): Promise<MutationResult> {
   const input = parseFormData(formData)
 
   if (!input.name) return { error: "이름은 필수입니다." }
@@ -87,23 +84,23 @@ export async function createDog(formData: FormData): Promise<MutationResult> {
   if (!admin) return { error: "운영진 권한이 없습니다." }
 
   const { error } = await supabase
-    .from("dogs")
+    .from("cats")
     .insert({ ...input, created_by: admin.id })
     .select("id")
     .single()
 
   if (error) {
-    console.error("[createDog]", error)
+    console.error("[createCat]", error)
     return { error: error.message }
   }
 
-  revalidatePath("/admin/dogs")
-  revalidatePath("/dogs")
+  revalidatePath("/admin/cats")
+  revalidatePath("/cats")
   revalidatePath("/")
-  redirect("/admin/dogs")
+  redirect("/admin/cats")
 }
 
-export async function updateDog(
+export async function updateCat(
   id: string,
   formData: FormData
 ): Promise<MutationResult> {
@@ -113,33 +110,33 @@ export async function updateDog(
 
   const supabase = await createClient()
 
-  const { error } = await supabase.from("dogs").update(input).eq("id", id)
+  const { error } = await supabase.from("cats").update(input).eq("id", id)
 
   if (error) {
-    console.error("[updateDog]", error)
+    console.error("[updateCat]", error)
     return { error: error.message }
   }
 
-  revalidatePath("/admin/dogs")
-  revalidatePath(`/admin/dogs/${id}`)
-  revalidatePath(`/dogs/${id}`)
-  revalidatePath("/dogs")
+  revalidatePath("/admin/cats")
+  revalidatePath(`/admin/cats/${id}`)
+  revalidatePath(`/cats/${id}`)
+  revalidatePath("/cats")
   revalidatePath("/")
-  redirect("/admin/dogs")
+  redirect("/admin/cats")
 }
 
-export async function deleteDog(id: string): Promise<MutationResult> {
+export async function deleteCat(id: string): Promise<MutationResult> {
   const supabase = await createClient()
 
-  const { error } = await supabase.from("dogs").delete().eq("id", id)
+  const { error } = await supabase.from("cats").delete().eq("id", id)
 
   if (error) {
-    console.error("[deleteDog]", error)
+    console.error("[deleteCat]", error)
     return { error: error.message }
   }
 
-  revalidatePath("/admin/dogs")
-  revalidatePath("/dogs")
+  revalidatePath("/admin/cats")
+  revalidatePath("/cats")
   revalidatePath("/")
   return {}
 }

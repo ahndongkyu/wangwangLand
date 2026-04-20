@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
@@ -26,12 +27,20 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src={SITE.logo}
+            alt={`${SITE.name} 로고`}
+            width={36}
+            height={36}
+            className="size-9 rounded-full"
+            priority
+          />
           <span className="text-xl font-bold tracking-tight text-foreground">
             {SITE.name}
           </span>
           <span className="hidden text-xs text-muted-foreground sm:inline">
-            {SITE.tagline}
+            {SITE.subtitle}
           </span>
         </Link>
 

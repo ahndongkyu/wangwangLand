@@ -11,15 +11,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: `${SITE.name} · ${SITE.tagline}`,
+    default: SITE.name,
     template: `%s · ${SITE.name}`,
   },
   description: SITE.description,
+  icons: {
+    icon: SITE.logo,
+    shortcut: SITE.logo,
+    apple: SITE.logo,
+  },
   openGraph: {
     title: SITE.name,
     description: SITE.description,
     locale: "ko_KR",
     type: "website",
+    images: [SITE.logo],
   },
 }
 

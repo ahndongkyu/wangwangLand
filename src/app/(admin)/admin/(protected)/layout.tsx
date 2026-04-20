@@ -7,7 +7,8 @@ import { SITE } from "@/shared/constants/site"
 
 const ADMIN_NAV = [
   { label: "대시보드", href: "/admin" },
-  { label: "유기견", href: "/admin/dogs" },
+  { label: "강아지", href: "/admin/dogs" },
+  { label: "고양이", href: "/admin/cats" },
   { label: "공지", href: "/admin/notices" },
   { label: "일상", href: "/admin/daily" },
   { label: "입양후기", href: "/admin/stories" },
