@@ -25,9 +25,12 @@ export async function listDogs({
   let query = supabase.from("dogs").select("*")
 
   if (sort === "name") {
-    query = query.order("name", { ascending: true })
+    query = query.order("name", { ascending: true }).order("id", { ascending: true })
   } else {
-    query = query.order("created_at", { ascending: false })
+    // 최신순 = 최근 업데이트된 순. id를 2차 정렬키로 걸어 동률 안정화.
+    query = query
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
   }
 
   query = query.range(offset, offset + limit - 1)
@@ -70,9 +73,11 @@ export async function listDogsWithCount({
   let query = supabase.from("dogs").select("*", { count: "exact" })
 
   if (sort === "name") {
-    query = query.order("name", { ascending: true })
+    query = query.order("name", { ascending: true }).order("id", { ascending: true })
   } else {
-    query = query.order("created_at", { ascending: false })
+    query = query
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
   }
 
   query = query.range(offset, offset + limit - 1)

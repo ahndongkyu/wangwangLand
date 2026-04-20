@@ -23,9 +23,11 @@ export async function listCats({
   let query = supabase.from("cats").select("*")
 
   if (sort === "name") {
-    query = query.order("name", { ascending: true })
+    query = query.order("name", { ascending: true }).order("id", { ascending: true })
   } else {
-    query = query.order("created_at", { ascending: false })
+    query = query
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
   }
 
   query = query.range(offset, offset + limit - 1)
@@ -64,9 +66,11 @@ export async function listCatsWithCount({
   let query = supabase.from("cats").select("*", { count: "exact" })
 
   if (sort === "name") {
-    query = query.order("name", { ascending: true })
+    query = query.order("name", { ascending: true }).order("id", { ascending: true })
   } else {
-    query = query.order("created_at", { ascending: false })
+    query = query
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: true })
   }
 
   query = query.range(offset, offset + limit - 1)
