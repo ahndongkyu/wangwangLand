@@ -28,33 +28,35 @@ export default async function HomePage() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/Banner.jpeg')] bg-cover bg-center" />
+        <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: "url('/images/Banner.jpeg')" }}
+        />
 
-        <div className="absolute inset-0 bg-background opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/30" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-20 text-center md:px-6 md:py-28">
-
-          <span className="rounded-full bg-accent/30 px-4 py-1 text-xs font-semibold text-accent-foreground">
-            {SITE.subtitle}
-          </span>
-          <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl">
+    <span className="rounded-full bg-background/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+      {SITE.subtitle}
+    </span>
+          <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl [text-shadow:_0_2px_8px_rgb(245_239_228_/_50%)]">
             {SITE.tagline}
           </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
+          <p className="mt-5 max-w-xl text-base font-medium text-foreground md:text-lg [text-shadow:_0_1px_4px_rgb(245_239_228_/_80%)]">
             {SITE.name}은 아무런 이유로도 아이들의 생명을 포기하지 않습니다.
             <br />
             새로운 가족을 만날 때까지 사랑으로 돌봅니다.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
-                href="/dogs"
-                className={cn(buttonVariants({ size: "lg" }))}
-            >
+            <Link href="/dogs" className={cn(buttonVariants({ size: "lg" }))}>
               입양 대기 아이들 보기
             </Link>
             <Link
                 href="/about"
-                className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+                className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "bg-background/90 backdrop-blur-sm"
+                )}
             >
               {SITE.name} 소개
             </Link>
