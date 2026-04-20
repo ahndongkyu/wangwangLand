@@ -35,6 +35,7 @@ export const MAIN_NAV = [
   { label: "입양후기", href: "/stories" },
   { label: "봉사", href: "/volunteer" },
   { label: "후원", href: "/donate" },
+  { label: "공지사항", href: "/notice" },
 ] as const
 
 export const FOOTER_NAV = [
