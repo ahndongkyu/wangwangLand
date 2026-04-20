@@ -6,6 +6,7 @@ export type CatSort = "latest" | "name"
 export interface ListCatsOptions {
   status?: DogStatus | "전체"
   sort?: CatSort
+  query?: string
   limit?: number
   offset?: number
 }
@@ -13,6 +14,7 @@ export interface ListCatsOptions {
 export async function listCats({
   status,
   sort = "latest",
+  query: searchQuery,
   limit = 12,
   offset = 0,
 }: ListCatsOptions = {}): Promise<Cat[]> {
@@ -30,6 +32,9 @@ export async function listCats({
 
   if (status && status !== "전체") {
     query = query.eq("status", status)
+  }
+  if (searchQuery && searchQuery.trim()) {
+    query = query.ilike("name", `%${searchQuery.trim()}%`)
   }
 
   const { data, error } = await query

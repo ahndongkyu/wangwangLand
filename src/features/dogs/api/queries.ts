@@ -7,6 +7,7 @@ export interface ListDogsOptions {
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
   sort?: DogSort
+  query?: string
   limit?: number
   offset?: number
 }
@@ -15,6 +16,7 @@ export async function listDogs({
   status,
   size,
   sort = "latest",
+  query: searchQuery,
   limit = 12,
   offset = 0,
 }: ListDogsOptions = {}): Promise<Dog[]> {
@@ -35,6 +37,9 @@ export async function listDogs({
   }
   if (size && size !== "전체") {
     query = query.eq("size", size)
+  }
+  if (searchQuery && searchQuery.trim()) {
+    query = query.ilike("name", `%${searchQuery.trim()}%`)
   }
 
   const { data, error } = await query

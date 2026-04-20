@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { DogGrid, listDogs } from "@/features/dogs"
 import type { DogSort } from "@/features/dogs/api/queries"
+import { SearchBox } from "@/shared/components/search-box"
 import { cn } from "@/shared/lib/utils"
 import type { DogSize, DogStatus } from "@/shared/types/database"
 
@@ -52,11 +53,17 @@ function parseSort(value: string | undefined): DogSort {
   return value === "name" ? "name" : "latest"
 }
 
-function buildHref(status: string, size: string, sort: DogSort) {
+function buildHref(
+  status: string,
+  size: string,
+  sort: DogSort,
+  q: string
+) {
   const params = new URLSearchParams()
   if (status !== "보호중") params.set("status", status)
   if (size !== "전체") params.set("size", size)
   if (sort !== "latest") params.set("sort", sort)
+  if (q) params.set("q", q)
   const qs = params.toString()
   return qs ? `/dogs?${qs}` : "/dogs"
 }
@@ -64,16 +71,23 @@ function buildHref(status: string, size: string, sort: DogSort) {
 export default async function DogsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; size?: string; sort?: string }>
+  searchParams: Promise<{
+    status?: string
+    size?: string
+    sort?: string
+    q?: string
+  }>
 }) {
   const params = await searchParams
   const activeStatus = parseStatus(params.status)
   const activeSize = parseSize(params.size)
   const activeSort = parseSort(params.sort)
+  const activeQuery = (params.q ?? "").trim()
   const dogs = await listDogs({
     status: activeStatus,
     size: activeSize,
     sort: activeSort,
+    query: activeQuery || undefined,
     limit: 100,
   })
 
@@ -94,13 +108,19 @@ export default async function DogsPage({
       </header>
 
       <div className="mb-8 space-y-4">
+        <SearchBox placeholder="강아지 이름으로 검색" className="max-w-md" />
         <FilterGroup
           label="상태"
           options={STATUS_FILTERS.map((f) => ({
             label: f.label,
             value: String(f.value),
             active: activeStatus === f.value,
-            href: buildHref(String(f.value), String(activeSize), activeSort),
+            href: buildHref(
+              String(f.value),
+              String(activeSize),
+              activeSort,
+              activeQuery
+            ),
           }))}
         />
         <FilterGroup
@@ -109,7 +129,12 @@ export default async function DogsPage({
             label: f.label,
             value: String(f.value),
             active: activeSize === f.value,
-            href: buildHref(String(activeStatus), String(f.value), activeSort),
+            href: buildHref(
+              String(activeStatus),
+              String(f.value),
+              activeSort,
+              activeQuery
+            ),
           }))}
         />
         <FilterGroup
@@ -118,7 +143,12 @@ export default async function DogsPage({
             label: o.label,
             value: o.value,
             active: activeSort === o.value,
-            href: buildHref(String(activeStatus), String(activeSize), o.value),
+            href: buildHref(
+              String(activeStatus),
+              String(activeSize),
+              o.value,
+              activeQuery
+            ),
           }))}
         />
       </div>
@@ -126,7 +156,9 @@ export default async function DogsPage({
       <DogGrid
         dogs={dogs}
         emptyMessage={
-          `'${activeStatus}${activeSize !== "전체" ? ` · ${activeSize}` : ""}' 조건에 해당하는 아이가 없어요.`
+          activeQuery
+            ? `'${activeQuery}' 검색 결과가 없습니다.`
+            : `'${activeStatus}${activeSize !== "전체" ? ` · ${activeSize}` : ""}' 조건에 해당하는 아이가 없어요.`
         }
       />
     </div>

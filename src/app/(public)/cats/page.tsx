@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { CatGrid, listCats } from "@/features/cats"
 import type { CatSort } from "@/features/cats/api/queries"
+import { SearchBox } from "@/shared/components/search-box"
 import { cn } from "@/shared/lib/utils"
 import type { DogStatus } from "@/shared/types/database"
 
@@ -36,10 +37,11 @@ function parseSort(value: string | undefined): CatSort {
   return value === "name" ? "name" : "latest"
 }
 
-function buildHref(status: string, sort: CatSort) {
+function buildHref(status: string, sort: CatSort, q: string) {
   const params = new URLSearchParams()
   if (status !== "보호중") params.set("status", status)
   if (sort !== "latest") params.set("sort", sort)
+  if (q) params.set("q", q)
   const qs = params.toString()
   return qs ? `/cats?${qs}` : "/cats"
 }
@@ -47,14 +49,16 @@ function buildHref(status: string, sort: CatSort) {
 export default async function CatsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; sort?: string }>
+  searchParams: Promise<{ status?: string; sort?: string; q?: string }>
 }) {
   const params = await searchParams
   const activeStatus = parseStatus(params.status)
   const activeSort = parseSort(params.sort)
+  const activeQuery = (params.q ?? "").trim()
   const cats = await listCats({
     status: activeStatus,
     sort: activeSort,
+    query: activeQuery || undefined,
     limit: 100,
   })
 
@@ -75,13 +79,14 @@ export default async function CatsPage({
       </header>
 
       <div className="mb-8 space-y-4">
+        <SearchBox placeholder="고양이 이름으로 검색" className="max-w-md" />
         <FilterGroup
           label="상태"
           options={STATUS_FILTERS.map((f) => ({
             label: f.label,
             value: String(f.value),
             active: activeStatus === f.value,
-            href: buildHref(String(f.value), activeSort),
+            href: buildHref(String(f.value), activeSort, activeQuery),
           }))}
         />
         <FilterGroup
@@ -90,7 +95,7 @@ export default async function CatsPage({
             label: o.label,
             value: o.value,
             active: activeSort === o.value,
-            href: buildHref(String(activeStatus), o.value),
+            href: buildHref(String(activeStatus), o.value, activeQuery),
           }))}
         />
       </div>
@@ -98,9 +103,11 @@ export default async function CatsPage({
       <CatGrid
         cats={cats}
         emptyMessage={
-          activeStatus === "전체"
-            ? "아직 등록된 고양이가 없어요."
-            : `'${activeStatus}' 상태인 고양이가 아직 없어요.`
+          activeQuery
+            ? `'${activeQuery}' 검색 결과가 없습니다.`
+            : activeStatus === "전체"
+              ? "아직 등록된 고양이가 없어요."
+              : `'${activeStatus}' 상태인 고양이가 아직 없어요.`
         }
       />
     </div>

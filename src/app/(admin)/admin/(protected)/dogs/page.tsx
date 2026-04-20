@@ -2,24 +2,36 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { DogDeleteButton, listDogs } from "@/features/dogs"
+import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminDogsPage() {
-  const dogs = await listDogs({ status: "전체", limit: 100 })
+export default async function AdminDogsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const params = await searchParams
+  const activeQuery = (params.q ?? "").trim()
+  const dogs = await listDogs({
+    status: "전체",
+    query: activeQuery || undefined,
+    limit: 200,
+  })
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-            유기견 관리
+            강아지 관리
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            전체 {dogs.length}마리
+            {activeQuery ? `'${activeQuery}' 검색 결과 ` : "전체 "}
+            {dogs.length}마리
           </p>
         </div>
         <Link href="/admin/dogs/new" className={cn(buttonVariants())}>
@@ -27,9 +39,15 @@ export default async function AdminDogsPage() {
         </Link>
       </header>
 
+      <div className="mb-4 max-w-md">
+        <SearchBox placeholder="이름으로 검색" />
+      </div>
+
       {dogs.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          아직 등록된 아이가 없습니다. 위 버튼을 눌러 첫 아이를 등록해 보세요.
+          {activeQuery
+            ? `'${activeQuery}' 검색 결과가 없습니다.`
+            : "아직 등록된 아이가 없습니다. 위 버튼을 눌러 첫 아이를 등록해 보세요."}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
@@ -39,9 +57,10 @@ export default async function AdminDogsPage() {
                 <th className="px-4 py-3 font-semibold">사진</th>
                 <th className="px-4 py-3 font-semibold">이름</th>
                 <th className="hidden px-4 py-3 font-semibold md:table-cell">품종</th>
+                <th className="hidden px-4 py-3 font-semibold md:table-cell">크기</th>
                 <th className="px-4 py-3 font-semibold">상태</th>
-                <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                  등록일
+                <th className="hidden px-4 py-3 font-semibold lg:table-cell">
+                  위치
                 </th>
                 <th className="px-4 py-3 text-right font-semibold">작업</th>
               </tr>
@@ -75,11 +94,14 @@ export default async function AdminDogsPage() {
                     <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                       {dog.breed ?? "-"}
                     </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+                      {dog.size ?? "-"}
+                    </td>
                     <td className="px-4 py-3">
                       <Badge variant="secondary">{dog.status}</Badge>
                     </td>
-                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                      {new Date(dog.created_at).toLocaleDateString("ko-KR")}
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
+                      {dog.kennel_location ?? "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
