@@ -32,7 +32,7 @@ export default async function AdminProtectedLayout({
               href="/admin"
               className="text-base font-bold text-foreground"
             >
-              {SITE.name} 어드민
+              {SITE.name} 관리자
             </Link>
             <nav className="hidden md:block">
               <ul className="flex items-center gap-1 text-sm">
