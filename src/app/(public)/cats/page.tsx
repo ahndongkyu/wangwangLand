@@ -1,8 +1,9 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 
-import { CatGrid, listCats } from "@/features/cats"
+import { CatGrid, listCatsWithCount } from "@/features/cats"
 import type { CatSort } from "@/features/cats/api/queries"
+import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { cn } from "@/shared/lib/utils"
 import type { DogStatus } from "@/shared/types/database"
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 60
+
+const PAGE_SIZE = 24
 
 const STATUS_FILTERS: Array<{ label: string; value: DogStatus | "전체" }> = [
   { label: "보호중", value: "보호중" },
@@ -49,18 +52,24 @@ function buildHref(status: string, sort: CatSort, q: string) {
 export default async function CatsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; sort?: string; q?: string }>
+  searchParams: Promise<{ status?: string; sort?: string; q?: string; page?: string }>
 }) {
   const params = await searchParams
   const activeStatus = parseStatus(params.status)
   const activeSort = parseSort(params.sort)
   const activeQuery = (params.q ?? "").trim()
-  const cats = await listCats({
+  const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
+  const offset = (pageNum - 1) * PAGE_SIZE
+
+  const { cats, total } = await listCatsWithCount({
     status: activeStatus,
     sort: activeSort,
     query: activeQuery || undefined,
-    limit: 100,
+    limit: PAGE_SIZE,
+    offset,
   })
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
@@ -74,7 +83,7 @@ export default async function CatsPage({
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
-          총 <span className="font-bold text-foreground">{cats.length}</span>마리
+          총 <span className="font-bold text-foreground">{total}</span>마리
         </p>
       </header>
 
@@ -109,6 +118,17 @@ export default async function CatsPage({
               ? "아직 등록된 고양이가 없어요."
               : `'${activeStatus}' 상태인 고양이가 아직 없어요.`
         }
+      />
+
+      <Pagination
+        currentPage={pageNum}
+        totalPages={totalPages}
+        basePath="/cats"
+        searchParams={{
+          status: activeStatus !== "보호중" ? activeStatus : undefined,
+          sort: activeSort !== "latest" ? activeSort : undefined,
+          q: activeQuery || undefined,
+        }}
       />
     </div>
   )

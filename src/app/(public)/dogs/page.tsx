@@ -1,8 +1,9 @@
 import Link from "next/link"
 import type { Metadata } from "next"
 
-import { DogGrid, listDogs } from "@/features/dogs"
+import { DogGrid, listDogsWithCount } from "@/features/dogs"
 import type { DogSort } from "@/features/dogs/api/queries"
+import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { cn } from "@/shared/lib/utils"
 import type { DogSize, DogStatus } from "@/shared/types/database"
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 60
+
+const PAGE_SIZE = 24
 
 const STATUS_FILTERS: Array<{ label: string; value: DogStatus | "전체" }> = [
   { label: "보호중", value: "보호중" },
@@ -76,6 +79,7 @@ export default async function DogsPage({
     size?: string
     sort?: string
     q?: string
+    page?: string
   }>
 }) {
   const params = await searchParams
@@ -83,13 +87,19 @@ export default async function DogsPage({
   const activeSize = parseSize(params.size)
   const activeSort = parseSort(params.sort)
   const activeQuery = (params.q ?? "").trim()
-  const dogs = await listDogs({
+  const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
+  const offset = (pageNum - 1) * PAGE_SIZE
+
+  const { dogs, total } = await listDogsWithCount({
     status: activeStatus,
     size: activeSize,
     sort: activeSort,
     query: activeQuery || undefined,
-    limit: 100,
+    limit: PAGE_SIZE,
+    offset,
   })
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
@@ -103,7 +113,7 @@ export default async function DogsPage({
           </p>
         </div>
         <p className="text-sm text-muted-foreground">
-          총 <span className="font-bold text-foreground">{dogs.length}</span>마리
+          총 <span className="font-bold text-foreground">{total}</span>마리
         </p>
       </header>
 
@@ -160,6 +170,18 @@ export default async function DogsPage({
             ? `'${activeQuery}' 검색 결과가 없습니다.`
             : `'${activeStatus}${activeSize !== "전체" ? ` · ${activeSize}` : ""}' 조건에 해당하는 아이가 없어요.`
         }
+      />
+
+      <Pagination
+        currentPage={pageNum}
+        totalPages={totalPages}
+        basePath="/dogs"
+        searchParams={{
+          status: activeStatus !== "보호중" ? activeStatus : undefined,
+          size: activeSize !== "전체" ? activeSize : undefined,
+          sort: activeSort !== "latest" ? activeSort : undefined,
+          q: activeQuery || undefined,
+        }}
       />
     </div>
   )
