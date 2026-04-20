@@ -52,6 +52,51 @@ export async function listDogs({
   return (data ?? []) as Dog[]
 }
 
+export interface PaginatedDogs {
+  dogs: Dog[]
+  total: number
+}
+
+export async function listDogsWithCount({
+  status,
+  size,
+  sort = "latest",
+  query: searchQuery,
+  limit = 20,
+  offset = 0,
+}: ListDogsOptions = {}): Promise<PaginatedDogs> {
+  const supabase = await createClient()
+
+  let query = supabase.from("dogs").select("*", { count: "exact" })
+
+  if (sort === "name") {
+    query = query.order("name", { ascending: true })
+  } else {
+    query = query.order("created_at", { ascending: false })
+  }
+
+  query = query.range(offset, offset + limit - 1)
+
+  if (status && status !== "전체") {
+    query = query.eq("status", status)
+  }
+  if (size && size !== "전체") {
+    query = query.eq("size", size)
+  }
+  if (searchQuery && searchQuery.trim()) {
+    query = query.ilike("name", `%${searchQuery.trim()}%`)
+  }
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error("[listDogsWithCount] error:", error)
+    return { dogs: [], total: 0 }
+  }
+
+  return { dogs: (data ?? []) as Dog[], total: count ?? 0 }
+}
+
 export async function getDog(id: string): Promise<Dog | null> {
   const supabase = await createClient()
 

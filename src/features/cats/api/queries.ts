@@ -47,6 +47,47 @@ export async function listCats({
   return (data ?? []) as Cat[]
 }
 
+export interface PaginatedCats {
+  cats: Cat[]
+  total: number
+}
+
+export async function listCatsWithCount({
+  status,
+  sort = "latest",
+  query: searchQuery,
+  limit = 20,
+  offset = 0,
+}: ListCatsOptions = {}): Promise<PaginatedCats> {
+  const supabase = await createClient()
+
+  let query = supabase.from("cats").select("*", { count: "exact" })
+
+  if (sort === "name") {
+    query = query.order("name", { ascending: true })
+  } else {
+    query = query.order("created_at", { ascending: false })
+  }
+
+  query = query.range(offset, offset + limit - 1)
+
+  if (status && status !== "전체") {
+    query = query.eq("status", status)
+  }
+  if (searchQuery && searchQuery.trim()) {
+    query = query.ilike("name", `%${searchQuery.trim()}%`)
+  }
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error("[listCatsWithCount] error:", error)
+    return { cats: [], total: 0 }
+  }
+
+  return { cats: (data ?? []) as Cat[], total: count ?? 0 }
+}
+
 export async function getCat(id: string): Promise<Cat | null> {
   const supabase = await createClient()
 
