@@ -7,28 +7,44 @@ import { Loader2, Upload, X } from "lucide-react"
 import { createClient } from "@/shared/lib/supabase/client"
 import { cn } from "@/shared/lib/utils"
 
+const MAX_IMAGES = 10
+
 interface Props {
   /** Supabase Storage 내 상위 폴더 (예: "dogs", "cats", "daily") */
   folder: string
   initialImages?: string[]
   initialThumbnailIndex?: number
+  maxImages?: number
 }
 
 export function AnimalImageUploader({
   folder,
   initialImages = [],
   initialThumbnailIndex = 0,
+  maxImages = MAX_IMAGES,
 }: Props) {
   const [images, setImages] = useState<string[]>(initialImages)
   const [thumbIdx, setThumbIdx] = useState(initialThumbnailIndex)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
+  const remaining = Math.max(0, maxImages - images.length)
+  const isFull = remaining === 0
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0) return
 
     setError(null)
+
+    if (files.length > remaining) {
+      setError(
+        `사진은 최대 ${maxImages}장까지 가능합니다. (${remaining}장 더 추가 가능)`
+      )
+      e.target.value = ""
+      return
+    }
+
     startTransition(async () => {
       const supabase = createClient()
       const uploaded: string[] = []
@@ -52,7 +68,7 @@ export function AnimalImageUploader({
         uploaded.push(data.publicUrl)
       }
 
-      setImages((prev) => [...prev, ...uploaded])
+      setImages((prev) => [...prev, ...uploaded].slice(0, maxImages))
     })
 
     e.target.value = ""
@@ -68,6 +84,21 @@ export function AnimalImageUploader({
     <div className="space-y-3">
       <input type="hidden" name="images" value={images.join(",")} />
       <input type="hidden" name="thumbnail_index" value={thumbIdx} />
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>
+          사진을 클릭하면 <strong className="text-foreground">대표 사진</strong>으로
+          지정돼요. 대표 사진이 목록·상세의 메인 이미지로 노출됩니다.
+        </span>
+        <span
+          className={cn(
+            "font-semibold",
+            isFull ? "text-destructive" : "text-foreground"
+          )}
+        >
+          {images.length} / {maxImages}
+        </span>
+      </div>
 
       <div className="flex flex-wrap items-start gap-3">
         {images.map((src, idx) => (
@@ -104,27 +135,31 @@ export function AnimalImageUploader({
           </div>
         ))}
 
-        <label
-          className={cn(
-            "flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary",
-            pending && "opacity-50"
-          )}
-        >
-          {pending ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            <Upload className="size-5" />
-          )}
-          <span className="text-xs">사진 추가</span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleUpload}
-            disabled={pending}
-          />
-        </label>
+        {!isFull && (
+          <label
+            className={cn(
+              "flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary",
+              pending && "opacity-50"
+            )}
+          >
+            {pending ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <Upload className="size-5" />
+            )}
+            <span className="text-xs">
+              {pending ? "업로드 중" : `사진 추가 (${remaining})`}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleUpload}
+              disabled={pending}
+            />
+          </label>
+        )}
       </div>
 
       {error && (
@@ -133,7 +168,7 @@ export function AnimalImageUploader({
         </p>
       )}
       <p className="text-xs text-muted-foreground">
-        사진 클릭 시 대표 사진 지정. 최대 10MB, jpg/png/webp/gif.
+        최대 {maxImages}장 / 장당 10MB 이하 / jpg · png · webp · gif
       </p>
     </div>
   )

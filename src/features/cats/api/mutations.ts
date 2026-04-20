@@ -63,10 +63,15 @@ function parseFormData(formData: FormData): CatMutationInput {
   }
 }
 
+const MAX_IMAGES = 10
+
 export async function createCat(formData: FormData): Promise<MutationResult> {
   const input = parseFormData(formData)
 
   if (!input.name) return { error: "이름은 필수입니다." }
+  if (input.images.length > MAX_IMAGES) {
+    return { error: `사진은 최대 ${MAX_IMAGES}장까지 등록 가능합니다.` }
+  }
 
   const supabase = await createClient()
 
@@ -107,6 +112,9 @@ export async function updateCat(
   const input = parseFormData(formData)
 
   if (!input.name) return { error: "이름은 필수입니다." }
+  if (input.images.length > MAX_IMAGES) {
+    return { error: `사진은 최대 ${MAX_IMAGES}장까지 등록 가능합니다.` }
+  }
 
   const supabase = await createClient()
 
