@@ -8,7 +8,8 @@ export const SITE = {
   contact: {
     phone: "",
     email: "beez_12@naver.com",
-    address: "",
+    address: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
+    addressNote: "호성이네민박펜션과 주소 동일",
     kakaoTalk: "",
   },
   sns: {
@@ -17,9 +18,12 @@ export const SITE = {
     youtube: "",
   },
   donation: {
-    bankName: "",
-    accountNumber: "",
-    accountHolder: "",
+    bankName: "NH농협",
+    accountNumber: "351-1336-8823-03",
+    accountHolder: "왕왕랜드",
+    regularMinimum: 10000,
+    parcelAddress: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
+    parcelAddressNote: "호성이네민박펜션과 주소 동일",
   },
 }
 

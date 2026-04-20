@@ -4,11 +4,11 @@ import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
   title: "후원 안내",
-  description: `${SITE.name}은 여러분의 후원으로 운영됩니다. 계좌 이체로 참여하실 수 있습니다.`,
+  description: `${SITE.name}은 여러분의 후원으로 운영됩니다. 계좌 이체와 후원품으로 참여하실 수 있습니다.`,
 }
 
 export default function DonatePage() {
-  const hasAccount = SITE.donation.bankName && SITE.donation.accountNumber
+  const d = SITE.donation
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -39,25 +39,55 @@ export default function DonatePage() {
         </ul>
       </section>
 
-      <section className="rounded-xl border border-primary/40 bg-primary/5 p-6">
-        <h2 className="mb-4 text-xl font-semibold text-foreground">
-          계좌 후원
-        </h2>
-        {hasAccount ? (
-          <div className="space-y-2 text-sm md:text-base">
-            <Row label="은행" value={SITE.donation.bankName} />
-            <Row label="계좌번호" value={SITE.donation.accountNumber} />
-            <Row label="예금주" value={SITE.donation.accountHolder} />
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            계좌 정보는 곧 공개됩니다. 문의 주시면 안내드리겠습니다.
+      <section className="mb-10 rounded-xl border border-primary/40 bg-primary/5 p-6">
+        <div className="mb-5 flex items-baseline justify-between gap-2">
+          <h2 className="text-xl font-semibold text-foreground">계좌 후원</h2>
+          <span className="text-xs text-muted-foreground">일시·정기 후원 공용</span>
+        </div>
+
+        <div className="space-y-2 text-sm md:text-base">
+          <Row label="은행" value={d.bankName} />
+          <Row
+            label="계좌번호"
+            value={
+              <span className="select-all font-mono tracking-wide">
+                {d.accountNumber}
+              </span>
+            }
+          />
+          <Row label="예금주" value={d.accountHolder} />
+        </div>
+
+        <div className="mt-5 rounded-lg bg-background/70 p-4 text-sm text-foreground/90">
+          <p className="font-semibold text-foreground">💙 정기 후원 안내</p>
+          <p className="mt-1.5 leading-relaxed text-muted-foreground">
+            월 <span className="font-semibold text-foreground">
+              {d.regularMinimum.toLocaleString()}원
+            </span>부터 자유롭게 책정하실 수 있습니다. 위 {d.bankName} 계좌로
+            자동이체를 등록해 주세요.
           </p>
-        )}
+        </div>
       </section>
 
-      <p className="mt-6 text-center text-xs text-muted-foreground">
-        * 정기 후원 및 카드/간편 결제는 추후 지원 예정입니다.
+      <section className="mb-10 rounded-xl border border-border bg-card p-6">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">
+          후원품 택배
+        </h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          사료·간식·담요·장난감 등 후원물품은 아래 주소로 보내 주세요.
+        </p>
+        <div className="rounded-lg bg-background px-4 py-3 text-sm">
+          <p className="font-semibold text-foreground">{d.parcelAddress}</p>
+          {d.parcelAddressNote && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              ※ {d.parcelAddressNote}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <p className="text-center text-xs text-muted-foreground">
+        * 카드·간편 결제 연동은 추후 지원 예정입니다.
       </p>
     </div>
   )
@@ -83,10 +113,16 @@ function UsageItem({
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+}: {
+  label: string
+  value: React.ReactNode
+}) {
   return (
     <div className="flex items-center gap-4">
-      <span className="w-20 text-muted-foreground">{label}</span>
+      <span className="w-20 shrink-0 text-muted-foreground">{label}</span>
       <span className="font-medium text-foreground">{value}</span>
     </div>
   )
