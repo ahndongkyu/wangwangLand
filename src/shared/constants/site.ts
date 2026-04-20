@@ -7,9 +7,10 @@ export const SITE = {
   logo: "/images/logo.png",
   contact: {
     phone: "",
-    email: "beez_12@naver.com",
+    email: "",
     address: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
     addressNote: "호성이네민박펜션과 주소 동일",
+    mapQuery: "인천 중구 을왕동 206-27",
     kakaoTalk: "",
   },
   sns: {

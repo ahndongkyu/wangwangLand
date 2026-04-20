@@ -37,7 +37,19 @@ export default function ContactPage() {
           />
         )}
         {SITE.contact.address && (
-          <InfoRow label="주소" value={SITE.contact.address} />
+          <InfoRow
+            label="주소"
+            value={
+              <div>
+                <p>{SITE.contact.address}</p>
+                {SITE.contact.addressNote && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    ※ {SITE.contact.addressNote}
+                  </p>
+                )}
+              </div>
+            }
+          />
         )}
         {SITE.contact.kakaoTalk && (
           <InfoRow label="카카오톡" value={SITE.contact.kakaoTalk} />
@@ -50,9 +62,26 @@ export default function ContactPage() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold text-foreground">오시는 길</h2>
-        <div className="flex aspect-video items-center justify-center rounded-lg border border-dashed border-border bg-muted text-sm text-muted-foreground">
-          지도는 곧 연동됩니다 🗺️
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground">오시는 길</h2>
+          <a
+            href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary hover:underline"
+          >
+            카카오맵에서 열기 →
+          </a>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border">
+          <iframe
+            src={`https://www.google.com/maps?q=${encodeURIComponent(SITE.contact.mapQuery)}&output=embed`}
+            title="왕왕랜드 위치"
+            className="aspect-video w-full"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
         </div>
       </section>
     </div>
