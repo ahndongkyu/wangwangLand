@@ -15,9 +15,24 @@ export async function generateMetadata({
   const { id } = await params
   const post = await getDailyPost(id)
   if (!post) return { title: "찾을 수 없는 일상" }
+  const desc = post.content?.slice(0, 120) ?? post.title
+  const cover = post.images[0]
   return {
     title: post.title,
-    description: post.content?.slice(0, 120) ?? post.title,
+    description: desc,
+    openGraph: {
+      title: `${post.title} · 왕왕랜드 일상`,
+      description: desc,
+      type: "article",
+      publishedTime: post.posted_at,
+      images: cover ? [{ url: cover, width: 1200, height: 630, alt: post.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${post.title} · 왕왕랜드 일상`,
+      description: desc,
+      images: cover ? [cover] : undefined,
+    },
   }
 }
 

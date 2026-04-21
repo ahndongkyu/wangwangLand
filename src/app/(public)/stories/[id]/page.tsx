@@ -17,9 +17,24 @@ export async function generateMetadata({
   const { id } = await params
   const story = await getAdoptionStory(id)
   if (!story) return { title: "찾을 수 없는 입양 후기" }
+  const desc = story.content.slice(0, 120)
+  const cover = story.images[0]
   return {
     title: story.title,
-    description: story.content.slice(0, 120),
+    description: desc,
+    openGraph: {
+      title: `${story.title} · 입양 후기`,
+      description: desc,
+      type: "article",
+      publishedTime: story.published_at ?? undefined,
+      images: cover ? [{ url: cover, width: 1200, height: 630, alt: story.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${story.title} · 입양 후기`,
+      description: desc,
+      images: cover ? [cover] : undefined,
+    },
   }
 }
 

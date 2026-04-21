@@ -32,9 +32,24 @@ export async function generateMetadata({
   const { id } = await params
   const cat = await getCat(id)
   if (!cat) return { title: "찾을 수 없는 아이" }
+  const cover = cat.images[cat.thumbnail_index] ?? cat.images[0]
+  const desc =
+    cat.description ?? `${cat.name} — 왕왕랜드에서 새 가족을 기다리는 아이입니다.`
   return {
     title: cat.name,
-    description: cat.description ?? `${cat.name}의 프로필 페이지입니다.`,
+    description: desc,
+    openGraph: {
+      title: `${cat.name} · 왕왕랜드`,
+      description: desc,
+      type: "article",
+      images: cover ? [{ url: cover, width: 1200, height: 630, alt: cat.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${cat.name} · 왕왕랜드`,
+      description: desc,
+      images: cover ? [cover] : undefined,
+    },
   }
 }
 

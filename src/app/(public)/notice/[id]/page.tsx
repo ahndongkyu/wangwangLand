@@ -15,9 +15,16 @@ export async function generateMetadata({
   const { id } = await params
   const notice = await getNotice(id)
   if (!notice) return { title: "공지를 찾을 수 없습니다" }
+  const desc = notice.content.slice(0, 120)
   return {
     title: notice.title,
-    description: notice.content.slice(0, 120),
+    description: desc,
+    openGraph: {
+      title: `${notice.title} · 왕왕랜드 공지`,
+      description: desc,
+      type: "article",
+      publishedTime: notice.published_at ?? undefined,
+    },
   }
 }
 

@@ -8,6 +8,7 @@ import {
   HeroCarousel,
   type HeroSlide,
 } from "@/shared/components/hero-carousel"
+import { OrganizationJsonLd } from "@/shared/components/structured-data"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
@@ -70,6 +71,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <OrganizationJsonLd />
       <HeroCarousel slides={HERO_SLIDES} interval={5000} autoPlayInitial />
 
       <section className="border-t border-border/60 bg-card">
