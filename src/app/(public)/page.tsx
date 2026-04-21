@@ -25,14 +25,13 @@ const HERO_SLIDES: HeroSlide[] = [
     secondary: { label: `${SITE.name} 소개`, href: "/about" },
   },
   {
-    // TODO: 바른퍼피랩 전용 배너 이미지로 교체 (/public/images/hero-barunpuppylab.jpg)
-    image: "/images/banner.jpeg",
-    badge: "🤝 협약 브랜드 · 바른퍼피랩",
-    title: "바른퍼피랩 × 왕왕랜드",
+    image: "/images/banner_2.jpg",
+    badge: "🤝 펫발란스 · 사료 공구 이벤트",
+    title: "펫발란스 × 왕왕랜드",
     description:
-      "바른퍼피랩과 함께하는 프리미엄 사료 이벤트.\n한 봉지 구매가 왕왕랜드 아이들의 한 끼가 됩니다.",
+      "펫발란스와 함께하는 프리미엄 사료 이벤트.\n한 봉지 구매가 왕왕랜드 아이들의 한 끼가 됩니다.",
     primary: {
-      label: "바른퍼피랩 바로가기",
+      label: "펫발란스 바로가기",
       href: SITE.partners.barunPuppyLab.url,
       external: true,
     },
