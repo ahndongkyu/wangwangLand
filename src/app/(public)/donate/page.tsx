@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -50,8 +51,14 @@ export default function DonatePage() {
           <Row
             label="계좌번호"
             value={
-              <span className="select-all font-mono tracking-wide">
-                {d.accountNumber}
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="select-all font-mono tracking-wide">
+                  {d.accountNumber}
+                </span>
+                <CopyButton
+                  value={d.accountNumber}
+                  label="계좌번호"
+                />
               </span>
             }
           />

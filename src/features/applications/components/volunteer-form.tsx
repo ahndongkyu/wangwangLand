@@ -77,14 +77,14 @@ export function VolunteerForm() {
     <form action={handleSubmit} className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="applicant_name">이름 *</Label>
+          <Label htmlFor="applicant_name">이름 및 단체명 *</Label>
           <Input
             id="applicant_name"
             name="applicant_name"
             required
             minLength={2}
-            maxLength={30}
-            placeholder="홍길동"
+            maxLength={50}
+            placeholder="예: 홍길동 / ○○대학교 봉사동아리"
           />
         </div>
         <div className="space-y-1.5">

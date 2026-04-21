@@ -17,14 +17,14 @@ export function validateKoreanPhone(phone: string): FieldValidation {
   return { valid: true }
 }
 
-/** 이름: trim 후 2~30자. */
+/** 이름/단체명: trim 후 2~50자. */
 export function validateName(name: string): FieldValidation {
   const trimmed = name.trim()
   if (trimmed.length < 2) {
-    return { valid: false, error: "이름은 2자 이상 입력해주세요." }
+    return { valid: false, error: "이름(또는 단체명)은 2자 이상 입력해주세요." }
   }
-  if (trimmed.length > 30) {
-    return { valid: false, error: "이름은 30자 이하로 입력해주세요." }
+  if (trimmed.length > 50) {
+    return { valid: false, error: "이름(또는 단체명)은 50자 이하로 입력해주세요." }
   }
   return { valid: true }
 }
