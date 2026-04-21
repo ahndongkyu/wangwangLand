@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { countCatsByStatus, listCats } from "@/features/cats"
+import { DailyCard, listDailyPosts } from "@/features/daily"
 import { countDogsBySize, DogGrid, listDogs } from "@/features/dogs"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
@@ -12,12 +13,14 @@ export const revalidate = 60
 const DOG_SIZE_ORDER: DogSize[] = ["소", "중소", "중", "중대", "대", "대대"]
 
 export default async function HomePage() {
-  const [dogs, cats, dogSizeCounts, catStatusCounts] = await Promise.all([
+  const [dogs, cats, dogSizeCounts, catStatusCounts, dailyResult] = await Promise.all([
     listDogs({ status: "보호중", limit: 8 }),
     listCats({ status: "보호중", limit: 4 }),
     countDogsBySize(),
     countCatsByStatus(),
+    listDailyPosts({ limit: 3 }),
   ])
+  const recentDaily = dailyResult.posts
 
   const dogTotal = DOG_SIZE_ORDER.reduce(
     (sum, size) => sum + dogSizeCounts[size],
@@ -191,6 +194,34 @@ export default async function HomePage() {
                     </p>
                   </div>
                 </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {recentDaily.length > 0 && (
+        <section className="border-t border-border/60 bg-background">
+          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+            <div className="mb-10 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
+                  왕왕랜드 일상
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  봉사 활동과 아이들의 평범한 하루를 기록합니다.
+                </p>
+              </div>
+              <Link
+                href="/daily"
+                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+              >
+                전체 보기 →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {recentDaily.map((post) => (
+                <DailyCard key={post.id} post={post} />
               ))}
             </div>
           </div>

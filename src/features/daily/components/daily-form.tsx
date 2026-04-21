@@ -1,0 +1,117 @@
+"use client"
+
+import Link from "next/link"
+import { useState, useTransition } from "react"
+
+import { createDailyPost, updateDailyPost } from "../api/mutations"
+import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
+import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
+import { Label } from "@/shared/components/ui/label"
+import { Textarea } from "@/shared/components/ui/textarea"
+import type { DailyPost } from "@/shared/types/database"
+
+interface Props {
+  post?: DailyPost
+}
+
+function toDateValue(iso?: string) {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  // Convert to YYYY-MM-DD in local timezone
+  const tzOffset = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10)
+}
+
+export function DailyForm({ post }: Props) {
+  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const isEdit = Boolean(post)
+
+  async function handleSubmit(formData: FormData) {
+    setError(null)
+    // Convert posted_at (date) to ISO at noon local time for stable display
+    const date = String(formData.get("posted_at") ?? "")
+    if (date) {
+      formData.set("posted_at", new Date(`${date}T12:00:00`).toISOString())
+    } else {
+      formData.delete("posted_at")
+    }
+    startTransition(async () => {
+      const result = isEdit && post
+        ? await updateDailyPost(post.id, formData)
+        : await createDailyPost(formData)
+      if (result?.error) setError(result.error)
+    })
+  }
+
+  return (
+    <form action={handleSubmit} className="space-y-6">
+      <div className="space-y-1.5">
+        <Label htmlFor="title">제목 *</Label>
+        <Input
+          id="title"
+          name="title"
+          required
+          defaultValue={post?.title ?? ""}
+          placeholder="예: 4.21.화 왕왕랜드 일상"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="posted_at">날짜</Label>
+        <Input
+          id="posted_at"
+          name="posted_at"
+          type="date"
+          defaultValue={toDateValue(post?.posted_at)}
+        />
+        <p className="text-xs text-muted-foreground">
+          비워두면 오늘 날짜로 등록됩니다.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="content">본문</Label>
+        <Textarea
+          id="content"
+          name="content"
+          rows={8}
+          defaultValue={post?.content ?? ""}
+          placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>사진 *</Label>
+        <AnimalImageUploader
+          folder="daily"
+          maxImages={10}
+          initialImages={post?.images ?? []}
+        />
+        <p className="text-xs text-muted-foreground">
+          일상 글에는 최대 10장까지 올릴 수 있어요. 첫 번째 사진이 목록 썸네일로 사용됩니다.
+        </p>
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-end gap-2">
+        <Link
+          href="/admin/daily"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          취소
+        </Link>
+        <Button type="submit" disabled={pending}>
+          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        </Button>
+      </div>
+    </form>
+  )
+}

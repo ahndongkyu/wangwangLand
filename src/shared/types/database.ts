@@ -56,7 +56,8 @@ export interface Notice {
 
 export interface DailyPost {
   id: string
-  caption: string | null
+  title: string
+  content: string | null
   images: string[]
   posted_at: string
   created_at: string
