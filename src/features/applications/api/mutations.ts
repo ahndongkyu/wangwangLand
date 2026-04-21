@@ -31,8 +31,20 @@ export async function submitAdoptionApplication(
   const reason = String(formData.get("reason") ?? "").trim()
   const privacy_agreed = formData.get("privacy_agreed") === "on"
 
-  if (!applicant_name || !phone || !email || !address || !reason) {
-    return { error: "필수 항목을 모두 입력해주세요." }
+  const nameCheck = validateName(applicant_name)
+  if (!nameCheck.valid) return { error: nameCheck.error }
+
+  const phoneCheck = validateKoreanPhone(phone)
+  if (!phoneCheck.valid) return { error: phoneCheck.error }
+
+  if (!email || !email.includes("@")) {
+    return { error: "올바른 이메일 주소를 입력해주세요." }
+  }
+  if (address.length < 5) {
+    return { error: "주소는 최소 시/도까지 입력해주세요." }
+  }
+  if (reason.length < 10) {
+    return { error: "입양을 결심하신 이유를 10자 이상 적어주세요." }
   }
   if (!privacy_agreed) {
     return { error: "개인정보 수집·이용 동의가 필요합니다." }

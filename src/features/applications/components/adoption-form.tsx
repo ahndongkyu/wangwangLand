@@ -8,6 +8,10 @@ import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
+import {
+  validateKoreanPhone,
+  validateName,
+} from "@/shared/lib/validation"
 import type { HousingType, OwnershipType } from "@/shared/types/database"
 
 const HOUSING: HousingType[] = ["아파트", "주택", "빌라", "오피스텔", "기타"]
@@ -25,6 +29,18 @@ export function AdoptionForm({ dogId, dogName }: Props) {
 
   async function handleSubmit(formData: FormData) {
     setError(null)
+
+    const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
+    if (!nameCheck.valid) {
+      setError(nameCheck.error!)
+      return
+    }
+    const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
+    if (!phoneCheck.valid) {
+      setError(phoneCheck.error!)
+      return
+    }
+
     startTransition(async () => {
       const result = await submitAdoptionApplication(formData)
       if (result.error) {
@@ -71,7 +87,14 @@ export function AdoptionForm({ dogId, dogName }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="applicant_name">이름 *</Label>
-            <Input id="applicant_name" name="applicant_name" required />
+            <Input
+              id="applicant_name"
+              name="applicant_name"
+              required
+              minLength={2}
+              maxLength={50}
+              placeholder="홍길동"
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone">연락처 *</Label>
@@ -80,16 +103,30 @@ export function AdoptionForm({ dogId, dogName }: Props) {
               name="phone"
               type="tel"
               required
+              pattern="^0\d{1,2}[- ]?\d{3,4}[- ]?\d{4}$"
               placeholder="010-0000-0000"
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="email">이메일 *</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="example@domain.com"
+            />
           </div>
           <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="address">주소 *</Label>
-            <Input id="address" name="address" required placeholder="시/도 시/군/구까지" />
+            <Input
+              id="address"
+              name="address"
+              required
+              minLength={5}
+              maxLength={100}
+              placeholder="시/도 시/군/구까지"
+            />
           </div>
         </div>
       </fieldset>
