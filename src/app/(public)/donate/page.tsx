@@ -84,7 +84,15 @@ export default function DonatePage() {
           사료·간식·담요·장난감 등 후원물품은 아래 주소로 보내 주세요.
         </p>
         <div className="rounded-lg bg-background px-4 py-3 text-sm">
-          <p className="font-semibold text-foreground">{d.parcelAddress}</p>
+          <div className="flex flex-wrap items-start gap-2">
+            <p className="flex-1 font-semibold text-foreground">
+              {d.parcelAddress}
+            </p>
+            <CopyButton
+              value={d.parcelAddressShort}
+              label="주소"
+            />
+          </div>
           {d.parcelAddressNote && (
             <p className="mt-1 text-xs text-muted-foreground">
               ※ {d.parcelAddressNote}

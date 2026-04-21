@@ -52,25 +52,21 @@ export function CopyButton({
       type="button"
       onClick={handleCopy}
       aria-label={label ? `${label} 복사` : "복사"}
+      title={label ? `${label} 복사` : "복사"}
       aria-live="polite"
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground shadow-sm transition-colors",
+        "inline-flex items-center justify-center rounded-md border border-border bg-background p-1.5 text-foreground shadow-sm transition-colors",
         "hover:bg-secondary",
         copied && "border-primary/60 bg-primary/10 text-primary",
         className
       )}
     >
       {copied ? (
-        <>
-          <Check className="size-3.5" />
-          복사됨
-        </>
+        <Check className="size-4" aria-hidden />
       ) : (
-        <>
-          <Copy className="size-3.5" />
-          복사
-        </>
+        <Copy className="size-4" aria-hidden />
       )}
+      <span className="sr-only">{copied ? "복사됨" : "복사"}</span>
     </button>
   )
 }

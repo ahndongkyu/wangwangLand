@@ -24,6 +24,8 @@ export const SITE = {
     accountHolder: "왕왕랜드",
     regularMinimum: 10000,
     parcelAddress: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
+    /** 택배사 주소 입력용 짧은 주소 (도로명 + 번지까지) */
+    parcelAddressShort: "인천 중구 선녀바위로 193",
     parcelAddressNote: "호성이네민박펜션과 주소 동일",
   },
   partners: {
