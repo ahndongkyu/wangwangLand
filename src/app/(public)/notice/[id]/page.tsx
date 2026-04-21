@@ -1,0 +1,66 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import type { Metadata } from "next"
+import { Pin } from "lucide-react"
+
+import { getNotice } from "@/features/notices"
+
+export const revalidate = 60
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const notice = await getNotice(id)
+  if (!notice) return { title: "공지를 찾을 수 없습니다" }
+  return {
+    title: notice.title,
+    description: notice.content.slice(0, 120),
+  }
+}
+
+export default async function NoticeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const notice = await getNotice(id)
+
+  if (!notice) notFound()
+
+  return (
+    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
+      <nav className="mb-4 text-sm text-muted-foreground">
+        <Link href="/notice" className="hover:text-foreground">
+          ← 공지사항
+        </Link>
+      </nav>
+
+      <header className="mb-8 border-b border-border pb-6">
+        <div className="mb-2 flex items-center gap-2">
+          {notice.is_pinned && (
+            <Pin className="size-4 text-primary" aria-label="상단 고정" />
+          )}
+          <span className="text-xs text-muted-foreground">
+            {notice.published_at &&
+              new Date(notice.published_at).toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
+          {notice.title}
+        </h1>
+      </header>
+
+      <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
+        {notice.content}
+      </article>
+    </div>
+  )
+}
