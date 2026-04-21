@@ -9,6 +9,8 @@ export const SITE = {
     phone: "",
     email: "",
     address: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
+    /** 지도 앱·내비게이션에 바로 검색 가능한 도로명까지 */
+    addressShort: "인천 중구 선녀바위로 193",
     addressNote: "호성이네민박펜션과 주소 동일",
     mapQuery: "인천 중구 을왕동 206-27",
     kakaoTalk: "",

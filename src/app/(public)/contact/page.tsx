@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -21,18 +22,34 @@ export default function ContactPage() {
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-6">
         {SITE.contact.phone && (
-          <InfoRow label="전화" value={SITE.contact.phone} />
+          <InfoRow
+            label="전화"
+            value={
+              <span className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`tel:${SITE.contact.phone}`}
+                  className="text-primary hover:underline"
+                >
+                  {SITE.contact.phone}
+                </a>
+                <CopyButton value={SITE.contact.phone} label="전화번호" />
+              </span>
+            }
+          />
         )}
         {SITE.contact.email && (
           <InfoRow
             label="이메일"
             value={
-              <a
-                href={`mailto:${SITE.contact.email}`}
-                className="text-primary hover:underline"
-              >
-                {SITE.contact.email}
-              </a>
+              <span className="flex flex-wrap items-center gap-2">
+                <a
+                  href={`mailto:${SITE.contact.email}`}
+                  className="text-primary hover:underline"
+                >
+                  {SITE.contact.email}
+                </a>
+                <CopyButton value={SITE.contact.email} label="이메일" />
+              </span>
             }
           />
         )}
@@ -41,7 +58,13 @@ export default function ContactPage() {
             label="주소"
             value={
               <div>
-                <p>{SITE.contact.address}</p>
+                <div className="flex flex-wrap items-start gap-2">
+                  <p className="flex-1">{SITE.contact.address}</p>
+                  <CopyButton
+                    value={SITE.contact.addressShort}
+                    label="주소"
+                  />
+                </div>
                 {SITE.contact.addressNote && (
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     ※ {SITE.contact.addressNote}
@@ -52,7 +75,15 @@ export default function ContactPage() {
           />
         )}
         {SITE.contact.kakaoTalk && (
-          <InfoRow label="카카오톡" value={SITE.contact.kakaoTalk} />
+          <InfoRow
+            label="카카오톡"
+            value={
+              <span className="flex flex-wrap items-center gap-2">
+                <span>{SITE.contact.kakaoTalk}</span>
+                <CopyButton value={SITE.contact.kakaoTalk} label="카카오톡 ID" />
+              </span>
+            }
+          />
         )}
         {!SITE.contact.phone && !SITE.contact.address && (
           <p className="text-sm text-muted-foreground">
