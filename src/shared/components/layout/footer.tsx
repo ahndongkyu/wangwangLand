@@ -1,6 +1,5 @@
 import Image from "next/image"
 import Link from "next/link"
-import { MapPin, Phone } from "lucide-react"
 
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -65,11 +64,9 @@ export function Footer() {
                 {SITE.name}
               </span>
             </Link>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {SITE.subtitle}
-            </p>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              {SITE.description}
+
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground/60">
+              {SITE.contact.address}
             </p>
 
             <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -134,86 +131,34 @@ export function Footer() {
             ))}
           </div>
 
-          {/* Contact */}
-          <div>
-            <p className="text-sm font-semibold text-foreground">연락처</p>
-            <ul className="mt-3 flex flex-col gap-3 text-sm">
-              {phones.length > 0 && (
-                <li>
-                  <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    <Phone className="size-3.5" aria-hidden />
-                    전화
-                  </div>
-                  <ul className="mt-1.5 flex flex-col gap-1.5">
-                    {phones.map((p) => (
-                      <li
-                        key={p.label}
-                        className="flex flex-wrap items-center gap-2"
-                      >
-                        <span className="w-16 shrink-0 text-xs text-muted-foreground">
-                          {p.label}
-                        </span>
-                        <a
-                          href={`tel:${p.number}`}
-                          className="text-foreground hover:text-primary"
-                        >
-                          {p.number}
-                        </a>
-                        <CopyButton
-                          value={p.number}
-                          label={`${p.label} 전화번호`}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              )}
-
-              {SITE.contact.address && (
-                <li>
-                  <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    <MapPin className="size-3.5" aria-hidden />
-                    주소
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap items-start gap-2">
-                    <p className="flex-1 text-foreground">
-                      {SITE.contact.address}
-                    </p>
+          {/* Contact — 전화번호 하나라도 있을 때만 노출 */}
+          {phones.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold text-foreground">연락처</p>
+              <ul className="mt-3 flex flex-col gap-1.5 text-sm">
+                {phones.map((p) => (
+                  <li
+                    key={p.label}
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    <span className="w-16 shrink-0 text-xs text-muted-foreground">
+                      {p.label}
+                    </span>
+                    <a
+                      href={`tel:${p.number}`}
+                      className="text-foreground hover:text-primary"
+                    >
+                      {p.number}
+                    </a>
                     <CopyButton
-                      value={SITE.contact.addressShort}
-                      label="주소"
+                      value={p.number}
+                      label={`${p.label} 전화번호`}
                     />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
-                    <a
-                      href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-border bg-card px-2.5 py-0.5 text-muted-foreground hover:border-primary hover:text-primary"
-                    >
-                      카카오맵
-                    </a>
-                    <a
-                      href={`https://map.naver.com/p/search/${encodeURIComponent(SITE.contact.mapQuery)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-border bg-card px-2.5 py-0.5 text-muted-foreground hover:border-primary hover:text-primary"
-                    >
-                      네이버지도
-                    </a>
-                    <a
-                      href={`https://www.google.com/maps/search/${encodeURIComponent(SITE.contact.mapQuery)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-border bg-card px-2.5 py-0.5 text-muted-foreground hover:border-primary hover:text-primary"
-                    >
-                      구글맵
-                    </a>
-                  </div>
-                </li>
-              )}
-            </ul>
-          </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* 3) 계좌 후원 미니카드 */}
