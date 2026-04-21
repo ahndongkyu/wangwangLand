@@ -26,6 +26,13 @@ export const SITE = {
     parcelAddress: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
     parcelAddressNote: "호성이네민박펜션과 주소 동일",
   },
+  partners: {
+    // TODO: 바른퍼피랩 실제 네이버 스토어 URL로 수정
+    barunPuppyLab: {
+      name: "바른퍼피랩",
+      url: "https://smartstore.naver.com/barunpuppylab",
+    },
+  },
 }
 
 export const MAIN_NAV = [
