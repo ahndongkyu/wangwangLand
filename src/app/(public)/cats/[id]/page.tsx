@@ -1,9 +1,9 @@
-import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
 import { getCat } from "@/features/cats"
+import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
@@ -48,10 +48,6 @@ export default async function CatDetailPage({
 
   if (!cat) notFound()
 
-  const images = cat.images.length > 0 ? cat.images : []
-  const mainImage = images[cat.thumbnail_index] ?? images[0] ?? null
-  const otherImages = images.filter((_, idx) => idx !== cat.thumbnail_index)
-
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 md:px-6 md:py-14">
       <nav className="mb-6 text-sm text-muted-foreground">
@@ -61,42 +57,12 @@ export default async function CatDetailPage({
       </nav>
 
       <div className="grid gap-8 md:grid-cols-[1.1fr_1fr]">
-        <div className="space-y-3">
-          <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-muted">
-            {mainImage ? (
-              <Image
-                src={mainImage}
-                alt={cat.name}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-7xl">
-                🐱
-              </div>
-            )}
-          </div>
-          {otherImages.length > 0 && (
-            <div className="grid grid-cols-4 gap-2">
-              {otherImages.slice(0, 4).map((src, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-square overflow-hidden rounded-lg bg-muted"
-                >
-                  <Image
-                    src={src}
-                    alt={`${cat.name} ${idx + 2}`}
-                    fill
-                    sizes="(max-width: 768px) 25vw, 12vw"
-                    className="object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <PhotoGallery
+          images={cat.images}
+          thumbnailIndex={cat.thumbnail_index}
+          alt={cat.name}
+          fallback="🐱"
+        />
 
         <div className="space-y-6">
           <header>

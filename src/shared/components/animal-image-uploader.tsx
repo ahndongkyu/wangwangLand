@@ -7,7 +7,7 @@ import { Loader2, Upload, X } from "lucide-react"
 import { createClient } from "@/shared/lib/supabase/client"
 import { cn } from "@/shared/lib/utils"
 
-const MAX_IMAGES = 10
+const MAX_IMAGES = 5
 
 interface Props {
   /** Supabase Storage 내 상위 폴더 (예: "dogs", "cats", "daily") */

@@ -63,7 +63,7 @@ function parseFormData(formData: FormData): CatMutationInput {
   }
 }
 
-const MAX_IMAGES = 10
+const MAX_IMAGES = 5
 
 export async function createCat(formData: FormData): Promise<MutationResult> {
   const input = parseFormData(formData)
