@@ -4,7 +4,7 @@ import { MapPin, Phone } from "lucide-react"
 
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { FOOTER_LINK_GROUPS, SITE } from "@/shared/constants/site"
+import { FOOTER_LEGAL, FOOTER_LINK_GROUPS, SITE } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
 
 export function Footer() {
@@ -245,14 +245,28 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 4) 저작권 */}
-        <div className="mt-10 border-t border-border/60 pt-6 text-xs text-muted-foreground">
-          <p>
-            © {year} {SITE.name}. All rights reserved.
-          </p>
-          <p className="mt-1">
-            본 사이트는 유기견 보호소 {SITE.name}의 공식 홈페이지입니다.
-          </p>
+        {/* 4) 저작권 + 약관 링크 */}
+        <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+          <div>
+            <p>
+              © {year} {SITE.name}. All rights reserved.
+            </p>
+            <p className="mt-1">
+              본 사이트는 유기견 보호소 {SITE.name}의 공식 홈페이지입니다.
+            </p>
+          </div>
+          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {FOOTER_LEGAL.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="transition-colors hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

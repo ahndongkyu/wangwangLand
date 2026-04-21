@@ -54,13 +54,6 @@ export const MAIN_NAV = [
   { label: "공지사항", href: "/notice" },
 ] as const
 
-export const FOOTER_NAV = [
-  { label: "센터소개", href: "/about" },
-  { label: "오시는 길", href: "/contact" },
-  { label: "개인정보처리방침", href: "/privacy" },
-  { label: "이용약관", href: "/terms" },
-] as const
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Footer 전용 네비게이션 — 주요 서비스 · 참여 · 운영 정보를 분류해 노출.
 
@@ -86,8 +79,12 @@ export const FOOTER_LINK_GROUPS: ReadonlyArray<{
       { label: "공지사항", href: "/notice" },
       { label: "센터 소개", href: "/about" },
       { label: "오시는 길", href: "/contact" },
-      { label: "개인정보처리방침", href: "/privacy" },
-      { label: "이용약관", href: "/terms" },
     ],
   },
 ]
+
+// 저작권 하단에 붙이는 약관 · 정책 링크 — 다른 네비와 섞지 않는다.
+export const FOOTER_LEGAL = [
+  { label: "개인정보처리방침", href: "/privacy" },
+  { label: "이용약관", href: "/terms" },
+] as const
