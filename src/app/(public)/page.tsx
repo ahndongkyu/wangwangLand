@@ -51,6 +51,7 @@ export default async function HomePage() {
             <Link href="/dogs" className={cn(buttonVariants({ size: "lg" }))}>
               입양 대기 아이들 보기
             </Link>
+            \
             <Link
                 href="/about"
                 className={cn(

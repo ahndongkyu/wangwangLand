@@ -18,13 +18,13 @@ function formatAge(months: number | null) {
 function statusVariant(status: Cat["status"]) {
   switch (status) {
     case "보호중":
-      return "bg-primary/15 text-primary"
+      return "bg-primary text-primary-foreground"
     case "임시보호중":
-      return "bg-accent/30 text-accent-foreground"
+      return "bg-[#4B7A42] text-white"
     case "입양완료":
-      return "bg-muted text-muted-foreground"
+      return "bg-foreground/80 text-background"
     case "무지개다리":
-      return "bg-foreground/10 text-foreground/70"
+      return "bg-muted-foreground text-background"
   }
 }
 
@@ -50,7 +50,7 @@ export function CatCard({ cat }: { cat: Cat }) {
           )}
           <Badge
             className={cn(
-              "absolute left-3 top-3 border-0 px-2 py-0.5 text-xs font-semibold",
+              "absolute left-3 top-3 border-0 px-2.5 py-1 text-xs font-bold shadow-md ring-1 ring-black/5",
               statusVariant(cat.status)
             )}
           >

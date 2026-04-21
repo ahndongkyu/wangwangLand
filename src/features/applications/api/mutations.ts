@@ -1,7 +1,10 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+
 import { createClient } from "@/shared/lib/supabase/server"
 import type {
+  ApplicationStatus,
   HousingType,
   OwnershipType,
   VolunteerActivity,
@@ -104,4 +107,95 @@ export async function submitVolunteerApplication(
   }
 
   return { id: data.id }
+}
+
+// ============================================================================
+// 어드민용 처리 액션
+// ============================================================================
+
+function revalidateAdminApplications() {
+  revalidatePath("/admin/applications")
+  revalidatePath("/admin")
+}
+
+export async function updateAdoptionApplication(
+  id: string,
+  formData: FormData
+): Promise<SubmitResult> {
+  const status = String(formData.get("status") ?? "") as ApplicationStatus
+  const adminNote = String(formData.get("admin_note") ?? "").trim()
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("adoption_applications")
+    .update({ status, admin_note: adminNote || null })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[updateAdoptionApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidateAdminApplications()
+  revalidatePath(`/admin/applications/adoption/${id}`)
+  return { id }
+}
+
+export async function updateVolunteerApplication(
+  id: string,
+  formData: FormData
+): Promise<SubmitResult> {
+  const status = String(formData.get("status") ?? "") as ApplicationStatus
+  const adminNote = String(formData.get("admin_note") ?? "").trim()
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("volunteer_applications")
+    .update({ status, admin_note: adminNote || null })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[updateVolunteerApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidateAdminApplications()
+  revalidatePath(`/admin/applications/volunteer/${id}`)
+  return { id }
+}
+
+export async function deleteAdoptionApplication(
+  id: string
+): Promise<SubmitResult> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("adoption_applications")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    console.error("[deleteAdoptionApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidateAdminApplications()
+  return {}
+}
+
+export async function deleteVolunteerApplication(
+  id: string
+): Promise<SubmitResult> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("volunteer_applications")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    console.error("[deleteVolunteerApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidateAdminApplications()
+  return {}
 }
