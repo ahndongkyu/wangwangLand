@@ -6,7 +6,12 @@ export const SITE = {
   description: "안락사 없는 따뜻한 유기견 보호소, 왕왕랜드입니다.",
   logo: "/images/logo.png",
   contact: {
-    phone: "",
+    /** 담당자별 연락처. number 빈 값이면 노출되지 않습니다. */
+    phones: [
+      { label: "대표", number: "" },
+      { label: "봉사 담당", number: "" },
+      { label: "입양 담당", number: "" },
+    ],
     email: "",
     address: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
     /** 지도 앱·내비게이션에 바로 검색 가능한 도로명까지 */
@@ -55,3 +60,34 @@ export const FOOTER_NAV = [
   { label: "개인정보처리방침", href: "/privacy" },
   { label: "이용약관", href: "/terms" },
 ] as const
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Footer 전용 네비게이션 — 주요 서비스 · 참여 · 운영 정보를 분류해 노출.
+
+export const FOOTER_LINK_GROUPS: ReadonlyArray<{
+  title: string
+  links: ReadonlyArray<{ label: string; href: string }>
+}> = [
+  {
+    title: "서비스",
+    links: [
+      { label: "강아지", href: "/dogs" },
+      { label: "고양이", href: "/cats" },
+      { label: "일상", href: "/daily" },
+      { label: "입양후기", href: "/stories" },
+    ],
+  },
+  {
+    title: "참여 · 정보",
+    links: [
+      { label: "입양 문의", href: "/adopt" },
+      { label: "봉사 신청", href: "/volunteer" },
+      { label: "후원하기", href: "/donate" },
+      { label: "공지사항", href: "/notice" },
+      { label: "센터 소개", href: "/about" },
+      { label: "오시는 길", href: "/contact" },
+      { label: "개인정보처리방침", href: "/privacy" },
+      { label: "이용약관", href: "/terms" },
+    ],
+  },
+]

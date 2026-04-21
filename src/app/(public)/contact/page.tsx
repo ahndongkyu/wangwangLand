@@ -21,22 +21,25 @@ export default function ContactPage() {
       </header>
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-6">
-        {SITE.contact.phone && (
-          <InfoRow
-            label="전화"
-            value={
-              <span className="flex flex-wrap items-center gap-2">
-                <a
-                  href={`tel:${SITE.contact.phone}`}
-                  className="text-primary hover:underline"
-                >
-                  {SITE.contact.phone}
-                </a>
-                <CopyButton value={SITE.contact.phone} label="전화번호" />
-              </span>
-            }
-          />
-        )}
+        {SITE.contact.phones
+          .filter((p) => p.number)
+          .map((p) => (
+            <InfoRow
+              key={p.label}
+              label={p.label}
+              value={
+                <span className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={`tel:${p.number}`}
+                    className="text-primary hover:underline"
+                  >
+                    {p.number}
+                  </a>
+                  <CopyButton value={p.number} label={`${p.label} 전화번호`} />
+                </span>
+              }
+            />
+          ))}
         {SITE.contact.email && (
           <InfoRow
             label="이메일"
@@ -85,11 +88,14 @@ export default function ContactPage() {
             }
           />
         )}
-        {!SITE.contact.phone && !SITE.contact.address && (
-          <p className="text-sm text-muted-foreground">
-            연락처 정보는 준비 중입니다. 이메일로 먼저 연락 주세요.
-          </p>
-        )}
+        {SITE.contact.phones.every((p) => !p.number) &&
+          !SITE.contact.email &&
+          !SITE.contact.address && (
+            <p className="text-sm text-muted-foreground">
+              연락처 정보는 준비 중입니다. 인스타그램 DM 또는 네이버 카페로 먼저
+              연락 주세요.
+            </p>
+          )}
       </section>
 
       <section className="mt-8">
