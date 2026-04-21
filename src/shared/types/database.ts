@@ -102,7 +102,8 @@ export interface VolunteerApplication {
   id: string
   applicant_name: string
   phone: string
-  email: string
+  email: string | null
+  party_size: number
   available_days: string[]
   available_time: string | null
   activities: VolunteerActivity[]

@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import {
+  validateKoreanPhone,
+  validateName,
+  validatePartySize,
+} from "@/shared/lib/validation"
 import type {
   ApplicationStatus,
   HousingType,
@@ -72,12 +77,19 @@ export async function submitVolunteerApplication(
 ): Promise<SubmitResult> {
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim()
-  const email = String(formData.get("email") ?? "").trim()
   const privacy_agreed = formData.get("privacy_agreed") === "on"
 
-  if (!applicant_name || !phone || !email) {
-    return { error: "이름, 연락처, 이메일은 필수입니다." }
-  }
+  const nameCheck = validateName(applicant_name)
+  if (!nameCheck.valid) return { error: nameCheck.error }
+
+  const phoneCheck = validateKoreanPhone(phone)
+  if (!phoneCheck.valid) return { error: phoneCheck.error }
+
+  const partyCheck = validatePartySize(
+    String(formData.get("party_size") ?? "1")
+  )
+  if (!partyCheck.valid) return { error: partyCheck.error }
+
   if (!privacy_agreed) {
     return { error: "개인정보 수집·이용 동의가 필요합니다." }
   }
@@ -91,7 +103,7 @@ export async function submitVolunteerApplication(
     .insert({
       applicant_name,
       phone,
-      email,
+      party_size: partyCheck.partySize!,
       available_days: availableDays,
       available_time: String(formData.get("available_time") ?? "").trim() || null,
       activities,

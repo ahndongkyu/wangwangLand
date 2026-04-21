@@ -49,17 +49,20 @@ export default async function VolunteerApplicationDetailPage({
               </a>
             }
           />
-          <Row
-            label="이메일"
-            value={
-              <a
-                href={`mailto:${app.email}`}
-                className="text-primary hover:underline"
-              >
-                {app.email}
-              </a>
-            }
-          />
+          <Row label="인원수" value={`${app.party_size}명`} />
+          {app.email && (
+            <Row
+              label="이메일"
+              value={
+                <a
+                  href={`mailto:${app.email}`}
+                  className="text-primary hover:underline"
+                >
+                  {app.email}
+                </a>
+              }
+            />
+          )}
         </Card>
 
         <Card title="가능 일정">

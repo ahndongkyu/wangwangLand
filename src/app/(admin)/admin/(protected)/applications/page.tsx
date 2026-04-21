@@ -208,6 +208,9 @@ export default async function AdminApplicationsPage({
             <thead className="border-b border-border bg-secondary/40 text-left text-sm">
               <tr>
                 <th className="px-4 py-3 font-semibold">신청자</th>
+                <th className="hidden px-4 py-3 font-semibold sm:table-cell">
+                  인원
+                </th>
                 <th className="hidden px-4 py-3 font-semibold md:table-cell">
                   연락처
                 </th>
@@ -228,6 +231,9 @@ export default async function AdminApplicationsPage({
                   className="border-b border-border last:border-0"
                 >
                   <td className="px-4 py-3 font-medium">{v.applicant_name}</td>
+                  <td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
+                    {v.party_size}명
+                  </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                     {v.phone}
                   </td>

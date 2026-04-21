@@ -8,6 +8,11 @@ import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
+import {
+  validateKoreanPhone,
+  validateName,
+  validatePartySize,
+} from "@/shared/lib/validation"
 import type { VolunteerActivity } from "@/shared/types/database"
 
 const DAYS = ["월", "화", "수", "목", "금", "토", "일"]
@@ -25,6 +30,26 @@ export function VolunteerForm() {
 
   async function handleSubmit(formData: FormData) {
     setError(null)
+
+    // 클라이언트 사전 검증
+    const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
+    if (!nameCheck.valid) {
+      setError(nameCheck.error!)
+      return
+    }
+    const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
+    if (!phoneCheck.valid) {
+      setError(phoneCheck.error!)
+      return
+    }
+    const partyCheck = validatePartySize(
+      String(formData.get("party_size") ?? "1")
+    )
+    if (!partyCheck.valid) {
+      setError(partyCheck.error!)
+      return
+    }
+
     startTransition(async () => {
       const result = await submitVolunteerApplication(formData)
       if (result.error) setError(result.error)
@@ -53,7 +78,14 @@ export function VolunteerForm() {
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="applicant_name">이름 *</Label>
-          <Input id="applicant_name" name="applicant_name" required />
+          <Input
+            id="applicant_name"
+            name="applicant_name"
+            required
+            minLength={2}
+            maxLength={30}
+            placeholder="홍길동"
+          />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="phone">연락처 *</Label>
@@ -62,12 +94,24 @@ export function VolunteerForm() {
             name="phone"
             type="tel"
             required
+            pattern="^0\d{1,2}[- ]?\d{3,4}[- ]?\d{4}$"
             placeholder="010-0000-0000"
           />
         </div>
         <div className="space-y-1.5 md:col-span-2">
-          <Label htmlFor="email">이메일 *</Label>
-          <Input id="email" name="email" type="email" required />
+          <Label htmlFor="party_size">인원수 *</Label>
+          <Input
+            id="party_size"
+            name="party_size"
+            type="number"
+            min={1}
+            max={20}
+            defaultValue={1}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            함께 오는 인원(본인 포함). 최대 20명까지 기재할 수 있어요.
+          </p>
         </div>
       </div>
 
@@ -128,7 +172,7 @@ export function VolunteerForm() {
       <div className="flex items-start gap-2 rounded-md border border-border bg-secondary/40 p-4">
         <Checkbox id="privacy_agreed" name="privacy_agreed" required className="mt-0.5" />
         <Label htmlFor="privacy_agreed" className="cursor-pointer text-sm leading-relaxed">
-          개인정보(이름·연락처·이메일)를 봉사 활동 운영 목적으로 수집·이용하는 데
+          개인정보(이름·연락처·인원수)를 봉사 활동 운영 목적으로 수집·이용하는 데
           동의합니다.
         </Label>
       </div>
