@@ -50,7 +50,19 @@ export default async function AdoptionApplicationDetailPage({
         <Card title="신청자 정보">
           <Row label="이름" value={app.applicant_name} />
           <Row label="연락처" value={<a href={`tel:${app.phone}`} className="text-primary hover:underline">{app.phone}</a>} />
-          <Row label="이메일" value={<a href={`mailto:${app.email}`} className="text-primary hover:underline">{app.email}</a>} />
+          {app.email && (
+            <Row
+              label="이메일"
+              value={
+                <a
+                  href={`mailto:${app.email}`}
+                  className="text-primary hover:underline"
+                >
+                  {app.email}
+                </a>
+              }
+            />
+          )}
           <Row label="주소" value={app.address} />
         </Card>
 

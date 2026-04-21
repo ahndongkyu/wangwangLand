@@ -82,7 +82,7 @@ export interface AdoptionApplication {
   cat_id: string | null
   applicant_name: string
   phone: string
-  email: string
+  email: string | null
   address: string
   reason: string
   family_size: number | null

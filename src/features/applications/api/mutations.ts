@@ -26,7 +26,6 @@ export async function submitAdoptionApplication(
   const dogId = String(formData.get("dog_id") ?? "").trim()
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
   const phone = String(formData.get("phone") ?? "").trim()
-  const email = String(formData.get("email") ?? "").trim()
   const address = String(formData.get("address") ?? "").trim()
   const reason = String(formData.get("reason") ?? "").trim()
   const privacy_agreed = formData.get("privacy_agreed") === "on"
@@ -37,9 +36,6 @@ export async function submitAdoptionApplication(
   const phoneCheck = validateKoreanPhone(phone)
   if (!phoneCheck.valid) return { error: phoneCheck.error }
 
-  if (!email || !email.includes("@")) {
-    return { error: "올바른 이메일 주소를 입력해주세요." }
-  }
   if (address.length < 5) {
     return { error: "주소는 최소 시/도까지 입력해주세요." }
   }
@@ -61,7 +57,6 @@ export async function submitAdoptionApplication(
       dog_id: dogId || null,
       applicant_name,
       phone,
-      email,
       address,
       reason,
       family_size: familySizeStr ? Number(familySizeStr) : null,
