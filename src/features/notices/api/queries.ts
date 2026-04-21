@@ -1,6 +1,10 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import type { Notice } from "@/shared/types/database"
 
+import type { RecentNoticeMeta } from "../types"
+
+export type { RecentNoticeMeta }
+
 export interface ListNoticesOptions {
   /** true면 미발행 포함 (어드민용) */
   includeDrafts?: boolean
@@ -46,6 +50,29 @@ export async function listNotices({
   }
 
   return { notices: (data ?? []) as Notice[], total: count ?? 0 }
+}
+
+/**
+ * 헤더 뱃지 계산용 — 최근 발행된 공지의 타임스탬프·핀 여부만 반환.
+ * 클라이언트가 localStorage 의 lastSeenAt 과 비교해 "N" 뱃지를 띄우는 데 사용.
+ */
+export async function listRecentPublishedNotices(
+  limit = 20
+): Promise<RecentNoticeMeta[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("notices")
+    .select("id, published_at, is_pinned")
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error("[listRecentPublishedNotices] error:", error)
+    return []
+  }
+
+  return (data ?? []) as RecentNoticeMeta[]
 }
 
 export async function getNotice(

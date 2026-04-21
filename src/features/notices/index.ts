@@ -1,4 +1,11 @@
 export { NoticeForm } from "./components/notice-form"
 export { NoticeDeleteButton } from "./components/notice-delete-button"
-export { listNotices, getNotice } from "./api/queries"
+export { NoticeBadge } from "./components/notice-badge"
+export { MarkNoticesSeen } from "./components/mark-notices-seen"
+export {
+  listNotices,
+  getNotice,
+  listRecentPublishedNotices,
+} from "./api/queries"
+export type { RecentNoticeMeta } from "./types"
 export { createNotice, updateNotice, deleteNotice } from "./api/mutations"

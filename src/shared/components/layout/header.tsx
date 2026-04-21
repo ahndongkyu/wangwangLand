@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation"
 import { Menu } from "lucide-react"
 import { useState } from "react"
 
+import { NoticeBadge } from "@/features/notices/components/notice-badge"
+import type { RecentNoticeMeta } from "@/features/notices/types"
 import { MAIN_NAV, SITE } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/components/ui/button"
@@ -17,7 +19,12 @@ import {
   SheetTrigger,
 } from "@/shared/components/ui/sheet"
 
-export function Header() {
+interface HeaderProps {
+  /** 헤더 "공지사항" 메뉴 옆 'N' 뱃지 계산용. 비우면 뱃지 미표시. */
+  recentNotices?: RecentNoticeMeta[]
+}
+
+export function Header({ recentNotices = [] }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -53,13 +60,16 @@ export function Header() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     isActive(item.href)
                       ? "bg-primary/10 text-primary"
                       : "text-foreground/80 hover:bg-secondary hover:text-foreground"
                   )}
                 >
                   {item.label}
+                  {item.href === "/notice" && (
+                    <NoticeBadge notices={recentNotices} />
+                  )}
                 </Link>
               </li>
             ))}
@@ -101,13 +111,16 @@ export function Header() {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "rounded-md px-3 py-3 text-base font-medium transition-colors",
+                      "inline-flex items-center rounded-md px-3 py-3 text-base font-medium transition-colors",
                       isActive(item.href)
                         ? "bg-primary/10 text-primary"
                         : "text-foreground/80 hover:bg-secondary"
                     )}
                   >
                     {item.label}
+                    {item.href === "/notice" && (
+                      <NoticeBadge notices={recentNotices} />
+                    )}
                   </Link>
                 ))}
                 <Link

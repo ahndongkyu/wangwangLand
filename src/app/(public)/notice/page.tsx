@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
-import { listNotices } from "@/features/notices"
+import { listNotices, MarkNoticesSeen } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 
@@ -33,6 +33,7 @@ export default async function NoticePage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
+      <MarkNoticesSeen />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">

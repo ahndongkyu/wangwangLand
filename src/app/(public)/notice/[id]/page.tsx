@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
-import { getNotice } from "@/features/notices"
+import { getNotice, MarkNoticesSeen } from "@/features/notices"
 
 export const revalidate = 60
 
@@ -33,6 +33,7 @@ export default async function NoticeDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
+      <MarkNoticesSeen />
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/notice" className="hover:text-foreground">
           ← 공지사항
