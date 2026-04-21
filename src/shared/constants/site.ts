@@ -27,10 +27,9 @@ export const SITE = {
     parcelAddressNote: "호성이네민박펜션과 주소 동일",
   },
   partners: {
-    // TODO: 바른퍼피랩 실제 네이버 스토어 URL로 수정
     barunPuppyLab: {
       name: "바른퍼피랩",
-      url: "https://smartstore.naver.com/barunpuppylab",
+      url: "https://smartstore.naver.com/barunpuppylab/products/13278162589",
     },
   },
 }
