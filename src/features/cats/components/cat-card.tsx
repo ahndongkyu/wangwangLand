@@ -10,7 +10,7 @@ import type { Cat } from "@/shared/types/database"
 function statusVariant(status: Cat["status"]) {
   switch (status) {
     case "보호중":
-      return "bg-primary text-primary-foreground"
+      return "bg-[#7BBF8F] text-white"
     case "임시보호중":
       return "bg-[#4B7A42] text-white"
     case "입양완료":
@@ -25,7 +25,7 @@ export function CatCard({ cat }: { cat: Cat }) {
 
   return (
     <Link href={`/cats/${cat.id}`} className="group block">
-      <Card className="overflow-hidden transition-shadow group-hover:shadow-md">
+      <Card className="overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           {thumbnailSrc ? (
             <Image

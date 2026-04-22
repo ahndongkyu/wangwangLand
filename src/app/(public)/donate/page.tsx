@@ -33,7 +33,7 @@ export default function DonatePage() {
           <UsageItem emoji="🏥" title="의료비" desc="예방 접종, 치료, 수술" />
           <UsageItem emoji="🏠" title="보호 환경" desc="시설 유지 및 개선" />
           <UsageItem
-            emoji="💙"
+            emoji="🧡"
             title="구조 활동"
             desc="버려진 아이들을 찾아가는 비용"
           />
@@ -66,7 +66,7 @@ export default function DonatePage() {
         </div>
 
         <div className="mt-5 rounded-lg bg-background/70 p-4 text-sm text-foreground/90">
-          <p className="font-semibold text-foreground">💙 정기 후원 안내</p>
+          <p className="font-semibold text-foreground">🧡 정기 후원 안내</p>
           <p className="mt-1.5 leading-relaxed text-muted-foreground">
             월 <span className="font-semibold text-foreground">
               {d.regularMinimum.toLocaleString()}원

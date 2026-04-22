@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { CopyButton } from "@/shared/components/copy-button"
+import { CountUp } from "@/shared/components/count-up"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { FOOTER_LEGAL, FOOTER_LINK_GROUPS, SITE } from "@/shared/constants/site"
 import { getSiteStats } from "@/shared/lib/stats"
@@ -47,7 +48,7 @@ export async function Footer() {
               href="/donate"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
-              💙 후원하기
+              🧡 후원하기
             </Link>
           </div>
         </div>
@@ -60,7 +61,7 @@ export async function Footer() {
             label="누적 구조"
             value={stats.rescued}
             suffix="마리"
-            emoji="💙"
+            emoji="🧡"
           />
           <StatItem
             label="입양 완료"
@@ -73,6 +74,7 @@ export async function Footer() {
             value={stats.volunteers}
             suffix="명"
             emoji="🙌"
+            fallbackText="모집 중"
           />
         </div>
       </section>
@@ -196,7 +198,7 @@ export async function Footer() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                💙 계좌 후원
+                🧡 계좌 후원
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
                 {d.bankName}{" "}
@@ -275,24 +277,33 @@ function StatItem({
   value,
   suffix,
   emoji,
+  fallbackText,
 }: {
   label: string
   value: number
   suffix: string
   emoji: string
+  fallbackText?: string
 }) {
+  const showFallback = value === 0 && !!fallbackText
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
         <span className="mr-1">{emoji}</span>
         {label}
       </p>
-      <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">
-        {value.toLocaleString()}
-        <span className="ml-0.5 text-xs font-medium text-muted-foreground">
-          {suffix}
-        </span>
-      </p>
+      {showFallback ? (
+        <p className="mt-1 text-base font-bold text-primary md:text-lg">
+          {fallbackText}
+        </p>
+      ) : (
+        <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">
+          <CountUp value={value} />
+          <span className="ml-0.5 text-xs font-medium text-muted-foreground">
+            {suffix}
+          </span>
+        </p>
+      )}
     </div>
   )
 }

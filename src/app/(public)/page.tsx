@@ -3,7 +3,9 @@ import Link from "next/link"
 import { listCats } from "@/features/cats"
 import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogs } from "@/features/dogs"
+import { listNotices } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
+import { CountUp } from "@/shared/components/count-up"
 import {
   HeroCarousel,
   type HeroSlide,
@@ -41,15 +43,18 @@ const HERO_SLIDES: HeroSlide[] = [
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [dogs, cats, dailyResult, storiesResult, stats] = await Promise.all([
-    listDogs({ status: "보호중", limit: 6 }),
-    listCats({ status: "보호중", limit: 4 }),
-    listDailyPosts({ limit: 3 }),
-    listAdoptionStories({ limit: 3 }),
-    getSiteStats(),
-  ])
+  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult] =
+    await Promise.all([
+      listDogs({ status: "보호중", limit: 6 }),
+      listCats({ status: "보호중", limit: 4 }),
+      listDailyPosts({ limit: 3 }),
+      listAdoptionStories({ limit: 3 }),
+      getSiteStats(),
+      listNotices({ limit: 3 }),
+    ])
   const recentDaily = dailyResult.posts
   const recentStories = storiesResult.stories
+  const recentNotices = noticesResult.notices
 
   return (
     <>
@@ -98,7 +103,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <CounterCard
-              emoji="💙"
+              emoji="🧡"
               label="누적 구조"
               value={stats.rescued}
               suffix="마리"
@@ -124,6 +129,7 @@ export default async function HomePage() {
               value={stats.volunteers}
               suffix="명"
               href="/volunteer"
+              fallbackText="모집 중"
             />
           </div>
         </div>
@@ -194,38 +200,57 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 5. 봉사 · 후원 2분할 CTA */}
-      <section className="border-t border-border/60 bg-background">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
-          <div className="mb-10 text-center">
-            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              함께해 주세요
-            </span>
-            <h2 className="mt-4 text-2xl font-bold text-foreground md:text-3xl">
-              당신의 작은 손길이 큰 힘이 됩니다
-            </h2>
+      {/* 5. 최근 공지사항 — 푸터 CTA 와의 중복을 피하고 운영 활성도 노출 */}
+      {recentNotices.length > 0 && (
+        <section className="border-t border-border/60 bg-background">
+          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+            <div className="mb-8 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
+                  📢 최근 소식
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  왕왕랜드의 최신 안내·이벤트입니다.
+                </p>
+              </div>
+              <Link
+                href="/notice"
+                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+              >
+                전체 공지 →
+              </Link>
+            </div>
+            <ul className="overflow-hidden rounded-xl border border-border bg-card">
+              {recentNotices.map((n) => (
+                <li
+                  key={n.id}
+                  className="border-b border-border last:border-0"
+                >
+                  <Link
+                    href={`/notice/${n.id}`}
+                    className="flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-secondary/40"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      {n.is_pinned && (
+                        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          상단고정
+                        </span>
+                      )}
+                      <span className="truncate font-medium text-foreground">
+                        {n.title}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {n.published_at &&
+                        new Date(n.published_at).toLocaleDateString("ko-KR")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <ParticipateCard
-              emoji="🙌"
-              title="봉사 신청하기"
-              description="산책·목욕·청소·사진 촬영 — 주말·평일 모두 환영합니다. 1인 참여부터 단체까지 가능해요."
-              cta="봉사 참여하기 →"
-              href="/volunteer"
-              tone="secondary"
-            />
-            <ParticipateCard
-              emoji="💙"
-              title="후원 시작하기"
-              description="월 1만원부터 자유 설정 가능합니다. 후원금은 사료·의료비·시설 유지에 투명하게 사용됩니다."
-              cta="후원 안내 →"
-              href="/donate"
-              tone="primary"
-            />
-          </div>
-        </div>
-      </section>
-
+        </section>
+      )}
       {/* 6. 왕왕랜드 일상 */}
       {recentDaily.length > 0 && (
         <section className="border-t border-border/60 bg-card">
@@ -307,72 +332,38 @@ function CounterCard({
   value,
   suffix,
   href,
+  fallbackText,
 }: {
   emoji: string
   label: string
   value: number
   suffix: string
   href: string
+  /** value 가 0 일 때 숫자 대신 보여줄 문구 (예: "모집 중") */
+  fallbackText?: string
 }) {
+  const showFallback = value === 0 && !!fallbackText
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-card p-6 text-center transition-colors hover:border-primary"
+      className="group rounded-xl border border-border bg-card p-6 text-center transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
     >
       <p className="text-3xl md:text-4xl">{emoji}</p>
       <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 text-3xl font-bold text-foreground md:text-4xl">
-        {value.toLocaleString()}
-        <span className="ml-0.5 text-sm font-medium text-muted-foreground">
-          {suffix}
-        </span>
-      </p>
-    </Link>
-  )
-}
-
-function ParticipateCard({
-  emoji,
-  title,
-  description,
-  cta,
-  href,
-  tone,
-}: {
-  emoji: string
-  title: string
-  description: string
-  cta: string
-  href: string
-  tone: "primary" | "secondary"
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group flex h-full flex-col rounded-xl border p-8 transition-all hover:shadow-lg",
-        tone === "primary"
-          ? "border-primary/40 bg-primary/5 hover:border-primary"
-          : "border-border bg-card hover:border-primary/40"
+      {showFallback ? (
+        <p className="mt-1 text-2xl font-bold text-primary md:text-3xl">
+          {fallbackText}
+        </p>
+      ) : (
+        <p className="mt-1 text-3xl font-bold text-foreground md:text-4xl">
+          <CountUp value={value} />
+          <span className="ml-0.5 text-sm font-medium text-muted-foreground">
+            {suffix}
+          </span>
+        </p>
       )}
-    >
-      <p className="text-4xl">{emoji}</p>
-      <h3 className="mt-4 text-xl font-bold text-foreground md:text-2xl">
-        {title}
-      </h3>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground md:text-base">
-        {description}
-      </p>
-      <p
-        className={cn(
-          "mt-5 text-sm font-semibold transition-transform group-hover:translate-x-1",
-          tone === "primary" ? "text-primary" : "text-foreground"
-        )}
-      >
-        {cta}
-      </p>
     </Link>
   )
 }

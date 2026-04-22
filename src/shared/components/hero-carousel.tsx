@@ -214,12 +214,17 @@ function CTALink({
   cta: HeroSlideCTA
   variant: "primary" | "outline"
 }) {
+  // 히어로 CTA 는 강조용. lg 사이즈 + 추가 가로 패딩 + 솔리드는 그림자.
   const className = cn(
     buttonVariants({
       size: "lg",
       variant: variant === "outline" ? "outline" : "default",
     }),
-    variant === "outline" && "bg-background/90 backdrop-blur-sm"
+    "h-11 px-6 text-base font-semibold",
+    variant === "primary" &&
+      "shadow-lg shadow-primary/30 transition-transform hover:-translate-y-0.5",
+    variant === "outline" &&
+      "border-2 bg-background/90 backdrop-blur-sm transition-transform hover:-translate-y-0.5"
   )
 
   if (cta.external) {
