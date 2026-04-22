@@ -35,6 +35,10 @@ interface AnimalBase {
   neutered: boolean | null
   images: string[]
   thumbnail_index: number
+  /** 상세 페이지 조회수 (세션 1회 집계) */
+  view_count: number
+  /** 관심 하트 총 수 (사용자별 토글) */
+  like_count: number
   created_at: string
   updated_at: string
   created_by: string | null

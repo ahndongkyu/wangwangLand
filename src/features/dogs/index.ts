@@ -5,6 +5,7 @@ export { DogDeleteButton } from "./components/dog-delete-button"
 export {
   listDogs,
   listDogsWithCount,
+  listSimilarDogs,
   getDog,
   countDogsByStatus,
   countDogsBySize,

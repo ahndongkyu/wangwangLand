@@ -5,6 +5,7 @@ export { CatDeleteButton } from "./components/cat-delete-button"
 export {
   listCats,
   listCatsWithCount,
+  listSimilarCats,
   getCat,
   countCatsByStatus,
 } from "./api/queries"

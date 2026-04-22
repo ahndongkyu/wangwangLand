@@ -109,6 +109,42 @@ export async function getCat(id: string): Promise<Cat | null> {
   return data as Cat | null
 }
 
+/**
+ * 고양이 상세 하단 "이런 친구도 있어요" 추천.
+ * status IN (보호중, 임시보호중), 자기 자신 제외, 같은 gender 우선.
+ */
+export async function listSimilarCats(
+  current: { id: string; gender: "수컷" | "암컷" | "미상" },
+  limit = 4
+): Promise<Cat[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("cats")
+    .select("*")
+    .in("status", ["보호중", "임시보호중"])
+    .neq("id", current.id)
+    .order("updated_at", { ascending: false })
+    .limit(40)
+
+  if (error || !data) {
+    console.error("[listSimilarCats]", error)
+    return []
+  }
+
+  const candidates = data as Cat[]
+
+  function score(c: Cat): number {
+    let s = 0
+    if (c.gender === current.gender && current.gender !== "미상") s += 3
+    return s
+  }
+
+  return [...candidates]
+    .sort((a, b) => score(b) - score(a))
+    .slice(0, limit)
+}
+
 export async function countCatsByStatus(): Promise<Record<DogStatus, number>> {
   const supabase = await createClient()
 

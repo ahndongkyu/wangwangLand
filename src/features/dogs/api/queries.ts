@@ -119,6 +119,50 @@ export async function getDog(id: string): Promise<Dog | null> {
   return data as Dog | null
 }
 
+/**
+ * 강아지 상세 하단 "이런 친구도 있어요" 추천.
+ * 대상: status IN (보호중, 임시보호중), 자기 자신 제외.
+ * 우선순위: 같은 size 와 같은 gender 가 상위. 그 외는 최근 업데이트 순.
+ */
+export async function listSimilarDogs(
+  current: {
+    id: string
+    size: DogSize | null
+    gender: "수컷" | "암컷" | "미상"
+  },
+  limit = 4
+): Promise<Dog[]> {
+  const supabase = await createClient()
+
+  // 충분히 후보를 넉넉하게 뽑아 클라이언트에서 점수화.
+  const { data, error } = await supabase
+    .from("dogs")
+    .select("*")
+    .in("status", ["보호중", "임시보호중"])
+    .neq("id", current.id)
+    .order("updated_at", { ascending: false })
+    .limit(40)
+
+  if (error || !data) {
+    console.error("[listSimilarDogs]", error)
+    return []
+  }
+
+  const candidates = data as Dog[]
+
+  function score(d: Dog): number {
+    let s = 0
+    if (current.size && d.size === current.size) s += 10
+    if (d.gender === current.gender && current.gender !== "미상") s += 3
+    // 최근 업데이트 가산점 (인덱스 위치 역순 → 최신 약간 우위)
+    return s
+  }
+
+  return [...candidates]
+    .sort((a, b) => score(b) - score(a))
+    .slice(0, limit)
+}
+
 export async function countDogsByStatus(): Promise<Record<DogStatus, number>> {
   const supabase = await createClient()
 
