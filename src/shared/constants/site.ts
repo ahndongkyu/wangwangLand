@@ -126,22 +126,27 @@ export const FOOTER_LINK_GROUPS: ReadonlyArray<{
   links: ReadonlyArray<{ label: string; href: string }>
 }> = [
   {
-    title: "서비스",
+    title: "아이들 만나기",
     links: [
       { label: "강아지", href: "/dogs" },
       { label: "고양이", href: "/cats" },
+      { label: "입양 후기", href: "/stories" },
       { label: "일상", href: "/daily" },
-      { label: "입양후기", href: "/stories" },
     ],
   },
   {
-    title: "참여 · 정보",
+    title: "함께하기",
     links: [
       { label: "입양 문의", href: "/adopt" },
       { label: "봉사 신청", href: "/volunteer" },
       { label: "후원하기", href: "/donate" },
-      { label: "공지사항", href: "/notice" },
+    ],
+  },
+  {
+    title: "정보",
+    links: [
       { label: "센터 소개", href: "/about" },
+      { label: "공지사항", href: "/notice" },
       { label: "오시는 길", href: "/contact" },
     ],
   },
