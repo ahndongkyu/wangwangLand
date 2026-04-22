@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import { ageMonthsFromBirthDate } from "@/shared/lib/age"
 import type { DogGender, DogSize, DogStatus } from "@/shared/types/database"
 
 export interface DogMutationInput {
@@ -11,6 +12,7 @@ export interface DogMutationInput {
   breed: string
   gender: DogGender
   size: DogSize | null
+  birth_date: string | null
   age_months: number | null
   weight_kg: number | null
   rescue_date: string | null
@@ -33,6 +35,7 @@ function parseFormData(formData: FormData): DogMutationInput {
   const ageStr = String(formData.get("age_months") ?? "")
   const weightStr = String(formData.get("weight_kg") ?? "")
   const rescueDate = String(formData.get("rescue_date") ?? "")
+  const birthDate = String(formData.get("birth_date") ?? "").trim() || null
   const images = String(formData.get("images") ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -42,12 +45,18 @@ function parseFormData(formData: FormData): DogMutationInput {
   const kennelLocation = String(formData.get("kennel_location") ?? "").trim()
   const neuteredRaw = String(formData.get("neutered") ?? "")
 
+  // birth_date 가 있으면 오늘 기준 age_months 를 덮어씌운다.
+  const ageFromBirth = birthDate ? ageMonthsFromBirthDate(birthDate) : null
+  const ageMonthsFinal =
+    ageFromBirth !== null ? ageFromBirth : ageStr ? Number(ageStr) : null
+
   return {
     name: String(formData.get("name") ?? "").trim(),
     breed: String(formData.get("breed") ?? "").trim(),
     gender: (String(formData.get("gender") ?? "미상") as DogGender),
     size: sizeRaw ? (sizeRaw as DogSize) : null,
-    age_months: ageStr ? Number(ageStr) : null,
+    birth_date: birthDate,
+    age_months: ageMonthsFinal,
     weight_kg: weightStr ? Number(weightStr) : null,
     rescue_date: rescueDate || null,
     status: String(formData.get("status") ?? "보호중") as DogStatus,

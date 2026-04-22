@@ -9,6 +9,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
+import { ageMonthsFromBirthDate, formatAgeMonths } from "@/shared/lib/age"
 import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
 
 interface Props {
@@ -30,7 +31,13 @@ const selectClass =
 export function DogForm({ dog }: Props) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [birthDate, setBirthDate] = useState(dog?.birth_date ?? "")
   const isEdit = Boolean(dog)
+
+  // 생년월일이 있으면 그로부터, 없으면 age_months 필드에서 오늘 기준 나이.
+  const computedAgeText = birthDate
+    ? formatAgeMonths(ageMonthsFromBirthDate(birthDate))
+    : null
 
   async function handleSubmit(formData: FormData) {
     setError(null)
@@ -136,7 +143,22 @@ export function DogForm({ dog }: Props) {
           </select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="age_months">나이 (개월)</Label>
+          <Label htmlFor="birth_date">생년월일</Label>
+          <Input
+            id="birth_date"
+            name="birth_date"
+            type="date"
+            value={birthDate}
+            onChange={(e) => setBirthDate(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {computedAgeText
+              ? `오늘 기준 ${computedAgeText} · 나이는 자동 계산`
+              : "정확히 알 때만 입력. 모르면 아래 '추정 나이' 에 개월수만 적어주세요."}
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="age_months">추정 나이 (개월)</Label>
           <Input
             id="age_months"
             name="age_months"
@@ -144,7 +166,13 @@ export function DogForm({ dog }: Props) {
             min={0}
             defaultValue={dog?.age_months ?? ""}
             placeholder="예: 24"
+            disabled={!!birthDate}
           />
+          <p className="text-xs text-muted-foreground">
+            {birthDate
+              ? "생년월일 입력 시 자동 계산되어 이 값은 덮어씌워집니다."
+              : "생년월일을 모를 때만 직접 입력하세요."}
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="weight_kg">몸무게 (kg)</Label>
@@ -156,15 +184,6 @@ export function DogForm({ dog }: Props) {
             step={0.1}
             defaultValue={dog?.weight_kg ?? ""}
             placeholder="예: 4.5"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="rescue_date">구조일</Label>
-          <Input
-            id="rescue_date"
-            name="rescue_date"
-            type="date"
-            defaultValue={dog?.rescue_date ?? ""}
           />
         </div>
         <div className="space-y-1.5">

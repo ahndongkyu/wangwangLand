@@ -21,6 +21,9 @@ interface AnimalBase {
   name: string
   breed: string | null
   gender: DogGender
+  /** 생년월일 (정확히 알 때) — 우선순위 ↑, 있으면 이로부터 나이 계산. */
+  birth_date: string | null
+  /** 생년월일 모를 때 직접 입력하는 폴백 개월수. */
   age_months: number | null
   weight_kg: number | null
   rescue_date: string | null

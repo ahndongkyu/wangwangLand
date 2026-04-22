@@ -6,18 +6,10 @@ import { getCat } from "@/features/cats"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
+import { formatAge } from "@/shared/lib/age"
 import { cn } from "@/shared/lib/utils"
 
 export const revalidate = 60
-
-function formatAge(months: number | null) {
-  if (months == null) return "나이 미상"
-  if (months < 12) return `${months}개월`
-  const years = Math.floor(months / 12)
-  const remainingMonths = months % 12
-  if (remainingMonths === 0) return `${years}살`
-  return `${years}살 ${remainingMonths}개월`
-}
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "-"
@@ -86,13 +78,13 @@ export default async function CatDetailPage({
               {cat.name}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {[cat.breed, formatAge(cat.age_months)].filter(Boolean).join(" · ")}
+              {[cat.breed, formatAge(cat)].filter(Boolean).join(" · ")}
             </p>
           </header>
 
           <dl className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-card p-5">
             <InfoRow label="성별" value={cat.gender} />
-            <InfoRow label="나이" value={formatAge(cat.age_months)} />
+            <InfoRow label="나이" value={formatAge(cat)} />
             <InfoRow
               label="몸무게"
               value={cat.weight_kg != null ? `${cat.weight_kg}kg` : "-"}

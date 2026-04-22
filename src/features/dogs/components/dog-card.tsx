@@ -3,17 +3,9 @@ import Link from "next/link"
 
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent } from "@/shared/components/ui/card"
+import { formatAge } from "@/shared/lib/age"
 import { cn } from "@/shared/lib/utils"
 import type { Dog } from "@/shared/types/database"
-
-function formatAge(months: number | null) {
-  if (months == null) return "나이 미상"
-  if (months < 12) return `${months}개월`
-  const years = Math.floor(months / 12)
-  const remainingMonths = months % 12
-  if (remainingMonths === 0) return `${years}살`
-  return `${years}살 ${remainingMonths}개월`
-}
 
 function statusVariant(status: Dog["status"]) {
   switch (status) {
@@ -69,7 +61,7 @@ export function DogCard({ dog }: { dog: Dog }) {
             )}
           </div>
           <div className="mt-1 text-sm text-muted-foreground">
-            {[dog.breed, formatAge(dog.age_months)].filter(Boolean).join(" · ")}
+            {[dog.breed, formatAge(dog)].filter(Boolean).join(" · ")}
           </div>
           {dog.size && (
             <div className="mt-2">
