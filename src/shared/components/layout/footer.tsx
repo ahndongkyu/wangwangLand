@@ -4,12 +4,18 @@ import Link from "next/link"
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { FOOTER_LEGAL, FOOTER_LINK_GROUPS, SITE } from "@/shared/constants/site"
+import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
 
-export function Footer() {
+export async function Footer() {
   const year = new Date().getFullYear()
   const phones = SITE.contact.phones.filter((p) => p.number)
   const d = SITE.donation
+  const reg = SITE.registration
+  const stats = await getSiteStats()
+  const hasRegistration = Boolean(
+    reg.representativeName || reg.shelterNumber || reg.businessNumber
+  )
 
   return (
     <footer className="mt-auto border-t border-border/60 bg-secondary/40">
@@ -44,6 +50,30 @@ export function Footer() {
               💙 후원하기
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* 1.5) 활동 실적 */}
+      <section className="border-b border-border/60 bg-background">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-3 gap-2 px-4 py-6 text-center md:gap-6 md:px-6 md:py-8">
+          <StatItem
+            label="누적 구조"
+            value={stats.rescued}
+            suffix="마리"
+            emoji="💙"
+          />
+          <StatItem
+            label="입양 완료"
+            value={stats.adopted}
+            suffix="마리"
+            emoji="🏡"
+          />
+          <StatItem
+            label="누적 봉사자"
+            value={stats.volunteers}
+            suffix="명"
+            emoji="🙌"
+          />
         </div>
       </section>
 
@@ -190,8 +220,30 @@ export function Footer() {
           </div>
         </div>
 
-        {/* 4) 저작권 + 약관 링크 */}
-        <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-6 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
+        {/* 4) 단체 정보 (해당 정보가 하나라도 있을 때만) */}
+        {hasRegistration && (
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-1 border-t border-border/60 pt-6 text-xs text-muted-foreground">
+            {reg.representativeName && (
+              <span>대표자 {reg.representativeName}</span>
+            )}
+            {reg.shelterNumber && (
+              <span>동물보호센터 등록번호 {reg.shelterNumber}</span>
+            )}
+            {reg.businessNumber && (
+              <span>사업자등록번호 {reg.businessNumber}</span>
+            )}
+          </div>
+        )}
+
+        {/* 5) 저작권 + 약관 링크 */}
+        <div
+          className={cn(
+            "flex flex-col gap-3 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between",
+            hasRegistration
+              ? "mt-4"
+              : "mt-10 border-t border-border/60 pt-6"
+          )}
+        >
           <div>
             <p>
               © {year} {SITE.name}. All rights reserved.
@@ -215,6 +267,33 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function StatItem({
+  label,
+  value,
+  suffix,
+  emoji,
+}: {
+  label: string
+  value: number
+  suffix: string
+  emoji: string
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
+        <span className="mr-1">{emoji}</span>
+        {label}
+      </p>
+      <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">
+        {value.toLocaleString()}
+        <span className="ml-0.5 text-xs font-medium text-muted-foreground">
+          {suffix}
+        </span>
+      </p>
+    </div>
   )
 }
 
