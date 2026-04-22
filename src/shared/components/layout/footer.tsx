@@ -126,9 +126,9 @@ export async function Footer() {
 
       {/* 2) 메인 그리드 — 4열: 브랜드 / 아이들 만나기 / 함께하기 / 정보 */}
       <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* 브랜드 */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2">
               <Image
                 src={SITE.logo}

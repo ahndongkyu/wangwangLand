@@ -66,7 +66,7 @@ export function Header({ recentNotices = [] }: HeaderProps) {
         3열 그리드로 로고 / 네비 / 액션 배치 — 중앙 열(1fr)이 뷰포트 가운데에
         고정되므로 로고·액션 폭이 달라도 네비가 시각적으로 정확히 중앙.
       */}
-      <div className="mx-auto grid h-20 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 md:px-6 lg:gap-8">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:grid md:h-20 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-6 lg:gap-8">
         <Link href="/" className="flex items-center gap-3 justify-self-start">
           <Image
             src={SITE.logo}
