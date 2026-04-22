@@ -46,8 +46,12 @@ export function Header({ recentNotices = [] }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-20 w-full max-w-6xl items-center gap-4 px-4 md:px-6 lg:gap-8">
-        <Link href="/" className="flex items-center gap-3">
+      {/*
+        3열 그리드로 로고 / 네비 / 액션 배치 — 중앙 열(1fr)이 뷰포트 가운데에
+        고정되므로 로고·액션 폭이 달라도 네비가 시각적으로 정확히 중앙.
+      */}
+      <div className="mx-auto grid h-20 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 md:px-6 lg:gap-8">
+        <Link href="/" className="flex items-center gap-3 justify-self-start">
           <Image
             src={SITE.logo}
             alt={`${SITE.name} 로고`}
@@ -66,8 +70,8 @@ export function Header({ recentNotices = [] }: HeaderProps) {
           </div>
         </Link>
 
-        {/* Desktop nav — 그룹 드롭다운 + 단일 링크 혼합 */}
-        <nav className="hidden md:flex">
+        {/* Desktop nav — 3열 그리드의 중앙 열 (모바일에선 자리만 차지하고 숨김). */}
+        <nav className="hidden justify-center md:flex">
           <ul className="flex items-center gap-0.5">
             {HEADER_NAV_GROUPS.map((node) =>
               node.kind === "link" ? (
@@ -100,7 +104,7 @@ export function Header({ recentNotices = [] }: HeaderProps) {
           </ul>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 justify-self-end">
           {/* 검색 — 데스크톱/모바일 공용, 열리면 주소 바 스타일 인풋 */}
           <button
             type="button"
