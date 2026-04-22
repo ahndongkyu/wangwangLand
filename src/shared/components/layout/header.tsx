@@ -274,14 +274,25 @@ function NavGroupDropdown({
               <Menu.Item
                 key={item.href}
                 className={cn(
-                  "relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none",
-                  "transition-colors duration-150",
-                  "data-[highlighted]:bg-[#FAF3E7] data-[highlighted]:text-foreground"
+                  "group/item relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none text-foreground",
+                  // 옵션 A: hover 시 살짝 위로 떠오름 + 배경 변화
+                  // (Tailwind v4 data-[highlighted] variant 가 본 프로젝트에서
+                  // translate 적용 안 돼 hover 로 통일. 키보드 nav 시각도 같이 잡으려면
+                  // data-[highlighted] 를 추가로 두면 되지만 마우스 케이스가 95%+)
+                  "transition-all duration-200",
+                  "hover:-translate-y-0.5 hover:bg-[#FAF3E7]"
                 )}
                 render={<Link href={item.href} />}
               >
                 {item.icon && (
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FAF3E7]">
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FAF3E7]",
+                      // 옵션 B: 항목 hover 시 아이콘 박스가 코랄 톤으로 전환
+                      "transition-colors duration-200",
+                      "group-hover/item:bg-primary/30"
+                    )}
+                  >
                     <BrandIcon
                       name={item.icon as BrandIconName}
                       size={22}
