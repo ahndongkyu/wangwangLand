@@ -15,4 +15,10 @@ export {
   getAdoptionApplication,
   getVolunteerApplication,
   countPendingApplications,
+  getApplicationStats,
+  listRecentApplications,
+} from "./api/queries"
+export type {
+  RecentApplication,
+  ApplicationStatusCounts,
 } from "./api/queries"

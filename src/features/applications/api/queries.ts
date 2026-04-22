@@ -12,12 +12,36 @@ export interface AdoptionRow extends AdoptionApplication {
 
 interface ListOptions {
   status?: ApplicationStatus | "전체"
+  /** 신청자 이름·전화 통합 검색 (ilike) */
+  query?: string
+  /** 제출일 이상 (ISO 날짜 YYYY-MM-DD) */
+  from?: string
+  /** 제출일 이하 (포함) */
+  to?: string
   limit?: number
   offset?: number
 }
 
+function toStartOfDayIso(ymd?: string): string | undefined {
+  if (!ymd) return undefined
+  // YYYY-MM-DD 를 KST 00:00 로 해석 후 UTC ISO 로 변환
+  const d = new Date(`${ymd}T00:00:00+09:00`)
+  if (Number.isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
+
+function toEndOfDayIso(ymd?: string): string | undefined {
+  if (!ymd) return undefined
+  const d = new Date(`${ymd}T23:59:59.999+09:00`)
+  if (Number.isNaN(d.getTime())) return undefined
+  return d.toISOString()
+}
+
 export async function listAdoptionApplications({
   status,
+  query: searchQuery,
+  from,
+  to,
   limit = 20,
   offset = 0,
 }: ListOptions = {}): Promise<{ rows: AdoptionRow[]; total: number }> {
@@ -33,6 +57,16 @@ export async function listAdoptionApplications({
     query = query.eq("status", status)
   }
 
+  if (searchQuery && searchQuery.trim()) {
+    const q = `%${searchQuery.trim()}%`
+    query = query.or(`applicant_name.ilike.${q},phone.ilike.${q}`)
+  }
+
+  const fromIso = toStartOfDayIso(from)
+  if (fromIso) query = query.gte("submitted_at", fromIso)
+  const toIso = toEndOfDayIso(to)
+  if (toIso) query = query.lte("submitted_at", toIso)
+
   const { data, count, error } = await query
 
   if (error) {
@@ -45,6 +79,9 @@ export async function listAdoptionApplications({
 
 export async function listVolunteerApplications({
   status,
+  query: searchQuery,
+  from,
+  to,
   limit = 20,
   offset = 0,
 }: ListOptions = {}): Promise<{
@@ -62,6 +99,16 @@ export async function listVolunteerApplications({
   if (status && status !== "전체") {
     query = query.eq("status", status)
   }
+
+  if (searchQuery && searchQuery.trim()) {
+    const q = `%${searchQuery.trim()}%`
+    query = query.or(`applicant_name.ilike.${q},phone.ilike.${q}`)
+  }
+
+  const fromIso = toStartOfDayIso(from)
+  if (fromIso) query = query.gte("submitted_at", fromIso)
+  const toIso = toEndOfDayIso(to)
+  if (toIso) query = query.lte("submitted_at", toIso)
 
   const { data, count, error } = await query
 
@@ -132,4 +179,142 @@ export async function countPendingApplications(): Promise<{
   ])
 
   return { adoption: adoption ?? 0, volunteer: volunteer ?? 0 }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 대시보드 통계 전용 쿼리
+
+export interface ApplicationStatusCounts {
+  접수: number
+  검토중: number
+  승인: number
+  반려: number
+  total: number
+}
+
+function emptyStatusCounts(): ApplicationStatusCounts {
+  return { 접수: 0, 검토중: 0, 승인: 0, 반려: 0, total: 0 }
+}
+
+/** 특정 테이블의 status 별 집계 + 기간 필터. */
+async function aggregateByStatus(
+  table: "adoption_applications" | "volunteer_applications",
+  opts: { from?: string; to?: string } = {}
+): Promise<ApplicationStatusCounts> {
+  const supabase = await createClient()
+  let q = supabase.from(table).select("status")
+  const fromIso = toStartOfDayIso(opts.from)
+  if (fromIso) q = q.gte("submitted_at", fromIso)
+  const toIso = toEndOfDayIso(opts.to)
+  if (toIso) q = q.lte("submitted_at", toIso)
+
+  const { data, error } = await q
+  if (error || !data) return emptyStatusCounts()
+
+  const acc = emptyStatusCounts()
+  for (const row of data as { status: ApplicationStatus }[]) {
+    acc[row.status] = (acc[row.status] ?? 0) + 1
+    acc.total += 1
+  }
+  return acc
+}
+
+export async function getApplicationStats(opts: {
+  monthFrom: string
+  monthTo: string
+  prevMonthFrom: string
+  prevMonthTo: string
+}): Promise<{
+  adoption: {
+    thisMonth: number
+    lastMonth: number
+    allTime: ApplicationStatusCounts
+  }
+  volunteer: {
+    thisMonth: number
+    lastMonth: number
+    allTime: ApplicationStatusCounts
+  }
+}> {
+  const [
+    adoptionThis,
+    adoptionPrev,
+    adoptionAll,
+    volunteerThis,
+    volunteerPrev,
+    volunteerAll,
+  ] = await Promise.all([
+    aggregateByStatus("adoption_applications", {
+      from: opts.monthFrom,
+      to: opts.monthTo,
+    }),
+    aggregateByStatus("adoption_applications", {
+      from: opts.prevMonthFrom,
+      to: opts.prevMonthTo,
+    }),
+    aggregateByStatus("adoption_applications"),
+    aggregateByStatus("volunteer_applications", {
+      from: opts.monthFrom,
+      to: opts.monthTo,
+    }),
+    aggregateByStatus("volunteer_applications", {
+      from: opts.prevMonthFrom,
+      to: opts.prevMonthTo,
+    }),
+    aggregateByStatus("volunteer_applications"),
+  ])
+
+  return {
+    adoption: {
+      thisMonth: adoptionThis.total,
+      lastMonth: adoptionPrev.total,
+      allTime: adoptionAll,
+    },
+    volunteer: {
+      thisMonth: volunteerThis.total,
+      lastMonth: volunteerPrev.total,
+      allTime: volunteerAll,
+    },
+  }
+}
+
+export interface RecentApplication {
+  id: string
+  type: "adoption" | "volunteer"
+  applicant_name: string
+  status: ApplicationStatus
+  submitted_at: string
+}
+
+export async function listRecentApplications(
+  limit = 6
+): Promise<RecentApplication[]> {
+  const supabase = await createClient()
+  const [adoption, volunteer] = await Promise.all([
+    supabase
+      .from("adoption_applications")
+      .select("id, applicant_name, status, submitted_at")
+      .order("submitted_at", { ascending: false })
+      .limit(limit),
+    supabase
+      .from("volunteer_applications")
+      .select("id, applicant_name, status, submitted_at")
+      .order("submitted_at", { ascending: false })
+      .limit(limit),
+  ])
+
+  const rows: RecentApplication[] = [
+    ...((adoption.data ?? []) as Omit<RecentApplication, "type">[]).map((r) => ({
+      ...r,
+      type: "adoption" as const,
+    })),
+    ...((volunteer.data ?? []) as Omit<RecentApplication, "type">[]).map((r) => ({
+      ...r,
+      type: "volunteer" as const,
+    })),
+  ]
+
+  return rows
+    .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at))
+    .slice(0, limit)
 }

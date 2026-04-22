@@ -3,30 +3,73 @@ import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
 import { CatDeleteButton, listCatsWithCount } from "@/features/cats"
+import type { CatSort } from "@/features/cats/api/queries"
+import { FilterGroup } from "@/shared/components/filter-group"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
+import type { DogStatus } from "@/shared/types/database"
 
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 20
 
+const STATUS_FILTERS: Array<{ label: string; value: DogStatus | "전체" }> = [
+  { label: "전체", value: "전체" },
+  { label: "보호중", value: "보호중" },
+  { label: "임시보호중", value: "임시보호중" },
+  { label: "입양완료", value: "입양완료" },
+  { label: "무지개다리", value: "무지개다리" },
+]
+
+const SORT_OPTIONS: Array<{ label: string; value: CatSort }> = [
+  { label: "최신순", value: "latest" },
+  { label: "이름순", value: "name" },
+]
+
+function parseStatus(value: string | undefined): DogStatus | "전체" {
+  if (!value) return "전체"
+  const found = STATUS_FILTERS.find((f) => f.value === value)
+  return found ? found.value : "전체"
+}
+
+function parseSort(value: string | undefined): CatSort {
+  return value === "name" ? "name" : "latest"
+}
+
+function buildHref(status: string, sort: CatSort, q: string) {
+  const qs = new URLSearchParams()
+  if (status !== "전체") qs.set("status", status)
+  if (sort !== "latest") qs.set("sort", sort)
+  if (q) qs.set("q", q)
+  const s = qs.toString()
+  return s ? `/admin/cats?${s}` : "/admin/cats"
+}
+
 export default async function AdminCatsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>
+  searchParams: Promise<{
+    q?: string
+    page?: string
+    status?: string
+    sort?: string
+  }>
 }) {
   const params = await searchParams
   const activeQuery = (params.q ?? "").trim()
+  const activeStatus = parseStatus(params.status)
+  const activeSort = parseSort(params.sort)
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
   const [me, { cats, total }] = await Promise.all([
     getCurrentAdmin(),
     listCatsWithCount({
-      status: "전체",
+      status: activeStatus,
+      sort: activeSort,
       query: activeQuery || undefined,
       limit: PAGE_SIZE,
       offset,
@@ -62,6 +105,27 @@ export default async function AdminCatsPage({
 
       <div className="mb-4 max-w-md">
         <SearchBox placeholder="이름으로 검색" />
+      </div>
+
+      <div className="mb-6 space-y-3">
+        <FilterGroup
+          label="상태"
+          options={STATUS_FILTERS.map((f) => ({
+            label: f.label,
+            value: String(f.value),
+            active: activeStatus === f.value,
+            href: buildHref(String(f.value), activeSort, activeQuery),
+          }))}
+        />
+        <FilterGroup
+          label="정렬"
+          options={SORT_OPTIONS.map((o) => ({
+            label: o.label,
+            value: o.value,
+            active: activeSort === o.value,
+            href: buildHref(String(activeStatus), o.value, activeQuery),
+          }))}
+        />
       </div>
 
       {cats.length === 0 ? (
@@ -149,7 +213,11 @@ export default async function AdminCatsPage({
             currentPage={pageNum}
             totalPages={totalPages}
             basePath="/admin/cats"
-            searchParams={{ q: activeQuery || undefined }}
+            searchParams={{
+              q: activeQuery || undefined,
+              status: activeStatus !== "전체" ? activeStatus : undefined,
+              sort: activeSort !== "latest" ? activeSort : undefined,
+            }}
           />
         </>
       )}

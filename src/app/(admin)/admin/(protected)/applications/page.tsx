@@ -4,6 +4,8 @@ import {
   listAdoptionApplications,
   listVolunteerApplications,
 } from "@/features/applications"
+import { Pagination } from "@/shared/components/pagination"
+import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
 import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
@@ -52,40 +54,75 @@ function statusBadgeColor(status: ApplicationStatus) {
   }
 }
 
+interface BuildOpts {
+  type?: TypeValue
+  status?: ApplicationStatus | "전체"
+  q?: string
+  from?: string
+  to?: string
+  page?: number
+}
+
+function buildHref({
+  type = "adoption",
+  status = "전체",
+  q = "",
+  from = "",
+  to = "",
+  page,
+}: BuildOpts) {
+  const qs = new URLSearchParams()
+  qs.set("type", type)
+  if (status !== "전체") qs.set("status", String(status))
+  if (q) qs.set("q", q)
+  if (from) qs.set("from", from)
+  if (to) qs.set("to", to)
+  if (page && page > 1) qs.set("page", String(page))
+  return `/admin/applications?${qs.toString()}`
+}
+
 export default async function AdminApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; status?: string }>
+  searchParams: Promise<{
+    type?: string
+    status?: string
+    q?: string
+    from?: string
+    to?: string
+    page?: string
+  }>
 }) {
   const params = await searchParams
   const activeType = parseType(params.type)
   const activeStatus = parseStatus(params.status)
+  const activeQuery = (params.q ?? "").trim()
+  const activeFrom = (params.from ?? "").trim()
+  const activeTo = (params.to ?? "").trim()
+  const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
+  const offset = (pageNum - 1) * PAGE_SIZE
+
+  const commonOpts = {
+    status: activeStatus,
+    query: activeQuery || undefined,
+    from: activeFrom || undefined,
+    to: activeTo || undefined,
+    limit: PAGE_SIZE,
+    offset,
+  }
 
   const adoption =
     activeType === "adoption"
-      ? await listAdoptionApplications({
-          status: activeStatus,
-          limit: PAGE_SIZE,
-        })
+      ? await listAdoptionApplications(commonOpts)
       : { rows: [], total: 0 }
 
   const volunteer =
     activeType === "volunteer"
-      ? await listVolunteerApplications({
-          status: activeStatus,
-          limit: PAGE_SIZE,
-        })
+      ? await listVolunteerApplications(commonOpts)
       : { rows: [], total: 0 }
 
-  const current =
-    activeType === "adoption" ? adoption : volunteer
-
-  function buildHref(type: TypeValue, status: string) {
-    const qs = new URLSearchParams()
-    qs.set("type", type)
-    if (status !== "전체") qs.set("status", status)
-    return `/admin/applications?${qs.toString()}`
-  }
+  const current = activeType === "adoption" ? adoption : volunteer
+  const totalPages = Math.max(1, Math.ceil(current.total / PAGE_SIZE))
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -102,7 +139,7 @@ export default async function AdminApplicationsPage({
         {TYPE_TABS.map((tab) => (
           <Link
             key={tab.value}
-            href={buildHref(tab.value, String(activeStatus))}
+            href={buildHref({ type: tab.value, status: activeStatus })}
             className={cn(
               "relative px-4 py-2 text-sm font-semibold transition-colors",
               tab.value === activeType
@@ -118,12 +155,74 @@ export default async function AdminApplicationsPage({
         ))}
       </div>
 
+      {/* 검색 + 날짜 범위 (GET form — 페이지 1부터 다시 표시) */}
+      <form
+        action="/admin/applications"
+        method="get"
+        className="mb-4 grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-[1.5fr_1fr_1fr_auto]"
+      >
+        <input type="hidden" name="type" value={activeType} />
+        {activeStatus !== "전체" && (
+          <input type="hidden" name="status" value={activeStatus} />
+        )}
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          이름·전화번호
+          <input
+            type="text"
+            name="q"
+            defaultValue={activeQuery}
+            placeholder="예: 홍길동 또는 010"
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm text-foreground"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          시작일
+          <input
+            type="date"
+            name="from"
+            defaultValue={activeFrom}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          종료일
+          <input
+            type="date"
+            name="to"
+            defaultValue={activeTo}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+          />
+        </label>
+        <div className="flex items-end gap-2">
+          <button
+            type="submit"
+            className="h-9 flex-1 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 md:flex-none"
+          >
+            검색
+          </button>
+          {(activeQuery || activeFrom || activeTo) && (
+            <Link
+              href={buildHref({ type: activeType, status: activeStatus })}
+              className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
+            >
+              초기화
+            </Link>
+          )}
+        </div>
+      </form>
+
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-muted-foreground">상태</span>
         {STATUS_FILTERS.map((f) => (
           <Link
             key={f.value}
-            href={buildHref(activeType, String(f.value))}
+            href={buildHref({
+              type: activeType,
+              status: f.value,
+              q: activeQuery,
+              from: activeFrom,
+              to: activeTo,
+            })}
             className={cn(
               "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
               activeStatus === f.value
@@ -267,6 +366,19 @@ export default async function AdminApplicationsPage({
           </table>
         </div>
       )}
+
+      <Pagination
+        currentPage={pageNum}
+        totalPages={totalPages}
+        basePath="/admin/applications"
+        searchParams={{
+          type: activeType,
+          status: activeStatus !== "전체" ? activeStatus : undefined,
+          q: activeQuery || undefined,
+          from: activeFrom || undefined,
+          to: activeTo || undefined,
+        }}
+      />
     </div>
   )
 }

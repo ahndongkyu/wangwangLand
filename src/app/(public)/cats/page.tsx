@@ -1,11 +1,10 @@
-import Link from "next/link"
 import type { Metadata } from "next"
 
 import { CatGrid, listCatsWithCount } from "@/features/cats"
 import type { CatSort } from "@/features/cats/api/queries"
+import { FilterGroup } from "@/shared/components/filter-group"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
-import { cn } from "@/shared/lib/utils"
 import type { DogStatus } from "@/shared/types/database"
 
 export const metadata: Metadata = {
@@ -134,32 +133,3 @@ export default async function CatsPage({
   )
 }
 
-function FilterGroup({
-  label,
-  options,
-}: {
-  label: string
-  options: { label: string; value: string; active: boolean; href: string }[]
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="w-10 text-xs font-semibold text-muted-foreground">
-        {label}
-      </span>
-      {options.map((o) => (
-        <Link
-          key={o.value}
-          href={o.href}
-          className={cn(
-            "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-            o.active
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card text-foreground/80 hover:bg-secondary"
-          )}
-        >
-          {o.label}
-        </Link>
-      ))}
-    </div>
-  )
-}
