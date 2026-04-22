@@ -3,13 +3,22 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Menu as MenuIcon, Search, X } from "lucide-react"
+import { ChevronDown, Menu as MenuIcon, Search, X } from "lucide-react"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
-import { HEADER_NAV_GROUPS, MAIN_NAV, SITE } from "@/shared/constants/site"
+import {
+  BrandIcon,
+  type BrandIconName,
+} from "@/shared/components/brand-icon"
+import {
+  HEADER_NAV_GROUPS,
+  type HeaderNavItem,
+  MAIN_NAV,
+  SITE,
+} from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -45,7 +54,14 @@ export function Header({ recentNotices = [] }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header
+      className={cn(
+        // 솔리드 흰색 + 부드러운 하단 라인 + 살짝의 그림자로 바(bar) 형태 강조.
+        // 배너 위에 있어도 경계가 명확하고, 드롭다운이 이 바에서 흘러내려오는 느낌.
+        "sticky top-0 z-40 w-full bg-white",
+        "border-b border-[#FBE4D2] shadow-[0_2px_8px_rgba(139,111,71,0.06)]"
+      )}
+    >
       {/*
         3열 그리드로 로고 / 네비 / 액션 배치 — 중앙 열(1fr)이 뷰포트 가운데에
         고정되므로 로고·액션 폭이 달라도 네비가 시각적으로 정확히 중앙.
@@ -179,7 +195,7 @@ export function Header({ recentNotices = [] }: HeaderProps) {
 
       {/* 검색 드로어 — 오픈 시 헤더 아래 한 줄 */}
       {searchOpen && (
-        <div className="border-t border-border/60 bg-background">
+        <div className="border-t border-[#FBE4D2] bg-white">
           <form
             onSubmit={handleSearchSubmit}
             className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 md:px-6"
@@ -214,53 +230,75 @@ function NavGroupDropdown({
   isActive,
 }: {
   label: string
-  items: ReadonlyArray<{ label: string; href: string; desc?: string }>
+  items: ReadonlyArray<HeaderNavItem>
   isActive: boolean
 }) {
   return (
     <Menu.Root>
       <Menu.Trigger
         className={cn(
-          "inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          "group/trig inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+          // 열렸을 때도 active 톤 유지 (사용자가 어디서 열었는지 명확)
+          "data-[popup-open]:bg-primary/10 data-[popup-open]:text-primary",
           isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground/80 hover:bg-secondary hover:text-foreground"
         )}
       >
         {label}
-        <svg
-          className="size-3.5 opacity-70"
-          viewBox="0 0 20 20"
-          fill="currentColor"
+        <ChevronDown
+          className="size-3.5 opacity-70 transition-transform duration-200 group-data-[popup-open]/trig:rotate-180"
           aria-hidden
-        >
-          <path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.38a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" />
-        </svg>
+        />
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Positioner sideOffset={8} align="start">
+        <Menu.Positioner sideOffset={12} align="center">
           <Menu.Popup
             className={cn(
-              "z-50 w-64 rounded-xl border border-border bg-card p-1.5 shadow-lg",
-              "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-              "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-              "transition-all duration-150"
+              // 240px 너비, 솔리드 흰 배경, 따뜻한 코랄 테두리, 깊은 그림자
+              "relative z-50 w-60 overflow-visible rounded-xl border border-[#FBE4D2] bg-white p-1.5",
+              "shadow-[0_12px_32px_rgba(139,111,71,0.15)]",
+              // 부드러운 fade + slide-down 애니메이션
+              "data-[starting-style]:-translate-y-1 data-[starting-style]:opacity-0",
+              "data-[ending-style]:-translate-y-1 data-[ending-style]:opacity-0",
+              "transition-[transform,opacity] duration-200 ease-out"
             )}
           >
+            {/* 위로 향하는 화살표 — 트리거 버튼과 시각 연결 */}
+            <span
+              aria-hidden
+              className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-l border-t border-[#FBE4D2] bg-white"
+            />
+
             {items.map((item) => (
               <Menu.Item
                 key={item.href}
-                className="flex w-full flex-col gap-0.5 rounded-md px-3 py-2 text-left text-sm outline-none transition-colors data-[highlighted]:bg-secondary"
+                className={cn(
+                  "relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none",
+                  "transition-colors duration-150",
+                  "data-[highlighted]:bg-[#FAF3E7] data-[highlighted]:text-foreground"
+                )}
                 render={<Link href={item.href} />}
               >
-                <span className="font-medium text-foreground">
-                  {item.label}
-                </span>
-                {item.desc && (
-                  <span className="text-xs text-muted-foreground">
-                    {item.desc}
+                {item.icon && (
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FAF3E7]">
+                    <BrandIcon
+                      name={item.icon as BrandIconName}
+                      size={22}
+                      decorative
+                    />
                   </span>
                 )}
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-semibold text-foreground">
+                    {item.label}
+                  </span>
+                  {item.desc && (
+                    <span className="text-xs leading-snug text-muted-foreground">
+                      {item.desc}
+                    </span>
+                  )}
+                </span>
               </Menu.Item>
             ))}
           </Menu.Popup>

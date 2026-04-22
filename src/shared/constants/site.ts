@@ -76,31 +76,42 @@ export const MAIN_NAV = [
  * 데스크톱 헤더 — 드롭다운 그룹으로 재편.
  * 모바일에선 MAIN_NAV 를 그대로 나열 (햄버거 시트).
  */
+export interface HeaderNavItem {
+  label: string
+  href: string
+  desc?: string
+  /**
+   * BrandIcon 의 name (string). site.ts 에서 BrandIconName import 하면 순환
+   * 위험이 있어 string 으로 두고 사용처(Header)에서 캐스팅한다.
+   */
+  icon?: string
+}
+
 export const HEADER_NAV_GROUPS: ReadonlyArray<
   | { kind: "link"; label: string; href: string }
   | {
       kind: "group"
       label: string
-      items: ReadonlyArray<{ label: string; href: string; desc?: string }>
+      items: ReadonlyArray<HeaderNavItem>
     }
 > = [
   {
     kind: "group",
     label: "아이들 만나기",
     items: [
-      { label: "강아지", href: "/dogs", desc: "입양 대기 중인 강아지들" },
-      { label: "고양이", href: "/cats", desc: "보호 중인 고양이들" },
-      { label: "입양 후기", href: "/stories", desc: "새 가족을 만난 아이들" },
-      { label: "일상", href: "/daily", desc: "봉사 활동·근황 기록" },
+      { label: "강아지", href: "/dogs", desc: "입양 대기 중인 강아지들", icon: "dog" },
+      { label: "고양이", href: "/cats", desc: "보호 중인 고양이들", icon: "paw" },
+      { label: "입양 후기", href: "/stories", desc: "새 가족을 만난 아이들", icon: "heart" },
+      { label: "일상", href: "/daily", desc: "봉사 활동·근황 기록", icon: "camera" },
     ],
   },
   {
     kind: "group",
     label: "참여",
     items: [
-      { label: "봉사 신청", href: "/volunteer", desc: "매주 봉사자를 기다려요" },
-      { label: "후원하기", href: "/donate", desc: "작은 정성이 큰 힘이 됩니다" },
-      { label: "입양 문의", href: "/adopt", desc: "가족이 되어주세요" },
+      { label: "봉사 신청", href: "/volunteer", desc: "매주 봉사자를 기다려요", icon: "volunteer" },
+      { label: "후원하기", href: "/donate", desc: "작은 정성이 큰 힘이 됩니다", icon: "gift" },
+      { label: "입양 문의", href: "/adopt", desc: "가족이 되어주세요", icon: "mail" },
     ],
   },
   { kind: "link", label: "공지사항", href: "/notice" },
