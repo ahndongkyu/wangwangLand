@@ -4,6 +4,8 @@ import { useTransition } from "react"
 import { Trash2 } from "lucide-react"
 
 import { deleteDog } from "../api/mutations"
+import { useConfirm } from "@/shared/components/confirm-dialog"
+import { useToast } from "@/shared/components/toast"
 import { Button } from "@/shared/components/ui/button"
 
 export function DogDeleteButton({
@@ -14,13 +16,21 @@ export function DogDeleteButton({
   name: string
 }) {
   const [pending, startTransition] = useTransition()
+  const confirm = useConfirm()
+  const toast = useToast()
 
-  function handleClick() {
-    if (!confirm(`'${name}' 아이 정보를 정말 삭제할까요? 되돌릴 수 없습니다.`))
-      return
+  async function handleClick() {
+    const ok = await confirm({
+      title: `'${name}' 정보를 삭제할까요?`,
+      description: "되돌릴 수 없습니다.",
+      confirmLabel: "삭제",
+      danger: true,
+    })
+    if (!ok) return
     startTransition(async () => {
       const result = await deleteDog(id)
-      if (result?.error) alert(`삭제 실패: ${result.error}`)
+      if (result?.error) toast.error(`삭제 실패: ${result.error}`)
+      else toast.success(`'${name}' 을(를) 삭제했습니다.`)
     })
   }
 

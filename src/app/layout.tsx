@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { Geist_Mono } from "next/font/google"
 
+import { ConfirmProvider } from "@/shared/components/confirm-dialog"
+import { ToastProvider } from "@/shared/components/toast"
 import { SITE } from "@/shared/constants/site"
 import "./globals.css"
 
@@ -79,7 +81,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${geistMono.variable} h-full`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
+      </body>
     </html>
   )
 }

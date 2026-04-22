@@ -4,6 +4,8 @@ import { useRef, useState, useTransition } from "react"
 import { Check, Pencil, Trash2, X } from "lucide-react"
 
 import { removeAdmin, updateAdminName, updateAdminRole } from "../api/mutations"
+import { useConfirm } from "@/shared/components/confirm-dialog"
+import { useToast } from "@/shared/components/toast"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { cn } from "@/shared/lib/utils"
@@ -28,6 +30,8 @@ export function AdminManageRow({ admin, currentAdminId }: Props) {
   const [draftName, setDraftName] = useState(admin.name)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const isSelf = admin.id === currentAdminId
 
@@ -53,9 +57,11 @@ export function AdminManageRow({ admin, currentAdminId }: Props) {
       const result = await updateAdminName(admin.id, trimmed)
       if (result.error) {
         setError(result.error)
+        toast.error(result.error)
       } else {
         setName(trimmed)
         setEditingName(false)
+        toast.success("이름을 저장했습니다.")
       }
     })
   }
@@ -69,25 +75,30 @@ export function AdminManageRow({ admin, currentAdminId }: Props) {
       const result = await updateAdminRole(admin.id, next)
       if (result.error) {
         setError(result.error)
+        toast.error(result.error)
         setRole(prev) // rollback
+      } else {
+        toast.success(`${admin.name} 역할을 변경했습니다.`)
       }
     })
   }
 
-  function handleRemove() {
-    if (
-      !confirm(
-        `${admin.name} (${admin.email}) 운영진을 제거할까요?\n` +
-          `※ Supabase 계정 자체는 유지되며, 필요하면 대시보드에서 별도 삭제해주세요.`
-      )
-    ) {
-      return
-    }
+  async function handleRemove() {
+    const ok = await confirm({
+      title: `${admin.name} 운영진을 제거할까요?`,
+      description: `${admin.email} 계정의 운영진 권한만 해제합니다. Supabase 계정 자체는 유지되며 필요하면 대시보드에서 별도 삭제해주세요.`,
+      confirmLabel: "제거",
+      danger: true,
+    })
+    if (!ok) return
     setError(null)
     startTransition(async () => {
       const result = await removeAdmin(admin.id)
       if (result.error) {
         setError(result.error)
+        toast.error(result.error)
+      } else {
+        toast.success(`${admin.name} 운영진을 제거했습니다.`)
       }
     })
   }
