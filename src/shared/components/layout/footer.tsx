@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { CountUp } from "@/shared/components/count-up"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -34,21 +35,30 @@ export async function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/dogs"
-              className={cn(buttonVariants({ size: "sm" }))}
+              className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
             >
-              🐶 입양 대기 보기
+              <BrandIcon name="dog" size={18} decorative />
+              입양 대기 보기
             </Link>
             <Link
               href="/volunteer"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-1.5"
+              )}
             >
-              🙌 봉사 신청
+              <BrandIcon name="volunteer" size={18} decorative />
+              봉사 신청
             </Link>
             <Link
               href="/donate"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-1.5"
+              )}
             >
-              🧡 후원하기
+              <BrandIcon name="heart" size={18} decorative />
+              후원하기
             </Link>
           </div>
         </div>
@@ -61,19 +71,19 @@ export async function Footer() {
             label="누적 구조"
             value={stats.rescued}
             suffix="마리"
-            emoji="🧡"
+            icon="heart"
           />
           <StatItem
             label="입양 완료"
             value={stats.adopted}
             suffix="마리"
-            emoji="🏡"
+            icon="adopted"
           />
           <StatItem
             label="누적 봉사자"
             value={stats.volunteers}
             suffix="명"
-            emoji="🙌"
+            icon="volunteer"
             fallbackText="모집 중"
           />
         </div>
@@ -197,8 +207,9 @@ export async function Footer() {
         <div className="mt-10 rounded-xl border border-primary/30 bg-primary/5 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-                🧡 계좌 후원
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-primary">
+                <BrandIcon name="heart" size={16} decorative />
+                계좌 후원
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
                 {d.bankName}{" "}
@@ -276,20 +287,20 @@ function StatItem({
   label,
   value,
   suffix,
-  emoji,
+  icon,
   fallbackText,
 }: {
   label: string
   value: number
   suffix: string
-  emoji: string
+  icon: BrandIconName
   fallbackText?: string
 }) {
   const showFallback = value === 0 && !!fallbackText
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
-        <span className="mr-1">{emoji}</span>
+      <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
+        <BrandIcon name={icon} size={18} decorative />
         {label}
       </p>
       {showFallback ? (

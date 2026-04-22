@@ -3,19 +3,20 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
 import { cn } from "@/shared/lib/utils"
 
 interface CtaItem {
   label: string
-  emoji: string
+  icon: BrandIconName
   href: string
   primary?: boolean
 }
 
 const ITEMS: CtaItem[] = [
-  { label: "입양 문의", emoji: "🐾", href: "/adopt", primary: true },
-  { label: "봉사 신청", emoji: "🙌", href: "/volunteer" },
-  { label: "후원하기", emoji: "🧡", href: "/donate" },
+  { label: "입양 문의", icon: "paw", href: "/adopt", primary: true },
+  { label: "봉사 신청", icon: "volunteer", href: "/volunteer" },
+  { label: "후원하기", icon: "heart", href: "/donate" },
 ]
 
 /**
@@ -46,9 +47,7 @@ export function MobileCtaBar() {
                   : "text-foreground/80 hover:bg-secondary"
               )}
             >
-              <span className="text-base leading-none" aria-hidden>
-                {item.emoji}
-              </span>
+              <BrandIcon name={item.icon} size={22} decorative />
               <span>{item.label}</span>
             </Link>
           </li>

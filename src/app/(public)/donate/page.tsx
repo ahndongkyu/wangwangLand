@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
 
@@ -29,11 +30,15 @@ export default function DonatePage() {
           후원금은 이렇게 쓰여요
         </h2>
         <ul className="grid gap-3 md:grid-cols-2">
-          <UsageItem emoji="🍖" title="사료 · 간식" desc="아이들의 한 끼" />
-          <UsageItem emoji="🏥" title="의료비" desc="예방 접종, 치료, 수술" />
-          <UsageItem emoji="🏠" title="보호 환경" desc="시설 유지 및 개선" />
+          <UsageItem icon="food-bowl" title="사료 · 간식" desc="아이들의 한 끼" />
+          <UsageItem icon="health" title="의료비" desc="예방 접종, 치료, 수술" />
           <UsageItem
-            emoji="🧡"
+            icon="home-shelter"
+            title="보호 환경"
+            desc="시설 유지 및 개선"
+          />
+          <UsageItem
+            icon="heart"
             title="구조 활동"
             desc="버려진 아이들을 찾아가는 비용"
           />
@@ -66,7 +71,10 @@ export default function DonatePage() {
         </div>
 
         <div className="mt-5 rounded-lg bg-background/70 p-4 text-sm text-foreground/90">
-          <p className="font-semibold text-foreground">🧡 정기 후원 안내</p>
+          <p className="flex items-center gap-1.5 font-semibold text-foreground">
+            <BrandIcon name="heart" size={20} decorative />
+            정기 후원 안내
+          </p>
           <p className="mt-1.5 leading-relaxed text-muted-foreground">
             월 <span className="font-semibold text-foreground">
               {d.regularMinimum.toLocaleString()}원
@@ -109,17 +117,17 @@ export default function DonatePage() {
 }
 
 function UsageItem({
-  emoji,
+  icon,
   title,
   desc,
 }: {
-  emoji: string
+  icon: BrandIconName
   title: string
   desc: string
 }) {
   return (
     <li className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
-      <span className="text-2xl">{emoji}</span>
+      <BrandIcon name={icon} size={36} decorative />
       <div>
         <p className="font-semibold text-foreground">{title}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>

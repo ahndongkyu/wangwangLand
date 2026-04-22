@@ -5,6 +5,10 @@ import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogs } from "@/features/dogs"
 import { listNotices } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
+import {
+  BrandIcon,
+  type BrandIconName,
+} from "@/shared/components/brand-icon"
 import { CountUp } from "@/shared/components/count-up"
 import {
   HeroCarousel,
@@ -103,28 +107,28 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <CounterCard
-              emoji="🧡"
+              icon="heart"
               label="누적 구조"
               value={stats.rescued}
               suffix="마리"
               href="/dogs?status=전체"
             />
             <CounterCard
-              emoji="🏠"
+              icon="home-shelter"
               label="현재 보호 중"
               value={stats.sheltered}
               suffix="마리"
               href="/dogs"
             />
             <CounterCard
-              emoji="🏡"
+              icon="adopted"
               label="입양 완료"
               value={stats.adopted}
               suffix="마리"
               href="/dogs?status=입양완료"
             />
             <CounterCard
-              emoji="🙌"
+              icon="volunteer"
               label="누적 봉사자"
               value={stats.volunteers}
               suffix="명"
@@ -206,8 +210,9 @@ export default async function HomePage() {
           <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  📢 최근 소식
+                <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
+                  <BrandIcon name="notification" size={28} decorative />
+                  최근 소식
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
                   왕왕랜드의 최신 안내·이벤트입니다.
@@ -327,14 +332,14 @@ export default async function HomePage() {
 }
 
 function CounterCard({
-  emoji,
+  icon,
   label,
   value,
   suffix,
   href,
   fallbackText,
 }: {
-  emoji: string
+  icon: BrandIconName
   label: string
   value: number
   suffix: string
@@ -348,7 +353,9 @@ function CounterCard({
       href={href}
       className="group rounded-xl border border-border bg-card p-6 text-center transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
     >
-      <p className="text-3xl md:text-4xl">{emoji}</p>
+      <div className="flex justify-center">
+        <BrandIcon name={icon} size={48} decorative />
+      </div>
       <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
