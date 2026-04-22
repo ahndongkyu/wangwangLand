@@ -9,6 +9,34 @@ export interface AdminMutationResult {
   error?: string
 }
 
+/** 어드민 이름 변경 (최고관리자만 실행 가능 — RLS 로 통제). */
+export async function updateAdminName(
+  id: string,
+  name: string
+): Promise<AdminMutationResult> {
+  const trimmed = name.trim()
+  if (trimmed.length < 2) {
+    return { error: "이름은 2자 이상 입력해주세요." }
+  }
+  if (trimmed.length > 50) {
+    return { error: "이름은 50자 이하로 입력해주세요." }
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("admins")
+    .update({ name: trimmed })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[updateAdminName]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/admins")
+  return {}
+}
+
 /**
  * 어드민 역할 변경 (admin ↔ editor).
  * RLS 및 ensure_at_least_one_top_admin() 트리거가 추가 검증.

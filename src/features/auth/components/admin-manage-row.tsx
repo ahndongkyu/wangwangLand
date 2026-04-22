@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { Trash2 } from "lucide-react"
+import { useRef, useState, useTransition } from "react"
+import { Check, Pencil, Trash2, X } from "lucide-react"
 
-import { removeAdmin, updateAdminRole } from "../api/mutations"
+import { removeAdmin, updateAdminName, updateAdminRole } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
 import { cn } from "@/shared/lib/utils"
 import type { Admin, AdminRole } from "@/shared/types/database"
 
@@ -22,9 +23,42 @@ const ROLE_LABEL: Record<AdminRole, string> = {
 export function AdminManageRow({ admin, currentAdminId }: Props) {
   const [pending, startTransition] = useTransition()
   const [role, setRole] = useState<AdminRole>(admin.role)
+  const [name, setName] = useState(admin.name)
+  const [editingName, setEditingName] = useState(false)
+  const [draftName, setDraftName] = useState(admin.name)
   const [error, setError] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const isSelf = admin.id === currentAdminId
+
+  function beginNameEdit() {
+    setDraftName(name)
+    setEditingName(true)
+    // input mount 후 focus
+    setTimeout(() => inputRef.current?.select(), 0)
+  }
+  function cancelNameEdit() {
+    setEditingName(false)
+    setDraftName(name)
+    setError(null)
+  }
+  function commitNameEdit() {
+    const trimmed = draftName.trim()
+    if (trimmed === name) {
+      setEditingName(false)
+      return
+    }
+    setError(null)
+    startTransition(async () => {
+      const result = await updateAdminName(admin.id, trimmed)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setName(trimmed)
+        setEditingName(false)
+      }
+    })
+  }
 
   function handleRoleChange(next: AdminRole) {
     if (next === role) return
@@ -60,10 +94,62 @@ export function AdminManageRow({ admin, currentAdminId }: Props) {
 
   return (
     <tr className="border-b border-border last:border-0">
-      <td className="px-4 py-3 font-medium">
-        {admin.name}
-        {isSelf && (
-          <span className="ml-1.5 text-xs text-muted-foreground">(나)</span>
+      <td className="px-4 py-3">
+        {editingName ? (
+          <div className="flex items-center gap-1">
+            <Input
+              ref={inputRef}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitNameEdit()
+                else if (e.key === "Escape") cancelNameEdit()
+              }}
+              disabled={pending}
+              minLength={2}
+              maxLength={50}
+              className="h-8 text-sm"
+              aria-label="이름"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={commitNameEdit}
+              disabled={pending}
+              aria-label="저장"
+            >
+              <Check className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={cancelNameEdit}
+              disabled={pending}
+              aria-label="취소"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium">{name}</span>
+            {isSelf && (
+              <span className="text-xs text-muted-foreground">(나)</span>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={beginNameEdit}
+              disabled={pending}
+              aria-label="이름 수정"
+              className="size-7 p-0 opacity-60 hover:opacity-100"
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+          </div>
         )}
       </td>
       <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
