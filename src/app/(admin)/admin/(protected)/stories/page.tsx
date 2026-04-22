@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { getCurrentAdmin } from "@/features/auth"
 import { StoryDeleteButton, listAdoptionStories } from "@/features/stories"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
@@ -21,12 +22,16 @@ export default async function AdminStoriesPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { stories, total } = await listAdoptionStories({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-    includeDrafts: true,
-  })
+  const [me, { stories, total }] = await Promise.all([
+    getCurrentAdmin(),
+    listAdoptionStories({
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+      includeDrafts: true,
+    }),
+  ])
+  const canDelete = me?.role === "admin"
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -132,7 +137,9 @@ export default async function AdminStoriesPage({
                           >
                             수정
                           </Link>
-                          <StoryDeleteButton id={s.id} title={s.title} />
+                          {canDelete && (
+                            <StoryDeleteButton id={s.id} title={s.title} />
+                          )}
                         </div>
                       </td>
                     </tr>

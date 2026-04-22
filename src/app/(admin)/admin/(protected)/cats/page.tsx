@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { getCurrentAdmin } from "@/features/auth"
 import { CatDeleteButton, listCatsWithCount } from "@/features/cats"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
@@ -22,12 +23,16 @@ export default async function AdminCatsPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { cats, total } = await listCatsWithCount({
-    status: "전체",
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [me, { cats, total }] = await Promise.all([
+    getCurrentAdmin(),
+    listCatsWithCount({
+      status: "전체",
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+  ])
+  const canDelete = me?.role === "admin"
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const startIdx = offset + 1
@@ -128,7 +133,9 @@ export default async function AdminCatsPage({
                           >
                             수정
                           </Link>
-                          <CatDeleteButton id={cat.id} name={cat.name} />
+                          {canDelete && (
+                            <CatDeleteButton id={cat.id} name={cat.name} />
+                          )}
                         </div>
                       </td>
                     </tr>

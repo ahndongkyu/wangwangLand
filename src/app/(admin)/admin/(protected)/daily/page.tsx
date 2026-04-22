@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { getCurrentAdmin } from "@/features/auth"
 import { DailyDeleteButton, listDailyPosts } from "@/features/daily"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
@@ -21,11 +22,15 @@ export default async function AdminDailyPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { posts, total } = await listDailyPosts({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [me, { posts, total }] = await Promise.all([
+    getCurrentAdmin(),
+    listDailyPosts({
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+  ])
+  const canDelete = me?.role === "admin"
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -114,7 +119,9 @@ export default async function AdminDailyPage({
                           >
                             수정
                           </Link>
-                          <DailyDeleteButton id={p.id} title={p.title} />
+                          {canDelete && (
+                            <DailyDeleteButton id={p.id} title={p.title} />
+                          )}
                         </div>
                       </td>
                     </tr>

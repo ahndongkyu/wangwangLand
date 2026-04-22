@@ -1,2 +1,4 @@
 export { login, logout } from "./api/actions"
 export { getCurrentAdmin } from "./api/queries"
+export { updateAdminRole, removeAdmin } from "./api/mutations"
+export { AdminManageRow } from "./components/admin-manage-row"

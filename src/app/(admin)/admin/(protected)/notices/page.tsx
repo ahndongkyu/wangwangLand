@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Pin } from "lucide-react"
 
+import { getCurrentAdmin } from "@/features/auth"
 import { listNotices, NoticeDeleteButton } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
@@ -22,12 +23,16 @@ export default async function AdminNoticesPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { notices, total } = await listNotices({
-    includeDrafts: true,
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [me, { notices, total }] = await Promise.all([
+    getCurrentAdmin(),
+    listNotices({
+      includeDrafts: true,
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+  ])
+  const canDelete = me?.role === "admin"
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -109,7 +114,9 @@ export default async function AdminNoticesPage({
                         >
                           수정
                         </Link>
-                        <NoticeDeleteButton id={n.id} title={n.title} />
+                        {canDelete && (
+                          <NoticeDeleteButton id={n.id} title={n.title} />
+                        )}
                       </div>
                     </td>
                   </tr>

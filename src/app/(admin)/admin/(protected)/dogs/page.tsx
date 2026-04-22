@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { getCurrentAdmin } from "@/features/auth"
 import { DogDeleteButton, listDogsWithCount } from "@/features/dogs"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
@@ -22,12 +23,16 @@ export default async function AdminDogsPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { dogs, total } = await listDogsWithCount({
-    status: "전체",
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [me, { dogs, total }] = await Promise.all([
+    getCurrentAdmin(),
+    listDogsWithCount({
+      status: "전체",
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+  ])
+  const canDelete = me?.role === "admin"
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const startIdx = offset + 1
@@ -134,7 +139,9 @@ export default async function AdminDogsPage({
                           >
                             수정
                           </Link>
-                          <DogDeleteButton id={dog.id} name={dog.name} />
+                          {canDelete && (
+                            <DogDeleteButton id={dog.id} name={dog.name} />
+                          )}
                         </div>
                       </td>
                     </tr>
