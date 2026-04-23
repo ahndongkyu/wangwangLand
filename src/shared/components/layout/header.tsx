@@ -9,6 +9,8 @@ import { useState } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
+import { UserMenu } from "@/features/members/components/user-menu"
+import type { Profile } from "@/features/members/api/queries"
 import {
   BrandIcon,
   type BrandIconName,
@@ -33,9 +35,10 @@ import {
 
 interface HeaderProps {
   recentNotices?: RecentNoticeMeta[]
+  profile?: Profile | null
 }
 
-export function Header({ recentNotices = [] }: HeaderProps) {
+export function Header({ recentNotices = [], profile }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -138,10 +141,22 @@ export function Header({ recentNotices = [] }: HeaderProps) {
             )}
           </button>
 
+          {/* 로그인 / 유저메뉴 */}
+          {profile ? (
+            <UserMenu profile={profile} />
+          ) : (
+            <Link
+              href="/login"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}
+            >
+              로그인
+            </Link>
+          )}
+
           {/* CTA — 모바일에서도 항상 노출 (sm:inline-flex 제거) */}
           <Link
             href="/adopt"
-            className={cn(buttonVariants({ size: "sm" }), "whitespace-nowrap")}
+            className={cn(buttonVariants({ size: "sm" }), "whitespace-nowrap hidden sm:inline-flex")}
           >
             입양 문의
           </Link>
