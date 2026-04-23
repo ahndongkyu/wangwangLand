@@ -235,16 +235,16 @@ export default async function HomePage() {
                 >
                   <Link
                     href={`/notice/${n.id}`}
-                    className="flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-secondary/40"
+                    className="grid grid-cols-[16px_1fr_auto] items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40"
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="flex items-center justify-center">
                       {n.is_pinned && (
-                        <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
+                        <Pin className="size-3.5 text-primary" aria-label="상단고정" />
                       )}
-                      <span className="truncate font-medium text-foreground">
-                        {n.title}
-                      </span>
-                    </div>
+                    </span>
+                    <span className="truncate font-medium text-foreground">
+                      {n.title}
+                    </span>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {n.published_at &&
                         new Date(n.published_at).toLocaleDateString("ko-KR")}
