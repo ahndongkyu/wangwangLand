@@ -12,13 +12,14 @@ export interface Profile {
 
 export async function getCurrentProfile(): Promise<Profile | null> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  // getSession()은 쿠키만 읽어 네트워크 호출 없음 → 동시 refresh 충돌 방지
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return null
 
   const { data } = await supabase
     .from("profiles")
     .select("id, nickname, avatar_url, role, status, is_banned, created_at")
-    .eq("id", user.id)
+    .eq("id", session.user.id)
     .maybeSingle()
 
   return data as Profile | null
