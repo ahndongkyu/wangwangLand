@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -15,7 +15,6 @@ export interface HeroSlideCTA {
 }
 
 export interface HeroSlide {
-  /** public/ 기준 경로 또는 절대 URL */
   image: string
   badge?: string
   title: string
@@ -26,9 +25,7 @@ export interface HeroSlide {
 
 interface Props {
   slides: HeroSlide[]
-  /** 자동 슬라이드 간격 (ms). 기본 5000 */
   interval?: number
-  /** 자동 재생 초기 상태. 기본 true */
   autoPlayInitial?: boolean
 }
 
@@ -43,26 +40,16 @@ export function HeroCarousel({
   const count = slides.length
 
   const goTo = useCallback(
-    (next: number) => {
-      setIndex(((next % count) + count) % count)
-    },
+    (next: number) => setIndex(((next % count) + count) % count),
     [count]
   )
-
-  const next = useCallback(() => {
-    setIndex((i) => (i + 1) % count)
-  }, [count])
-
-  const prev = useCallback(() => {
-    setIndex((i) => (i - 1 + count) % count)
-  }, [count])
+  const next = useCallback(() => setIndex((i) => (i + 1) % count), [count])
+  const prev = useCallback(() => setIndex((i) => (i - 1 + count) % count), [count])
 
   // 자동 재생
   useEffect(() => {
     if (!playing || count < 2) return
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % count)
-    }, interval)
+    const id = window.setInterval(() => setIndex((i) => (i + 1) % count), interval)
     return () => window.clearInterval(id)
   }, [playing, count, interval])
 
@@ -81,12 +68,8 @@ export function HeroCarousel({
   }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return
-    const endX = e.changedTouches[0].clientX
-    const dx = endX - touchStartX.current
-    if (Math.abs(dx) > 40) {
-      if (dx < 0) next()
-      else prev()
-    }
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    if (Math.abs(dx) > 40) dx < 0 ? next() : prev()
     touchStartX.current = null
   }
 
@@ -97,9 +80,12 @@ export function HeroCarousel({
       className="relative overflow-hidden"
       aria-roledescription="carousel"
       aria-label="메인 배너"
+      onMouseEnter={() => setPlaying(false)}
+      onMouseLeave={() => setPlaying(true)}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {/* 슬라이드 트랙 */}
       <div
         className="flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${index * 100}%)` }}
@@ -111,55 +97,53 @@ export function HeroCarousel({
 
       {count > 1 && (
         <>
+          {/* 화살표 — 모바일 숨김 */}
           <button
             type="button"
             onClick={prev}
             aria-label="이전 슬라이드"
-            className="absolute left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-background/70 p-2 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background/90 md:left-4"
+            className={cn(
+              "absolute left-6 z-20 hidden md:flex",
+              "top-[55%] -translate-y-1/2",
+              "size-11 items-center justify-center rounded-2xl",
+              "bg-white/70 shadow-md backdrop-blur-sm",
+              "transition-transform duration-150 hover:scale-110 hover:bg-white/90"
+            )}
           >
-            <ChevronLeft className="size-5" />
+            <ChevronLeft className="size-5 stroke-[1.5] text-foreground" />
           </button>
           <button
             type="button"
             onClick={next}
             aria-label="다음 슬라이드"
-            className="absolute right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-background/70 p-2 text-foreground shadow-md backdrop-blur-sm transition hover:bg-background/90 md:right-4"
+            className={cn(
+              "absolute right-6 z-20 hidden md:flex",
+              "top-[55%] -translate-y-1/2",
+              "size-11 items-center justify-center rounded-2xl",
+              "bg-white/70 shadow-md backdrop-blur-sm",
+              "transition-transform duration-150 hover:scale-110 hover:bg-white/90"
+            )}
           >
-            <ChevronRight className="size-5" />
+            <ChevronRight className="size-5 stroke-[1.5] text-foreground" />
           </button>
 
-          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full bg-background/70 px-3 py-1.5 shadow-md backdrop-blur-sm">
-            <div className="flex items-center gap-1.5">
-              {slides.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => goTo(i)}
-                  aria-label={`${i + 1}번째 슬라이드로 이동`}
-                  aria-current={i === index}
-                  className={cn(
-                    "h-2 rounded-full transition-all",
-                    i === index
-                      ? "w-6 bg-primary"
-                      : "w-2 bg-foreground/40 hover:bg-foreground/60"
-                  )}
-                />
-              ))}
-            </div>
-            <span className="h-3 w-px bg-foreground/20" />
-            <button
-              type="button"
-              onClick={() => setPlaying((p) => !p)}
-              aria-label={playing ? "자동 슬라이드 정지" : "자동 슬라이드 재생"}
-              aria-pressed={playing}
-              className="text-foreground/80 hover:text-foreground"
-            >
-              {playing ? (
-                <Pause className="size-4" />
-              ) : (
-                <Play className="size-4" />
-              )}
-            </button>
+          {/* 인디케이터 도트 */}
+          <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`${i + 1}번째 슬라이드로 이동`}
+                aria-current={i === index}
+                className={cn(
+                  "rounded-full transition-all duration-300",
+                  i === index
+                    ? "h-2 w-6 bg-white shadow-sm"
+                    : "size-2 bg-white/50 hover:bg-white/75"
+                )}
+              />
+            ))}
           </div>
         </>
       )}
@@ -207,14 +191,7 @@ function SlideView({ slide, active }: { slide: HeroSlide; active: boolean }) {
   )
 }
 
-function CTALink({
-  cta,
-  variant,
-}: {
-  cta: HeroSlideCTA
-  variant: "primary" | "outline"
-}) {
-  // 히어로 CTA 는 강조용. lg 사이즈 + 추가 가로 패딩 + 솔리드는 그림자.
+function CTALink({ cta, variant }: { cta: HeroSlideCTA; variant: "primary" | "outline" }) {
   const className = cn(
     buttonVariants({
       size: "lg",
@@ -229,20 +206,11 @@ function CTALink({
 
   if (cta.external) {
     return (
-      <a
-        href={cta.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-      >
+      <a href={cta.href} target="_blank" rel="noopener noreferrer" className={className}>
         {cta.label}
       </a>
     )
   }
 
-  return (
-    <Link href={cta.href} className={className}>
-      {cta.label}
-    </Link>
-  )
+  return <Link href={cta.href} className={className}>{cta.label}</Link>
 }
