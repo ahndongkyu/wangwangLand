@@ -1,6 +1,6 @@
 "use client"
 
-import { BrandIcon } from "@/shared/components/brand-icon"
+import { Moon, Sun } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { cn } from "@/shared/lib/utils"
 
@@ -19,12 +19,11 @@ export function ThemeToggle({ className }: { className?: string }) {
         className
       )}
     >
-      {/* 낮 → 자는 강아지(밤으로 전환) / 밤 → 행복한 강아지(낮으로 전환) */}
-      <BrandIcon
-        name={isDark ? "dog-happy" : "dog-sleep"}
-        size={22}
-        decorative
-      />
+      {isDark ? (
+        <Sun className="size-5" />
+      ) : (
+        <Moon className="size-5" />
+      )}
     </button>
   )
 }
