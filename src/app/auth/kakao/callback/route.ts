@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { createServerClient } from "@supabase/ssr"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies"
 
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 const KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me"
@@ -48,39 +48,31 @@ export async function GET(request: Request) {
 
     const kakaoUser = await userRes.json()
     const kakaoId = String(kakaoUser.id)
-    const kakaoNickname: string =
-      kakaoUser.kakao_account?.profile?.nickname ?? ""
-    const kakaoAvatar: string | null =
-      kakaoUser.kakao_account?.profile?.profile_image_url ?? null
+    const kakaoNickname: string = kakaoUser.kakao_account?.profile?.nickname ?? ""
+    const kakaoAvatar: string | null = kakaoUser.kakao_account?.profile?.profile_image_url ?? null
 
-    // 3. Supabase 사용자 upsert (admin 클라이언트)
+    // 3. Supabase 사용자 확인 (이메일로 직접 조회 — listUsers 페이징 버그 방지)
     const admin = createAdminClient()
     const fakeEmail = `kakao_${kakaoId}@kakao.wangwangland.internal`
-
-    // 기존 사용자 확인
-    const { data: existing } = await admin.auth.admin.listUsers()
-    const existingUser = existing?.users?.find(
-      (u) => u.email === fakeEmail
-    )
 
     let userId: string
     let isNewUser = false
 
-    if (existingUser) {
-      userId = existingUser.id
+    const { data: existingUser } = await admin.auth.admin.getUserByEmail(fakeEmail)
+
+    if (existingUser?.user) {
+      userId = existingUser.user.id
     } else {
       isNewUser = true
-      // 신규 사용자 생성
-      const { data: created, error: createErr } =
-        await admin.auth.admin.createUser({
-          email: fakeEmail,
-          email_confirm: true,
-          user_metadata: {
-            kakao_id: kakaoId,
-            full_name: kakaoNickname,
-            avatar_url: kakaoAvatar,
-          },
-        })
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email: fakeEmail,
+        email_confirm: true,
+        user_metadata: {
+          kakao_id: kakaoId,
+          full_name: kakaoNickname,
+          avatar_url: kakaoAvatar,
+        },
+      })
 
       if (createErr || !created.user) {
         console.error("사용자 생성 실패", createErr)
@@ -90,30 +82,28 @@ export async function GET(request: Request) {
       userId = created.user.id
     }
 
-    // 4. 매직링크로 세션 생성
-    const { data: linkData, error: linkErr } =
-      await admin.auth.admin.generateLink({
-        type: "magiclink",
-        email: fakeEmail,
-      })
+    // 4. 매직링크로 세션 토큰 발급
+    const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email: fakeEmail,
+    })
 
     if (linkErr || !linkData?.properties?.hashed_token) {
       console.error("링크 생성 실패", linkErr)
       return NextResponse.redirect(new URL("/login?error=1", origin))
     }
 
-    // 5. 토큰을 세션으로 교환 (일반 클라이언트)
-    const cookieStore = await cookies()
+    // 5. verifyOtp 후 쿠키를 캡처해서 redirect 응답에 직접 붙임
+    const cookiesToSet: Array<{ name: string; value: string; options: Partial<ResponseCookie> }> = []
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() { return cookieStore.getAll() },
+          getAll() { return [] },
           setAll(list) {
-            list.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
+            cookiesToSet.push(...list)
           },
         },
       }
@@ -129,34 +119,34 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/login?error=1", origin))
     }
 
-    // 6. 프로필 확인 → 리다이렉트
-    const { data: profile } = await supabase
+    // 6. 프로필 확인
+    const { data: profile } = await admin
       .from("profiles")
       .select("nickname, status, is_banned")
       .eq("id", userId)
       .maybeSingle()
 
-    // 밴된 유저 차단
+    // 리다이렉트 목적지 결정
+    let redirectPath = "/"
     if (profile?.is_banned) {
-      await supabase.auth.signOut()
-      return NextResponse.redirect(new URL("/login?error=banned", origin))
+      redirectPath = "/login?error=banned"
+    } else if (isNewUser) {
+      redirectPath = kakaoNickname
+        ? `/onboarding?name=${encodeURIComponent(kakaoNickname)}`
+        : "/onboarding"
+    } else if (!profile || profile.status === "pending") {
+      redirectPath = "/pending"
+    } else if (profile.status === "rejected") {
+      redirectPath = "/rejected"
     }
 
-    // 신규 가입 → 닉네임 설정 온보딩 (카카오 이름을 기본값으로 전달)
-    if (isNewUser) {
-      const onboardingUrl = new URL("/onboarding", origin)
-      if (kakaoNickname) onboardingUrl.searchParams.set("name", kakaoNickname)
-      return NextResponse.redirect(onboardingUrl)
-    }
+    // 7. 쿠키를 redirect 응답에 직접 붙여서 반환
+    const response = NextResponse.redirect(new URL(redirectPath, origin))
+    cookiesToSet.forEach(({ name, value, options }) => {
+      response.cookies.set({ name, value, ...options })
+    })
 
-    if (!profile || profile.status === "pending") {
-      return NextResponse.redirect(new URL("/pending", origin))
-    }
-    if (profile.status === "rejected") {
-      return NextResponse.redirect(new URL("/rejected", origin))
-    }
-
-    return NextResponse.redirect(new URL("/", origin))
+    return response
   } catch (err) {
     console.error("카카오 콜백 오류", err)
     return NextResponse.redirect(new URL("/login?error=1", origin))
