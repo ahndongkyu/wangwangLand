@@ -5,16 +5,17 @@ import { OnboardingForm } from "@/features/members"
 
 export const metadata: Metadata = { title: "닉네임 설정" }
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ name?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
 
-  // 카카오 닉네임을 기본값으로
-  const defaultNickname =
-    (user.user_metadata?.full_name as string | undefined) ??
-    (user.user_metadata?.name as string | undefined) ??
-    ""
+  const { name } = await searchParams
+  const defaultNickname = name ?? (user.user_metadata?.full_name as string | undefined) ?? ""
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-20">

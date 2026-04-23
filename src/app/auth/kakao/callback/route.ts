@@ -64,10 +64,12 @@ export async function GET(request: Request) {
     )
 
     let userId: string
+    let isNewUser = false
 
     if (existingUser) {
       userId = existingUser.id
     } else {
+      isNewUser = true
       // 신규 사용자 생성
       const { data: created, error: createErr } =
         await admin.auth.admin.createUser({
@@ -140,15 +142,11 @@ export async function GET(request: Request) {
       return NextResponse.redirect(new URL("/login?error=banned", origin))
     }
 
-    if (!profile || profile.nickname === "새 회원") {
-      // 신규 사용자면 카카오 닉네임을 기본값으로 프로필 업데이트
-      if (kakaoNickname) {
-        await supabase
-          .from("profiles")
-          .update({ avatar_url: kakaoAvatar })
-          .eq("id", userId)
-      }
-      return NextResponse.redirect(new URL("/onboarding", origin))
+    // 신규 가입 → 닉네임 설정 온보딩 (카카오 이름을 기본값으로 전달)
+    if (isNewUser) {
+      const onboardingUrl = new URL("/onboarding", origin)
+      if (kakaoNickname) onboardingUrl.searchParams.set("name", kakaoNickname)
+      return NextResponse.redirect(onboardingUrl)
     }
 
     if (profile.status === "pending") {
