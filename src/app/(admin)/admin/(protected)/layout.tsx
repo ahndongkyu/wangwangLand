@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { getCurrentAdmin, logout } from "@/features/auth"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { Button } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 
@@ -65,6 +66,7 @@ export default async function AdminProtectedLayout({
                 {ROLE_LABEL[admin.role] ?? admin.role}
               </span>
             </span>
+            <ThemeToggle />
             <form action={logout}>
               <Button type="submit" variant="outline" size="sm">
                 로그아웃

@@ -5,6 +5,8 @@ export type CatSort = "latest" | "name"
 
 export interface ListCatsOptions {
   status?: DogStatus | "전체"
+  gender?: "수컷" | "암컷" | "미상" | "전체"
+  neutered?: "true" | "false" | "전체"
   sort?: CatSort
   query?: string
   limit?: number
@@ -56,6 +58,8 @@ export interface PaginatedCats {
 
 export async function listCatsWithCount({
   status,
+  gender,
+  neutered,
   sort = "latest",
   query: searchQuery,
   limit = 20,
@@ -78,8 +82,17 @@ export async function listCatsWithCount({
   if (status && status !== "전체") {
     query = query.eq("status", status)
   }
+  if (gender && gender !== "전체") {
+    query = query.eq("gender", gender)
+  }
+  if (neutered === "true") {
+    query = query.eq("neutered", true)
+  } else if (neutered === "false") {
+    query = query.eq("neutered", false)
+  }
   if (searchQuery && searchQuery.trim()) {
-    query = query.ilike("name", `%${searchQuery.trim()}%`)
+    const q = searchQuery.trim()
+    query = query.or(`name.ilike.%${q}%,breed.ilike.%${q}%`)
   }
 
   const { data, count, error } = await query

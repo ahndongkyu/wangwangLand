@@ -106,39 +106,40 @@
 }
 
 .dark {
-  --brand-cream: oklch(0.22 0.015 60);
-  --brand-ivory: oklch(0.27 0.018 60);
-  --brand-coral: oklch(0.78 0.11 50);
-  --brand-coral-hover: oklch(0.82 0.12 48);
-  --brand-sage: oklch(0.65 0.04 130);
-  --brand-brown: oklch(0.95 0.01 82);
-  --brand-warm-gray: oklch(0.6 0.02 70);
+  /* Brand palette — warm dark (#1A1410 base) */
+  --brand-cream: oklch(0.134 0.022 55);      /* #1A1410 — page bg     */
+  --brand-ivory: oklch(0.180 0.025 55);      /* #241C15 — card        */
+  --brand-coral: oklch(0.762 0.120 48);      /* #F0A078 — CTA (밝게)  */
+  --brand-coral-hover: oklch(0.800 0.128 46);
+  --brand-sage: oklch(0.820 0.055 145);      /* #B8D4A8 — accent      */
+  --brand-brown: oklch(0.930 0.032 82);      /* #F5E8D0 — 제목        */
+  --brand-warm-gray: oklch(0.624 0.042 68);  /* #A89078 — 설명 라벨   */
 
   --background: var(--brand-cream);
   --foreground: var(--brand-brown);
   --card: var(--brand-ivory);
-  --card-foreground: var(--brand-brown);
-  --popover: var(--brand-ivory);
+  --card-foreground: oklch(0.882 0.035 80);  /* #E8D9C0 — 본문        */
+  --popover: oklch(0.220 0.027 55);          /* #2D221A — 드롭다운    */
   --popover-foreground: var(--brand-brown);
   --primary: var(--brand-coral);
-  --primary-foreground: oklch(0.15 0.01 60);
-  --secondary: oklch(0.32 0.02 60);
-  --secondary-foreground: var(--brand-brown);
-  --muted: oklch(0.32 0.02 60);
-  --muted-foreground: oklch(0.7 0.015 70);
+  --primary-foreground: oklch(0.134 0.022 55);
+  --secondary: oklch(0.220 0.027 55);        /* #2D221A — hover bg    */
+  --secondary-foreground: oklch(0.763 0.042 76); /* #C9B89A            */
+  --muted: oklch(0.220 0.027 55);
+  --muted-foreground: var(--brand-warm-gray);
   --accent: var(--brand-sage);
-  --accent-foreground: oklch(0.95 0.01 82);
+  --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(0.270 0.030 55);           /* #3A2E23 — 구분선      */
+  --input: oklch(0.300 0.030 55);
   --ring: var(--brand-coral);
   --sidebar: var(--brand-ivory);
   --sidebar-foreground: var(--brand-brown);
   --sidebar-primary: var(--brand-coral);
-  --sidebar-primary-foreground: oklch(0.15 0.01 60);
-  --sidebar-accent: oklch(0.32 0.02 60);
+  --sidebar-primary-foreground: oklch(0.134 0.022 55);
+  --sidebar-accent: oklch(0.220 0.027 55);
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: oklch(0.270 0.030 55);
   --sidebar-ring: var(--brand-coral);
 }
 
@@ -156,5 +157,18 @@
   }
   h1, h2, h3, h4 {
     @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* 어드민 테이블 행 — 호버 시 배경 살짝 밝게 + 왼쪽 포인트 라인 */
+  table tbody tr {
+    @apply transition-colors duration-150;
+  }
+  table tbody tr:hover {
+    @apply bg-secondary/70;
+  }
+  table tbody tr:hover td:first-child {
+    @apply border-l-2 border-l-primary/60;
   }
 }

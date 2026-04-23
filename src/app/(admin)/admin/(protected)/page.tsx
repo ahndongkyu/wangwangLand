@@ -5,7 +5,9 @@ import {
   listRecentApplications,
 } from "@/features/applications"
 import { countCatsByStatus } from "@/features/cats"
-import { countDogsByStatus } from "@/features/dogs"
+import { countDogsByStatus, getMonthlyRescueStats } from "@/features/dogs"
+import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
+import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { cn } from "@/shared/lib/utils"
@@ -67,26 +69,21 @@ export default async function AdminDashboardPage() {
   const thisMonth = monthRange(now)
   const prevMonth = monthRange(new Date(now.getFullYear(), now.getMonth() - 1, 15))
 
-  const [dogCounts, catCounts, appStats, recentApps] = await Promise.all([
-    countDogsByStatus(),
-    countCatsByStatus(),
-    getApplicationStats({
-      monthFrom: thisMonth.from,
-      monthTo: thisMonth.to,
-      prevMonthFrom: prevMonth.from,
-      prevMonthTo: prevMonth.to,
-    }),
-    listRecentApplications(6),
-  ])
+  const [dogCounts, catCounts, appStats, recentApps, monthlyStats] =
+    await Promise.all([
+      countDogsByStatus(),
+      countCatsByStatus(),
+      getApplicationStats({
+        monthFrom: thisMonth.from,
+        monthTo: thisMonth.to,
+        prevMonthFrom: prevMonth.from,
+        prevMonthTo: prevMonth.to,
+      }),
+      listRecentApplications(6),
+      getMonthlyRescueStats(6),
+    ])
 
-  const dogTotal =
-    dogCounts["보호중"] +
-    dogCounts["임시보호중"] +
-    dogCounts["입양완료"] +
-    dogCounts["무지개다리"]
-  const dogAdopted = dogCounts["입양완료"]
-  const dogAdoptionRate =
-    dogTotal > 0 ? Math.round((dogAdopted / dogTotal) * 100) : 0
+  const monthLabel = now.toLocaleDateString("ko-KR", { month: "long" })
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -95,7 +92,7 @@ export default async function AdminDashboardPage() {
           대시보드
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          왕왕랜드 운영 현황 — 오늘 기준{" "}
+          왕왕랜드 운영 현황 · 오늘 기준{" "}
           {now.toLocaleDateString("ko-KR", {
             year: "numeric",
             month: "long",
@@ -104,12 +101,12 @@ export default async function AdminDashboardPage() {
         </p>
       </header>
 
-      {/* 1. 이번 달 요약 */}
+      {/* 1. 이번 달 요약 — 전월 대비 명확하게 */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          📅 이번 달 요약
+          📅 {monthLabel} 신청 현황
         </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <MonthCard
             label="입양 신청"
             value={appStats.adoption.thisMonth}
@@ -123,20 +120,14 @@ export default async function AdminDashboardPage() {
             href="/admin/applications?type=volunteer"
           />
           <MonthCard
-            label="입양 완료 누적"
-            value={dogAdopted}
-            suffix={`/ ${dogTotal}마리`}
-            extra={<span className="text-xs text-primary">{dogAdoptionRate}%</span>}
-            href="/admin/dogs?status=입양완료"
-          />
-          <MonthCard
-            label="대기중인 신청"
+            label="대기 중인 신청"
             value={
               appStats.adoption.allTime["접수"] +
               appStats.volunteer.allTime["접수"]
             }
             href="/admin/applications?status=접수"
             highlight
+            suffix="건"
           />
         </div>
       </section>
@@ -169,8 +160,16 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
         {recentApps.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            아직 신청이 없습니다.
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-12 text-center">
+            <BrandIcon name="mail" size={40} decorative />
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                아직 신청이 없어요
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                신청이 들어오면 여기서 바로 확인할 수 있습니다.
+              </p>
+            </div>
           </div>
         ) : (
           <ul className="overflow-hidden rounded-lg border border-border bg-card">
@@ -214,50 +213,98 @@ export default async function AdminDashboardPage() {
         )}
       </section>
 
-      {/* 4. 동물 현황 */}
+      {/* 4. 동물 현황 (누적) */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          🐶 강아지 현황
+          🐶 강아지 현황 (누적)
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="보호중" value={dogCounts["보호중"]} />
-          <StatCard label="임시보호중" value={dogCounts["임시보호중"]} />
-          <StatCard label="입양완료" value={dogCounts["입양완료"]} />
-          <StatCard label="무지개다리" value={dogCounts["무지개다리"]} />
+          <StatCard label="보호중" value={dogCounts["보호중"]} href="/admin/dogs?status=보호중" />
+          <StatCard label="임시보호중" value={dogCounts["임시보호중"]} href="/admin/dogs?status=임시보호중" />
+          <StatCard label="입양완료" value={dogCounts["입양완료"]} href="/admin/dogs?status=입양완료" />
+          <StatCard label="무지개다리" value={dogCounts["무지개다리"]} href="/admin/dogs?status=무지개다리" />
         </div>
       </section>
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          🐱 고양이 현황
+          🐱 고양이 현황 (누적)
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="보호중" value={catCounts["보호중"]} />
-          <StatCard label="임시보호중" value={catCounts["임시보호중"]} />
-          <StatCard label="입양완료" value={catCounts["입양완료"]} />
-          <StatCard label="무지개다리" value={catCounts["무지개다리"]} />
+          <StatCard label="보호중" value={catCounts["보호중"]} href="/admin/cats?status=보호중" />
+          <StatCard label="임시보호중" value={catCounts["임시보호중"]} href="/admin/cats?status=임시보호중" />
+          <StatCard label="입양완료" value={catCounts["입양완료"]} href="/admin/cats?status=입양완료" />
+          <StatCard label="무지개다리" value={catCounts["무지개다리"]} href="/admin/cats?status=무지개다리" />
         </div>
       </section>
 
-      {/* 5. 빠른 작업 */}
+      {/* 5. 월별 구조 추이 차트 */}
+      <section className="mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between text-sm font-semibold text-foreground">
+              <span>📈 월별 구조 추이 (최근 6개월)</span>
+              <Link
+                href="/admin/dogs"
+                className="text-xs font-normal text-primary hover:underline"
+              >
+                강아지 목록 →
+              </Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminTrendChart data={monthlyStats} />
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* 6. 빠른 작업 */}
       <section>
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
           ⚡ 빠른 작업
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <QuickLink href="/admin/dogs/new" label="강아지 등록" />
-          <QuickLink href="/admin/cats/new" label="고양이 등록" />
-          <QuickLink href="/admin/notices/new" label="공지 작성" />
-          <QuickLink href="/admin/daily/new" label="일상 작성" />
+          <QuickLink
+            href="/admin/dogs/new"
+            icon="dog"
+            label="강아지 등록"
+            desc="신규 보호 시작"
+          />
+          <QuickLink
+            href="/admin/cats/new"
+            icon="paw"
+            label="고양이 등록"
+            desc="신규 보호 시작"
+          />
+          <QuickLink
+            href="/admin/notices/new"
+            icon="notification"
+            label="공지 작성"
+            desc="새 소식 게시"
+          />
+          <QuickLink
+            href="/admin/daily/new"
+            icon="camera"
+            label="일상 작성"
+            desc="활동 기록"
+          />
         </div>
       </section>
     </div>
   )
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
+function StatCard({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: number
+  href?: string
+}) {
+  const content = (
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-xs font-medium text-muted-foreground">
           {label}
@@ -267,6 +314,13 @@ function StatCard({ label, value }: { label: string; value: number }) {
         <p className="text-2xl font-bold text-foreground">{value}</p>
       </CardContent>
     </Card>
+  )
+  return href ? (
+    <Link href={href} className="block">
+      {content}
+    </Link>
+  ) : (
+    content
   )
 }
 
@@ -303,10 +357,13 @@ function MonthCard({
       </CardHeader>
       <CardContent className="flex items-baseline gap-1.5">
         <p className="text-2xl font-bold text-foreground">{value}</p>
-        {suffix && (
-          <p className="text-xs text-muted-foreground">{suffix}</p>
-        )}
+        {suffix && <p className="text-xs text-muted-foreground">{suffix}</p>}
         {extra}
+        {prev !== undefined && (
+          <p className="text-[10px] text-muted-foreground/70">
+            전월 {prev}건
+          </p>
+        )}
       </CardContent>
     </Card>
   )
@@ -368,13 +425,29 @@ function StatusBreakdown({
   )
 }
 
-function QuickLink({ href, label }: { href: string; label: string }) {
+function QuickLink({
+  href,
+  icon,
+  label,
+  desc,
+}: {
+  href: string
+  icon: Parameters<typeof BrandIcon>[0]["name"]
+  label: string
+  desc: string
+}) {
   return (
     <Link
       href={href}
-      className="flex items-center justify-center rounded-lg border border-border bg-card px-4 py-6 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+      className="group flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-secondary"
     >
-      {label}
+      <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
+        <BrandIcon name={icon} size={20} decorative />
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
     </Link>
   )
 }

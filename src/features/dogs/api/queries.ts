@@ -1,11 +1,13 @@
 import { createClient } from "@/shared/lib/supabase/server"
-import type { Dog, DogSize, DogStatus } from "@/shared/types/database"
+import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
 
 export type DogSort = "latest" | "name"
 
 export interface ListDogsOptions {
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
+  gender?: DogGender | "전체"
+  neutered?: "true" | "false" | "전체"
   sort?: DogSort
   query?: string
   limit?: number
@@ -63,6 +65,8 @@ export interface PaginatedDogs {
 export async function listDogsWithCount({
   status,
   size,
+  gender,
+  neutered,
   sort = "latest",
   query: searchQuery,
   limit = 20,
@@ -88,8 +92,17 @@ export async function listDogsWithCount({
   if (size && size !== "전체") {
     query = query.eq("size", size)
   }
+  if (gender && gender !== "전체") {
+    query = query.eq("gender", gender)
+  }
+  if (neutered === "true") {
+    query = query.eq("neutered", true)
+  } else if (neutered === "false") {
+    query = query.eq("neutered", false)
+  }
   if (searchQuery && searchQuery.trim()) {
-    query = query.ilike("name", `%${searchQuery.trim()}%`)
+    const q = searchQuery.trim()
+    query = query.or(`name.ilike.%${q}%,breed.ilike.%${q}%`)
   }
 
   const { data, count, error } = await query
@@ -185,6 +198,47 @@ export async function countDogsByStatus(): Promise<Record<DogStatus, number>> {
   }
 
   return counts
+}
+
+export interface MonthlyRescueStat {
+  month: string  // "YYYY-MM"
+  label: string  // "1월"
+  rescued: number
+}
+
+/** 최근 N개월 구조 추이 (rescue_date 기준) */
+export async function getMonthlyRescueStats(months = 6): Promise<MonthlyRescueStat[]> {
+  const supabase = await createClient()
+
+  const since = new Date()
+  since.setMonth(since.getMonth() - months + 1)
+  since.setDate(1)
+  const sinceStr = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-01`
+
+  const { data, error } = await supabase
+    .from("dogs")
+    .select("rescue_date")
+    .gte("rescue_date", sinceStr)
+    .not("rescue_date", "is", null)
+
+  if (error || !data) return []
+
+  const map = new Map<string, number>()
+  for (const { rescue_date } of data as { rescue_date: string }[]) {
+    const key = rescue_date.slice(0, 7)
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
+
+  const result: MonthlyRescueStat[] = []
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    d.setDate(1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    result.push({ month: key, label: `${d.getMonth() + 1}월`, rescued: map.get(key) ?? 0 })
+  }
+
+  return result
 }
 
 export async function countDogsBySize(): Promise<Record<DogSize | "미분류", number>> {

@@ -2,9 +2,13 @@ import type { Metadata } from "next"
 import { Geist_Mono } from "next/font/google"
 
 import { ConfirmProvider } from "@/shared/components/confirm-dialog"
+import { ThemeProvider } from "@/shared/components/theme-provider"
 import { ToastProvider } from "@/shared/components/toast"
 import { SITE } from "@/shared/constants/site"
 import "./globals.css"
+
+// 페이지 로드 시 깜빡임 없이 올바른 테마 적용 (hydration 전에 실행)
+const themeScript = `(function(){try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})()`
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -80,11 +84,17 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ko" className={`${geistMono.variable} h-full`}>
+    <html lang="ko" className={`${geistMono.variable} h-full`} suppressHydrationWarning>
+      <head>
+        {/* 테마 깜빡임 방지 — React hydration 전에 실행 */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full">
-        <ToastProvider>
-          <ConfirmProvider>{children}</ConfirmProvider>
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

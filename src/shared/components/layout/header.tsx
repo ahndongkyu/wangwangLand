@@ -13,6 +13,7 @@ import {
   BrandIcon,
   type BrandIconName,
 } from "@/shared/components/brand-icon"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
 import {
   HEADER_NAV_GROUPS,
   type HeaderNavItem,
@@ -56,10 +57,8 @@ export function Header({ recentNotices = [] }: HeaderProps) {
   return (
     <header
       className={cn(
-        // 솔리드 흰색 + 부드러운 하단 라인 + 살짝의 그림자로 바(bar) 형태 강조.
-        // 배너 위에 있어도 경계가 명확하고, 드롭다운이 이 바에서 흘러내려오는 느낌.
-        "sticky top-0 z-40 w-full bg-white",
-        "border-b border-[#FBE4D2] shadow-[0_2px_8px_rgba(139,111,71,0.06)]"
+        "sticky top-0 z-40 w-full bg-background",
+        "border-b border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
       )}
     >
       {/*
@@ -121,6 +120,9 @@ export function Header({ recentNotices = [] }: HeaderProps) {
         </nav>
 
         <div className="flex items-center justify-end gap-2 justify-self-end">
+          {/* 다크모드 토글 */}
+          <ThemeToggle />
+
           {/* 검색 — 데스크톱/모바일 공용, 열리면 주소 바 스타일 인풋 */}
           <button
             type="button"
@@ -162,24 +164,32 @@ export function Header({ recentNotices = [] }: HeaderProps) {
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
               <nav className="mt-6 flex flex-col gap-1 px-4">
-                {MAIN_NAV.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "inline-flex items-center rounded-md px-3 py-3 text-base font-medium transition-colors",
-                      isActive(item.href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground/80 hover:bg-secondary"
-                    )}
-                  >
-                    {item.label}
-                    {item.href === "/notice" && (
-                      <NoticeBadge notices={recentNotices} />
-                    )}
-                  </Link>
-                ))}
+                {MAIN_NAV.map((item) => {
+                  const icon = MOBILE_NAV_ICONS[item.href]
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-colors",
+                        isActive(item.href)
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground/80 hover:bg-secondary"
+                      )}
+                    >
+                      {icon && (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                          <BrandIcon name={icon} size={22} decorative />
+                        </span>
+                      )}
+                      <span className="flex-1">{item.label}</span>
+                      {item.href === "/notice" && (
+                        <NoticeBadge notices={recentNotices} />
+                      )}
+                    </Link>
+                  )
+                })}
                 <Link
                   href="/adopt"
                   onClick={() => setMobileOpen(false)}
@@ -195,7 +205,7 @@ export function Header({ recentNotices = [] }: HeaderProps) {
 
       {/* 검색 드로어 — 오픈 시 헤더 아래 한 줄 */}
       {searchOpen && (
-        <div className="border-t border-[#FBE4D2] bg-white">
+        <div className="border-t border-border bg-background">
           <form
             onSubmit={handleSearchSubmit}
             className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3 md:px-6"
@@ -221,6 +231,17 @@ export function Header({ recentNotices = [] }: HeaderProps) {
       )}
     </header>
   )
+}
+
+const MOBILE_NAV_ICONS: Record<string, BrandIconName> = {
+  "/about": "home-shelter",
+  "/dogs": "dog",
+  "/cats": "paw",
+  "/daily": "camera",
+  "/stories": "heart",
+  "/volunteer": "volunteer",
+  "/donate": "gift",
+  "/notice": "notification",
 }
 
 /** 데스크톱 드롭다운 그룹 */
@@ -255,9 +276,8 @@ function NavGroupDropdown({
         <Menu.Positioner sideOffset={12} align="center">
           <Menu.Popup
             className={cn(
-              // 240px 너비, 솔리드 흰 배경, 따뜻한 코랄 테두리, 깊은 그림자
-              "relative z-50 w-60 overflow-visible rounded-xl border border-[#FBE4D2] bg-white p-1.5",
-              "shadow-[0_12px_32px_rgba(139,111,71,0.15)]",
+              "relative z-50 w-60 overflow-visible rounded-xl border border-border bg-popover p-1.5",
+              "shadow-[0_12px_32px_rgba(0,0,0,0.15)]",
               // 부드러운 fade + slide-down 애니메이션
               "data-[starting-style]:-translate-y-1 data-[starting-style]:opacity-0",
               "data-[ending-style]:-translate-y-1 data-[ending-style]:opacity-0",
@@ -267,7 +287,7 @@ function NavGroupDropdown({
             {/* 위로 향하는 화살표 — 트리거 버튼과 시각 연결 */}
             <span
               aria-hidden
-              className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-l border-t border-[#FBE4D2] bg-white"
+              className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-l border-t border-border bg-popover"
             />
 
             {items.map((item) => (
@@ -280,14 +300,14 @@ function NavGroupDropdown({
                   // translate 적용 안 돼 hover 로 통일. 키보드 nav 시각도 같이 잡으려면
                   // data-[highlighted] 를 추가로 두면 되지만 마우스 케이스가 95%+)
                   "transition-all duration-200",
-                  "hover:-translate-y-0.5 hover:bg-[#FAF3E7]"
+                  "hover:-translate-y-0.5 hover:bg-secondary"
                 )}
                 render={<Link href={item.href} />}
               >
                 {item.icon && (
                   <span
                     className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#FAF3E7]",
+                      "flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary",
                       // 옵션 B: 항목 hover 시 아이콘 박스가 코랄 톤으로 전환
                       "transition-colors duration-200",
                       "group-hover/item:bg-primary/30"

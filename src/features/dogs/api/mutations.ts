@@ -145,6 +145,22 @@ export async function updateDog(
   redirect("/admin/dogs")
 }
 
+export async function updateDogStatus(
+  id: string,
+  status: DogStatus
+): Promise<MutationResult> {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("dogs")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id)
+  if (error) return { error: error.message }
+  revalidatePath("/admin/dogs")
+  revalidatePath(`/admin/dogs/${id}`)
+  revalidatePath("/admin")
+  return {}
+}
+
 export async function deleteDog(id: string): Promise<MutationResult> {
   const supabase = await createClient()
 
