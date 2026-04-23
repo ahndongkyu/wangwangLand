@@ -20,8 +20,11 @@ interface NoticeInput {
 
 function parseFormData(formData: FormData): NoticeInput {
   const imagesRaw = String(formData.get("images") ?? "").trim()
+  const titleBody = String(formData.get("title") ?? "").trim()
+  const prefix = String(formData.get("notice_prefix") ?? "").trim()
+  const title = prefix ? `[${prefix}] ${titleBody}` : titleBody
   return {
-    title: String(formData.get("title") ?? "").trim(),
+    title,
     content: String(formData.get("content") ?? ""),
     is_pinned: formData.get("is_pinned") === "on",
     publish: formData.get("publish") === "on",
