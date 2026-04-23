@@ -171,7 +171,7 @@ export async function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="인스타그램"
-                  className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="flex size-9 items-center justify-center rounded-lg border border-transparent bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white transition-opacity hover:opacity-85"
                 >
                   <InstagramIcon className="size-4" />
                 </a>
