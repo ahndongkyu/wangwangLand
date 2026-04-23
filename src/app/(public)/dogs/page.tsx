@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { DogGrid, listDogsWithCount } from "@/features/dogs"
 import type { DogSort } from "@/features/dogs/api/queries"
@@ -117,7 +118,9 @@ export default async function DogsPage({
       </header>
 
       <div className="mb-8 space-y-4">
-        <SearchBox placeholder="강아지 이름으로 검색" className="max-w-md" />
+        <Suspense fallback={null}>
+          <SearchBox placeholder="강아지 이름으로 검색" className="max-w-md" />
+        </Suspense>
         <FilterGroup
           label="상태"
           options={STATUS_FILTERS.map((f) => ({

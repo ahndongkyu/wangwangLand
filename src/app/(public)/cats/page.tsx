@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 
 import { CatGrid, listCatsWithCount } from "@/features/cats"
 import type { CatSort } from "@/features/cats/api/queries"
@@ -87,7 +88,9 @@ export default async function CatsPage({
       </header>
 
       <div className="mb-8 space-y-4">
-        <SearchBox placeholder="고양이 이름으로 검색" className="max-w-md" />
+        <Suspense fallback={null}>
+          <SearchBox placeholder="고양이 이름으로 검색" className="max-w-md" />
+        </Suspense>
         <FilterGroup
           label="상태"
           options={STATUS_FILTERS.map((f) => ({
