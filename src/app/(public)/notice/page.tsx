@@ -59,29 +59,54 @@ export default async function NoticePage({
             : "아직 등록된 공지가 없어요."}
         </div>
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {notices.map((n) => (
-            <li key={n.id}>
-              <Link
-                href={`/notice/${n.id}`}
-                className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-secondary/50"
-              >
-                <div className="flex items-center gap-2">
-                  {n.is_pinned && (
-                    <Pin className="size-4 text-primary" aria-label="상단 고정" />
-                  )}
-                  <span className="font-medium text-foreground">
-                    {n.title}
-                  </span>
-                </div>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {n.published_at &&
-                    new Date(n.published_at).toLocaleDateString("ko-KR")}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* 헤더 */}
+          <div className="grid grid-cols-[48px_1fr_80px] border-b border-border bg-secondary/40 px-5 py-2.5 text-xs font-semibold text-muted-foreground">
+            <span className="text-center">번호</span>
+            <span className="pl-2">제목</span>
+            <span className="text-right">작성일</span>
+          </div>
+
+          <ul className="divide-y divide-border">
+            {notices.map((n, i) => {
+              const num = total - offset - i
+              return (
+                <li
+                  key={n.id}
+                  className={n.is_pinned ? "bg-primary/5" : undefined}
+                >
+                  <Link
+                    href={`/notice/${n.id}`}
+                    className="grid grid-cols-[48px_1fr_80px] items-center gap-2 px-5 py-3.5 transition-colors hover:bg-secondary/50"
+                  >
+                    {/* 번호 or 핀 */}
+                    <span className="flex items-center justify-center">
+                      {n.is_pinned ? (
+                        <Pin className="size-3.5 text-primary" aria-label="상단 고정" />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{num}</span>
+                      )}
+                    </span>
+
+                    {/* 제목 */}
+                    <span className="truncate pl-2 text-sm font-medium text-foreground">
+                      {n.title}
+                    </span>
+
+                    {/* 날짜 */}
+                    <span className="text-right text-xs text-muted-foreground">
+                      {n.published_at &&
+                        new Date(n.published_at).toLocaleDateString("ko-KR", {
+                          month: "2-digit",
+                          day: "2-digit",
+                        })}
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
 
       <Pagination
