@@ -51,7 +51,7 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-50 min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+        <div className="absolute right-0 top-9 z-[100] min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
           {/* 승인/거절 */}
           {profile.status !== "approved" && (
             <button

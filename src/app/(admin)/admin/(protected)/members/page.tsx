@@ -85,7 +85,7 @@ export default async function AdminMembersPage({
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="rounded-lg border border-border bg-card">
             <table className="w-full">
               <thead className="border-b border-border bg-secondary/40 text-left text-sm">
                 <tr>

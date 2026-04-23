@@ -14,6 +14,7 @@ const ADMIN_NAV = [
   { label: "일상", href: "/admin/daily", topOnly: false },
   { label: "입양후기", href: "/admin/stories", topOnly: false },
   { label: "신청 관리", href: "/admin/applications", topOnly: false },
+  { label: "회원 관리", href: "/admin/members", topOnly: false },
   { label: "운영진 관리", href: "/admin/admins", topOnly: true },
 ] as const
 
