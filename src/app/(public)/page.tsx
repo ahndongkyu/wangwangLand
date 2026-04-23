@@ -5,6 +5,7 @@ import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogs } from "@/features/dogs"
 import { listNotices } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
+import { Pin } from "lucide-react"
 import {
   BrandIcon,
   type BrandIconName,
@@ -238,9 +239,7 @@ export default async function HomePage() {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       {n.is_pinned && (
-                        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
-                          상단고정
-                        </span>
+                        <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
                       )}
                       <span className="truncate font-medium text-foreground">
                         {n.title}
