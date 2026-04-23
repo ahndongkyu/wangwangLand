@@ -2,10 +2,10 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname, useTransition } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { ChevronDown, LogOut, Menu as MenuIcon } from "lucide-react"
 import { Menu } from "@base-ui/react/menu"
-import { useState } from "react"
+import { useState, useTransition } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
