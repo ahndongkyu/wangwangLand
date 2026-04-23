@@ -66,41 +66,41 @@ export function AdminHeader({
 
   return (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="text-base font-bold text-foreground whitespace-nowrap">
-            {siteName} 관리자
-          </Link>
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-6">
+        {/* 왼쪽: 로고 */}
+        <Link href="/admin" className="text-base font-bold text-foreground whitespace-nowrap justify-self-start">
+          {siteName} 관리자
+        </Link>
 
-          {/* 데스크톱 네비 */}
-          <nav className="hidden md:block">
-            <ul className="flex items-center gap-1 text-sm">
-              <li>
-                <Link
-                  href="/admin"
-                  className={cn(
-                    "rounded-md px-3 py-1.5 font-medium transition-colors",
-                    pathname === "/admin"
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground/70 hover:bg-secondary hover:text-foreground"
-                  )}
-                >
-                  대시보드
-                </Link>
+        {/* 가운데: 데스크톱 네비 */}
+        <nav className="hidden md:flex justify-center">
+          <ul className="flex items-center gap-1 text-sm">
+            <li>
+              <Link
+                href="/admin"
+                className={cn(
+                  "rounded-md px-3 py-1.5 font-medium transition-colors",
+                  pathname === "/admin"
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                대시보드
+              </Link>
+            </li>
+            {NAV_GROUPS.map((group) => (
+              <li key={group.label}>
+                <NavDropdown
+                  group={group}
+                  isActive={group.items.some((i) => isActive(i.href))}
+                />
               </li>
-              {NAV_GROUPS.map((group) => (
-                <li key={group.label}>
-                  <NavDropdown
-                    group={group}
-                    isActive={group.items.some((i) => isActive(i.href))}
-                  />
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
+            ))}
+          </ul>
+        </nav>
 
-        <div className="flex items-center gap-3">
+        {/* 오른쪽: 유저 정보 + 로그아웃 */}
+        <div className="flex items-center gap-3 justify-self-end">
           <span className="hidden text-xs text-muted-foreground sm:inline">
             {adminName}{" "}
             <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
