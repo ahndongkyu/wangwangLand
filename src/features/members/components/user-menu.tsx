@@ -46,7 +46,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
         className="flex items-center gap-2 rounded-full px-1 transition-opacity hover:opacity-80 disabled:opacity-50 outline-none"
         aria-label="내 계정"
       >
-        <div className="relative size-8 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+        <div className="relative size-9 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
           {profile.avatar_url ? (
             <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
           ) : (

@@ -111,7 +111,6 @@ export const HEADER_NAV_GROUPS: ReadonlyArray<
     items: [
       { label: "봉사 신청", href: "/volunteer", desc: "매주 봉사자를 기다려요", icon: "volunteer" },
       { label: "후원하기", href: "/donate", desc: "작은 정성이 큰 힘이 됩니다", icon: "gift" },
-      { label: "입양 문의", href: "/adopt", desc: "가족이 되어주세요", icon: "mail" },
     ],
   },
   { kind: "link", label: "공지사항", href: "/notice" },
