@@ -39,14 +39,14 @@ export default function AboutPage() {
         {/* 콘텐츠 카드 */}
         <div className="flex flex-col justify-center px-8 py-10 md:px-10 md:py-12">
           <span className="text-xs font-bold tracking-widest text-primary">
-            RUN BY HEART
+            WANGWANGLAND
           </span>
           <h1 className="mt-3 text-2xl font-bold leading-snug text-foreground md:text-3xl">
-            7명의 운영진,<br />30여 명의 봉사자
+            이름을 드러내지 않아도,<br />손길은 남습니다
           </h1>
           <p className="mt-4 leading-relaxed text-muted-foreground">
-            얼굴보다 먼저 행동으로 증명하는 사람들. 각자의 삶을 꾸리면서도
-            왕왕랜드의 하루를 함께 만들어갑니다.
+            하루 두 번의 밥, 수십 번의 산책, 셀 수 없는 쓰다듬.
+            누군가의 이름이 아닌 아이들의 평온으로 기억되길 바랍니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/volunteer" className={cn(buttonVariants({ size: "sm" }))}>
