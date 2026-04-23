@@ -15,14 +15,17 @@ interface NoticeInput {
   content: string
   is_pinned: boolean
   publish: boolean
+  images: string[]
 }
 
 function parseFormData(formData: FormData): NoticeInput {
+  const imagesRaw = String(formData.get("images") ?? "").trim()
   return {
     title: String(formData.get("title") ?? "").trim(),
     content: String(formData.get("content") ?? ""),
     is_pinned: formData.get("is_pinned") === "on",
     publish: formData.get("publish") === "on",
+    images: imagesRaw ? imagesRaw.split(",").filter(Boolean) : [],
   }
 }
 
@@ -64,6 +67,7 @@ export async function createNotice(
       title: input.title,
       content: input.content,
       is_pinned: input.is_pinned,
+      images: input.images,
       published_at: input.publish ? new Date().toISOString() : null,
       created_by: admin.id,
     })
@@ -110,6 +114,7 @@ export async function updateNotice(
       title: input.title,
       content: input.content,
       is_pinned: input.is_pinned,
+      images: input.images,
       published_at: publishedAt,
     })
     .eq("id", id)

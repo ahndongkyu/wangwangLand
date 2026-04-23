@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
@@ -69,6 +70,26 @@ export default async function NoticeDetailPage({
       <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
         {notice.content}
       </article>
+
+      {notice.images && notice.images.length > 0 && (
+        <div className="mt-10 space-y-4">
+          {notice.images.map((src, i) => (
+            <div
+              key={src}
+              className="relative w-full overflow-hidden rounded-xl border border-border"
+              style={{ aspectRatio: "16/9" }}
+            >
+              <Image
+                src={src}
+                alt={`공지 이미지 ${i + 1}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="object-contain"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

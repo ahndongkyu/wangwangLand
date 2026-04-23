@@ -55,6 +55,7 @@ export interface Notice {
   title: string
   content: string
   is_pinned: boolean
+  images: string[]
   published_at: string | null
   created_at: string
   updated_at: string

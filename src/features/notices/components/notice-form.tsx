@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
+import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
@@ -33,6 +34,15 @@ export function NoticeForm({ notice }: Props) {
 
   return (
     <form action={handleSubmit} className="space-y-6">
+      <div className="space-y-1.5">
+        <Label>이미지 (선택)</Label>
+        <AnimalImageUploader
+          folder="notices"
+          initialImages={notice?.images ?? []}
+          maxImages={5}
+        />
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
         <Input
