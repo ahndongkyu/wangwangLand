@@ -43,16 +43,19 @@ export function UserMenu({ profile }: { profile: Profile }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={pending}
-        className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80 disabled:opacity-50 outline-none"
+        className="flex items-center gap-2 rounded-full px-1 transition-opacity hover:opacity-80 disabled:opacity-50 outline-none"
         aria-label="내 계정"
       >
-        <div className="relative size-9 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+        <div className="relative size-8 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
           {profile.avatar_url ? (
             <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
           ) : (
             <User className="size-full p-1.5 text-muted-foreground" />
           )}
         </div>
+        <span className="hidden max-w-[80px] truncate text-sm font-medium text-foreground sm:block">
+          {profile.nickname}
+        </span>
       </button>
 
       {open && (

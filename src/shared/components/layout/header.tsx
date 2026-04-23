@@ -3,14 +3,13 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, LogOut, Menu as MenuIcon } from "lucide-react"
+import { ChevronDown, Menu as MenuIcon } from "lucide-react"
 import { Menu } from "@base-ui/react/menu"
-import { useState, useTransition } from "react"
+import { useState } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
-import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
 import {
   BrandIcon,
@@ -41,14 +40,9 @@ interface HeaderProps {
 export function Header({ recentNotices = [], profile }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [pending, startTransition] = useTransition()
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
-
-  function handleSignOut() {
-    startTransition(() => signOut())
-  }
 
   return (
     <header
@@ -116,19 +110,7 @@ export function Header({ recentNotices = [], profile }: HeaderProps) {
           <ThemeToggle />
 
           {profile ? (
-            <>
-              <UserMenu profile={profile} />
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={pending}
-                aria-label="로그아웃"
-                title="로그아웃"
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border text-foreground/60 transition-colors hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-              >
-                <LogOut className="size-4" />
-              </button>
-            </>
+            <UserMenu profile={profile} />
           ) : (
             <Link
               href="/login"
