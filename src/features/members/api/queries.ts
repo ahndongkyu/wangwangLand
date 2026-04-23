@@ -6,6 +6,7 @@ export interface Profile {
   avatar_url: string | null
   role: "member" | "full_member" | "staff"
   status: "pending" | "approved" | "rejected"
+  is_banned: boolean
   created_at: string
 }
 
@@ -16,7 +17,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, role, status, created_at")
+    .select("id, nickname, avatar_url, role, status, is_banned, created_at")
     .eq("id", user.id)
     .maybeSingle()
 
@@ -41,7 +42,7 @@ export async function listProfiles({
 
   let query = supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, role, status, created_at", { count: "exact" })
+    .select("id, nickname, avatar_url, role, status, is_banned, created_at", { count: "exact" })
     .order("status", { ascending: true }) // pending 먼저
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1)

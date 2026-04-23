@@ -2,7 +2,7 @@
 
 import { useTransition, useRef, useEffect, useState } from "react"
 import { MoreHorizontal, ChevronRight } from "lucide-react"
-import { approveMember, rejectMember, updateMemberRole } from "../api/actions"
+import { approveMember, rejectMember, updateMemberRole, toggleMemberBan } from "../api/actions"
 import { useToast } from "@/shared/components/toast"
 import type { Profile } from "../api/queries"
 
@@ -47,6 +47,15 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
     })
   }
 
+  function handleBan(ban: boolean) {
+    setOpen(false)
+    startTransition(async () => {
+      const result = await toggleMemberBan(profile.id, ban)
+      if (result.error) toast.error(`실패: ${result.error}`)
+      else toast.success(ban ? "밴 처리했습니다." : "밴을 해제했습니다.")
+    })
+  }
+
   return (
     <div ref={ref} className="relative inline-block">
       <button
@@ -86,7 +95,7 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
             </>
           )}
 
-          {/* 승인된 회원 → 권한 변경 + 거절로 전환 */}
+          {/* 승인된 회원 → 권한 변경 + 밴 + 거절 */}
           {profile.status === "approved" && (
             <>
               <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">권한 변경</div>
@@ -109,6 +118,17 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
                 </button>
               )}
               <div className="mx-2 my-1 border-t border-border" />
+              {profile.is_banned ? (
+                <button type="button" onClick={() => handleBan(false)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
+                  🔓 밴 해제
+                </button>
+              ) : (
+                <button type="button" onClick={() => handleBan(true)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+                  🚫 밴
+                </button>
+              )}
               <button type="button" onClick={handleReject}
                 className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
                 ❌ 거절로 변경

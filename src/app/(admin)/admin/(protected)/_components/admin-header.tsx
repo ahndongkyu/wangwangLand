@@ -55,7 +55,7 @@ export function AdminHeader({
     {
       label: "회원 관리",
       items: [
-        { label: "가입 승인", href: "/admin/members" },
+        { label: "회원 관리", href: "/admin/members" },
         { label: "신청 관리", href: "/admin/applications" },
         ...(isTopAdmin ? [{ label: "운영진 관리", href: "/admin/admins" }] : []),
       ],

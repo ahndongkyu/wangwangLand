@@ -110,6 +110,23 @@ export async function updateMemberStatus(
   return {}
 }
 
+/** 어드민: 회원 밴/밴 해제 */
+export async function toggleMemberBan(
+  id: string,
+  is_banned: boolean
+): Promise<{ error?: string }> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from("profiles")
+    .update({ is_banned })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/members")
+  return {}
+}
+
 /** 어드민: 회원 권한 변경 */
 export async function updateMemberRole(
   id: string,

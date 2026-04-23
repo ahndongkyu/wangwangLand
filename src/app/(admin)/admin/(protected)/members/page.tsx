@@ -25,10 +25,16 @@ const ROLE_LABEL = {
   staff: "운영진",
 } as const
 
+const ROLE_COLOR = {
+  member: "bg-secondary text-muted-foreground",
+  full_member: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  staff: "bg-primary/15 text-primary",
+} as const
+
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>
+  searchParams: Promise<{ status?: string; page?: string; q?: string }>
 }) {
   const params = await searchParams
   const filterStatus = (params.status ?? "") as "pending" | "approved" | "rejected" | ""
@@ -42,19 +48,16 @@ export default async function AdminMembersPage({
   })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-
   const filterHref = (s: string) =>
     s ? `/admin/members?status=${s}` : "/admin/members"
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground md:text-3xl">회원 관리</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            전체 <span className="font-semibold text-foreground">{total}</span>명
-          </p>
-        </div>
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">회원 관리</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          전체 <span className="font-semibold text-foreground">{total}</span>명
+        </p>
       </header>
 
       {/* 상태 필터 */}
@@ -92,23 +95,49 @@ export default async function AdminMembersPage({
                   <th className="px-4 py-3 font-semibold">닉네임</th>
                   <th className="px-4 py-3 font-semibold">상태</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">권한</th>
+                  <th className="hidden px-4 py-3 font-semibold lg:table-cell">밴</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">가입일</th>
                   <th className="px-4 py-3 text-right font-semibold">작업</th>
                 </tr>
               </thead>
               <tbody>
                 {profiles.map((p) => (
-                  <tr key={p.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {p.nickname}
+                  <tr key={p.id} className={`border-b border-border last:border-0 ${p.is_banned ? "opacity-60" : ""}`}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {p.avatar_url && (
+                          <img
+                            src={p.avatar_url}
+                            alt={p.nickname}
+                            className="size-7 rounded-full object-cover"
+                          />
+                        )}
+                        <span className="font-medium text-foreground">{p.nickname}</span>
+                        {p.is_banned && (
+                          <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                            BAN
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLOR[p.status]}`}>
                         {STATUS_LABEL[p.status]}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                      {ROLE_LABEL[p.role]}
+                    <td className="hidden px-4 py-3 md:table-cell">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${ROLE_COLOR[p.role]}`}>
+                        {ROLE_LABEL[p.role]}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 lg:table-cell">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        p.is_banned
+                          ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                          : "bg-secondary text-muted-foreground"
+                      }`}>
+                        {p.is_banned ? "밴" : "정상"}
+                      </span>
                     </td>
                     <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                       {new Date(p.created_at).toLocaleDateString("ko-KR")}

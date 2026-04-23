@@ -32,7 +32,12 @@ export default async function LoginPage({
           </p>
         </div>
 
-        {error && (
+        {error === "banned" && (
+          <p className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            이용이 제한된 계정입니다. 문의사항은 운영진에게 연락해주세요.
+          </p>
+        )}
+        {error && error !== "banned" && (
           <p className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
             로그인에 실패했습니다. 다시 시도해주세요.
           </p>

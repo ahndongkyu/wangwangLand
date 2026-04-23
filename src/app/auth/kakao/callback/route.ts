@@ -130,9 +130,15 @@ export async function GET(request: Request) {
     // 6. 프로필 확인 → 리다이렉트
     const { data: profile } = await supabase
       .from("profiles")
-      .select("nickname, status")
+      .select("nickname, status, is_banned")
       .eq("id", userId)
       .maybeSingle()
+
+    // 밴된 유저 차단
+    if (profile?.is_banned) {
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL("/login?error=banned", origin))
+    }
 
     if (!profile || profile.nickname === "새 회원") {
       // 신규 사용자면 카카오 닉네임을 기본값으로 프로필 업데이트
