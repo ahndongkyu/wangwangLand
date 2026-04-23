@@ -51,35 +51,44 @@ export async function GET(request: Request) {
     const kakaoNickname: string = kakaoUser.kakao_account?.profile?.nickname ?? ""
     const kakaoAvatar: string | null = kakaoUser.kakao_account?.profile?.profile_image_url ?? null
 
-    // 3. Supabase 사용자 확인 (이메일로 직접 조회 — listUsers 페이징 버그 방지)
+    // 3. Supabase 사용자 upsert
     const admin = createAdminClient()
     const fakeEmail = `kakao_${kakaoId}@kakao.wangwangland.internal`
 
     let userId: string
     let isNewUser = false
 
-    const { data: existingUser } = await admin.auth.admin.getUserByEmail(fakeEmail)
+    // 먼저 생성 시도 → 이미 있으면 에러 → listUsers로 찾기
+    const { data: created, error: createErr } = await admin.auth.admin.createUser({
+      email: fakeEmail,
+      email_confirm: true,
+      user_metadata: {
+        kakao_id: kakaoId,
+        full_name: kakaoNickname,
+        avatar_url: kakaoAvatar,
+      },
+    })
 
-    if (existingUser?.user) {
-      userId = existingUser.user.id
-    } else {
+    if (!createErr && created.user) {
+      // 신규 유저
       isNewUser = true
-      const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email: fakeEmail,
-        email_confirm: true,
-        user_metadata: {
-          kakao_id: kakaoId,
-          full_name: kakaoNickname,
-          avatar_url: kakaoAvatar,
-        },
-      })
-
-      if (createErr || !created.user) {
-        console.error("사용자 생성 실패", createErr)
+      userId = created.user.id
+    } else {
+      // 이미 존재하는 유저 — 이메일로 탐색 (perPage 최대값으로 한 번에 조회)
+      let found: string | null = null
+      let page = 1
+      while (!found) {
+        const { data: { users } } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
+        const match = users.find((u) => u.email === fakeEmail)
+        if (match) { found = match.id; break }
+        if (users.length < 1000) break
+        page++
+      }
+      if (!found) {
+        console.error("기존 사용자 탐색 실패", createErr)
         return NextResponse.redirect(new URL("/login?error=1", origin))
       }
-
-      userId = created.user.id
+      userId = found
     }
 
     // 4. 매직링크로 세션 토큰 발급
