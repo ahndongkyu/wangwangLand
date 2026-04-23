@@ -60,6 +60,64 @@ export async function updateNickname(
   redirect("/pending")
 }
 
+/** 프로필 업데이트 — 닉네임 + 아바타 */
+export async function updateProfile(
+  _prev: { error: string | null; success?: boolean },
+  formData: FormData
+): Promise<{ error: string | null; success?: boolean }> {
+  const nickname = (formData.get("nickname") as string | null)?.trim() ?? ""
+  const avatarFile = formData.get("avatar") as File | null
+
+  if (nickname.length < 2 || nickname.length > 20) {
+    return { error: "닉네임은 2~20자 사이로 입력해주세요." }
+  }
+  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
+    return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  // 닉네임 중복 확인
+  const { data: dup } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("nickname", nickname)
+    .neq("id", user.id)
+    .maybeSingle()
+  if (dup) return { error: "이미 사용 중인 닉네임입니다." }
+
+  // 아바타 업로드
+  let avatarUrl: string | undefined
+  if (avatarFile && avatarFile.size > 0) {
+    if (avatarFile.size > 3 * 1024 * 1024) {
+      return { error: "이미지는 3MB 이하만 가능합니다." }
+    }
+    const ext = avatarFile.name.split(".").pop() ?? "jpg"
+    const path = `${user.id}/avatar.${ext}`
+    const { error: uploadErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
+    if (uploadErr) return { error: "이미지 업로드에 실패했습니다." }
+    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
+    avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
+  }
+
+  const updates: Record<string, unknown> = {
+    nickname,
+    updated_at: new Date().toISOString(),
+  }
+  if (avatarUrl) updates.avatar_url = avatarUrl
+
+  const { error } = await supabase.from("profiles").update(updates).eq("id", user.id)
+  if (error) return { error: "저장에 실패했습니다." }
+
+  revalidatePath("/profile")
+  revalidatePath("/")
+  return { error: null, success: true }
+}
+
 /** 어드민: 회원 승인 (상태 + 권한 동시 설정) */
 export async function approveMember(
   id: string,

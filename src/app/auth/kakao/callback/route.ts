@@ -149,7 +149,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(onboardingUrl)
     }
 
-    if (profile.status === "pending") {
+    if (!profile || profile.status === "pending") {
       return NextResponse.redirect(new URL("/pending", origin))
     }
     if (profile.status === "rejected") {

@@ -1,7 +1,7 @@
 export { getCurrentProfile } from "./api/queries"
 export type { Profile } from "./api/queries"
 export { listProfiles } from "./api/queries"
-export { signOut, getKakaoLoginUrl, updateNickname, updateMemberStatus, updateMemberRole } from "./api/actions"
+export { signOut, getKakaoLoginUrl, updateNickname, updateProfile, updateMemberStatus, updateMemberRole } from "./api/actions"
 export { KakaoLoginButton } from "./components/kakao-login-button"
 export { UserMenu } from "./components/user-menu"
 export { OnboardingForm } from "./components/onboarding-form"
