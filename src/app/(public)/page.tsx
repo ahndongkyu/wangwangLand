@@ -25,7 +25,7 @@ const HERO_SLIDES: HeroSlide[] = [
     image: "/images/banner.jpeg",
     badge: SITE.subtitle,
     title: SITE.tagline,
-    description: `${SITE.name}은 아무런 이유로도 아이들의 생명을 포기하지 않습니다.\n새로운 가족을 만날 때까지 사랑으로 돌봅니다.`,
+    description: `${SITE.name}는 어떤 이유로도 아이들의 생명을 포기하지 않습니다.\n새로운 가족을 만날 때까지 사랑으로 돌봅니다.`,
     primary: { label: "입양 대기 아이들 보기", href: "/dogs" },
     secondary: { label: `${SITE.name} 소개`, href: "/about" },
   },
@@ -77,7 +77,7 @@ export default async function HomePage() {
             포기하지 않습니다
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            {SITE.name}은 100% 안락사 없는 보호소입니다.
+            {SITE.name}는 100% 안락사 없는 보호소입니다.
             병들거나 나이 든 아이도, 사회성 훈련이 필요한 아이도 새로운 가족을
             만날 때까지 사랑으로 끝까지 책임집니다. 매일 봉사자와 운영진이 아이들
             하나하나를 돌보고 있어요.

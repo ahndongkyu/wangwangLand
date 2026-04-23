@@ -4,7 +4,7 @@ import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
   title: "센터 소개",
-  description: `${SITE.name}은 어떤 단체이며, 어떤 가치로 활동하는지 소개합니다.`,
+  description: `${SITE.name}는 어떤 단체이며, 어떤 가치로 활동하는지 소개합니다.`,
 }
 
 export default function AboutPage() {
@@ -19,7 +19,7 @@ export default function AboutPage() {
 
       <Section title="우리의 약속">
         <p>
-          {SITE.name}은 어떤 이유로도 아이들의 생명을 포기하지 않습니다. 새로운
+          {SITE.name}는 어떤 이유로도 아이들의 생명을 포기하지 않습니다. 새로운
           가족을 만날 때까지, 또는 아이들이 자연의 섭리로 떠나는 그 순간까지,
           끝까지 책임지고 돌봅니다.
         </p>
@@ -32,13 +32,6 @@ export default function AboutPage() {
           <Li>평생 가족이 되어줄 따뜻한 분들을 연결해 드립니다.</Li>
           <Li>입양 이후에도 아이와 가족이 잘 지내는지 소통합니다.</Li>
         </ul>
-      </Section>
-
-      <Section title="함께해 주세요">
-        <p>
-          저희의 활동은 여러분의 관심과 도움으로 이루어집니다. 입양, 봉사, 후원
-          어떤 방법이든 좋습니다. 작은 마음 하나하나가 한 생명을 살립니다.
-        </p>
       </Section>
 
       <p className="mt-10 text-sm text-muted-foreground">
