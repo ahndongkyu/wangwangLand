@@ -38,14 +38,14 @@ export function AdminHeader({
 
   const NAV_GROUPS: NavGroup[] = [
     {
-      label: "아이들",
+      label: "아이들 관리",
       items: [
         { label: "강아지", href: "/admin/dogs" },
         { label: "고양이", href: "/admin/cats" },
       ],
     },
     {
-      label: "게시글",
+      label: "게시글 관리",
       items: [
         { label: "공지사항", href: "/admin/notices" },
         { label: "일상", href: "/admin/daily" },
@@ -53,10 +53,10 @@ export function AdminHeader({
       ],
     },
     {
-      label: "관리",
+      label: "회원 관리",
       items: [
+        { label: "가입 승인", href: "/admin/members" },
         { label: "신청 관리", href: "/admin/applications" },
-        { label: "회원 관리", href: "/admin/members" },
         ...(isTopAdmin ? [{ label: "운영진 관리", href: "/admin/admins" }] : []),
       ],
     },
