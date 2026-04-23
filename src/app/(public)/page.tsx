@@ -49,7 +49,7 @@ export const revalidate = 60
 export default async function HomePage() {
   const [dogs, cats, dailyResult, storiesResult, stats, noticesResult] =
     await Promise.all([
-      listDogs({ status: "보호중", limit: 6 }),
+      listDogs({ status: "보호중", limit: 8 }),
       listCats({ status: "보호중", limit: 4 }),
       listDailyPosts({ limit: 3 }),
       listAdoptionStories({ limit: 3 }),
@@ -161,6 +161,7 @@ export default async function HomePage() {
 
           <DogGrid
             dogs={dogs}
+            mobileLimit={6}
             emptyMessage="아직 등록된 아이가 없어요. 곧 만나게 될 친구들을 준비 중입니다."
           />
 
