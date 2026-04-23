@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
-import { StoryDeleteButton, listAdoptionStories } from "@/features/stories"
+import { StoryRowActions, listAdoptionStories } from "@/features/stories"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -128,19 +128,11 @@ export default async function AdminStoriesPage({
                         {new Date(s.created_at).toLocaleDateString("ko-KR")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/admin/stories/${s.id}/edit`}
-                            className={cn(
-                              buttonVariants({ variant: "ghost", size: "sm" })
-                            )}
-                          >
-                            수정
-                          </Link>
-                          {canDelete && (
-                            <StoryDeleteButton id={s.id} title={s.title} />
-                          )}
-                        </div>
+                        <StoryRowActions
+                          id={s.id}
+                          title={s.title}
+                          canDelete={canDelete}
+                        />
                       </td>
                     </tr>
                   )

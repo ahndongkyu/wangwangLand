@@ -3,6 +3,9 @@ import type { Cat, DogStatus } from "@/shared/types/database"
 
 export type CatSort = "latest" | "name"
 
+const CAT_CARD_COLS =
+  "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, neutered, rescue_date, updated_at" as const
+
 export interface ListCatsOptions {
   status?: DogStatus | "전체"
   gender?: "수컷" | "암컷" | "미상" | "전체"
@@ -22,7 +25,7 @@ export async function listCats({
 }: ListCatsOptions = {}): Promise<Cat[]> {
   const supabase = await createClient()
 
-  let query = supabase.from("cats").select("*")
+  let query = supabase.from("cats").select(CAT_CARD_COLS)
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
@@ -67,7 +70,7 @@ export async function listCatsWithCount({
 }: ListCatsOptions = {}): Promise<PaginatedCats> {
   const supabase = await createClient()
 
-  let query = supabase.from("cats").select("*", { count: "exact" })
+  let query = supabase.from("cats").select(CAT_CARD_COLS, { count: "exact" })
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
@@ -132,30 +135,41 @@ export async function listSimilarCats(
 ): Promise<Cat[]> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("cats")
-    .select("*")
-    .in("status", ["보호중", "임시보호중"])
-    .neq("id", current.id)
-    .order("updated_at", { ascending: false })
-    .limit(40)
+  const [sameGender, any] = await Promise.all([
+    current.gender !== "미상"
+      ? supabase
+          .from("cats")
+          .select(CAT_CARD_COLS)
+          .in("status", ["보호중", "임시보호중"])
+          .neq("id", current.id)
+          .eq("gender", current.gender)
+          .order("updated_at", { ascending: false })
+          .limit(limit)
+      : Promise.resolve({ data: [] as Cat[], error: null }),
+    supabase
+      .from("cats")
+      .select(CAT_CARD_COLS)
+      .in("status", ["보호중", "임시보호중"])
+      .neq("id", current.id)
+      .order("updated_at", { ascending: false })
+      .limit(limit),
+  ])
 
-  if (error || !data) {
-    console.error("[listSimilarCats]", error)
+  if (any.error) {
+    console.error("[listSimilarCats]", any.error)
     return []
   }
 
-  const candidates = data as Cat[]
-
-  function score(c: Cat): number {
-    let s = 0
-    if (c.gender === current.gender && current.gender !== "미상") s += 3
-    return s
+  const seen = new Set<string>()
+  const result: Cat[] = []
+  for (const c of [...(sameGender.data ?? []), ...(any.data ?? [])]) {
+    if (result.length >= limit) break
+    if (!seen.has(c.id)) {
+      seen.add(c.id)
+      result.push(c as Cat)
+    }
   }
-
-  return [...candidates]
-    .sort((a, b) => score(b) - score(a))
-    .slice(0, limit)
+  return result
 }
 
 export async function countCatsByStatus(): Promise<Record<DogStatus, number>> {

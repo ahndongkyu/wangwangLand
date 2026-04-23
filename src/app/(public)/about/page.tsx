@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: `${SITE.name}는 어떤 단체이며, 어떤 가치로 활동하는지 소개합니다.`,
 }
 
+export const revalidate = 3600 // 통계 수치는 1시간마다 갱신
+
 export default async function AboutPage() {
   const stats = await getSiteStats()
 

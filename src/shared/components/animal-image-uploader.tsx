@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { Loader2, Upload, X } from "lucide-react"
 
 import { createClient } from "@/shared/lib/supabase/client"
@@ -27,6 +27,12 @@ export function AnimalImageUploader({
   const [thumbIdx, setThumbIdx] = useState(initialThumbnailIndex)
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const thumbInputRef = useRef<HTMLInputElement>(null)
+
+  function setThumb(idx: number) {
+    setThumbIdx(idx)
+    if (thumbInputRef.current) thumbInputRef.current.value = String(idx)
+  }
 
   const remaining = Math.max(0, maxImages - images.length)
   const isFull = remaining === 0
@@ -76,14 +82,14 @@ export function AnimalImageUploader({
 
   function removeImage(idx: number) {
     setImages((prev) => prev.filter((_, i) => i !== idx))
-    if (thumbIdx === idx) setThumbIdx(0)
-    else if (thumbIdx > idx) setThumbIdx((i) => i - 1)
+    if (thumbIdx === idx) setThumb(0)
+    else if (thumbIdx > idx) setThumb(thumbIdx - 1)
   }
 
   return (
     <div className="space-y-3">
       <input type="hidden" name="images" value={images.join(",")} />
-      <input type="hidden" name="thumbnail_index" value={thumbIdx} />
+      <input type="hidden" name="thumbnail_index" ref={thumbInputRef} defaultValue={thumbIdx} />
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
@@ -113,7 +119,7 @@ export function AnimalImageUploader({
           >
             <button
               type="button"
-              onClick={() => setThumbIdx(idx)}
+              onClick={() => setThumb(idx)}
               className="block h-full w-full"
               aria-label={`${idx + 1}번 이미지를 대표로 선택`}
             >

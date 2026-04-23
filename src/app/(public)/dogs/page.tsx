@@ -18,10 +18,10 @@ export const revalidate = 60
 const PAGE_SIZE = 24
 
 const STATUS_FILTERS: Array<{ label: string; value: DogStatus | "전체" }> = [
+  { label: "전체", value: "전체" },
   { label: "보호중", value: "보호중" },
   { label: "임시보호중", value: "임시보호중" },
   { label: "입양완료", value: "입양완료" },
-  { label: "전체", value: "전체" },
 ]
 
 const SIZE_FILTERS: Array<{ label: string; value: DogSize | "전체" }> = [
@@ -40,9 +40,9 @@ const SORT_OPTIONS: Array<{ label: string; value: DogSort }> = [
 ]
 
 function parseStatus(value: string | undefined): DogStatus | "전체" {
-  if (!value) return "보호중"
+  if (!value) return "전체"
   const found = STATUS_FILTERS.find((f) => f.value === value)
-  return found ? found.value : "보호중"
+  return found ? found.value : "전체"
 }
 
 function parseSize(value: string | undefined): DogSize | "전체" {
@@ -62,7 +62,7 @@ function buildHref(
   q: string
 ) {
   const params = new URLSearchParams()
-  if (status !== "보호중") params.set("status", status)
+  if (status !== "전체") params.set("status", status)
   if (size !== "전체") params.set("size", size)
   if (sort !== "latest") params.set("sort", sort)
   if (q) params.set("q", q)
@@ -176,7 +176,7 @@ export default async function DogsPage({
         totalPages={totalPages}
         basePath="/dogs"
         searchParams={{
-          status: activeStatus !== "보호중" ? activeStatus : undefined,
+          status: activeStatus !== "전체" ? activeStatus : undefined,
           size: activeSize !== "전체" ? activeSize : undefined,
           sort: activeSort !== "latest" ? activeSort : undefined,
           q: activeQuery || undefined,

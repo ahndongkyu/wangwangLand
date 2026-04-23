@@ -28,7 +28,7 @@ export async function listNotices({
 
   let query = supabase
     .from("notices")
-    .select("*", { count: "exact" })
+    .select("id, title, is_pinned, published_at, created_at", { count: "exact" })
     .order("is_pinned", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })

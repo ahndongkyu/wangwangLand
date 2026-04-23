@@ -77,7 +77,7 @@ export function HeroCarousel({
 
   return (
     <section
-      className="relative overflow-hidden"
+      className="relative min-h-[420px] overflow-hidden md:min-h-[560px]"
       aria-roledescription="carousel"
       aria-label="메인 배너"
       onMouseEnter={() => setPlaying(false)}

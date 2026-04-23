@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
-import { DailyDeleteButton, listDailyPosts } from "@/features/daily"
+import { DailyRowActions, listDailyPosts } from "@/features/daily"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -110,19 +110,11 @@ export default async function AdminDailyPage({
                         {new Date(p.posted_at).toLocaleDateString("ko-KR")}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Link
-                            href={`/admin/daily/${p.id}/edit`}
-                            className={cn(
-                              buttonVariants({ variant: "ghost", size: "sm" })
-                            )}
-                          >
-                            수정
-                          </Link>
-                          {canDelete && (
-                            <DailyDeleteButton id={p.id} title={p.title} />
-                          )}
-                        </div>
+                        <DailyRowActions
+                          id={p.id}
+                          title={p.title}
+                          canDelete={canDelete}
+                        />
                       </td>
                     </tr>
                   )

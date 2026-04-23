@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Pin } from "lucide-react"
 
 import { getCurrentAdmin } from "@/features/auth"
-import { listNotices, NoticeDeleteButton } from "@/features/notices"
+import { listNotices, NoticeRowActions } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
@@ -105,19 +105,11 @@ export default async function AdminNoticesPage({
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Link
-                          href={`/admin/notices/${n.id}/edit`}
-                          className={cn(
-                            buttonVariants({ variant: "ghost", size: "sm" })
-                          )}
-                        >
-                          수정
-                        </Link>
-                        {canDelete && (
-                          <NoticeDeleteButton id={n.id} title={n.title} />
-                        )}
-                      </div>
+                      <NoticeRowActions
+                        id={n.id}
+                        title={n.title}
+                        canDelete={canDelete}
+                      />
                     </td>
                   </tr>
                 ))}

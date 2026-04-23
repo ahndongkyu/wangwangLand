@@ -1,5 +1,6 @@
 export { NoticeForm } from "./components/notice-form"
 export { NoticeDeleteButton } from "./components/notice-delete-button"
+export { NoticeRowActions } from "./components/notice-row-actions"
 export { NoticeBadge } from "./components/notice-badge"
 export { MarkNoticesSeen } from "./components/mark-notices-seen"
 export {

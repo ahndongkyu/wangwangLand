@@ -3,6 +3,10 @@ import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database
 
 export type DogSort = "latest" | "name"
 
+/** 카드 목록에 필요한 컬럼만 선택 (description 등 큰 텍스트 제외) */
+const DOG_CARD_COLS =
+  "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, size, neutered, rescue_date, updated_at" as const
+
 export interface ListDogsOptions {
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
@@ -24,7 +28,7 @@ export async function listDogs({
 }: ListDogsOptions = {}): Promise<Dog[]> {
   const supabase = await createClient()
 
-  let query = supabase.from("dogs").select("*")
+  let query = supabase.from("dogs").select(DOG_CARD_COLS)
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
@@ -74,7 +78,7 @@ export async function listDogsWithCount({
 }: ListDogsOptions = {}): Promise<PaginatedDogs> {
   const supabase = await createClient()
 
-  let query = supabase.from("dogs").select("*", { count: "exact" })
+  let query = supabase.from("dogs").select(DOG_CARD_COLS, { count: "exact" })
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
@@ -147,33 +151,43 @@ export async function listSimilarDogs(
 ): Promise<Dog[]> {
   const supabase = await createClient()
 
-  // 충분히 후보를 넉넉하게 뽑아 클라이언트에서 점수화.
-  const { data, error } = await supabase
-    .from("dogs")
-    .select("*")
-    .in("status", ["보호중", "임시보호중"])
-    .neq("id", current.id)
-    .order("updated_at", { ascending: false })
-    .limit(40)
+  // 같은 크기 우선 쿼리 (있을 때만), 나머지 채우기 쿼리를 병렬 실행
+  const [sameSize, any] = await Promise.all([
+    current.size
+      ? supabase
+          .from("dogs")
+          .select(DOG_CARD_COLS)
+          .in("status", ["보호중", "임시보호중"])
+          .neq("id", current.id)
+          .eq("size", current.size)
+          .order("updated_at", { ascending: false })
+          .limit(limit)
+      : Promise.resolve({ data: [] as Dog[], error: null }),
+    supabase
+      .from("dogs")
+      .select(DOG_CARD_COLS)
+      .in("status", ["보호중", "임시보호중"])
+      .neq("id", current.id)
+      .order("updated_at", { ascending: false })
+      .limit(limit),
+  ])
 
-  if (error || !data) {
-    console.error("[listSimilarDogs]", error)
+  if (any.error) {
+    console.error("[listSimilarDogs]", any.error)
     return []
   }
 
-  const candidates = data as Dog[]
-
-  function score(d: Dog): number {
-    let s = 0
-    if (current.size && d.size === current.size) s += 10
-    if (d.gender === current.gender && current.gender !== "미상") s += 3
-    // 최근 업데이트 가산점 (인덱스 위치 역순 → 최신 약간 우위)
-    return s
+  // 같은 크기 먼저, 중복 제거, limit 개 반환
+  const seen = new Set<string>()
+  const result: Dog[] = []
+  for (const d of [...(sameSize.data ?? []), ...(any.data ?? [])]) {
+    if (result.length >= limit) break
+    if (!seen.has(d.id)) {
+      seen.add(d.id)
+      result.push(d as Dog)
+    }
   }
-
-  return [...candidates]
-    .sort((a, b) => score(b) - score(a))
-    .slice(0, limit)
+  return result
 }
 
 export async function countDogsByStatus(): Promise<Record<DogStatus, number>> {
