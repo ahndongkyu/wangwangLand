@@ -3,6 +3,7 @@
 import { Check, Copy } from "lucide-react"
 import { useState } from "react"
 
+import { useToast } from "@/shared/components/toast"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
@@ -23,12 +24,18 @@ export function CopyButton({
   resetMs = 1500,
 }: Props) {
   const [copied, setCopied] = useState(false)
+  const toast = useToast()
 
   async function handleCopy() {
+    const succeed = () => {
+      setCopied(true)
+      toast.success("복사되었습니다 ✓")
+      setTimeout(() => setCopied(false), resetMs)
+    }
+
     try {
       await navigator.clipboard.writeText(value)
-      setCopied(true)
-      setTimeout(() => setCopied(false), resetMs)
+      succeed()
     } catch {
       // fallback: 구형 브라우저
       const ta = document.createElement("textarea")
@@ -39,8 +46,9 @@ export function CopyButton({
       ta.select()
       try {
         document.execCommand("copy")
-        setCopied(true)
-        setTimeout(() => setCopied(false), resetMs)
+        succeed()
+      } catch {
+        toast.error("복사에 실패했어요. 직접 선택해서 복사해 주세요.")
       } finally {
         document.body.removeChild(ta)
       }
