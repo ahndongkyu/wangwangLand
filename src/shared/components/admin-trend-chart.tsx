@@ -45,7 +45,7 @@ export function AdminTrendChart({ data }: { data: MonthlyRescueStat[] }) {
             fontSize: "12px",
             color: "var(--color-foreground)",
           }}
-          formatter={(value: number) => [`${value}마리`, "구조"]}
+          formatter={(value) => [`${value}마리`, "구조"]}
           labelStyle={{ fontWeight: 600 }}
         />
         <Bar dataKey="rescued" radius={[4, 4, 0, 0]} maxBarSize={36}>
