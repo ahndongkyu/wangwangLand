@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
+import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
@@ -11,25 +12,25 @@ export const metadata: Metadata = {
   description: `${SITE.name}는 어떤 단체이며, 어떤 가치로 활동하는지 소개합니다.`,
 }
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const stats = await getSiteStats()
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-20">
 
       {/* 히어로 — 좌측 이미지 + 우측 카드 */}
-      <section className="mb-16 overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:grid md:grid-cols-[1fr_1fr] lg:grid-cols-[3fr_2fr]">
+      <section className="mb-8 overflow-hidden rounded-2xl border border-border bg-card shadow-sm md:grid md:grid-cols-[1fr_1fr] lg:grid-cols-[3fr_2fr]">
         {/* 이미지 */}
         <div className="relative min-h-64 md:min-h-0">
           <Image
-            src="/images/about.JPG"
+            src="/images/about.jpg"
             alt="봉사자들과 함께하는 왕왕랜드"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover object-center"
             priority
           />
-          {/* 은은한 오버레이 */}
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.40)" }} />
-          {/* 이미지 캡션 */}
           <div className="absolute bottom-5 left-5 text-white">
             <p className="text-sm font-semibold">봉사자들과 함께</p>
             <p className="mt-0.5 text-xs opacity-75">2025.11 · 왕왕랜드</p>
@@ -59,7 +60,15 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 섹션들 */}
+      {/* 통계 — 히어로 바로 아래 */}
+      <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="누적 구조" value={stats.rescued} suffix="마리" />
+        <StatCard label="현재 보호 중" value={stats.sheltered} suffix="마리" />
+        <StatCard label="입양 완료" value={stats.adopted} suffix="마리" />
+        <StatCard label="누적 봉사자" value={stats.volunteers} suffix="명" fallback="모집 중" />
+      </section>
+
+      {/* 3단 카드 */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <InfoCard
           badge="우리의 약속"
@@ -69,12 +78,10 @@ export default function AboutPage() {
         <InfoCard
           badge="100% 안락사 없는 보호소"
           title="우리가 하는 일"
-          body=""
           list={[
-            "길 위에 버려진 아이들을 구조하고 안전한 보금자리를 제공합니다.",
-            "건강 회복과 사회성 교육을 도와 입양 준비를 합니다.",
-            "평생 가족이 되어줄 따뜻한 분들을 연결해 드립니다.",
-            "입양 이후에도 아이와 가족이 잘 지내는지 소통합니다.",
+            "길 위의 아이들을 구조하고 건강·사회성을 회복시킵니다.",
+            "평생 가족이 되어줄 따뜻한 분들과 연결합니다.",
+            "입양 후에도 아이와 가족이 잘 지내는지 함께 소통합니다.",
           ]}
         />
         <InfoCard
@@ -84,10 +91,33 @@ export default function AboutPage() {
           className="md:col-span-2 lg:col-span-1"
         />
       </div>
+    </div>
+  )
+}
 
-      <p className="mt-12 text-xs text-muted-foreground/60">
-        * 세부 내용은 단체 승격 완료 후 공식 문구로 갱신됩니다.
-      </p>
+function StatCard({
+  label,
+  value,
+  suffix,
+  fallback,
+}: {
+  label: string
+  value: number
+  suffix: string
+  fallback?: string
+}) {
+  const showFallback = value === 0 && !!fallback
+  return (
+    <div className="rounded-xl border border-border bg-card px-5 py-4 text-center">
+      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+      {showFallback ? (
+        <p className="mt-1 text-2xl font-bold text-primary">{fallback}</p>
+      ) : (
+        <p className="mt-1 text-2xl font-bold text-foreground">
+          {value.toLocaleString()}
+          <span className="ml-0.5 text-sm font-medium text-muted-foreground">{suffix}</span>
+        </p>
+      )}
     </div>
   )
 }
@@ -101,7 +131,7 @@ function InfoCard({
 }: {
   badge: string
   title: string
-  body: string
+  body?: string
   list?: string[]
   className?: string
 }) {
@@ -115,10 +145,10 @@ function InfoCard({
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
       )}
       {list && (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 space-y-2.5">
           {list.map((item) => (
             <li key={item} className="flex gap-2 text-sm text-muted-foreground">
-              <span className="mt-0.5 shrink-0 text-primary">•</span>
+              <span className="mt-0.5 shrink-0 text-primary">✓</span>
               <span>{item}</span>
             </li>
           ))}
