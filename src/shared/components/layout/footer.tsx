@@ -49,7 +49,7 @@ export async function Footer() {
               href="/donate"
               className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
             >
-              <BrandIcon name="heart" size={16} decorative />
+              <BrandIcon name="heart" size={16} decorative className="brightness-0 invert" />
               후원하기
             </Link>
           </div>
