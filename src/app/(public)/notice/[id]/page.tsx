@@ -5,6 +5,7 @@ import { Pin } from "lucide-react"
 
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
 import { ImageLightbox } from "@/shared/components/image-lightbox"
+import { LinkifiedText } from "@/shared/components/linkified-text"
 
 export const revalidate = 60
 
@@ -67,8 +68,8 @@ export default async function NoticeDetailPage({
         </h1>
       </header>
 
-      <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
-        {notice.content}
+      <article className="text-base leading-relaxed text-foreground/90">
+        <LinkifiedText text={notice.content} className="whitespace-pre-wrap" />
       </article>
 
       {notice.images && notice.images.length > 0 && (
