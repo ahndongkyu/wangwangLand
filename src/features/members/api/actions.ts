@@ -4,17 +4,15 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 
-/** 카카오 OAuth URL 반환 — 클라이언트에서 window.location.href 로 이동 */
+/** 카카오 OAuth URL 반환 — Supabase를 거치지 않고 카카오 직접 연동 */
 export async function getKakaoLoginUrl(): Promise<string | null> {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.signInWithOAuth({
-    provider: "kakao",
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-      scopes: "profile_nickname profile_image",
-    },
+  const params = new URLSearchParams({
+    client_id: process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY!,
+    redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/kakao/callback`,
+    response_type: "code",
+    scope: "profile_nickname profile_image",
   })
-  return data.url ?? null
+  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
 }
 
 /** 로그아웃 */
