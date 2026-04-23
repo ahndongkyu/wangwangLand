@@ -60,13 +60,47 @@ export async function updateNickname(
   redirect("/pending")
 }
 
-/** 어드민: 회원 상태 변경 */
+/** 어드민: 회원 승인 (상태 + 권한 동시 설정) */
+export async function approveMember(
+  id: string,
+  role: "member" | "full_member" | "staff"
+): Promise<{ error?: string }> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from("profiles")
+    .update({ status: "approved", role })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/members")
+  return {}
+}
+
+/** 어드민: 회원 거절 */
+export async function rejectMember(
+  id: string
+): Promise<{ error?: string }> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from("profiles")
+    .update({ status: "rejected" })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/members")
+  return {}
+}
+
+/** 어드민: 회원 상태 변경 (레거시 — 하위 호환) */
 export async function updateMemberStatus(
   id: string,
   status: "approved" | "rejected"
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin
     .from("profiles")
     .update({ status })
     .eq("id", id)
@@ -81,8 +115,9 @@ export async function updateMemberRole(
   id: string,
   role: "member" | "full_member" | "staff"
 ): Promise<{ error?: string }> {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin
     .from("profiles")
     .update({ role })
     .eq("id", id)
