@@ -131,7 +131,7 @@ export function AnimalImageUploader({
             <button
               type="button"
               onClick={() => removeImage(idx)}
-              className="absolute right-1 top-1 rounded-full bg-destructive/90 p-1 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute right-1 top-1 rounded-full bg-destructive/90 p-1 text-destructive-foreground opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
               aria-label={`${idx + 1}번 이미지 삭제`}
             >
               <X className="size-3" />

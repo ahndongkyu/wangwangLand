@@ -77,6 +77,9 @@ export default async function AdminStoriesPage({
                     상태
                   </th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">
+                    작성자
+                  </th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
                     작성일
                   </th>
                   <th className="px-4 py-3 text-right font-semibold">작업</th>
@@ -123,6 +126,20 @@ export default async function AdminStoriesPage({
                         >
                           {isPublished ? "공개" : "임시저장"}
                         </span>
+                      </td>
+                      <td className="hidden px-4 py-3 text-sm md:table-cell">
+                        {s.author ? (
+                          <span className="flex items-center gap-1">
+                            <span>{s.author.nickname}</span>
+                            {s.author.role !== "admin" && (
+                              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                유저
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                         {new Date(s.created_at).toLocaleDateString("ko-KR")}

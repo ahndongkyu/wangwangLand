@@ -69,10 +69,10 @@ export default async function AdminDailyPage({
                   <th className="px-4 py-3 font-semibold">사진</th>
                   <th className="px-4 py-3 font-semibold">제목</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    사진 수
+                    작성자
                   </th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    날짜
+                    작성일
                   </th>
                   <th className="px-4 py-3 text-right font-semibold">작업</th>
                 </tr>
@@ -103,8 +103,19 @@ export default async function AdminDailyPage({
                         </div>
                       </td>
                       <td className="px-4 py-3 font-medium">{p.title}</td>
-                      <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                        {p.images.length}장
+                      <td className="hidden px-4 py-3 text-sm md:table-cell">
+                        {p.author ? (
+                          <span className="flex items-center gap-1">
+                            <span>{p.author.nickname}</span>
+                            {p.author.role !== "admin" && (
+                              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                유저
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                         {new Date(p.posted_at).toLocaleDateString("ko-KR")}
