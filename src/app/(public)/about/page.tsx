@@ -87,7 +87,7 @@ export default async function AboutPage() {
         <InfoCard
           badge="함께해요"
           title="당신의 참여가 생명을 살려요"
-          body="입양, 봉사, 후원 어떤 방법이든 좋습니다./n작은 마음 하나하나가 한 생명을 살립니다."
+          body={"입양, 봉사, 후원 어떤 방법이든 좋습니다.\n작은 마음 하나하나가 한 생명을 살립니다."}
           className="md:col-span-2 lg:col-span-1"
         />
       </div>
@@ -142,7 +142,7 @@ function InfoCard({
       </span>
       <h2 className="mt-2 text-lg font-bold text-foreground">{title}</h2>
       {body && (
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{body}</p>
       )}
       {list && (
         <ul className="mt-3 space-y-2.5">
