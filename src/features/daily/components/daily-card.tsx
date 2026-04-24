@@ -1,9 +1,10 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import type { DailyPost } from "@/shared/types/database"
+import { RoleBadge } from "@/shared/components/role-badge"
+import type { DailyPostWithAuthor } from "../api/queries"
 
-export function DailyCard({ post }: { post: DailyPost }) {
+export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
   const cover = post.images[0] ?? null
 
   return (
@@ -32,10 +33,7 @@ export function DailyCard({ post }: { post: DailyPost }) {
         )}
       </div>
       <div className="p-4">
-        <p className="text-xs text-muted-foreground">
-          {new Date(post.posted_at).toLocaleDateString("ko-KR")}
-        </p>
-        <h3 className="mt-1 line-clamp-2 text-base font-semibold text-foreground">
+        <h3 className="line-clamp-2 text-base font-semibold text-foreground">
           {post.title}
         </h3>
         {post.content && (
@@ -43,6 +41,17 @@ export function DailyCard({ post }: { post: DailyPost }) {
             {post.content}
           </p>
         )}
+        <div className="mt-3 flex items-center gap-2">
+          {post.author && (
+            <>
+              <RoleBadge role={post.author.role} />
+              <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
+            </>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {new Date(post.posted_at).toLocaleDateString("ko-KR")}
+          </span>
+        </div>
       </div>
     </Link>
   )

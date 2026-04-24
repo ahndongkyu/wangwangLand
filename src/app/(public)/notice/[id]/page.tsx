@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
+import { RoleBadge } from "@/shared/components/role-badge"
 import { ImageLightbox } from "@/shared/components/image-lightbox"
 import { LinkifiedText } from "@/shared/components/linkified-text"
 
@@ -66,6 +67,12 @@ export default async function NoticeDetailPage({
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           {notice.title}
         </h1>
+        {notice.author && (
+          <div className="mt-3 flex items-center gap-2">
+            <RoleBadge role={notice.author.role} />
+            <span className="text-sm text-muted-foreground">{notice.author.nickname}</span>
+          </div>
+        )}
       </header>
 
       <article className="text-base leading-relaxed text-foreground/90">

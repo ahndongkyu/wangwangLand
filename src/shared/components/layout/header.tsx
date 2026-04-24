@@ -13,6 +13,7 @@ import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
 import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
+import { RoleBadge } from "@/shared/components/role-badge"
 import {
   BrandIcon,
   type BrandIconName,
@@ -198,18 +199,6 @@ const MOBILE_NAV_ICONS: Record<string, BrandIconName> = {
   "/notice": "notification",
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  member: "일반회원",
-  full_member: "정회원",
-  staff: "운영진",
-  admin: "관리자",
-}
-const ROLE_COLOR: Record<string, string> = {
-  member: "bg-muted text-muted-foreground",
-  full_member: "bg-primary/15 text-primary",
-  staff: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-}
 
 function MobileProfileSection({
   profile,
@@ -259,10 +248,8 @@ function MobileProfileSection({
           )}
         </div>
         <div className="min-w-0">
-          <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold ${ROLE_COLOR[profile.role]}`}>
-            {ROLE_LABEL[profile.role]}
-          </span>
-          <p className="truncate font-semibold text-foreground">{profile.nickname}</p>
+          <RoleBadge role={profile.role} />
+          <p className="mt-0.5 truncate font-semibold text-foreground">{profile.nickname}</p>
         </div>
       </div>
 

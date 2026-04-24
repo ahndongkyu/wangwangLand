@@ -6,6 +6,7 @@ import Link from "next/link"
 import { LogOut, Moon, Settings, Sun, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
+import { RoleBadge } from "@/shared/components/role-badge"
 import type { Profile } from "../api/queries"
 
 const ROLE_LABEL: Record<Profile["role"], string> = {
@@ -13,13 +14,6 @@ const ROLE_LABEL: Record<Profile["role"], string> = {
   full_member: "정회원",
   staff: "운영진",
   admin: "관리자",
-}
-
-const ROLE_COLOR: Record<Profile["role"], string> = {
-  member: "bg-muted text-muted-foreground",
-  full_member: "bg-primary/15 text-primary",
-  staff: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 }
 
 export function UserMenu({ profile }: { profile: Profile }) {
@@ -59,9 +53,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
           )}
         </div>
         <div className="hidden flex-col items-start gap-1 sm:flex">
-          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${ROLE_COLOR[profile.role]}`}>
-            {ROLE_LABEL[profile.role]}
-          </span>
+          <RoleBadge role={profile.role} />
           <span className="max-w-[80px] truncate text-sm font-medium leading-snug text-foreground">
             {profile.nickname}
           </span>
@@ -74,9 +66,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
           <div className="border-b border-border px-4 py-3">
             <p className="flex items-center gap-1.5 font-semibold text-foreground">
               {profile.nickname}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${ROLE_COLOR[profile.role]}`}>
-                {ROLE_LABEL[profile.role]}
-              </span>
+              <RoleBadge role={profile.role} />
             </p>
           </div>
 

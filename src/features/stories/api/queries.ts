@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { AdoptionStory } from "@/shared/types/database"
 
 export interface StoryDogRef {
@@ -10,6 +11,7 @@ export interface StoryDogRef {
 
 export type StoryWithDog = AdoptionStory & {
   dog: StoryDogRef | null
+  author: AuthorInfo | null
 }
 
 export interface ListStoriesOptions {
@@ -63,7 +65,14 @@ export async function listAdoptionStories({
     return { stories: [], total: 0 }
   }
 
-  return { stories: (data ?? []) as StoryWithDog[], total: count ?? 0 }
+  const authorMap = await fetchAuthorMap((data ?? []).map((s) => s.created_by))
+
+  const stories: StoryWithDog[] = (data ?? []).map((s) => ({
+    ...(s as unknown as AdoptionStory & { dog: StoryDogRef | null }),
+    author: s.created_by ? (authorMap[s.created_by] ?? null) : null,
+  }))
+
+  return { stories, total: count ?? 0 }
 }
 
 export async function getAdoptionStory(
@@ -87,6 +96,11 @@ export async function getAdoptionStory(
     console.error("[getAdoptionStory] error:", error)
     return null
   }
+  if (!data) return null
 
-  return data as StoryWithDog | null
+  const authorMap = await fetchAuthorMap([data.created_by])
+  return {
+    ...(data as AdoptionStory & { dog: StoryDogRef | null }),
+    author: data.created_by ? (authorMap[data.created_by] ?? null) : null,
+  }
 }

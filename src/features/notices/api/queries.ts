@@ -1,9 +1,12 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { Notice } from "@/shared/types/database"
 
 import type { RecentNoticeMeta } from "../types"
 
 export type { RecentNoticeMeta }
+
+export type NoticeWithAuthor = Notice & { author: AuthorInfo | null }
 
 export interface ListNoticesOptions {
   /** true면 미발행 포함 (어드민용) */
@@ -14,7 +17,7 @@ export interface ListNoticesOptions {
 }
 
 export interface PaginatedNotices {
-  notices: Notice[]
+  notices: NoticeWithAuthor[]
   total: number
 }
 
@@ -28,7 +31,7 @@ export async function listNotices({
 
   let query = supabase
     .from("notices")
-    .select("id, title, is_pinned, published_at, created_at", { count: "exact" })
+    .select("id, title, is_pinned, published_at, created_at, created_by", { count: "exact" })
     .order("is_pinned", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
@@ -49,12 +52,18 @@ export async function listNotices({
     return { notices: [], total: 0 }
   }
 
-  return { notices: (data ?? []) as Notice[], total: count ?? 0 }
+  const authorMap = await fetchAuthorMap((data ?? []).map((n) => n.created_by))
+
+  const notices: NoticeWithAuthor[] = (data ?? []).map((n) => ({
+    ...(n as unknown as Notice),
+    author: n.created_by ? (authorMap[n.created_by] ?? null) : null,
+  }))
+
+  return { notices, total: count ?? 0 }
 }
 
 /**
  * 헤더 뱃지 계산용 — 최근 발행된 공지의 타임스탬프·핀 여부만 반환.
- * 클라이언트가 localStorage 의 lastSeenAt 과 비교해 "N" 뱃지를 띄우는 데 사용.
  */
 export async function listRecentPublishedNotices(
   limit = 20
@@ -78,7 +87,7 @@ export async function listRecentPublishedNotices(
 export async function getNotice(
   id: string,
   { includeDrafts = false }: { includeDrafts?: boolean } = {}
-): Promise<Notice | null> {
+): Promise<NoticeWithAuthor | null> {
   const supabase = await createClient()
 
   let query = supabase.from("notices").select("*").eq("id", id)
@@ -92,6 +101,11 @@ export async function getNotice(
     console.error("[getNotice] error:", error)
     return null
   }
+  if (!data) return null
 
-  return data as Notice | null
+  const authorMap = await fetchAuthorMap([data.created_by])
+  return {
+    ...(data as Notice),
+    author: data.created_by ? (authorMap[data.created_by] ?? null) : null,
+  }
 }

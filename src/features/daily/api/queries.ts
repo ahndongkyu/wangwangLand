@@ -1,5 +1,8 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { DailyPost } from "@/shared/types/database"
+
+export type DailyPostWithAuthor = DailyPost & { author: AuthorInfo | null }
 
 export interface ListDailyOptions {
   query?: string
@@ -8,7 +11,7 @@ export interface ListDailyOptions {
 }
 
 export interface PaginatedDaily {
-  posts: DailyPost[]
+  posts: DailyPostWithAuthor[]
   total: number
 }
 
@@ -21,7 +24,7 @@ export async function listDailyPosts({
 
   let query = supabase
     .from("daily_posts")
-    .select("id, title, images, content, posted_at", { count: "exact" })
+    .select("id, title, images, content, posted_at, created_by", { count: "exact" })
     .order("posted_at", { ascending: false })
     .order("id", { ascending: true })
     .range(offset, offset + limit - 1)
@@ -37,10 +40,17 @@ export async function listDailyPosts({
     return { posts: [], total: 0 }
   }
 
-  return { posts: (data ?? []) as DailyPost[], total: count ?? 0 }
+  const authorMap = await fetchAuthorMap((data ?? []).map((p) => p.created_by))
+
+  const posts: DailyPostWithAuthor[] = (data ?? []).map((p) => ({
+    ...(p as unknown as DailyPost),
+    author: p.created_by ? (authorMap[p.created_by] ?? null) : null,
+  }))
+
+  return { posts, total: count ?? 0 }
 }
 
-export async function getDailyPost(id: string): Promise<DailyPost | null> {
+export async function getDailyPost(id: string): Promise<DailyPostWithAuthor | null> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -53,6 +63,11 @@ export async function getDailyPost(id: string): Promise<DailyPost | null> {
     console.error("[getDailyPost] error:", error)
     return null
   }
+  if (!data) return null
 
-  return data as DailyPost | null
+  const authorMap = await fetchAuthorMap([data.created_by])
+  return {
+    ...(data as DailyPost),
+    author: data.created_by ? (authorMap[data.created_by] ?? null) : null,
+  }
 }

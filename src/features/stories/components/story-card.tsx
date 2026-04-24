@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { RoleBadge } from "@/shared/components/role-badge"
 import type { StoryWithDog } from "../api/queries"
 
 export function StoryCard({ story }: { story: StoryWithDog }) {
@@ -43,11 +44,19 @@ export function StoryCard({ story }: { story: StoryWithDog }) {
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
           {story.content}
         </p>
-        {story.published_at && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            {new Date(story.published_at).toLocaleDateString("ko-KR")}
-          </p>
-        )}
+        <div className="mt-3 flex items-center gap-2">
+          {story.author && (
+            <>
+              <RoleBadge role={story.author.role} />
+              <span className="text-xs text-muted-foreground">{story.author.nickname}</span>
+            </>
+          )}
+          {story.published_at && (
+            <span className="ml-auto text-xs text-muted-foreground">
+              {new Date(story.published_at).toLocaleDateString("ko-KR")}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   )
