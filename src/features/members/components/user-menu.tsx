@@ -58,8 +58,8 @@ export function UserMenu({ profile }: { profile: Profile }) {
             <User className="size-full p-1.5 text-muted-foreground" />
           )}
         </div>
-        <div className="hidden flex-col items-start sm:flex">
-          <span className="text-[10px] font-bold leading-none text-muted-foreground">
+        <div className="hidden flex-col items-start gap-1 sm:flex">
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${ROLE_COLOR[profile.role]}`}>
             {ROLE_LABEL[profile.role]}
           </span>
           <span className="max-w-[80px] truncate text-sm font-medium leading-snug text-foreground">
