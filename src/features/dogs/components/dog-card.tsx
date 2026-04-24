@@ -26,7 +26,7 @@ export function DogCard({ dog }: { dog: Dog }) {
 
   return (
     <Link href={`/dogs/${dog.id}`} className="group block">
-      <Card className="overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
+      <Card className="overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:border-[#E89B5E] group-hover:shadow-lg">
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           {thumbnailSrc ? (
             <Image
@@ -64,17 +64,24 @@ export function DogCard({ dog }: { dog: Dog }) {
           {/* 메타 뱃지 그룹 */}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {dog.gender && dog.gender !== "미상" && (
-              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
-                {dog.gender === "수컷" ? "♂" : "♀"} {dog.gender}
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  dog.gender === "수컷"
+                    ? "bg-sky-50 text-sky-600"
+                    : "bg-pink-50 text-pink-500"
+                )}
+              >
+                {dog.gender === "수컷" ? "♂ 남아" : "♀ 여아"}
               </span>
             )}
             {formatAge(dog) && (
-              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {formatAge(dog)}
               </span>
             )}
             {dog.size && (
-              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {dog.size}형
               </span>
             )}
