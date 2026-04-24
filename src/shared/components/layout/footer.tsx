@@ -146,11 +146,6 @@ export async function Footer() {
             <div className="mt-4 rounded-lg border border-border bg-card px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
               <p>{SITE.contact.addressShort}</p>
               <p>유기견보호소 왕왕랜드</p>
-              {SITE.contact.addressNote && (
-                <p className="mt-1 text-muted-foreground/60">
-                  {SITE.contact.addressNote}
-                </p>
-              )}
             </div>
 
             {/* SNS 아이콘 — 36px 정사각형 */}
