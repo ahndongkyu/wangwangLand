@@ -23,11 +23,11 @@ export async function sendCommentNotifications(opts: {
     // 대댓글 → 부모 댓글 작성자에게 알림
     const { data: parent } = await admin
       .from("comments")
-      .select("author_id")
+      .select("user_id")
       .eq("id", parentId)
       .maybeSingle()
-    if (parent?.author_id && parent.author_id !== actorId) {
-      targets.push({ userId: parent.author_id, type: "reply_to_comment" })
+    if (parent?.user_id && parent.user_id !== actorId) {
+      targets.push({ userId: parent.user_id, type: "reply_to_comment" })
     }
   } else {
     // 일반 댓글 → 게시글 작성자에게 알림

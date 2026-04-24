@@ -43,7 +43,7 @@ export async function listComments(
   const rows = data ?? []
 
   // 작성자 일괄 조회
-  const authorIds = [...new Set(rows.map((c) => c.author_id).filter(Boolean))] as string[]
+  const authorIds = [...new Set(rows.map((c) => c.user_id).filter(Boolean))] as string[]
   const authorMap: Record<string, CommentAuthor> = {}
   if (authorIds.length > 0) {
     const { data: profiles } = await supabase
@@ -62,7 +62,8 @@ export async function listComments(
   for (const row of rows) {
     const comment: Comment = {
       ...row,
-      author: row.author_id ? (authorMap[row.author_id] ?? null) : null,
+      author_id: row.user_id ?? null,
+      author: row.user_id ? (authorMap[row.user_id] ?? null) : null,
       replies: [],
     }
     if (!row.parent_id) {

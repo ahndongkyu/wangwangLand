@@ -35,7 +35,7 @@ export async function createComment(
       post_type: postType,
       post_id: postId,
       parent_id: parentId ?? null,
-      author_id: session.user.id,
+      user_id: session.user.id,
       content: trimmed,
     })
     .select("id")
@@ -43,7 +43,7 @@ export async function createComment(
 
   if (error || !comment) {
     console.error("[createComment] insert error:", JSON.stringify(error))
-    return { error: `댓글 작성에 실패했습니다. (${error?.code ?? "unknown"}: ${error?.message ?? ""})` }
+    return { error: "댓글 작성에 실패했습니다." }
   }
 
   // 알림 발송 (실패해도 댓글 등록엔 영향 없음)
@@ -81,7 +81,7 @@ export async function deleteComment(
     .from("comments")
     .delete()
     .eq("id", commentId)
-    .or(isStaff ? `id.eq.${commentId}` : `author_id.eq.${session.user.id}`)
+    .or(isStaff ? `id.eq.${commentId}` : `user_id.eq.${session.user.id}`)
 
   if (error) return { error: "삭제에 실패했습니다." }
 
