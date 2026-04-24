@@ -51,26 +51,34 @@ export function DogCard({ dog }: { dog: Dog }) {
           </Badge>
         </div>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-base font-semibold text-foreground">
-              {dog.name}
-            </h3>
+          {/* 이름 */}
+          <h3 className="text-lg font-bold leading-tight text-foreground">
+            {dog.name}
+          </h3>
+          {/* 품종 */}
+          {dog.breed && (
+            <p className="mt-1 truncate text-sm text-muted-foreground">
+              {dog.breed}
+            </p>
+          )}
+          {/* 메타 뱃지 그룹 */}
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {dog.gender && dog.gender !== "미상" && (
-              <span className="text-xs text-muted-foreground">
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {dog.gender === "수컷" ? "♂" : "♀"} {dog.gender}
               </span>
             )}
-          </div>
-          <div className="mt-1 text-sm text-muted-foreground">
-            {[dog.breed, formatAge(dog)].filter(Boolean).join(" · ")}
-          </div>
-          {dog.size && (
-            <div className="mt-2">
-              <span className="inline-flex items-center rounded-full bg-accent/30 px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">
+            {formatAge(dog) && (
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
+                {formatAge(dog)}
+              </span>
+            )}
+            {dog.size && (
+              <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {dog.size}형
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
     </Link>
