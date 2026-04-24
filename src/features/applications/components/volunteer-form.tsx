@@ -50,6 +50,11 @@ export function VolunteerForm() {
       return
     }
 
+    if (formData.get("privacy_agreed") !== "on") {
+      setError("개인정보 수집·이용 동의가 필요합니다.")
+      return
+    }
+
     startTransition(async () => {
       const result = await submitVolunteerApplication(formData)
       if (result.error) setError(result.error)
@@ -170,7 +175,7 @@ export function VolunteerForm() {
       </div>
 
       <div className="flex items-start gap-2 rounded-md border border-border bg-secondary/40 p-4">
-        <Checkbox id="privacy_agreed" name="privacy_agreed" required className="mt-0.5" />
+        <Checkbox id="privacy_agreed" name="privacy_agreed" className="mt-0.5" />
         <Label htmlFor="privacy_agreed" className="cursor-pointer text-sm leading-relaxed">
           개인정보(이름·연락처·인원수)를 봉사 활동 운영 목적으로 수집·이용하는 데
           동의합니다.

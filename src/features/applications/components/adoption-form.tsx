@@ -41,6 +41,11 @@ export function AdoptionForm({ dogId, dogName }: Props) {
       return
     }
 
+    if (formData.get("privacy_agreed") !== "on") {
+      setError("개인정보 수집·이용 동의가 필요합니다.")
+      return
+    }
+
     startTransition(async () => {
       const result = await submitAdoptionApplication(formData)
       if (result.error) {
@@ -210,7 +215,7 @@ export function AdoptionForm({ dogId, dogName }: Props) {
       </div>
 
       <div className="flex items-start gap-2 rounded-md border border-border bg-secondary/40 p-4">
-        <Checkbox id="privacy_agreed" name="privacy_agreed" required className="mt-0.5" />
+        <Checkbox id="privacy_agreed" name="privacy_agreed" className="mt-0.5" />
         <Label htmlFor="privacy_agreed" className="cursor-pointer text-sm leading-relaxed">
           개인정보(이름·연락처·주소·가족/주거 정보)를 입양 상담 목적으로
           수집·이용하는 데 동의합니다. 정보는 상담 종료 또는 입양 완료 후 1년간

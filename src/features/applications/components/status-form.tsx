@@ -1,11 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import {
-  deleteAdoptionApplication,
-  deleteVolunteerApplication,
   updateAdoptionApplication,
   updateVolunteerApplication,
 } from "../api/mutations"
@@ -34,11 +31,8 @@ export function ApplicationStatusForm({
   kind,
   currentStatus,
   currentNote,
-  applicantName,
 }: Props) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [deleting, startDelete] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -52,23 +46,6 @@ export function ApplicationStatusForm({
           : await updateVolunteerApplication(id, formData)
       if (result.error) setError(result.error)
       else setSaved(true)
-    })
-  }
-
-  function handleDelete() {
-    if (!confirm(`${applicantName}님의 신청을 정말 삭제할까요? 되돌릴 수 없습니다.`))
-      return
-    startDelete(async () => {
-      const result =
-        kind === "adoption"
-          ? await deleteAdoptionApplication(id)
-          : await deleteVolunteerApplication(id)
-      if (result.error) {
-        alert(`삭제 실패: ${result.error}`)
-        return
-      }
-      router.push("/admin/applications")
-      router.refresh()
     })
   }
 
@@ -121,17 +98,7 @@ export function ApplicationStatusForm({
         <p className="text-sm text-primary">저장되었습니다.</p>
       )}
 
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleDelete}
-          disabled={deleting}
-          className="text-destructive hover:bg-destructive/10"
-        >
-          {deleting ? "삭제 중..." : "신청 삭제"}
-        </Button>
+      <div className="flex justify-end pt-2">
         <Button type="submit" disabled={pending}>
           {pending ? "저장 중..." : "저장"}
         </Button>
