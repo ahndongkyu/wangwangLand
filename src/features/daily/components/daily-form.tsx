@@ -79,6 +79,9 @@ export function DailyForm({ post }: Props) {
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
           folder="daily"
         />
+        <p className="text-xs text-muted-foreground">
+          💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
+        </p>
       </div>
 
       {error && (

@@ -83,6 +83,9 @@ export function StoryForm({ story, dogs }: Props) {
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
         />
+        <p className="text-xs text-muted-foreground">
+          💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
+        </p>
       </div>
 
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/30 p-3">

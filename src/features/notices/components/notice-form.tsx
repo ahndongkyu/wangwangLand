@@ -132,6 +132,9 @@ export function NoticeForm({ notice }: Props) {
           placeholder="공지 본문을 입력하세요."
           folder="notices"
         />
+        <p className="text-xs text-muted-foreground">
+          💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
+        </p>
       </div>
 
       {/* 옵션 */}
