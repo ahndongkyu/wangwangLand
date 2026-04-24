@@ -6,6 +6,7 @@ import { Camera, User } from "lucide-react"
 import { updateProfile } from "../api/actions"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
+import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import type { Profile } from "../api/queries"
 
 interface Props {
@@ -17,52 +18,79 @@ const initialState = { error: null as string | null, success: false }
 export function ProfileForm({ profile }: Props) {
   const [state, action, pending] = useActionState(updateProfile, initialState)
   const fileRef = useRef<HTMLInputElement>(null)
+  const croppedFileRef = useRef<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setPreview(reader.result as string)
+    reader.onload = () => setCropSrc(reader.result as string)
     reader.readAsDataURL(file)
+    e.target.value = ""
+  }
+
+  function handleCropDone(file: File, previewUrl: string) {
+    croppedFileRef.current = file
+    setPreview(previewUrl)
+    setCropSrc(null)
+  }
+
+  // 폼 제출 시 크롭된 파일을 FormData에 주입
+  function handleSubmit(formData: FormData) {
+    if (croppedFileRef.current) {
+      formData.set("avatar", croppedFileRef.current)
+    }
+    return action(formData)
   }
 
   const avatarSrc = preview ?? profile.avatar_url
 
   return (
-    <form action={action} className="space-y-6">
-      {/* 프로필 사진 */}
-      <div className="flex flex-col items-center gap-3">
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="group relative size-24 overflow-hidden rounded-full border-2 border-primary/30 bg-muted transition-opacity hover:opacity-80"
-        >
-          {avatarSrc ? (
-            <Image src={avatarSrc} alt="프로필 사진" fill className="object-cover" />
-          ) : (
-            <User className="size-full p-5 text-muted-foreground" />
-          )}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            <Camera className="size-6 text-white" />
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          사진 변경
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          name="avatar"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileChange}
+    <>
+      {cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          aspect={1}
+          circular
+          onDone={handleCropDone}
+          onCancel={() => setCropSrc(null)}
         />
-      </div>
+      )}
+
+      <form action={handleSubmit} className="space-y-6">
+        {/* 프로필 사진 */}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="group relative size-24 overflow-hidden rounded-full border-2 border-primary/30 bg-muted transition-opacity hover:opacity-80"
+          >
+            {avatarSrc ? (
+              <Image src={avatarSrc} alt="프로필 사진" fill className="object-cover" />
+            ) : (
+              <User className="size-full p-5 text-muted-foreground" />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Camera className="size-6 text-white" />
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            사진 변경
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
 
       {/* 닉네임 */}
       <div className="space-y-1.5">
@@ -95,5 +123,6 @@ export function ProfileForm({ profile }: Props) {
         {pending ? "저장 중..." : "저장"}
       </Button>
     </form>
+    </>
   )
 }

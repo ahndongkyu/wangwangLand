@@ -3,13 +3,15 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, Menu as MenuIcon } from "lucide-react"
+import { ChevronDown, LogOut, Menu as MenuIcon, Moon, Settings, Sun, User } from "lucide-react"
+import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
+import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
 import {
   BrandIcon,
@@ -135,37 +137,47 @@ export function Header({ recentNotices = [], profile }: HeaderProps) {
             >
               <MenuIcon className="size-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader>
+            <SheetContent side="right" className="w-72 flex flex-col p-0">
+              <SheetHeader className="sr-only">
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
-              <nav className="mt-6 flex flex-col gap-1 px-4">
-                {MAIN_NAV.map((item) => {
-                  const icon = MOBILE_NAV_ICONS[item.href]
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-colors",
-                        isActive(item.href)
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground/80 hover:bg-secondary"
-                      )}
-                    >
-                      {icon && (
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                          <BrandIcon name={icon} size={22} decorative />
-                        </span>
-                      )}
-                      <span className="flex-1">{item.label}</span>
-                      {item.href === "/notice" && (
-                        <NoticeBadge notices={recentNotices} />
-                      )}
-                    </Link>
-                  )
-                })}
+
+              {/* 프로필 섹션 */}
+              <MobileProfileSection profile={profile} onClose={() => setMobileOpen(false)} />
+
+              {/* 구분선 */}
+              <div className="mx-4 border-t border-border" />
+
+              {/* 네비 메뉴 */}
+              <nav className="flex-1 overflow-y-auto py-3">
+                <div className="flex flex-col gap-0.5 px-3">
+                  {MAIN_NAV.map((item) => {
+                    const icon = MOBILE_NAV_ICONS[item.href]
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-colors",
+                          isActive(item.href)
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground/80 hover:bg-secondary"
+                        )}
+                      >
+                        {icon && (
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                            <BrandIcon name={icon} size={22} decorative />
+                          </span>
+                        )}
+                        <span className="flex-1">{item.label}</span>
+                        {item.href === "/notice" && (
+                          <NoticeBadge notices={recentNotices} />
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
@@ -184,6 +196,118 @@ const MOBILE_NAV_ICONS: Record<string, BrandIconName> = {
   "/volunteer": "volunteer",
   "/donate": "gift",
   "/notice": "notification",
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  member: "일반회원",
+  full_member: "정회원",
+  staff: "운영진",
+  admin: "관리자",
+}
+const ROLE_COLOR: Record<string, string> = {
+  member: "bg-muted text-muted-foreground",
+  full_member: "bg-primary/15 text-primary",
+  staff: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+}
+
+function MobileProfileSection({
+  profile,
+  onClose,
+}: {
+  profile?: Profile | null
+  onClose: () => void
+}) {
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+
+  if (!profile) {
+    // 비로그인
+    return (
+      <div className="flex flex-col gap-3 px-4 py-5">
+        <p className="text-sm text-muted-foreground">로그인하고 더 많은 기능을 이용하세요</p>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            onClick={onClose}
+            className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground"
+          >
+            로그인
+          </Link>
+          <button
+            type="button"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="flex size-10 items-center justify-center rounded-xl border border-border text-foreground/70 hover:bg-secondary"
+            aria-label="테마 전환"
+          >
+            {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="px-4 py-5">
+      {/* 아바타 + 닉네임 */}
+      <div className="flex items-center gap-3">
+        <div className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+          {profile.avatar_url ? (
+            <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
+          ) : (
+            <User className="size-full p-2.5 text-muted-foreground" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold ${ROLE_COLOR[profile.role]}`}>
+            {ROLE_LABEL[profile.role]}
+          </span>
+          <p className="truncate font-semibold text-foreground">{profile.nickname}</p>
+        </div>
+      </div>
+
+      {/* 빠른 액션 버튼들 */}
+      <div className="mt-4 flex flex-col gap-1">
+        {(profile.role === "staff" || profile.role === "admin") && (
+          <Link
+            href="/admin"
+            onClick={onClose}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+          >
+            <Settings className="size-4" />
+            어드민 페이지
+          </Link>
+        )}
+        <Link
+          href="/profile"
+          onClick={onClose}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          <User className="size-4" />
+          프로필 설정
+        </Link>
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          <span className="flex items-center gap-2">
+            {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+            {isDark ? "다크 모드" : "라이트 모드"}
+          </span>
+          <span className="text-xs text-muted-foreground">전환</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { onClose(); signOut() }}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="size-4" />
+          로그아웃
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /** 데스크톱 드롭다운 그룹 */

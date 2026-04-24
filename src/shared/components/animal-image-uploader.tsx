@@ -5,6 +5,7 @@ import { useRef, useState, useTransition } from "react"
 import { Loader2, Upload, X } from "lucide-react"
 
 import { createClient } from "@/shared/lib/supabase/client"
+import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import { cn } from "@/shared/lib/utils"
 
 const MAX_IMAGES = 5
@@ -28,6 +29,8 @@ export function AnimalImageUploader({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const thumbInputRef = useRef<HTMLInputElement>(null)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const pendingFileRef = useRef<File | null>(null)
 
   function setThumb(idx: number) {
     setThumbIdx(idx)
@@ -37,46 +40,39 @@ export function AnimalImageUploader({
   const remaining = Math.max(0, maxImages - images.length)
   const isFull = remaining === 0
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files
-    if (!files || files.length === 0) return
+  async function uploadFile(file: File) {
+    const supabase = createClient()
+    const path = `${folder}/${crypto.randomUUID()}.jpg`
+    const { error: uploadError } = await supabase.storage
+      .from("public-images")
+      .upload(path, file, { cacheControl: "3600", upsert: false })
+    if (uploadError) {
+      setError(`업로드 실패: ${uploadError.message}`)
+      return
+    }
+    const { data } = supabase.storage.from("public-images").getPublicUrl(path)
+    setImages((prev) => [...prev, data.publicUrl].slice(0, maxImages))
+  }
 
-    setError(null)
+  function handleCropDone(file: File) {
+    setCropSrc(null)
+    pendingFileRef.current = null
+    startTransition(() => uploadFile(file))
+  }
 
-    if (files.length > remaining) {
-      setError(
-        `사진은 최대 ${maxImages}장까지 가능합니다. (${remaining}장 더 추가 가능)`
-      )
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (images.length >= maxImages) {
+      setError(`사진은 최대 ${maxImages}장까지 가능합니다.`)
       e.target.value = ""
       return
     }
-
-    startTransition(async () => {
-      const supabase = createClient()
-      const uploaded: string[] = []
-
-      for (const file of Array.from(files)) {
-        const ext = file.name.split(".").pop() ?? "jpg"
-        const path = `${folder}/${crypto.randomUUID()}.${ext}`
-
-        const { error: uploadError } = await supabase.storage
-          .from("public-images")
-          .upload(path, file, { cacheControl: "3600", upsert: false })
-
-        if (uploadError) {
-          setError(`업로드 실패: ${uploadError.message}`)
-          continue
-        }
-
-        const { data } = supabase.storage
-          .from("public-images")
-          .getPublicUrl(path)
-        uploaded.push(data.publicUrl)
-      }
-
-      setImages((prev) => [...prev, ...uploaded].slice(0, maxImages))
-    })
-
+    setError(null)
+    pendingFileRef.current = file
+    const reader = new FileReader()
+    reader.onload = () => setCropSrc(reader.result as string)
+    reader.readAsDataURL(file)
     e.target.value = ""
   }
 
@@ -88,6 +84,14 @@ export function AnimalImageUploader({
 
   return (
     <div className="space-y-3">
+      {cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          aspect={4 / 3}
+          onDone={handleCropDone}
+          onCancel={() => { setCropSrc(null); pendingFileRef.current = null }}
+        />
+      )}
       <input type="hidden" name="images" value={images.join(",")} />
       <input type="hidden" name="thumbnail_index" ref={thumbInputRef} defaultValue={thumbIdx} />
 
@@ -159,9 +163,8 @@ export function AnimalImageUploader({
             <input
               type="file"
               accept="image/*"
-              multiple
               className="hidden"
-              onChange={handleUpload}
+              onChange={handleFileSelect}
               disabled={pending}
             />
           </label>
