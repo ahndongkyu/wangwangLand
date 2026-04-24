@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { getCurrentProfile } from "@/features/members"
 import { KakaoLoginButton } from "@/features/members"
+import { EmailLoginForm } from "@/features/members/components/email-login-form"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = { title: "로그인" }
@@ -48,6 +49,8 @@ export default async function LoginPage({
         <p className="mt-6 text-center text-xs text-muted-foreground">
           가입 후 운영진 승인을 거쳐 활동할 수 있습니다.
         </p>
+
+        <EmailLoginForm />
       </div>
     </div>
   )

@@ -15,6 +15,37 @@ export async function getKakaoLoginUrl(): Promise<string | null> {
   return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`
 }
 
+/** 이메일/비밀번호 로그인 (테스트 계정용) */
+export async function signInWithEmail(
+  _prev: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
+  const email = (formData.get("email") as string | null)?.trim() ?? ""
+  const password = (formData.get("password") as string | null) ?? ""
+
+  if (!email || !password) return { error: "이메일과 비밀번호를 입력해주세요." }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) return { error: "이메일 또는 비밀번호가 올바르지 않습니다." }
+
+  // 프로필 확인 후 리다이렉트
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: "로그인에 실패했습니다." }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("status")
+    .eq("id", session.user.id)
+    .maybeSingle()
+
+  if (!profile) redirect("/onboarding")
+  if (profile.status === "pending") redirect("/pending")
+  if (profile.status === "rejected") redirect("/rejected")
+  redirect("/")
+}
+
 /** 로그아웃 */
 export async function signOut() {
   const supabase = await createClient()
