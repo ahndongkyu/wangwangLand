@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 
 import {
   deleteAdoptionApplication,
@@ -36,7 +35,6 @@ export function ApplicationStatusForm({
   currentNote,
   applicantName,
 }: Props) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [deleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -134,8 +132,7 @@ export function ApplicationStatusForm({
                     setConfirmDelete(false)
                     return
                   }
-                  router.push("/admin/applications")
-                  router.refresh()
+                  window.location.href = "/admin/applications"
                 })
               }}
               disabled={deleting}
