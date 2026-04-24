@@ -6,6 +6,8 @@ import { ChevronDown, ExternalLink, LogOut, Moon, Sun, User } from "lucide-react
 import { useState, useEffect, useRef } from "react"
 
 import { useTheme } from "@/shared/components/theme-provider"
+import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
+import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
 
 type NavGroup = {
@@ -24,6 +26,7 @@ interface AdminHeaderProps {
   adminRole: string
   isTopAdmin: boolean
   logoutAction: () => Promise<void>
+  pendingCounts: PendingCounts
 }
 
 export function AdminHeader({
@@ -32,6 +35,7 @@ export function AdminHeader({
   adminRole,
   isTopAdmin,
   logoutAction,
+  pendingCounts,
 }: AdminHeaderProps) {
   const pathname = usePathname()
 
@@ -98,8 +102,9 @@ export function AdminHeader({
           </ul>
         </nav>
 
-        {/* 오른쪽: 유저 드롭다운 */}
-        <div className="flex items-center justify-self-end">
+        {/* 오른쪽: 알림벨 + 유저 드롭다운 */}
+        <div className="flex items-center gap-1 justify-self-end">
+          <AdminNotificationBell counts={pendingCounts} />
           <AdminUserMenu
             adminName={adminName}
             adminRole={adminRole}
