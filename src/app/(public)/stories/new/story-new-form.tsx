@@ -4,6 +4,7 @@ import { useActionState } from "react"
 import Link from "next/link"
 import { createStoryAsUser } from "@/features/stories/api/user-actions"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
+import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 
@@ -28,14 +29,11 @@ export function StoryNewForm() {
 
       {/* 내용 */}
       <div className="space-y-1.5">
-        <label htmlFor="content" className="text-sm font-medium text-foreground">내용 *</label>
-        <textarea
-          id="content"
+        <label className="text-sm font-medium text-foreground">내용 *</label>
+        <RichTextEditor
           name="content"
-          rows={8}
           placeholder="아이와의 소중한 이야기를 써주세요..."
-          required
-          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+          folder="stories"
         />
       </div>
 

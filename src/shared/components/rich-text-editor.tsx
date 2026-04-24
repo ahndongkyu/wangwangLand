@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import TiptapImage from "@tiptap/extension-image"
+import { ImageResize } from "tiptap-extension-resize-image"
 import TiptapLink from "@tiptap/extension-link"
 import Underline from "@tiptap/extension-underline"
 import TextAlign from "@tiptap/extension-text-align"
@@ -57,7 +57,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
-      TiptapImage.configure({ inline: false, allowBase64: false }),
+      ImageResize.configure({ inline: false }),
       TiptapLink.configure({
         openOnClick: false,
         HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
@@ -105,7 +105,8 @@ export function RichTextEditor({
         if (error) { alert(`이미지 업로드 실패: ${error.message}`); return }
 
         const { data } = supabase.storage.from("public-images").getPublicUrl(path)
-        editor?.chain().focus().setImage({ src: data.publicUrl }).run()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(editor?.chain().focus() as any).setImage({ src: data.publicUrl }).run()
       } finally {
         setUploading(false)
       }
