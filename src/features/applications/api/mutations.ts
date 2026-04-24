@@ -233,8 +233,8 @@ export async function updateVolunteerApplication(
 export async function deleteAdoptionApplication(
   id: string
 ): Promise<SubmitResult> {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from("adoption_applications")
     .delete()
     .eq("id", id)
@@ -251,8 +251,8 @@ export async function deleteAdoptionApplication(
 export async function deleteVolunteerApplication(
   id: string
 ): Promise<SubmitResult> {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from("volunteer_applications")
     .delete()
     .eq("id", id)
