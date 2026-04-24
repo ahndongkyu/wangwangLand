@@ -56,8 +56,8 @@ export default async function MyApplicationsPage() {
     status: ApplicationStatus
     submitted_at: string
     admin_note: string | null
-    dog: { name: string } | null
-    cat: { name: string } | null
+    dog: { name: string }[] | null
+    cat: { name: string }[] | null
   }>
 
   const volunteers = (volunteerRes.data ?? []) as Array<{
@@ -166,8 +166,8 @@ export default async function MyApplicationsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <p className="text-sm font-medium text-foreground">
-                          {a.dog?.name ?? a.cat?.name
-                            ? `${a.dog?.name ?? a.cat?.name} 입양 신청`
+                          {a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                            ? `${a.dog?.[0]?.name ?? a.cat?.[0]?.name} 입양 신청`
                             : "입양 신청"}
                         </p>
                         <p className="text-xs text-muted-foreground">
