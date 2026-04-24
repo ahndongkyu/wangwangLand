@@ -91,7 +91,7 @@ export function ImageCropModal({
         <p className="text-center text-xs text-muted-foreground -mt-2">
           {circular
             ? "원형 영역을 드래그해서 위치를 조정하세요"
-            : "모서리·가장자리를 드래그해서 크기를 조정하세요"}
+            : "모서리·가장자리를 드래그해서 원하는 크기로 자유롭게 조정하세요"}
         </p>
 
         {/* 크롭 영역 */}

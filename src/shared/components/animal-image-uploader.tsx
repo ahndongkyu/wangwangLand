@@ -87,7 +87,6 @@ export function AnimalImageUploader({
       {cropSrc && (
         <ImageCropModal
           imageSrc={cropSrc}
-          aspect={4 / 3}
           onDone={handleCropDone}
           onCancel={() => { setCropSrc(null); pendingFileRef.current = null }}
         />
