@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Pin } from "lucide-react"
 
 import { getCurrentAdmin } from "@/features/auth"
 import { DogRowActions, DogStatusSelect, listDogsWithCount } from "@/features/dogs"
@@ -305,7 +306,17 @@ export default async function AdminDogsPage({
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-medium">{dog.name}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium">{dog.name}</span>
+                          {dog.is_pinned && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                              <Pin className="size-2.5" aria-hidden />
+                              고정
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                         {dog.breed ?? "-"}
                       </td>
