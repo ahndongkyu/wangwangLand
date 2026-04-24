@@ -117,6 +117,12 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
                   운영진으로
                 </button>
               )}
+              {profile.role !== "admin" && (
+                <button type="button" onClick={() => handleRole("admin")}
+                  className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
+                  최고관리자로
+                </button>
+              )}
               <div className="mx-2 my-1 border-t border-border" />
               {profile.is_banned ? (
                 <button type="button" onClick={() => handleBan(false)}
@@ -160,4 +166,5 @@ const ROLE_LABEL: Record<Profile["role"], string> = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
+  admin: "최고관리자",
 }

@@ -121,7 +121,7 @@ export async function updateProfile(
 /** 어드민: 회원 승인 (상태 + 권한 동시 설정) */
 export async function approveMember(
   id: string,
-  role: "member" | "full_member" | "staff"
+  role: "member" | "full_member" | "staff" | "admin"
 ): Promise<{ error?: string }> {
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
@@ -188,7 +188,7 @@ export async function toggleMemberBan(
 /** 어드민: 회원 권한 변경 */
 export async function updateMemberRole(
   id: string,
-  role: "member" | "full_member" | "staff"
+  role: "member" | "full_member" | "staff" | "admin"
 ): Promise<{ error?: string }> {
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()

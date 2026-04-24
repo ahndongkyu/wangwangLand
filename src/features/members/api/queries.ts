@@ -4,7 +4,7 @@ export interface Profile {
   id: string
   nickname: string
   avatar_url: string | null
-  role: "member" | "full_member" | "staff"
+  role: "member" | "full_member" | "staff" | "admin"
   status: "pending" | "approved" | "rejected"
   is_banned: boolean
   created_at: string

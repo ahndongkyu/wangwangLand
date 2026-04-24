@@ -23,12 +23,14 @@ const ROLE_LABEL = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
+  admin: "최고관리자",
 } as const
 
 const ROLE_COLOR = {
   member: "bg-secondary text-muted-foreground",
   full_member: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   staff: "bg-primary/15 text-primary",
+  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 } as const
 
 export default async function AdminMembersPage({

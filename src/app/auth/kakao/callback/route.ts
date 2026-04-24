@@ -131,7 +131,7 @@ export async function GET(request: Request) {
     // 6. 프로필 확인
     const { data: profile } = await admin
       .from("profiles")
-      .select("nickname, status, is_banned")
+      .select("nickname, status, is_banned, role")
       .eq("id", userId)
       .maybeSingle()
 
@@ -147,6 +147,8 @@ export async function GET(request: Request) {
       redirectPath = "/pending"
     } else if (profile.status === "rejected") {
       redirectPath = "/rejected"
+    } else if (profile.role === "admin" || profile.role === "staff") {
+      redirectPath = "/admin"
     }
 
     // 7. 쿠키를 redirect 응답에 직접 붙여서 반환

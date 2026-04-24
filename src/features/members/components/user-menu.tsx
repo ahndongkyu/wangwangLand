@@ -11,12 +11,14 @@ const ROLE_LABEL: Record<Profile["role"], string> = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
+  admin: "최고관리자",
 }
 
 const ROLE_COLOR: Record<Profile["role"], string> = {
   member: "bg-muted text-muted-foreground",
   full_member: "bg-primary/15 text-primary",
   staff: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 }
 
 export function UserMenu({ profile }: { profile: Profile }) {

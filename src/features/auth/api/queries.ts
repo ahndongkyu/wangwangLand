@@ -1,7 +1,8 @@
 import { createClient } from "@/shared/lib/supabase/server"
-import type { Admin } from "@/shared/types/database"
+import type { Profile } from "@/features/members/api/queries"
 
-export async function getCurrentAdmin(): Promise<Admin | null> {
+/** staff 또는 admin role을 가진 유저만 반환. 권한 없으면 null. */
+export async function getCurrentAdmin(): Promise<Profile | null> {
   const supabase = await createClient()
 
   const { data: { session } } = await supabase.auth.getSession()
@@ -9,9 +10,10 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
   if (!user) return null
 
   const { data, error } = await supabase
-    .from("admins")
-    .select("*")
-    .eq("user_id", user.id)
+    .from("profiles")
+    .select("id, nickname, avatar_url, role, status, is_banned, created_at")
+    .eq("id", user.id)
+    .in("role", ["staff", "admin"])
     .maybeSingle()
 
   if (error) {
@@ -19,5 +21,5 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
     return null
   }
 
-  return data as Admin | null
+  return data as Profile | null
 }

@@ -1,59 +1,29 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-
 import { createClient } from "@/shared/lib/supabase/server"
-import type { AdminRole } from "@/shared/types/database"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
+
+export type StaffRole = "admin" | "staff"
 
 export interface AdminMutationResult {
   error?: string
 }
 
-/** 어드민 이름 변경 (최고관리자만 실행 가능 — RLS 로 통제). */
-export async function updateAdminName(
-  id: string,
-  name: string
-): Promise<AdminMutationResult> {
-  const trimmed = name.trim()
-  if (trimmed.length < 2) {
-    return { error: "이름은 2자 이상 입력해주세요." }
-  }
-  if (trimmed.length > 50) {
-    return { error: "이름은 50자 이하로 입력해주세요." }
-  }
-
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("admins")
-    .update({ name: trimmed })
-    .eq("id", id)
-
-  if (error) {
-    console.error("[updateAdminName]", error)
-    return { error: error.message }
-  }
-
-  revalidatePath("/admin/admins")
-  return {}
-}
-
-/**
- * 어드민 역할 변경 (admin ↔ editor).
- * RLS 및 ensure_at_least_one_top_admin() 트리거가 추가 검증.
- */
+/** 운영진 역할 변경 (admin ↔ staff). 최고관리자만 실행 가능. */
 export async function updateAdminRole(
-  id: string,
-  role: AdminRole
+  profileId: string,
+  role: StaffRole
 ): Promise<AdminMutationResult> {
-  if (role !== "admin" && role !== "editor") {
+  if (role !== "admin" && role !== "staff") {
     return { error: "올바르지 않은 역할입니다." }
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("admins")
+  const adminClient = createAdminClient()
+  const { error } = await adminClient
+    .from("profiles")
     .update({ role })
-    .eq("id", id)
+    .eq("id", profileId)
 
   if (error) {
     console.error("[updateAdminRole]", error)
@@ -64,35 +34,44 @@ export async function updateAdminRole(
   return {}
 }
 
-/**
- * 어드민 제거 (admins 테이블에서만 삭제).
- * auth.users 는 남아있어 Supabase 대시보드에서 별도 삭제 필요.
- * 최소 1명의 최고관리자는 남도록 DB 트리거에서 보장.
- */
-export async function removeAdmin(id: string): Promise<AdminMutationResult> {
+/** 운영진 제거 — role을 full_member로 강등. 본인은 제거 불가. */
+export async function removeAdmin(profileId: string): Promise<AdminMutationResult> {
   const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return { error: "로그인이 필요합니다." }
 
-  // 자기 자신 제거 방지
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: "로그인이 필요합니다." }
-
-  const { data: selfAdmin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle()
-
-  if (selfAdmin?.id === id) {
+  if (session.user.id === profileId) {
     return { error: "본인은 직접 제거할 수 없습니다." }
   }
 
-  const { error } = await supabase.from("admins").delete().eq("id", id)
+  const adminClient = createAdminClient()
+
+  // 타깃의 현재 role 확인
+  const { data: target } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", profileId)
+    .maybeSingle()
+
+  // 타깃이 admin이면 남은 admin 수 확인 (최소 1명 보장)
+  if (target?.role === "admin") {
+    const { count } = await adminClient
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "admin")
+
+    if ((count ?? 0) <= 1) {
+      return { error: "최고관리자는 최소 1명 이상 유지되어야 합니다." }
+    }
+  }
+
+  const { error } = await adminClient
+    .from("profiles")
+    .update({ role: "full_member" })
+    .eq("id", profileId)
 
   if (error) {
     console.error("[removeAdmin]", error)
-    // DB 트리거 에러 메시지를 그대로 전달
     return { error: error.message }
   }
 

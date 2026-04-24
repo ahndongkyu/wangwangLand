@@ -5,17 +5,19 @@ import { ProfileForm } from "@/features/members/components/profile-form"
 
 export const metadata: Metadata = { title: "프로필 설정" }
 
-const ROLE_LABEL = {
+const ROLE_LABEL: Record<string, string> = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
-} as const
+  admin: "최고관리자",
+}
 
-const ROLE_COLOR = {
+const ROLE_COLOR: Record<string, string> = {
   member: "bg-secondary text-muted-foreground",
   full_member: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   staff: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-} as const
+  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+}
 
 export default async function ProfilePage() {
   const profile = await getCurrentProfile()

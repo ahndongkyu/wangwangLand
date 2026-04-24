@@ -17,7 +17,7 @@ export default async function AdminProtectedLayout({
     <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader
         siteName={SITE.name}
-        adminName={admin.name}
+        adminName={admin.nickname}
         adminRole={admin.role}
         isTopAdmin={isTopAdmin}
         logoutAction={logout}
