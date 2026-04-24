@@ -27,7 +27,7 @@ export default async function AdminAdminsPage() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">운영진 관리</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          역할 변경과 제거가 가능합니다. 최고관리자는 최소 1명 이상 유지되어야 합니다.
+          역할 변경과 제거가 가능합니다. 관리자는 최소 1명 이상 유지되어야 합니다.
         </p>
       </header>
 
@@ -35,7 +35,7 @@ export default async function AdminAdminsPage() {
         <p className="font-semibold text-foreground">권한 요약</p>
         <ul className="mt-2 space-y-1 text-muted-foreground">
           <li>
-            <span className="font-semibold text-foreground">최고관리자</span> —
+            <span className="font-semibold text-foreground">관리자</span> —
             컨텐츠 작성·수정·삭제, 신청 관리, 운영진 관리 전부 가능
           </li>
           <li>
@@ -53,7 +53,7 @@ export default async function AdminAdminsPage() {
           1) 회원 관리 페이지에서 해당 회원 찾기
           <br />
           2) 역할을 <span className="font-semibold text-foreground">운영진</span> 또는{" "}
-          <span className="font-semibold text-foreground">최고관리자</span>로 변경
+          <span className="font-semibold text-foreground">관리자</span>로 변경
           <br />
           → 변경 즉시 이 페이지에 표시되며 관리자 페이지 접근이 가능해집니다.
         </p>
@@ -85,7 +85,7 @@ export default async function AdminAdminsPage() {
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
-        최고관리자 {topAdminCount}명 · 전체 {list.length}명
+        관리자 {topAdminCount}명 · 전체 {list.length}명
       </p>
     </div>
   )

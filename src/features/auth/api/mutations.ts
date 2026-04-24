@@ -10,7 +10,7 @@ export interface AdminMutationResult {
   error?: string
 }
 
-/** 운영진 역할 변경 (admin ↔ staff). 최고관리자만 실행 가능. */
+/** 운영진 역할 변경 (admin ↔ staff). 관리자만 실행 가능. */
 export async function updateAdminRole(
   profileId: string,
   role: StaffRole
@@ -61,7 +61,7 @@ export async function removeAdmin(profileId: string): Promise<AdminMutationResul
       .eq("role", "admin")
 
     if ((count ?? 0) <= 1) {
-      return { error: "최고관리자는 최소 1명 이상 유지되어야 합니다." }
+      return { error: "관리자는 최소 1명 이상 유지되어야 합니다." }
     }
   }
 

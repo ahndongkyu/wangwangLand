@@ -11,7 +11,7 @@ const ROLE_LABEL: Record<Profile["role"], string> = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
-  admin: "최고관리자",
+  admin: "관리자",
 }
 
 const ROLE_COLOR: Record<Profile["role"], string> = {

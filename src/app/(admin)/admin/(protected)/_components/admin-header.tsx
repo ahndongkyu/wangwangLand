@@ -15,7 +15,7 @@ type NavGroup = {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  admin: "최고관리자",
+  admin: "관리자",
   staff: "운영진",
 }
 

@@ -24,7 +24,7 @@ const ROLE_LABEL = {
   member: "일반회원",
   full_member: "정회원",
   staff: "운영진",
-  admin: "최고관리자",
+  admin: "관리자",
 } as const
 
 const ROLE_COLOR = {
