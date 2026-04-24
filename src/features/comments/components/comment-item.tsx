@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useRef, useEffect } from "react"
+import { useState, useTransition, useRef, useEffect, useCallback } from "react"
 import Image from "next/image"
 import { User, Trash2, CornerDownRight, Pencil, Check, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
@@ -9,6 +9,8 @@ import { RoleBadge } from "@/shared/components/role-badge"
 import { deleteComment, updateComment } from "../api/actions"
 import { CommentForm } from "./comment-form"
 import type { Comment, PostType, CommentAuthor } from "../api/queries"
+import { useConfirm } from "@/shared/components/confirm-dialog"
+import { useToast } from "@/shared/components/toast"
 
 interface Props {
   comment: Comment
@@ -24,9 +26,10 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
   const [showReply, setShowReply] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
-  const [editError, setEditError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const canDelete = currentUserId && (comment.author_id === currentUserId || isStaff)
   const canEdit = currentUserId && comment.author_id === currentUserId
@@ -38,20 +41,28 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
     }
   }, [editing])
 
-  function handleDelete() {
-    if (!confirm("댓글을 삭제할까요?")) return
+  async function handleDelete() {
+    const ok = await confirm({
+      variant: "destructive",
+      title: "댓글을 삭제할까요?",
+      description: "삭제한 댓글은 복구할 수 없어요.",
+      confirmText: "삭제",
+    })
+    if (!ok) return
     startTransition(async () => {
-      await deleteComment(comment.id, postType, postId)
+      const result = await deleteComment(comment.id, postType, postId)
+      if (result?.error) toast.error(result.error)
+      else toast.success("댓글이 삭제됐어요.")
     })
   }
 
   function handleEditSave() {
-    setEditError(null)
     startTransition(async () => {
       const result = await updateComment(comment.id, editContent, postType, postId)
       if (result.error) {
-        setEditError(result.error)
+        toast.error(result.error)
       } else {
+        toast.success("댓글이 수정됐어요.")
         setEditing(false)
       }
     })
@@ -59,7 +70,6 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
 
   function handleEditCancel() {
     setEditContent(comment.content)
-    setEditError(null)
     setEditing(false)
   }
 
@@ -102,7 +112,6 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
                 rows={3}
                 className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
               />
-              {editError && <p className="mt-1 text-xs text-destructive">{editError}</p>}
               <div className="mt-1.5 flex items-center gap-2">
                 <button
                   type="button"
