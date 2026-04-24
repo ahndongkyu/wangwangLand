@@ -42,8 +42,8 @@ export async function createComment(
     .single()
 
   if (error || !comment) {
-    console.error("[createComment]", error)
-    return { error: "댓글 작성에 실패했습니다." }
+    console.error("[createComment] insert error:", JSON.stringify(error))
+    return { error: `댓글 작성에 실패했습니다. (${error?.code ?? "unknown"}: ${error?.message ?? ""})` }
   }
 
   // 알림 발송 (실패해도 댓글 등록엔 영향 없음)
