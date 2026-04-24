@@ -161,6 +161,63 @@ export async function updateDogStatus(
   return {}
 }
 
+const MAX_PINNED = 8
+
+/**
+ * 강아지 고정(pin) 토글.
+ * - isPinned=true: 고정 ON (최대 8개 제한, 초과 시 에러)
+ * - isPinned=false: 고정 OFF
+ */
+export async function toggleDogPin(
+  id: string,
+  isPinned: boolean
+): Promise<MutationResult> {
+  const supabase = await createClient()
+
+  if (isPinned) {
+    // 현재 고정 수 확인
+    const { count } = await supabase
+      .from("dogs")
+      .select("id", { count: "exact", head: true })
+      .eq("is_pinned", true)
+      .neq("id", id) // 이미 고정된 자기 자신은 제외
+
+    if ((count ?? 0) >= MAX_PINNED) {
+      return { error: `최대 ${MAX_PINNED}개까지 고정할 수 있어요. 다른 아이를 먼저 해제해주세요.` }
+    }
+
+    // 다음 pin_order = 현재 최댓값 + 1
+    const { data: maxRow } = await supabase
+      .from("dogs")
+      .select("pin_order")
+      .eq("is_pinned", true)
+      .order("pin_order", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const nextOrder = ((maxRow?.pin_order as number | null) ?? 0) + 1
+
+    const { error } = await supabase
+      .from("dogs")
+      .update({ is_pinned: true, pin_order: nextOrder })
+      .eq("id", id)
+
+    if (error) return { error: error.message }
+  } else {
+    const { error } = await supabase
+      .from("dogs")
+      .update({ is_pinned: false, pin_order: null })
+      .eq("id", id)
+
+    if (error) return { error: error.message }
+  }
+
+  revalidatePath("/admin/dogs")
+  revalidatePath(`/admin/dogs/${id}`)
+  revalidatePath("/")
+  return {}
+}
+
 export async function deleteDog(id: string): Promise<MutationResult> {
   const supabase = await createClient()
 

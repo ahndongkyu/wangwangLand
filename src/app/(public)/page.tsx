@@ -2,7 +2,7 @@ import Link from "next/link"
 
 import { listCats } from "@/features/cats"
 import { DailyCard, listDailyPosts } from "@/features/daily"
-import { DogGrid, listDogs } from "@/features/dogs"
+import { DogGrid, listDogsForHome } from "@/features/dogs"
 import { listNotices } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
 import { Pin } from "lucide-react"
@@ -50,7 +50,7 @@ export const revalidate = 60
 export default async function HomePage() {
   const [dogs, cats, dailyResult, storiesResult, stats, noticesResult] =
     await Promise.all([
-      listDogs({ status: "보호중", limit: 8 }),
+      listDogsForHome(8),
       listCats({ status: "보호중", limit: 4 }),
       listDailyPosts({ limit: 3 }),
       listAdoptionStories({ limit: 3 }),

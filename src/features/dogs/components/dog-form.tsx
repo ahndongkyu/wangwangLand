@@ -1,15 +1,17 @@
 "use client"
 
 import Link from "next/link"
+import { Pin, PinOff } from "lucide-react"
 import { useState, useTransition } from "react"
 
-import { createDog, updateDog } from "../api/mutations"
+import { createDog, updateDog, toggleDogPin } from "../api/mutations"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { ageMonthsFromBirthDate, formatAgeMonths } from "@/shared/lib/age"
+import { cn } from "@/shared/lib/utils"
 import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
 
 interface Props {
@@ -32,6 +34,9 @@ export function DogForm({ dog }: Props) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [birthDate, setBirthDate] = useState(dog?.birth_date ?? "")
+  const [pinned, setPinned] = useState(dog?.is_pinned ?? false)
+  const [pinPending, startPinTransition] = useTransition()
+  const [pinError, setPinError] = useState<string | null>(null)
   const isEdit = Boolean(dog)
 
   // 생년월일이 있으면 그로부터, 없으면 age_months 필드에서 오늘 기준 나이.
@@ -52,7 +57,65 @@ export function DogForm({ dog }: Props) {
   const neuteredDefault =
     dog?.neutered === true ? "true" : dog?.neutered === false ? "false" : ""
 
+  function handlePinToggle() {
+    if (!dog) return
+    setPinError(null)
+    const next = !pinned
+    startPinTransition(async () => {
+      const result = await toggleDogPin(dog.id, next)
+      if (result.error) {
+        setPinError(result.error)
+      } else {
+        setPinned(next)
+      }
+    })
+  }
+
   return (
+    <>
+    {/* 고정 토글 — 수정 페이지에서만 표시, 폼 저장과 독립적으로 즉시 반영 */}
+    {isEdit && dog && (
+      <div className="mb-6 flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          {pinned ? (
+            <Pin className="size-4 text-primary" />
+          ) : (
+            <PinOff className="size-4 text-muted-foreground" />
+          )}
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              홈 화면 고정
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {pinned
+                ? "현재 '새 가족을 기다려요' 섹션에 고정되어 있어요."
+                : "활성화하면 홈 화면 상단에 우선 노출돼요. (최대 8마리)"}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handlePinToggle}
+          disabled={pinPending}
+          className={cn(
+            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50",
+            pinned ? "bg-primary" : "bg-input"
+          )}
+          role="switch"
+          aria-checked={pinned}
+        >
+          <span
+            className={cn(
+              "pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out",
+              pinned ? "translate-x-5" : "translate-x-0"
+            )}
+          />
+        </button>
+      </div>
+    )}
+    {pinError && (
+      <p className="mb-4 text-sm text-destructive" role="alert">{pinError}</p>
+    )}
     <form action={handleSubmit} className="space-y-6">
       <div className="space-y-1.5">
         <Label>사진</Label>
@@ -248,5 +311,6 @@ export function DogForm({ dog }: Props) {
         </Button>
       </div>
     </form>
+    </>
   )
 }

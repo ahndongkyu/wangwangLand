@@ -5,7 +5,7 @@ export type DogSort = "latest" | "name"
 
 /** 카드 목록에 필요한 컬럼만 선택 (description 등 큰 텍스트 제외) */
 const DOG_CARD_COLS =
-  "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, size, neutered, rescue_date, updated_at" as const
+  "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, size, neutered, rescue_date, updated_at, is_pinned, pin_order" as const
 
 export interface ListDogsOptions {
   status?: DogStatus | "전체"
@@ -188,6 +188,59 @@ export async function listSimilarDogs(
     }
   }
   return result
+}
+
+/**
+ * 홈 "새 가족을 기다려요" 섹션용 쿼리.
+ * 1순위: is_pinned = true (pin_order ASC)
+ * 2순위: 나머지 슬롯 → 보호 중 최신 입소순 자동 채움
+ * 총 limit 개 (기본 8) 반환.
+ */
+export async function listDogsForHome(limit = 8): Promise<Dog[]> {
+  const supabase = await createClient()
+
+  // 고정 먼저
+  const { data: pinned } = await supabase
+    .from("dogs")
+    .select(DOG_CARD_COLS)
+    .eq("is_pinned", true)
+    .in("status", ["보호중", "임시보호중"])
+    .order("pin_order", { ascending: true, nullsFirst: false })
+    .limit(limit)
+
+  const pinnedDogs = (pinned ?? []) as Dog[]
+  const remaining = limit - pinnedDogs.length
+
+  if (remaining <= 0) return pinnedDogs
+
+  // 나머지 슬롯을 최신 입소순 비고정 아이로 채움
+  const pinnedIds = pinnedDogs.map((d) => d.id)
+  let fillQuery = supabase
+    .from("dogs")
+    .select(DOG_CARD_COLS)
+    .eq("is_pinned", false)
+    .in("status", ["보호중", "임시보호중"])
+    .order("rescue_date", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(remaining)
+
+  // 고정 아이가 있으면 중복 제거
+  if (pinnedIds.length > 0) {
+    fillQuery = fillQuery.not("id", "in", `(${pinnedIds.join(",")})`)
+  }
+
+  const { data: filler } = await fillQuery
+  return [...pinnedDogs, ...((filler ?? []) as Dog[])]
+}
+
+/** 현재 고정된 강아지 수 (최대 8개 제한용) */
+export async function countPinnedDogs(): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from("dogs")
+    .select("id", { count: "exact", head: true })
+    .eq("is_pinned", true)
+  return count ?? 0
 }
 
 export async function countDogsByStatus(): Promise<Record<DogStatus, number>> {

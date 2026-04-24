@@ -6,11 +6,13 @@ export { DogStatusSelect } from "./components/dog-status-select"
 export { DogRowActions } from "./components/dog-row-actions"
 export {
   listDogs,
+  listDogsForHome,
   listDogsWithCount,
   listSimilarDogs,
   getDog,
   countDogsByStatus,
   countDogsBySize,
+  countPinnedDogs,
   getMonthlyRescueStats,
 } from "./api/queries"
-export { createDog, updateDog, deleteDog, updateDogStatus } from "./api/mutations"
+export { createDog, updateDog, deleteDog, updateDogStatus, toggleDogPin } from "./api/mutations"

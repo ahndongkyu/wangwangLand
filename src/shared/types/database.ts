@@ -46,6 +46,8 @@ interface AnimalBase {
 
 export interface Dog extends AnimalBase {
   size: DogSize | null
+  is_pinned: boolean
+  pin_order: number | null
 }
 
 export interface Cat extends AnimalBase {}

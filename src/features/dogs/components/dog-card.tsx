@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Pin } from "lucide-react"
 
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent } from "@/shared/components/ui/card"
@@ -49,6 +50,12 @@ export function DogCard({ dog }: { dog: Dog }) {
           >
             {dog.status}
           </Badge>
+          {dog.is_pinned && (
+            <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-primary/90 px-2 py-1 text-[11px] font-bold text-white shadow-md ring-1 ring-black/10">
+              <Pin className="size-2.5" aria-hidden />
+              고정
+            </span>
+          )}
         </div>
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-2">
