@@ -1,31 +1,87 @@
 "use client"
 
 import { useTransition, useRef, useEffect, useState } from "react"
-import { MoreHorizontal, ChevronRight } from "lucide-react"
+import Image from "next/image"
+import { MoreHorizontal, User } from "lucide-react"
+
 import { approveMember, rejectMember, updateMemberRole, toggleMemberBan } from "../api/actions"
 import { useToast } from "@/shared/components/toast"
+import { cn } from "@/shared/lib/utils"
 import type { Profile } from "../api/queries"
 
-export function MemberRowActions({ profile, isTopAdmin = false }: { profile: Profile; isTopAdmin?: boolean }) {
+const STATUS_LABEL: Record<Profile["status"], string> = {
+  pending: "대기",
+  approved: "승인",
+  rejected: "거절",
+}
+
+const STATUS_COLOR: Record<Profile["status"], string> = {
+  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  approved: "bg-primary/15 text-primary",
+  rejected: "bg-destructive/15 text-destructive",
+}
+
+const ROLE_LABEL: Record<Profile["role"], string> = {
+  member: "일반회원",
+  full_member: "정회원",
+  staff: "운영진",
+  admin: "관리자",
+}
+
+export function MemberRowActions({
+  profile,
+  isTopAdmin = false,
+}: {
+  profile: Profile
+  isTopAdmin?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+  const [role, setRole] = useState<Profile["role"]>(profile.role)
+  const [status, setStatus] = useState<Profile["status"]>(profile.status)
+  const [isBanned, setIsBanned] = useState(profile.is_banned)
   const toast = useToast()
-  const ref = useRef<HTMLDivElement>(null)
+  const moreRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
-  function handleApprove(role: Profile["role"]) {
-    setOpen(false)
+  function handleRoleChange(nextRole: Profile["role"]) {
+    if (nextRole === role && status === "approved") return
+    const prevRole = role
+    const prevStatus = status
+    setRole(nextRole)
     startTransition(async () => {
-      const result = await approveMember(profile.id, role)
-      if (result.error) toast.error(`실패: ${result.error}`)
-      else toast.success(`${ROLE_LABEL[role]}으로 승인했습니다.`)
+      const result =
+        status === "approved"
+          ? await updateMemberRole(profile.id, nextRole)
+          : await approveMember(profile.id, nextRole)
+      if (result.error) {
+        toast.error(`실패: ${result.error}`)
+        setRole(prevRole)
+        setStatus(prevStatus)
+      } else {
+        if (status !== "approved") setStatus("approved")
+        toast.success(`${ROLE_LABEL[nextRole]}으로 변경했습니다.`)
+      }
+    })
+  }
+
+  function handleBan(ban: boolean) {
+    setIsBanned(ban)
+    startTransition(async () => {
+      const result = await toggleMemberBan(profile.id, ban)
+      if (result.error) {
+        toast.error(`실패: ${result.error}`)
+        setIsBanned(!ban)
+      } else {
+        toast.success(ban ? "차단했습니다." : "차단을 해제했습니다.")
+      }
     })
   }
 
@@ -34,137 +90,161 @@ export function MemberRowActions({ profile, isTopAdmin = false }: { profile: Pro
     startTransition(async () => {
       const result = await rejectMember(profile.id)
       if (result.error) toast.error(`실패: ${result.error}`)
-      else toast.success("거절했습니다.")
+      else {
+        setStatus("rejected")
+        toast.success("거절했습니다.")
+      }
     })
   }
 
-  function handleRole(role: Profile["role"]) {
+  function handleReApprove() {
     setOpen(false)
+    const targetRole: Profile["role"] = role === "rejected" ? "member" : role
     startTransition(async () => {
-      const result = await updateMemberRole(profile.id, role)
+      const result = await approveMember(profile.id, targetRole)
       if (result.error) toast.error(`실패: ${result.error}`)
-      else toast.success(`${ROLE_LABEL[role]}으로 변경했습니다.`)
-    })
-  }
-
-  function handleBan(ban: boolean) {
-    setOpen(false)
-    startTransition(async () => {
-      const result = await toggleMemberBan(profile.id, ban)
-      if (result.error) toast.error(`실패: ${result.error}`)
-      else toast.success(ban ? "밴 처리했습니다." : "밴을 해제했습니다.")
+      else {
+        setStatus("approved")
+        toast.success(`${ROLE_LABEL[targetRole]}으로 재승인했습니다.`)
+      }
     })
   }
 
   return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        disabled={pending}
-        className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
-        aria-label="작업 메뉴"
-      >
-        <MoreHorizontal className="size-4" />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-9 z-[100] min-w-[180px] rounded-lg border border-border bg-popover shadow-lg overflow-hidden">
-
-          {/* 대기 중 → 승인(권한 선택) + 거절 */}
-          {profile.status === "pending" && (
-            <>
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">승인 권한 선택</div>
-              <button type="button" onClick={() => handleApprove("member")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                ✅ <span>일반회원으로 승인</span>
-              </button>
-              <button type="button" onClick={() => handleApprove("full_member")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                ✅ <span>정회원으로 승인</span>
-              </button>
-              <button type="button" onClick={() => handleApprove("staff")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                ✅ <span>운영진으로 승인</span>
-              </button>
-              <div className="mx-2 my-1 border-t border-border" />
-              <button type="button" onClick={handleReject}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
-                ❌ <span>거절</span>
-              </button>
-            </>
-          )}
-
-          {/* 승인된 회원 → 권한 변경 + 밴 + 거절 */}
-          {profile.status === "approved" && (
-            <>
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">권한 변경</div>
-              {profile.role !== "member" && (
-                <button type="button" onClick={() => handleRole("member")}
-                  className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                  일반회원으로
-                </button>
-              )}
-              {profile.role !== "full_member" && (
-                <button type="button" onClick={() => handleRole("full_member")}
-                  className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                  정회원으로
-                </button>
-              )}
-              {profile.role !== "staff" && (
-                <button type="button" onClick={() => handleRole("staff")}
-                  className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                  운영진으로
-                </button>
-              )}
-              {isTopAdmin && profile.role !== "admin" && (
-                <button type="button" onClick={() => handleRole("admin")}
-                  className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                  관리자로
-                </button>
-              )}
-              <div className="mx-2 my-1 border-t border-border" />
-              {profile.is_banned ? (
-                <button type="button" onClick={() => handleBan(false)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                  🔓 밴 해제
-                </button>
-              ) : (
-                <button type="button" onClick={() => handleBan(true)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20">
-                  🚫 밴
-                </button>
-              )}
-              <button type="button" onClick={handleReject}
-                className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
-                ❌ 거절로 변경
-              </button>
-            </>
-          )}
-
-          {/* 거절된 회원 → 재승인 */}
-          {profile.status === "rejected" && (
-            <>
-              <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground">재승인</div>
-              <button type="button" onClick={() => handleApprove("member")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                ✅ <span>일반회원으로 승인</span>
-              </button>
-              <button type="button" onClick={() => handleApprove("full_member")}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary">
-                ✅ <span>정회원으로 승인</span>
-              </button>
-            </>
-          )}
+    <tr className={cn("border-b border-border last:border-0", isBanned && "opacity-60")}>
+      {/* 닉네임 */}
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+            {profile.avatar_url ? (
+              <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
+            ) : (
+              <User className="size-full p-1.5 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-foreground">{profile.nickname}</span>
+            {isBanned && (
+              <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                차단
+              </span>
+            )}
+          </div>
         </div>
-      )}
-    </div>
-  )
-}
+      </td>
 
-const ROLE_LABEL: Record<Profile["role"], string> = {
-  member: "일반회원",
-  full_member: "정회원",
-  staff: "운영진",
-  admin: "관리자",
+      {/* 상태 */}
+      <td className="px-4 py-3">
+        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", STATUS_COLOR[status])}>
+          {STATUS_LABEL[status]}
+        </span>
+      </td>
+
+      {/* 권한 */}
+      <td className="hidden px-4 py-3 md:table-cell">
+        <select
+          value={role}
+          onChange={(e) => handleRoleChange(e.target.value as Profile["role"])}
+          disabled={pending || status === "rejected"}
+          className={cn(
+            "h-8 rounded-md border border-input bg-background px-2 text-xs font-medium",
+            "disabled:cursor-not-allowed disabled:opacity-60"
+          )}
+          aria-label={`${profile.nickname} 권한`}
+        >
+          <option value="member">일반회원</option>
+          <option value="full_member">정회원</option>
+          <option value="staff">운영진</option>
+          {isTopAdmin && <option value="admin">관리자</option>}
+        </select>
+      </td>
+
+      {/* 가입일 */}
+      <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+        {new Date(profile.created_at).toLocaleDateString("ko-KR")}
+      </td>
+
+      {/* 작업 */}
+      <td className="px-4 py-3 text-right">
+        <div className="flex items-center justify-end gap-1">
+          {/* 차단 / 해제 버튼 */}
+          {status === "approved" && (
+            <button
+              type="button"
+              onClick={() => handleBan(!isBanned)}
+              disabled={pending}
+              className={cn(
+                "rounded-md px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50",
+                isBanned
+                  ? "bg-secondary text-foreground hover:bg-secondary/80"
+                  : "text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+              )}
+            >
+              {isBanned ? "해제" : "차단"}
+            </button>
+          )}
+
+          {/* 더보기 */}
+          <div ref={moreRef} className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              disabled={pending}
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+              aria-label="더보기"
+            >
+              <MoreHorizontal className="size-4" />
+            </button>
+
+            {open && (
+              <div className="absolute right-0 top-9 z-[100] min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+                {/* 대기 중 */}
+                {status === "pending" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); handleRoleChange(role) }}
+                      className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary"
+                    >
+                      승인
+                    </button>
+                    <div className="mx-2 my-1 border-t border-border" />
+                    <button
+                      type="button"
+                      onClick={handleReject}
+                      className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                    >
+                      거절
+                    </button>
+                  </>
+                )}
+
+                {/* 승인됨 */}
+                {status === "approved" && (
+                  <button
+                    type="button"
+                    onClick={handleReject}
+                    className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                  >
+                    거절로 변경
+                  </button>
+                )}
+
+                {/* 거절됨 */}
+                {status === "rejected" && (
+                  <button
+                    type="button"
+                    onClick={handleReApprove}
+                    className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary"
+                  >
+                    재승인
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </td>
+    </tr>
+  )
 }

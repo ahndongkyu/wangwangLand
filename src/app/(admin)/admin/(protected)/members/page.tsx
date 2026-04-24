@@ -8,32 +8,6 @@ export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 30
 
-const STATUS_LABEL = {
-  pending: "대기",
-  approved: "승인",
-  rejected: "거절",
-} as const
-
-const STATUS_COLOR = {
-  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-  approved: "bg-primary/15 text-primary",
-  rejected: "bg-destructive/15 text-destructive",
-} as const
-
-const ROLE_LABEL = {
-  member: "일반회원",
-  full_member: "정회원",
-  staff: "운영진",
-  admin: "관리자",
-} as const
-
-const ROLE_COLOR = {
-  member: "bg-secondary text-muted-foreground",
-  full_member: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  staff: "bg-primary/15 text-primary",
-  admin: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-} as const
-
 export default async function AdminMembersPage({
   searchParams,
 }: {
@@ -94,64 +68,20 @@ export default async function AdminMembersPage({
         </div>
       ) : (
         <>
-          <div className="rounded-lg border border-border bg-card">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
             <table className="w-full">
               <thead className="border-b border-border bg-secondary/40 text-left text-sm">
                 <tr>
                   <th className="px-4 py-3 font-semibold">닉네임</th>
                   <th className="px-4 py-3 font-semibold">상태</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">권한</th>
-                  <th className="hidden px-4 py-3 font-semibold lg:table-cell">밴</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">가입일</th>
                   <th className="px-4 py-3 text-right font-semibold">작업</th>
                 </tr>
               </thead>
               <tbody>
                 {profiles.map((p) => (
-                  <tr key={p.id} className={`border-b border-border last:border-0 ${p.is_banned ? "opacity-60" : ""}`}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {p.avatar_url && (
-                          <img
-                            src={p.avatar_url}
-                            alt={p.nickname}
-                            className="size-7 rounded-full object-cover"
-                          />
-                        )}
-                        <span className="font-medium text-foreground">{p.nickname}</span>
-                        {p.is_banned && (
-                          <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                            BAN
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_COLOR[p.status]}`}>
-                        {STATUS_LABEL[p.status]}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${ROLE_COLOR[p.role]}`}>
-                        {ROLE_LABEL[p.role]}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 lg:table-cell">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        p.is_banned
-                          ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                          : "bg-secondary text-muted-foreground"
-                      }`}>
-                        {p.is_banned ? "밴" : "정상"}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                      {new Date(p.created_at).toLocaleDateString("ko-KR")}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <MemberRowActions profile={p} isTopAdmin={isTopAdmin} />
-                    </td>
-                  </tr>
+                  <MemberRowActions key={p.id} profile={p} isTopAdmin={isTopAdmin} />
                 ))}
               </tbody>
             </table>

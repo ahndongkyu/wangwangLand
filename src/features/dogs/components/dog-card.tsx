@@ -50,9 +50,9 @@ export function DogCard({ dog }: { dog: Dog }) {
             {dog.status}
           </Badge>
         </div>
-        <CardContent className="p-4">
+        <CardContent className="h-[108px] overflow-hidden p-4">
           {/* 이름 */}
-          <h3 className="text-lg font-bold leading-tight text-foreground">
+          <h3 className="truncate text-lg font-bold leading-tight text-foreground">
             {dog.name}
           </h3>
           {/* 품종 */}
@@ -62,11 +62,11 @@ export function DogCard({ dog }: { dog: Dog }) {
             </p>
           )}
           {/* 메타 뱃지 그룹 */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-nowrap gap-1.5 overflow-hidden">
             {dog.gender && dog.gender !== "미상" && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium",
+                  "inline-flex size-6 items-center justify-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] text-xs font-medium leading-none",
                   dog.gender === "수컷" ? "text-sky-600" : "text-pink-500"
                 )}
               >
