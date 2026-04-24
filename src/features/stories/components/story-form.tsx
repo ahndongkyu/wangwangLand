@@ -82,7 +82,7 @@ export function StoryForm({ story, dogs }: Props) {
           id="content"
           name="content"
           required
-          rows={8}
+          rows={20}
           defaultValue={story?.content ?? ""}
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
         />

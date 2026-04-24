@@ -77,7 +77,7 @@ export function DailyForm({ post }: Props) {
         <Textarea
           id="content"
           name="content"
-          rows={8}
+          rows={20}
           defaultValue={post?.content ?? ""}
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
         />

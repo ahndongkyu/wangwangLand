@@ -130,7 +130,7 @@ export function NoticeForm({ notice }: Props) {
         <Textarea
           id="content"
           name="content"
-          rows={14}
+          rows={24}
           required
           defaultValue={notice?.content ?? ""}
           placeholder="공지 본문을 입력하세요. 줄바꿈은 그대로 유지됩니다."
