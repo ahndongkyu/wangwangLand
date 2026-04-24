@@ -60,8 +60,9 @@ export default async function StoryDetailPage({
 
       <header className="mb-8 border-b border-border pb-6">
         {story.dog && (
-          <p className="text-sm font-semibold text-primary">
-            🐶 {story.dog.name}의 이야기
+          <p className="flex items-center gap-1 text-sm font-semibold text-primary">
+            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-4" />
+            {story.dog.name}의 이야기
           </p>
         )}
         <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
@@ -91,8 +92,9 @@ export default async function StoryDetailPage({
       {story.dog && (
         <div className="mt-10 rounded-lg border border-border bg-secondary/30 p-6 text-center">
           <p className="text-sm text-muted-foreground">이 이야기의 주인공</p>
-          <p className="mt-1 text-lg font-bold text-foreground">
-            🐶 {story.dog.name}
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-lg font-bold text-foreground">
+            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-5" />
+            {story.dog.name}
           </p>
           <Link
             href={`/dogs/${story.dog.id}`}

@@ -113,7 +113,12 @@ export default async function AdminStoriesPage({
                       </td>
                       <td className="px-4 py-3 font-medium">{s.title}</td>
                       <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                        {s.dog ? `🐶 ${s.dog.name}` : "—"}
+                        {s.dog ? (
+                          <span className="flex items-center gap-1">
+                            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-4" />
+                            {s.dog.name}
+                          </span>
+                        ) : "—"}
                       </td>
                       <td className="hidden px-4 py-3 md:table-cell">
                         <span

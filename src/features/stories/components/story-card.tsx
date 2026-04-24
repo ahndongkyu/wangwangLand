@@ -35,8 +35,9 @@ export function StoryCard({ story }: { story: StoryWithDog }) {
       </div>
       <div className="p-4">
         {story.dog && (
-          <p className="text-xs font-semibold text-primary">
-            🐶 {story.dog.name}
+          <p className="flex items-center gap-1 text-xs font-semibold text-primary">
+            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-3.5" />
+            {story.dog.name}
           </p>
         )}
         <h3 className="mt-1 line-clamp-2 text-base font-semibold text-foreground">
