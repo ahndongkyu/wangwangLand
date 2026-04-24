@@ -83,12 +83,12 @@ export async function updateNickname(
 
   const { error } = await supabase
     .from("profiles")
-    .update({ nickname, updated_at: new Date().toISOString() })
+    .update({ nickname, status: "approved", updated_at: new Date().toISOString() })
     .eq("id", user.id)
 
   if (error) return { error: "저장에 실패했습니다." }
 
-  redirect("/pending")
+  redirect("/")
 }
 
 /** 프로필 업데이트 — 닉네임 + 아바타 */

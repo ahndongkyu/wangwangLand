@@ -44,7 +44,7 @@ export function OnboardingForm({ defaultNickname }: { defaultNickname?: string }
         disabled={pending}
         className="w-full rounded-xl bg-primary py-3 text-base font-bold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
       >
-        {pending ? "저장 중..." : "완료 → 가입 신청"}
+        {pending ? "저장 중..." : "완료"}
       </button>
     </form>
   )
