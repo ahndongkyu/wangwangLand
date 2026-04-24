@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, ExternalLink } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 
 import { ThemeToggle } from "@/shared/components/theme-toggle"
@@ -108,6 +108,14 @@ export function AdminHeader({
             </span>
           </span>
           <ThemeToggle />
+          <Link
+            href="/"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <ExternalLink className="size-3.5" />
+            메인사이트
+          </Link>
           <form action={logoutAction}>
             <Button type="submit" variant="outline" size="sm">
               로그아웃
