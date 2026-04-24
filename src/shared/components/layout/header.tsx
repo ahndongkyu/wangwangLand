@@ -118,7 +118,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
         <div className="flex items-center justify-end gap-2 justify-self-end">
           {pendingCounts && <AdminNotificationBell counts={pendingCounts} />}
-          {profile && (
+          {!pendingCounts && profile && (
             <UserNotificationBell
               notifications={userNotifications}
               unreadCount={unreadNotificationCount}

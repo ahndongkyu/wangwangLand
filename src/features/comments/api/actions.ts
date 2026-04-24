@@ -60,6 +60,36 @@ export async function createComment(
   return {}
 }
 
+export async function updateComment(
+  commentId: string,
+  content: string,
+  postType: PostType,
+  postId: string
+): Promise<{ error?: string }> {
+  const trimmed = content.trim()
+  if (!trimmed) return { error: "내용을 입력해주세요." }
+  if (trimmed.length > 500) return { error: "댓글은 500자 이하로 작성해주세요." }
+
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return { error: "로그인이 필요합니다." }
+
+  const { error } = await supabase
+    .from("comments")
+    .update({ content: trimmed })
+    .eq("id", commentId)
+    .eq("user_id", session.user.id)
+
+  if (error) {
+    console.error("[updateComment]", error)
+    return { error: "수정에 실패했습니다." }
+  }
+
+  const path = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
+  revalidatePath(path)
+  return {}
+}
+
 export async function deleteComment(
   commentId: string,
   postType: PostType,
