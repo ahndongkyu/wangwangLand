@@ -66,10 +66,8 @@ export function DogCard({ dog }: { dog: Dog }) {
             {dog.gender && dog.gender !== "미상" && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  dog.gender === "수컷"
-                    ? "bg-sky-50 text-sky-600"
-                    : "bg-pink-50 text-pink-500"
+                  "inline-flex items-center rounded-full bg-[#F0DFC8] px-2.5 py-0.5 text-xs font-medium",
+                  dog.gender === "수컷" ? "text-sky-600" : "text-pink-500"
                 )}
               >
                 {dog.gender === "수컷" ? "♂" : "♀"}
