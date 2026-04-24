@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
-import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
@@ -155,16 +154,6 @@ export function NoticeForm({ notice }: Props) {
             ? isPublished ? "공개 유지" : "공개로 전환"
             : "바로 공개 (체크 해제 시 임시저장)"}
         </label>
-      </div>
-
-      {/* 이미지 — 마지막 */}
-      <div className="space-y-1.5">
-        <Label>이미지 (선택)</Label>
-        <AnimalImageUploader
-          folder="notices"
-          initialImages={notice?.images ?? []}
-          maxImages={5}
-        />
       </div>
 
       {error && (

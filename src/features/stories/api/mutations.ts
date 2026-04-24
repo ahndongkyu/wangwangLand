@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import { extractImagesFromHtml } from "@/shared/lib/utils"
 
 const MAX_IMAGES = 10
 
@@ -21,16 +22,13 @@ interface StoryInput {
 }
 
 function parseFormData(formData: FormData): StoryInput {
-  const images = String(formData.get("images") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-
+  const content = String(formData.get("content") ?? "").trim()
+  const images = extractImagesFromHtml(content)
   const dogIdRaw = String(formData.get("dog_id") ?? "").trim()
 
   return {
     title: String(formData.get("title") ?? "").trim(),
-    content: String(formData.get("content") ?? "").trim(),
+    content,
     dog_id: dogIdRaw || null,
     images,
     published: formData.get("published") === "on",
@@ -39,10 +37,7 @@ function parseFormData(formData: FormData): StoryInput {
 
 function validate(input: StoryInput): string | null {
   if (!input.title) return "제목은 필수입니다."
-  if (!input.content) return "본문은 필수입니다."
-  if (input.images.length === 0) return "사진을 최소 1장 이상 추가해주세요."
-  if (input.images.length > MAX_IMAGES)
-    return `사진은 최대 ${MAX_IMAGES}장까지 등록 가능합니다.`
+  if (!input.content || input.content === "<p></p>") return "본문은 필수입니다."
   return null
 }
 

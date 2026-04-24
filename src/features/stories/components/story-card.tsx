@@ -2,10 +2,11 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { RoleBadge } from "@/shared/components/role-badge"
+import { extractImagesFromHtml, stripHtml } from "@/shared/lib/utils"
 import type { StoryWithDog } from "../api/queries"
 
 export function StoryCard({ story }: { story: StoryWithDog }) {
-  const cover = story.images[0] ?? null
+  const cover = story.images[0] ?? extractImagesFromHtml(story.content)[0] ?? null
 
   return (
     <Link
@@ -42,7 +43,7 @@ export function StoryCard({ story }: { story: StoryWithDog }) {
           {story.title}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-          {story.content}
+          {stripHtml(story.content)}
         </p>
         <div className="mt-3 flex items-center gap-2">
           {story.author && (

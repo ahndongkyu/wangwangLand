@@ -3,7 +3,6 @@
 import { useActionState } from "react"
 import Link from "next/link"
 import { createDailyPostAsUser } from "@/features/daily/api/user-actions"
-import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -19,12 +18,6 @@ export function DailyNewForm() {
       <div className="space-y-1.5">
         <label htmlFor="title" className="text-sm font-medium text-foreground">제목 *</label>
         <Input id="title" name="title" placeholder="제목을 입력하세요" maxLength={100} required />
-      </div>
-
-      {/* 사진 */}
-      <div className="space-y-1.5">
-        <p className="text-sm font-medium text-foreground">사진 *</p>
-        <AnimalImageUploader folder="daily" maxImages={10} />
       </div>
 
       {/* 내용 */}

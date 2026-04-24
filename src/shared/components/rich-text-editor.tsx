@@ -38,6 +38,10 @@ interface Props {
   defaultValue?: string
   placeholder?: string
   folder?: string
+  /** 본문 내 삽입 가능한 최대 이미지 수 (기본 10) */
+  maxImages?: number
+  /** 이미지 1장 최대 용량 MB (기본 10) */
+  maxFileSizeMB?: number
 }
 
 export function RichTextEditor({
@@ -45,9 +49,14 @@ export function RichTextEditor({
   defaultValue = "",
   placeholder = "내용을 입력하세요.",
   folder = "posts",
+  maxImages = 10,
+  maxFileSizeMB = 10,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [imageCount, setImageCount] = useState(
+    () => (defaultValue.match(/<img/g) ?? []).length
+  )
   // form 제출 시 최신 HTML 을 전달하기 위한 ref
   const hiddenRef = useRef<HTMLInputElement>(null)
   // 툴바 active 상태를 re-render 시키기 위한 counter
@@ -70,10 +79,9 @@ export function RichTextEditor({
     content: defaultValue,
     immediatelyRender: false,
     onUpdate({ editor }) {
-      // hidden input 값을 에디터가 바뀔 때마다 동기화
-      if (hiddenRef.current) {
-        hiddenRef.current.value = editor.getHTML()
-      }
+      const html = editor.getHTML()
+      if (hiddenRef.current) hiddenRef.current.value = html
+      setImageCount((html.match(/<img/g) ?? []).length)
     },
     onSelectionUpdate() {
       // 커서 이동 시 툴바 활성 상태 갱신
@@ -92,6 +100,17 @@ export function RichTextEditor({
   // ── 이미지 업로드 ──────────────────────────────────────────────
   const handleImageUpload = useCallback(
     async (file: File) => {
+      // 개수 제한
+      if (imageCount >= maxImages) {
+        alert(`이미지는 최대 ${maxImages}장까지 삽입할 수 있어요.`)
+        return
+      }
+      // 용량 제한
+      if (file.size > maxFileSizeMB * 1024 * 1024) {
+        alert(`이미지 용량은 ${maxFileSizeMB}MB 이하만 가능해요.`)
+        return
+      }
+
       setUploading(true)
       try {
         const supabase = createClient()
@@ -111,7 +130,7 @@ export function RichTextEditor({
         setUploading(false)
       }
     },
-    [editor, folder]
+    [editor, folder, imageCount, maxImages, maxFileSizeMB]
   )
 
   const onFileChange = useCallback(
@@ -234,9 +253,9 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+          disabled={uploading || imageCount >= maxImages}
           className={btn(false)}
-          title="이미지 삽입"
+          title={imageCount >= maxImages ? `이미지 최대 ${maxImages}장` : "이미지 삽입"}
         >
           {uploading
             ? <Loader2 className="size-3.5 animate-spin" />
@@ -244,6 +263,14 @@ export function RichTextEditor({
           }
         </button>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+
+        {/* 이미지 카운터 */}
+        <span className={cn(
+          "ml-1 text-[10px] tabular-nums",
+          imageCount >= maxImages ? "text-destructive font-semibold" : "text-muted-foreground"
+        )}>
+          {imageCount}/{maxImages}
+        </span>
       </div>
 
       {/* ── 에디터 본문 ──────────────────────────────────────── */}

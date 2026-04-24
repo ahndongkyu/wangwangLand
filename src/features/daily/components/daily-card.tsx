@@ -2,10 +2,12 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { RoleBadge } from "@/shared/components/role-badge"
+import { extractImagesFromHtml, stripHtml } from "@/shared/lib/utils"
 import type { DailyPostWithAuthor } from "../api/queries"
 
 export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
-  const cover = post.images[0] ?? null
+  // images[] 우선, 없으면 본문 HTML에서 첫 번째 이미지 추출
+  const cover = post.images[0] ?? extractImagesFromHtml(post.content ?? "")[0] ?? null
 
   return (
     <Link
@@ -38,7 +40,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
         </h3>
         {post.content && (
           <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-            {post.content}
+            {stripHtml(post.content)}
           </p>
         )}
         <div className="mt-3 flex items-center gap-2">

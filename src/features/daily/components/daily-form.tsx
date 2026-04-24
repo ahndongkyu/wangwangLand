@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useState, useTransition } from "react"
 
 import { createDailyPost, updateDailyPost } from "../api/mutations"
-import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -80,18 +79,6 @@ export function DailyForm({ post }: Props) {
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
           folder="daily"
         />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>사진 *</Label>
-        <AnimalImageUploader
-          folder="daily"
-          maxImages={10}
-          initialImages={post?.images ?? []}
-        />
-        <p className="text-xs text-muted-foreground">
-          일상 글에는 최대 10장까지 올릴 수 있어요. 첫 번째 사진이 목록 썸네일로 사용됩니다.
-        </p>
       </div>
 
       {error && (

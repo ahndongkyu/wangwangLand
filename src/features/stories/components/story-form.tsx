@@ -5,7 +5,6 @@ import { useState, useTransition } from "react"
 
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
 import type { StoryWithDog } from "../api/queries"
-import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -84,18 +83,6 @@ export function StoryForm({ story, dogs }: Props) {
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
         />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>사진 *</Label>
-        <AnimalImageUploader
-          folder="stories"
-          maxImages={10}
-          initialImages={story?.images ?? []}
-        />
-        <p className="text-xs text-muted-foreground">
-          입양 후기에는 최대 10장까지 올릴 수 있어요. 첫 번째 사진이 목록 썸네일로 사용됩니다.
-        </p>
       </div>
 
       <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/30 p-3">

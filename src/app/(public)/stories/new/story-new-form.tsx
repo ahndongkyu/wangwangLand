@@ -3,7 +3,6 @@
 import { useActionState } from "react"
 import Link from "next/link"
 import { createStoryAsUser } from "@/features/stories/api/user-actions"
-import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -19,12 +18,6 @@ export function StoryNewForm() {
       <div className="space-y-1.5">
         <label htmlFor="title" className="text-sm font-medium text-foreground">제목 *</label>
         <Input id="title" name="title" placeholder="예: 몽이와 함께한 첫 한 달" maxLength={100} required />
-      </div>
-
-      {/* 사진 */}
-      <div className="space-y-1.5">
-        <p className="text-sm font-medium text-foreground">사진 *</p>
-        <AnimalImageUploader folder="stories" maxImages={10} />
       </div>
 
       {/* 내용 */}
