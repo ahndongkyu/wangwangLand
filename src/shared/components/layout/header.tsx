@@ -105,19 +105,20 @@ export function Header({ recentNotices = [], profile }: HeaderProps) {
           </ul>
         </nav>
 
-        {/* 오른쪽: 다크모드 + 유저/로그인 + 로그아웃 + 모바일 햄버거 */}
+        {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
         <div className="flex items-center justify-end gap-2 justify-self-end">
-          <ThemeToggle />
-
           {profile ? (
             <UserMenu profile={profile} />
           ) : (
-            <Link
-              href="/login"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}
-            >
-              로그인
-            </Link>
+            <>
+              <ThemeToggle />
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}
+              >
+                로그인
+              </Link>
+            </>
           )}
 
           {/* 모바일 햄버거 */}
