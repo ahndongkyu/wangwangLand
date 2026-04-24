@@ -66,7 +66,7 @@ export function DogCard({ dog }: { dog: Dog }) {
             {dog.gender && dog.gender !== "미상" && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium",
+                  "inline-flex items-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium",
                   dog.gender === "수컷" ? "text-sky-600" : "text-pink-500"
                 )}
               >
@@ -74,12 +74,12 @@ export function DogCard({ dog }: { dog: Dog }) {
               </span>
             )}
             {formatAge(dog) && (
-              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {formatAge(dog)}
               </span>
             )}
             {dog.size && (
-              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {dog.size}형
               </span>
             )}
