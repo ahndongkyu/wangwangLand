@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, LogOut, Menu as MenuIcon, Moon, Settings, Sun, User } from "lucide-react"
+import { ChevronDown, ClipboardList, LogOut, Menu as MenuIcon, Moon, Settings, Sun, User } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
@@ -286,6 +286,14 @@ function MobileProfileSection({
         >
           <User className="size-4" />
           프로필 설정
+        </Link>
+        <Link
+          href="/my/applications"
+          onClick={onClose}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+        >
+          <ClipboardList className="size-4" />
+          나의 신청 내역
         </Link>
         <button
           type="button"

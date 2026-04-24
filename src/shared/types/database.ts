@@ -106,6 +106,7 @@ export interface AdoptionApplication {
   admin_note: string | null
   submitted_at: string
   updated_at: string
+  created_by: string | null
 }
 
 export interface VolunteerApplication {
@@ -123,4 +124,5 @@ export interface VolunteerApplication {
   admin_note: string | null
   submitted_at: string
   updated_at: string
+  created_by: string | null
 }

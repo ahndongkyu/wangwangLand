@@ -3,7 +3,7 @@
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { LogOut, Moon, Settings, Sun, User } from "lucide-react"
+import { ClipboardList, LogOut, Moon, Settings, Sun, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
 import { RoleBadge } from "@/shared/components/role-badge"
@@ -88,6 +88,14 @@ export function UserMenu({ profile }: { profile: Profile }) {
             >
               <User className="size-4" />
               프로필 설정
+            </Link>
+            <Link
+              href="/my/applications"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+            >
+              <ClipboardList className="size-4" />
+              나의 신청 내역
             </Link>
 
             {/* 다크/라이트 모드 토글 */}

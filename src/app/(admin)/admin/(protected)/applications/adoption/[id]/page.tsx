@@ -42,7 +42,7 @@ export default async function AdoptionApplicationDetailPage({
           입양 신청 상세
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {new Date(app.submitted_at).toLocaleString("ko-KR")} 제출
+          {new Date(app.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} 제출
         </p>
       </header>
 

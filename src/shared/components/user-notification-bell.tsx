@@ -16,9 +16,18 @@ const POST_PATH: Record<string, string> = {
 }
 
 function notifLabel(n: UserNotification): string {
+  if (n.type === "application_status_changed") {
+    const typeLabel = n.post_type === "adoption" ? "입양" : "봉사"
+    return `${typeLabel} 신청 상태가 변경됐어요. 신청 내역에서 확인해보세요!`
+  }
   const actor = n.actor?.nickname ?? "누군가"
   if (n.type === "reply_to_comment") return `${actor}님이 내 댓글에 답글을 달았어요`
   return `${actor}님이 내 게시글에 댓글을 달았어요`
+}
+
+function notifPath(n: UserNotification): string {
+  if (n.type === "application_status_changed") return "/my/applications"
+  return `${POST_PATH[n.post_type] ?? ""}/${n.post_id}`
 }
 
 interface Props {
@@ -43,7 +52,7 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
 
   function handleClickNotif(n: UserNotification) {
     setOpen(false)
-    const path = `${POST_PATH[n.post_type] ?? ""}/${n.post_id}`
+    const path = notifPath(n)
     startTransition(async () => {
       await markNotificationRead(n.id)
       router.push(path)

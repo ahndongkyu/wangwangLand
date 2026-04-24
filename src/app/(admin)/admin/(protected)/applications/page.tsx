@@ -67,16 +67,17 @@ function buildHref({
   type = "adoption",
   status = "전체",
   q = "",
-  from = "",
-  to = "",
+  from,
+  to,
   page,
 }: BuildOpts) {
   const qs = new URLSearchParams()
   qs.set("type", type)
   if (status !== "전체") qs.set("status", String(status))
   if (q) qs.set("q", q)
-  if (from) qs.set("from", from)
-  if (to) qs.set("to", to)
+  // from/to를 명시적으로 넘기면 빈 문자열이라도 URL에 포함 (전체 기간 구분용)
+  if (from !== undefined) qs.set("from", from.trim())
+  if (to !== undefined) qs.set("to", to.trim())
   if (page && page > 1) qs.set("page", String(page))
   return `/admin/applications?${qs.toString()}`
 }
@@ -94,11 +95,18 @@ export default async function AdminApplicationsPage({
   }>
 }) {
   const params = await searchParams
+
+  // KST 오늘 날짜 (YYYY-MM-DD)
+  const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10)
+
   const activeType = parseType(params.type)
   const activeStatus = parseStatus(params.status)
   const activeQuery = (params.q ?? "").trim()
-  const activeFrom = (params.from ?? "").trim()
-  const activeTo = (params.to ?? "").trim()
+  // from/to가 URL에 없으면 오늘을 기본값으로, 빈 문자열이면 전체 기간
+  const activeFrom = params.from !== undefined ? params.from.trim() : todayKST
+  const activeTo = params.to !== undefined ? params.to.trim() : todayKST
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
@@ -200,14 +208,18 @@ export default async function AdminApplicationsPage({
           >
             검색
           </button>
-          {(activeQuery || activeFrom || activeTo) && (
-            <Link
-              href={buildHref({ type: activeType, status: activeStatus })}
-              className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
-            >
-              초기화
-            </Link>
-          )}
+          <Link
+            href={buildHref({ type: activeType, status: activeStatus })}
+            className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
+          >
+            오늘
+          </Link>
+          <Link
+            href={buildHref({ type: activeType, status: activeStatus, from: "", to: "" })}
+            className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
+          >
+            전체 기간
+          </Link>
         </div>
       </form>
 
@@ -286,7 +298,7 @@ export default async function AdminApplicationsPage({
                     </Badge>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(a.submitted_at).toLocaleString("ko-KR")}
+                    {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link
@@ -350,7 +362,7 @@ export default async function AdminApplicationsPage({
                     </Badge>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(v.submitted_at).toLocaleString("ko-KR")}
+                    {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link

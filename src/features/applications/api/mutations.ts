@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import {
   validateKoreanPhone,
   validateName,
@@ -51,6 +52,8 @@ export async function submitAdoptionApplication(
   const ownershipType = String(formData.get("ownership_type") ?? "") as OwnershipType | ""
 
   const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
   const { data, error } = await supabase
     .from("adoption_applications")
     .insert({
@@ -67,6 +70,7 @@ export async function submitAdoptionApplication(
       past_pet_experience:
         String(formData.get("past_pet_experience") ?? "").trim() || null,
       privacy_agreed: true,
+      created_by: session?.user?.id ?? null,
     })
     .select("id")
     .single()
@@ -105,6 +109,8 @@ export async function submitVolunteerApplication(
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
 
   const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
   const { data, error } = await supabase
     .from("volunteer_applications")
     .insert({
@@ -116,6 +122,7 @@ export async function submitVolunteerApplication(
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
       privacy_agreed: true,
+      created_by: session?.user?.id ?? null,
     })
     .select("id")
     .single()
@@ -145,6 +152,14 @@ export async function updateAdoptionApplication(
   const adminNote = String(formData.get("admin_note") ?? "").trim()
 
   const supabase = await createClient()
+
+  // 상태 변경 전 created_by 조회
+  const { data: prev } = await supabase
+    .from("adoption_applications")
+    .select("created_by, status")
+    .eq("id", id)
+    .maybeSingle()
+
   const { error } = await supabase
     .from("adoption_applications")
     .update({ status, admin_note: adminNote || null })
@@ -153,6 +168,18 @@ export async function updateAdoptionApplication(
   if (error) {
     console.error("[updateAdoptionApplication]", error)
     return { error: error.message }
+  }
+
+  // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
+  if (prev?.created_by && prev.status !== status) {
+    const admin = createAdminClient()
+    await admin.from("notifications").insert({
+      user_id: prev.created_by,
+      type: "application_status_changed",
+      post_type: "adoption",
+      post_id: id,
+      actor_id: null,
+    })
   }
 
   revalidateAdminApplications()
@@ -168,6 +195,14 @@ export async function updateVolunteerApplication(
   const adminNote = String(formData.get("admin_note") ?? "").trim()
 
   const supabase = await createClient()
+
+  // 상태 변경 전 created_by 조회
+  const { data: prev } = await supabase
+    .from("volunteer_applications")
+    .select("created_by, status")
+    .eq("id", id)
+    .maybeSingle()
+
   const { error } = await supabase
     .from("volunteer_applications")
     .update({ status, admin_note: adminNote || null })
@@ -176,6 +211,18 @@ export async function updateVolunteerApplication(
   if (error) {
     console.error("[updateVolunteerApplication]", error)
     return { error: error.message }
+  }
+
+  // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
+  if (prev?.created_by && prev.status !== status) {
+    const admin = createAdminClient()
+    await admin.from("notifications").insert({
+      user_id: prev.created_by,
+      type: "application_status_changed",
+      post_type: "volunteer",
+      post_id: id,
+      actor_id: null,
+    })
   }
 
   revalidateAdminApplications()
