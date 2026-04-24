@@ -171,4 +171,62 @@
   table tbody tr:hover td:first-child {
     @apply border-l-2 border-l-primary/60;
   }
+
+  /* ── Tiptap 에디터 + 게시글 렌더링 공통 prose 스타일 ─────────── */
+  .rich-content,
+  .tiptap {
+    color: oklch(var(--foreground) / 0.9);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+  }
+  .rich-content p,
+  .tiptap p {
+    margin-bottom: 0.75em;
+  }
+  .rich-content h1, .tiptap h1 { font-size: 1.6rem; font-weight: 700; margin: 1.2em 0 0.5em; }
+  .rich-content h2, .tiptap h2 { font-size: 1.3rem; font-weight: 700; margin: 1.2em 0 0.5em; }
+  .rich-content h3, .tiptap h3 { font-size: 1.1rem; font-weight: 600; margin: 1em 0 0.4em; }
+  .rich-content strong, .tiptap strong { font-weight: 700; }
+  .rich-content em,     .tiptap em     { font-style: italic; }
+  .rich-content u,      .tiptap u      { text-decoration: underline; }
+  .rich-content ul, .tiptap ul { list-style-type: disc;    padding-left: 1.5em; margin-bottom: 0.75em; }
+  .rich-content ol, .tiptap ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.75em; }
+  .rich-content li, .tiptap li { margin-bottom: 0.25em; }
+  .rich-content blockquote,
+  .tiptap blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: oklch(var(--muted-foreground));
+    font-style: italic;
+  }
+  .rich-content hr, .tiptap hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5em 0;
+  }
+  .rich-content a,  .tiptap a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .rich-content img, .tiptap img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1em 0;
+  }
+  /* Tiptap placeholder */
+  .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: oklch(var(--muted-foreground));
+    pointer-events: none;
+    float: left;
+    height: 0;
+  }
+  /* 이미지 선택 시 테두리 */
+  .tiptap img.ProseMirror-selectednode {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
 }

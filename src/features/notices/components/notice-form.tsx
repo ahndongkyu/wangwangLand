@@ -5,11 +5,11 @@ import { useState, useTransition } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
+import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import { Textarea } from "@/shared/components/ui/textarea"
 import { cn } from "@/shared/lib/utils"
 import type { Notice } from "@/shared/types/database"
 
@@ -126,19 +126,13 @@ export function NoticeForm({ notice }: Props) {
 
       {/* 내용 */}
       <div className="space-y-1.5">
-        <Label htmlFor="content">내용 *</Label>
-        <Textarea
-          id="content"
+        <Label>내용 *</Label>
+        <RichTextEditor
           name="content"
-          rows={24}
-          required
           defaultValue={notice?.content ?? ""}
-          placeholder="공지 본문을 입력하세요. 줄바꿈은 그대로 유지됩니다."
-          className="font-mono text-sm"
+          placeholder="공지 본문을 입력하세요."
+          folder="notices"
         />
-        <p className="text-xs text-muted-foreground">
-          빈 줄로 문단 구분, 줄바꿈은 그대로 표시됩니다.
-        </p>
       </div>
 
       {/* 옵션 */}

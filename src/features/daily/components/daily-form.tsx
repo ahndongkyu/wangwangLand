@@ -5,10 +5,10 @@ import { useState, useTransition } from "react"
 
 import { createDailyPost, updateDailyPost } from "../api/mutations"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
+import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import { Textarea } from "@/shared/components/ui/textarea"
 import type { DailyPost } from "@/shared/types/database"
 
 interface Props {
@@ -73,13 +73,12 @@ export function DailyForm({ post }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="content">본문</Label>
-        <Textarea
-          id="content"
+        <Label>본문</Label>
+        <RichTextEditor
           name="content"
-          rows={20}
           defaultValue={post?.content ?? ""}
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
+          folder="daily"
         />
       </div>
 

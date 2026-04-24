@@ -6,10 +6,10 @@ import { useState, useTransition } from "react"
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
 import type { StoryWithDog } from "../api/queries"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
+import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import { Textarea } from "@/shared/components/ui/textarea"
 import { cn } from "@/shared/lib/utils"
 
 export interface DogOption {
@@ -77,14 +77,12 @@ export function StoryForm({ story, dogs }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="content">본문 *</Label>
-        <Textarea
-          id="content"
+        <Label>본문 *</Label>
+        <RichTextEditor
           name="content"
-          required
-          rows={20}
           defaultValue={story?.content ?? ""}
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
+          folder="stories"
         />
       </div>
 

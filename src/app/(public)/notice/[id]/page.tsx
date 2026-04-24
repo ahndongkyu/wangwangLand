@@ -7,7 +7,7 @@ import { getNotice, MarkNoticesSeen } from "@/features/notices"
 import { CommentSection } from "@/features/comments"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { ImageLightbox } from "@/shared/components/image-lightbox"
-import { LinkifiedText } from "@/shared/components/linkified-text"
+import { RichTextContent } from "@/shared/components/rich-text-content"
 
 export const revalidate = 60
 
@@ -76,8 +76,8 @@ export default async function NoticeDetailPage({
         )}
       </header>
 
-      <article className="text-base leading-relaxed text-foreground/90">
-        <LinkifiedText text={notice.content} className="whitespace-pre-wrap" />
+      <article>
+        <RichTextContent html={notice.content} />
       </article>
 
       {notice.images && notice.images.length > 0 && (

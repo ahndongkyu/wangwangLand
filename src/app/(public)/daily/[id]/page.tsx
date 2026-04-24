@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { getDailyPost } from "@/features/daily"
 import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
+import { RichTextContent } from "@/shared/components/rich-text-content"
 
 export const revalidate = 60
 
@@ -78,8 +79,8 @@ export default async function DailyDetailPage({
       </div>
 
       {post.content && (
-        <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
-          {post.content}
+        <article>
+          <RichTextContent html={post.content} />
         </article>
       )}
 

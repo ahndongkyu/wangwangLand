@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { getAdoptionStory } from "@/features/stories"
 import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
+import { RichTextContent } from "@/shared/components/rich-text-content"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -81,8 +82,8 @@ export default async function StoryDetailPage({
         <PhotoGallery images={story.images} alt={story.title} fallback="💕" />
       </div>
 
-      <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
-        {story.content}
+      <article>
+        <RichTextContent html={story.content} />
       </article>
 
       <CommentSection postType="story" postId={story.id} />
