@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useRef, useEffect, useCallback } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import Image from "next/image"
 import { User, Trash2, CornerDownRight, Pencil, Check, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
@@ -9,7 +9,6 @@ import { RoleBadge } from "@/shared/components/role-badge"
 import { deleteComment, updateComment } from "../api/actions"
 import { CommentForm } from "./comment-form"
 import type { Comment, PostType, CommentAuthor } from "../api/queries"
-import { useConfirm } from "@/shared/components/confirm-dialog"
 import { useToast } from "@/shared/components/toast"
 
 interface Props {
@@ -26,9 +25,10 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
   const [showReply, setShowReply] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
+  const [isPendingDelete, setIsPendingDelete] = useState(false)
   const [pending, startTransition] = useTransition()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const confirm = useConfirm()
+  const undoRef = useRef(false)
   const toast = useToast()
 
   const canDelete = currentUserId && (comment.author_id === currentUserId || isStaff)
@@ -41,18 +41,26 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
     }
   }, [editing])
 
-  async function handleDelete() {
-    const ok = await confirm({
-      variant: "destructive",
-      title: "댓글을 삭제할까요?",
-      description: "삭제한 댓글은 복구할 수 없어요.",
-      confirmText: "삭제",
-    })
-    if (!ok) return
-    startTransition(async () => {
-      const result = await deleteComment(comment.id, postType, postId)
-      if (result?.error) toast.error(result.error)
-      else toast.success("댓글이 삭제됐어요.")
+  // 낙관적 삭제 + undo 토스트
+  function handleDelete() {
+    undoRef.current = false
+    setIsPendingDelete(true)
+
+    toast.neutral("댓글이 삭제됐어요.", {
+      duration: 5000,
+      action: {
+        label: "되돌리기",
+        onClick: () => {
+          undoRef.current = true
+          setIsPendingDelete(false)
+        },
+      },
+      onDismiss: () => {
+        // toast가 자동 닫힐 때 (undo 안 눌렀으면) 실제 삭제
+        if (!undoRef.current) {
+          deleteComment(comment.id, postType, postId).catch(console.error)
+        }
+      },
     })
   }
 
@@ -72,6 +80,9 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
     setEditContent(comment.content)
     setEditing(false)
   }
+
+  // 낙관적 삭제 중 → 화면에서 숨김
+  if (isPendingDelete) return null
 
   const timeAgo = formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ko })
 
@@ -140,7 +151,7 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
             </p>
           )}
 
-          {/* 액션 버튼 (편집 중 아닐 때만) */}
+          {/* 액션 버튼 */}
           {!editing && (
             <div className="mt-1.5 flex items-center gap-3">
               {!isReply && currentUserId && (

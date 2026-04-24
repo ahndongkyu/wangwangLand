@@ -1,6 +1,13 @@
 "use client"
 
-import { CheckCircle2, Info, X, XCircle } from "lucide-react"
+import {
+  Check,
+  X,
+  AlertTriangle,
+  Info,
+  Minus,
+  Loader2,
+} from "lucide-react"
 import {
   createContext,
   useCallback,
@@ -12,44 +19,141 @@ import {
 
 import { cn } from "@/shared/lib/utils"
 
-export type ToastType = "success" | "error" | "info"
+// ─── 타입 ────────────────────────────────────────────────────────────────────
+
+export type ToastType = "success" | "error" | "warning" | "info" | "neutral" | "loading"
+
+export interface ToastOptions {
+  duration?: number
+  action?: { label: string; onClick: () => void }
+  /** toast가 (action 제외) 닫힐 때 호출 */
+  onDismiss?: () => void
+}
 
 interface Toast {
   id: number
   message: string
   type: ToastType
+  opts: ToastOptions
 }
 
 interface ToastApi {
-  success: (message: string) => void
-  error: (message: string) => void
-  info: (message: string) => void
+  success: (message: string, opts?: ToastOptions) => void
+  error: (message: string, opts?: ToastOptions) => void
+  warning: (message: string, opts?: ToastOptions) => void
+  info: (message: string, opts?: ToastOptions) => void
+  neutral: (message: string, opts?: ToastOptions) => void
+  loading: (message: string, opts?: ToastOptions) => number
+  dismiss: (id: number) => void
 }
 
+// ─── 컬러 설정 ───────────────────────────────────────────────────────────────
+
+const TYPE_CONFIG: Record<
+  ToastType,
+  {
+    Icon: React.ElementType
+    iconBg: string       // Tailwind light
+    iconColor: string    // Tailwind light
+    darkIconBg: string   // Tailwind dark
+    darkIconColor: string
+    defaultDuration: number
+  }
+> = {
+  success: {
+    Icon: Check,
+    iconBg: "bg-[#E8F1E5]",
+    iconColor: "text-[#4A7C3A]",
+    darkIconBg: "dark:bg-[#2E3B2A]",
+    darkIconColor: "dark:text-[#9BC88E]",
+    defaultDuration: 3500,
+  },
+  error: {
+    Icon: X,
+    iconBg: "bg-[#FCEBEB]",
+    iconColor: "text-[#A32D2D]",
+    darkIconBg: "dark:bg-[#3F1E1E]",
+    darkIconColor: "dark:text-[#E67B7B]",
+    defaultDuration: 4500,
+  },
+  warning: {
+    Icon: AlertTriangle,
+    iconBg: "bg-[#FAEEDA]",
+    iconColor: "text-[#BA7517]",
+    darkIconBg: "dark:bg-[#3F321A]",
+    darkIconColor: "dark:text-[#E8B96A]",
+    defaultDuration: 4000,
+  },
+  info: {
+    Icon: Info,
+    iconBg: "bg-[#FCE9D9]",
+    iconColor: "text-[#C06B2A]",
+    darkIconBg: "dark:bg-[#3D2815]",
+    darkIconColor: "dark:text-[#F0B079]",
+    defaultDuration: 3500,
+  },
+  neutral: {
+    Icon: Minus,
+    iconBg: "bg-[#F1EFE8]",
+    iconColor: "text-[#5F5E5A]",
+    darkIconBg: "dark:bg-[#302B25]",
+    darkIconColor: "dark:text-[#B5A995]",
+    defaultDuration: 4000,
+  },
+  loading: {
+    Icon: Loader2,
+    iconBg: "bg-[#F1EFE8]",
+    iconColor: "text-[#5F5E5A]",
+    darkIconBg: "dark:bg-[#302B25]",
+    darkIconColor: "dark:text-[#B5A995]",
+    defaultDuration: 999_999,
+  },
+}
+
+// ─── Context ─────────────────────────────────────────────────────────────────
+
 const ToastContext = createContext<ToastApi | null>(null)
-const TOAST_DURATION = 3500
+
+// ─── Provider ────────────────────────────────────────────────────────────────
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const idRef = useRef(0)
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
 
-  const dismiss = useCallback((id: number) => {
+  const toastsRef = useRef<Toast[]>([])
+  useEffect(() => { toastsRef.current = toasts }, [toasts])
+
+  const dismiss = useCallback((id: number, fromAction = false) => {
+    const toast = toastsRef.current.find((t) => t.id === id)
+    if (toast?.opts.onDismiss && !fromAction) toast.opts.onDismiss()
     setToasts((prev) => prev.filter((t) => t.id !== id))
+    const t = timers.current.get(id)
+    if (t) { clearTimeout(t); timers.current.delete(id) }
   }, [])
 
   const show = useCallback(
-    (message: string, type: ToastType) => {
+    (message: string, type: ToastType, opts: ToastOptions = {}): number => {
       const id = ++idRef.current
-      setToasts((prev) => [...prev, { id, message, type }])
-      setTimeout(() => dismiss(id), TOAST_DURATION)
+      const duration = opts.duration ?? TYPE_CONFIG[type].defaultDuration
+      setToasts((prev) => [...prev, { id, message, type, opts }])
+      if (duration < 999_000) {
+        const t = setTimeout(() => dismiss(id), duration)
+        timers.current.set(id, t)
+      }
+      return id
     },
     [dismiss]
   )
 
   const api: ToastApi = {
-    success: (m) => show(m, "success"),
-    error: (m) => show(m, "error"),
-    info: (m) => show(m, "info"),
+    success: (m, o) => { show(m, "success", o) },
+    error:   (m, o) => { show(m, "error",   o) },
+    warning: (m, o) => { show(m, "warning", o) },
+    info:    (m, o) => { show(m, "info",    o) },
+    neutral: (m, o) => { show(m, "neutral", o) },
+    loading: (m, o) =>   show(m, "loading", o),
+    dismiss,
   }
 
   return (
@@ -60,12 +164,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
+// ─── Viewport ────────────────────────────────────────────────────────────────
+
 function ToastViewport({
   toasts,
   onDismiss,
 }: {
   toasts: Toast[]
-  onDismiss: (id: number) => void
+  onDismiss: (id: number, fromAction?: boolean) => void
 }) {
   return (
     <div
@@ -80,62 +186,106 @@ function ToastViewport({
   )
 }
 
+// ─── Item ─────────────────────────────────────────────────────────────────────
+
 function ToastItem({
   toast,
   onDismiss,
 }: {
   toast: Toast
-  onDismiss: (id: number) => void
+  onDismiss: (id: number, fromAction?: boolean) => void
 }) {
   const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true))
     return () => cancelAnimationFrame(id)
   }, [])
 
-  const Icon =
-    toast.type === "success"
-      ? CheckCircle2
-      : toast.type === "error"
-        ? XCircle
-        : Info
+  const cfg = TYPE_CONFIG[toast.type]
+  const { action } = toast.opts
 
   return (
     <div
       role={toast.type === "error" ? "alert" : "status"}
       aria-live={toast.type === "error" ? "assertive" : "polite"}
       className={cn(
-        "pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border bg-card p-3 shadow-lg transition-all duration-200",
-        mounted ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
-        toast.type === "success" &&
-          "border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400",
-        toast.type === "error" &&
-          "border-destructive/40 bg-destructive/5 text-destructive",
-        toast.type === "info" && "border-border text-foreground"
+        "pointer-events-auto flex items-center gap-2.5 rounded-full px-3.5 py-2",
+        // 배경 + 텍스트
+        "bg-white text-[#2C2C2A]",
+        "dark:bg-[#2B2520] dark:text-[#F5EDE0]",
+        // 테두리 + 그림자
+        "border border-transparent dark:border-[#3A3229]",
+        "shadow-[0_8px_20px_rgba(60,40,20,0.12)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)]",
+        // 애니메이션
+        "transition-all duration-200",
+        mounted
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-2 opacity-0 sm:-translate-y-2",
       )}
     >
-      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <p className="flex-1 text-sm leading-relaxed">{toast.message}</p>
-      <button
-        type="button"
-        onClick={() => onDismiss(toast.id)}
-        aria-label="닫기"
-        className="shrink-0 rounded-md p-0.5 opacity-60 transition-opacity hover:opacity-100"
+      {/* 아이콘 */}
+      <span
+        className={cn(
+          "flex size-5 shrink-0 items-center justify-center rounded-full",
+          cfg.iconBg, cfg.iconColor,
+          cfg.darkIconBg, cfg.darkIconColor,
+        )}
       >
-        <X className="size-3.5" aria-hidden />
-      </button>
+        <cfg.Icon
+          className={cn(
+            "size-3",
+            toast.type === "loading" && "animate-spin"
+          )}
+          aria-hidden
+        />
+      </span>
+
+      {/* 메시지 */}
+      <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug">
+        {toast.message}
+      </p>
+
+      {/* Undo 액션 버튼 */}
+      {action && (
+        <button
+          type="button"
+          onClick={() => {
+            action.onClick()
+            onDismiss(toast.id, true)
+          }}
+          className="shrink-0 rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-[12px] font-semibold text-[#C06B2A] transition-opacity hover:opacity-80 dark:bg-[#3D2815] dark:text-[#F0B079]"
+        >
+          {action.label}
+        </button>
+      )}
+
+      {/* 닫기 버튼 (loading 제외) */}
+      {toast.type !== "loading" && (
+        <button
+          type="button"
+          onClick={() => onDismiss(toast.id)}
+          aria-label="닫기"
+          className="shrink-0 rounded-full p-0.5 opacity-40 transition-opacity hover:opacity-80"
+        >
+          <X className="size-3" aria-hidden />
+        </button>
+      )}
     </div>
   )
 }
 
+// ─── Hook ────────────────────────────────────────────────────────────────────
+
 export function useToast(): ToastApi {
   const ctx = useContext(ToastContext)
   if (!ctx) {
-    // Provider 가 아직 마운트 안 된 초기 렌더 등에서 no-op 반환.
+    const noop = () => {}
     return {
-      success: () => {},
-      error: () => {},
-      info: () => {},
+      success: noop, error: noop, warning: noop,
+      info: noop, neutral: noop,
+      loading: () => 0,
+      dismiss: noop,
     }
   }
   return ctx
