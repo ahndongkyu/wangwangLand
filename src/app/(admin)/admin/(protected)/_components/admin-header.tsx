@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronDown, ExternalLink, LogOut, Moon, Sun, User } from "lucide-react"
@@ -24,6 +25,7 @@ interface AdminHeaderProps {
   siteName: string
   adminName: string
   adminRole: string
+  adminAvatarUrl?: string | null
   isTopAdmin: boolean
   logoutAction: () => Promise<void>
   pendingCounts: PendingCounts
@@ -33,6 +35,7 @@ export function AdminHeader({
   siteName,
   adminName,
   adminRole,
+  adminAvatarUrl,
   isTopAdmin,
   logoutAction,
   pendingCounts,
@@ -108,6 +111,7 @@ export function AdminHeader({
           <AdminUserMenu
             adminName={adminName}
             adminRole={adminRole}
+            adminAvatarUrl={adminAvatarUrl}
             logoutAction={logoutAction}
           />
         </div>
@@ -149,10 +153,12 @@ export function AdminHeader({
 function AdminUserMenu({
   adminName,
   adminRole,
+  adminAvatarUrl,
   logoutAction,
 }: {
   adminName: string
   adminRole: string
+  adminAvatarUrl?: string | null
   logoutAction: () => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
@@ -176,8 +182,12 @@ function AdminUserMenu({
         className="flex items-center gap-2 rounded-full px-1 py-1 transition-opacity hover:opacity-80 outline-none"
         aria-label="계정 메뉴"
       >
-        <div className="flex size-9 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/10">
-          <User className="size-4 text-primary" />
+        <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/30 bg-primary/10">
+          {adminAvatarUrl ? (
+            <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
+          ) : (
+            <User className="size-4 text-primary" />
+          )}
         </div>
         <span className="hidden max-w-[80px] truncate text-sm font-medium text-foreground sm:block">
           {adminName}

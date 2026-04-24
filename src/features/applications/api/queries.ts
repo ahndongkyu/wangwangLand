@@ -286,6 +286,49 @@ export interface RecentApplication {
   submitted_at: string
 }
 
+export interface MonthlyVolunteerStat {
+  month: string  // "YYYY-MM"
+  label: string  // "1월"
+  rescued: number  // 봉사 신청 수 (차트 컴포넌트와 동일 키 재사용)
+}
+
+/** 최근 N개월 봉사 신청 추이 */
+export async function getMonthlyVolunteerStats(months = 6): Promise<MonthlyVolunteerStat[]> {
+  const supabase = await createClient()
+
+  const since = new Date()
+  since.setMonth(since.getMonth() - months + 1)
+  since.setDate(1)
+  const sinceStr = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-01T00:00:00+09:00`
+
+  const { data, error } = await supabase
+    .from("volunteer_applications")
+    .select("submitted_at")
+    .gte("submitted_at", sinceStr)
+
+  if (error || !data) return []
+
+  const map = new Map<string, number>()
+  for (const { submitted_at } of data as { submitted_at: string }[]) {
+    // KST 기준 월 추출
+    const d = new Date(submitted_at)
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+    const key = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}`
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
+
+  const result: MonthlyVolunteerStat[] = []
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    d.setDate(1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    result.push({ month: key, label: `${d.getMonth() + 1}월`, rescued: map.get(key) ?? 0 })
+  }
+
+  return result
+}
+
 export async function listRecentApplications(
   limit = 6
 ): Promise<RecentApplication[]> {

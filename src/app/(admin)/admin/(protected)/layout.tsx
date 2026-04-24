@@ -21,6 +21,7 @@ export default async function AdminProtectedLayout({
         siteName={SITE.name}
         adminName={admin.nickname}
         adminRole={admin.role}
+        adminAvatarUrl={admin.avatar_url ?? null}
         isTopAdmin={isTopAdmin}
         logoutAction={logout}
         pendingCounts={pendingCounts}

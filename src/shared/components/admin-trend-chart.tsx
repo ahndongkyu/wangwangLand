@@ -16,7 +16,13 @@ interface MonthlyRescueStat {
   rescued: number
 }
 
-export function AdminTrendChart({ data }: { data: MonthlyRescueStat[] }) {
+export function AdminTrendChart({
+  data,
+  valueLabel = "건",
+}: {
+  data: MonthlyRescueStat[]
+  valueLabel?: string
+}) {
   const max = Math.max(...data.map((d) => d.rescued), 1)
   const lastIdx = data.length - 1
 
@@ -45,7 +51,7 @@ export function AdminTrendChart({ data }: { data: MonthlyRescueStat[] }) {
             fontSize: "12px",
             color: "var(--color-foreground)",
           }}
-          formatter={(value) => [`${value}마리`, "구조"]}
+          formatter={(value) => [`${value}${valueLabel}`, ""]}
           labelStyle={{ fontWeight: 600 }}
         />
         <Bar dataKey="rescued" radius={[4, 4, 0, 0]} maxBarSize={36}>

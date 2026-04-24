@@ -3,9 +3,8 @@ import Link from "next/link"
 import {
   getApplicationStats,
   listRecentApplications,
+  getMonthlyVolunteerStats,
 } from "@/features/applications"
-import { countCatsByStatus } from "@/features/cats"
-import { countDogsByStatus, getMonthlyRescueStats } from "@/features/dogs"
 import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
@@ -69,10 +68,8 @@ export default async function AdminDashboardPage() {
   const thisMonth = monthRange(now)
   const prevMonth = monthRange(new Date(now.getFullYear(), now.getMonth() - 1, 15))
 
-  const [dogCounts, catCounts, appStats, recentApps, monthlyStats] =
+  const [appStats, recentApps, monthlyVolunteerStats] =
     await Promise.all([
-      countDogsByStatus(),
-      countCatsByStatus(),
       getApplicationStats({
         monthFrom: thisMonth.from,
         monthTo: thisMonth.to,
@@ -80,7 +77,7 @@ export default async function AdminDashboardPage() {
         prevMonthTo: prevMonth.to,
       }),
       listRecentApplications(6),
-      getMonthlyRescueStats(6),
+      getMonthlyVolunteerStats(6),
     ])
 
   const monthLabel = now.toLocaleDateString("ko-KR", { month: "long" })
@@ -101,12 +98,46 @@ export default async function AdminDashboardPage() {
         </p>
       </header>
 
-      {/* 1. 이번 달 요약 — 전월 대비 명확하게 */}
+      {/* 1. 빠른 작업 */}
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+          ⚡ 빠른 작업
+        </h2>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <QuickLink
+            href="/admin/dogs/new"
+            icon="dog"
+            label="강아지 등록"
+            desc="신규 보호 시작"
+          />
+          <QuickLink
+            href="/admin/cats/new"
+            icon="paw"
+            label="고양이 등록"
+            desc="신규 보호 시작"
+          />
+          <QuickLink
+            href="/admin/notices/new"
+            icon="notification"
+            label="공지 작성"
+            desc="새 소식 게시"
+          />
+          <QuickLink
+            href="/admin/daily/new"
+            icon="camera"
+            label="일상 작성"
+            desc="활동 기록"
+          />
+        </div>
+      </section>
+
+      {/* 2. 이번 달 신청 현황 */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
           📅 {monthLabel} 신청 현황
         </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        {/* 이번 달 카드 */}
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
           <MonthCard
             label="입양 신청"
             value={appStats.adoption.thisMonth}
@@ -130,20 +161,19 @@ export default async function AdminDashboardPage() {
             suffix="건"
           />
         </div>
-      </section>
-
-      {/* 2. 신청 상태별 누적 */}
-      <section className="mb-8 grid gap-4 md:grid-cols-2">
-        <StatusBreakdown
-          title="📋 입양 신청 상태 (누적)"
-          counts={appStats.adoption.allTime}
-          basePath="/admin/applications?type=adoption"
-        />
-        <StatusBreakdown
-          title="🙌 봉사 신청 상태 (누적)"
-          counts={appStats.volunteer.allTime}
-          basePath="/admin/applications?type=volunteer"
-        />
+        {/* 신청 상태별 누적 */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <StatusBreakdown
+            title="📋 입양 신청 누적"
+            counts={appStats.adoption.allTime}
+            basePath="/admin/applications?type=adoption"
+          />
+          <StatusBreakdown
+            title="🐾 구조 현황"
+            counts={appStats.volunteer.allTime}
+            basePath="/admin/applications?type=volunteer"
+          />
+        </div>
       </section>
 
       {/* 3. 최근 신청 */}
@@ -213,114 +243,26 @@ export default async function AdminDashboardPage() {
         )}
       </section>
 
-      {/* 4. 동물 현황 (누적) */}
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          🐶 강아지 현황 (누적)
-        </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="보호중" value={dogCounts["보호중"]} href="/admin/dogs?status=보호중" />
-          <StatCard label="임시보호중" value={dogCounts["임시보호중"]} href="/admin/dogs?status=임시보호중" />
-          <StatCard label="입양완료" value={dogCounts["입양완료"]} href="/admin/dogs?status=입양완료" />
-          <StatCard label="무지개다리" value={dogCounts["무지개다리"]} href="/admin/dogs?status=무지개다리" />
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          🐱 고양이 현황 (누적)
-        </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard label="보호중" value={catCounts["보호중"]} href="/admin/cats?status=보호중" />
-          <StatCard label="임시보호중" value={catCounts["임시보호중"]} href="/admin/cats?status=임시보호중" />
-          <StatCard label="입양완료" value={catCounts["입양완료"]} href="/admin/cats?status=입양완료" />
-          <StatCard label="무지개다리" value={catCounts["무지개다리"]} href="/admin/cats?status=무지개다리" />
-        </div>
-      </section>
-
-      {/* 5. 월별 구조 추이 차트 */}
+      {/* 4. 월별 봉사 신청 추이 */}
       <section className="mb-8">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center justify-between text-sm font-semibold text-foreground">
-              <span>📈 월별 구조 추이 (최근 6개월)</span>
+              <span>📈 월별 봉사 신청 추이 (최근 6개월)</span>
               <Link
-                href="/admin/dogs"
+                href="/admin/applications?type=volunteer"
                 className="text-xs font-normal text-primary hover:underline"
               >
-                강아지 목록 →
+                봉사 신청 목록 →
               </Link>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AdminTrendChart data={monthlyStats} />
+            <AdminTrendChart data={monthlyVolunteerStats} valueLabel="건" />
           </CardContent>
         </Card>
       </section>
-
-      {/* 6. 빠른 작업 */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          ⚡ 빠른 작업
-        </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <QuickLink
-            href="/admin/dogs/new"
-            icon="dog"
-            label="강아지 등록"
-            desc="신규 보호 시작"
-          />
-          <QuickLink
-            href="/admin/cats/new"
-            icon="paw"
-            label="고양이 등록"
-            desc="신규 보호 시작"
-          />
-          <QuickLink
-            href="/admin/notices/new"
-            icon="notification"
-            label="공지 작성"
-            desc="새 소식 게시"
-          />
-          <QuickLink
-            href="/admin/daily/new"
-            icon="camera"
-            label="일상 작성"
-            desc="활동 기록"
-          />
-        </div>
-      </section>
     </div>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  href,
-}: {
-  label: string
-  value: number
-  href?: string
-}) {
-  const content = (
-    <Card className="h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xs font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-      </CardContent>
-    </Card>
-  )
-  return href ? (
-    <Link href={href} className="block">
-      {content}
-    </Link>
-  ) : (
-    content
   )
 }
 

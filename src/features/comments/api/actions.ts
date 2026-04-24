@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/shared/lib/supabase/server"
+import { sendCommentNotifications } from "@/features/notifications/api/actions"
 import type { PostType } from "./queries"
 
 export async function createComment(
@@ -28,18 +29,31 @@ export async function createComment(
     return { error: "승인된 회원만 댓글을 작성할 수 있습니다." }
   }
 
-  const { error } = await supabase.from("comments").insert({
-    post_type: postType,
-    post_id: postId,
-    parent_id: parentId ?? null,
-    author_id: session.user.id,
-    content: trimmed,
-  })
+  const { data: comment, error } = await supabase
+    .from("comments")
+    .insert({
+      post_type: postType,
+      post_id: postId,
+      parent_id: parentId ?? null,
+      author_id: session.user.id,
+      content: trimmed,
+    })
+    .select("id")
+    .single()
 
-  if (error) {
+  if (error || !comment) {
     console.error("[createComment]", error)
     return { error: "댓글 작성에 실패했습니다." }
   }
+
+  // 알림 발송 (실패해도 댓글 등록엔 영향 없음)
+  sendCommentNotifications({
+    commentId: comment.id,
+    postType,
+    postId,
+    parentId: parentId ?? null,
+    actorId: session.user.id,
+  }).catch(console.error)
 
   const path = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
   revalidatePath(path)
