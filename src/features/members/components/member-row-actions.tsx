@@ -6,7 +6,7 @@ import { approveMember, rejectMember, updateMemberRole, toggleMemberBan } from "
 import { useToast } from "@/shared/components/toast"
 import type { Profile } from "../api/queries"
 
-export function MemberRowActions({ profile }: { profile: Profile }) {
+export function MemberRowActions({ profile, isTopAdmin = false }: { profile: Profile; isTopAdmin?: boolean }) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const toast = useToast()
@@ -117,7 +117,7 @@ export function MemberRowActions({ profile }: { profile: Profile }) {
                   운영진으로
                 </button>
               )}
-              {profile.role !== "admin" && (
+              {isTopAdmin && profile.role !== "admin" && (
                 <button type="button" onClick={() => handleRole("admin")}
                   className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary">
                   최고관리자로

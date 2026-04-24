@@ -123,7 +123,7 @@ export default async function AdminCatsPage({
       offset,
     }),
   ])
-  const canDelete = me?.role === "admin"
+  const canDelete = !!me
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const startIdx = offset + 1

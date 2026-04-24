@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { listProfiles, MemberRowActions } from "@/features/members"
+import { getCurrentAdmin } from "@/features/auth"
 import { Pagination } from "@/shared/components/pagination"
 
 export const metadata: Metadata = { title: "회원 관리" }
@@ -42,6 +43,9 @@ export default async function AdminMembersPage({
   const filterStatus = (params.status ?? "") as "pending" | "approved" | "rejected" | ""
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
+
+  const me = await getCurrentAdmin()
+  const isTopAdmin = me?.role === "admin"
 
   const { profiles, total } = await listProfiles({
     status: filterStatus || undefined,
@@ -145,7 +149,7 @@ export default async function AdminMembersPage({
                       {new Date(p.created_at).toLocaleDateString("ko-KR")}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <MemberRowActions profile={p} />
+                      <MemberRowActions profile={p} isTopAdmin={isTopAdmin} />
                     </td>
                   </tr>
                 ))}

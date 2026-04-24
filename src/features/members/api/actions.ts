@@ -123,6 +123,20 @@ export async function approveMember(
   id: string,
   role: "member" | "full_member" | "staff" | "admin"
 ): Promise<{ error?: string }> {
+  // admin role 설정은 최고관리자만 가능
+  if (role === "admin") {
+    const { createClient } = await import("@/shared/lib/supabase/server")
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return { error: "로그인이 필요합니다." }
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle()
+    if (me?.role !== "admin") return { error: "최고관리자만 해당 권한을 부여할 수 있습니다." }
+  }
+
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin
@@ -190,6 +204,20 @@ export async function updateMemberRole(
   id: string,
   role: "member" | "full_member" | "staff" | "admin"
 ): Promise<{ error?: string }> {
+  // admin role 설정은 최고관리자만 가능
+  if (role === "admin") {
+    const { createClient } = await import("@/shared/lib/supabase/server")
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return { error: "로그인이 필요합니다." }
+    const { data: me } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle()
+    if (me?.role !== "admin") return { error: "최고관리자만 해당 권한을 부여할 수 있습니다." }
+  }
+
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin

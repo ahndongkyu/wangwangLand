@@ -30,7 +30,7 @@ export default async function AdminDailyPage({
       offset,
     }),
   ])
-  const canDelete = me?.role === "admin"
+  const canDelete = !!me
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
