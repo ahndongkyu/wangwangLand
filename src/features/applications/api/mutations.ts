@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
@@ -245,7 +246,7 @@ export async function deleteAdoptionApplication(
   }
 
   revalidateAdminApplications()
-  return {}
+  redirect("/admin/applications")
 }
 
 export async function deleteVolunteerApplication(
@@ -263,5 +264,5 @@ export async function deleteVolunteerApplication(
   }
 
   revalidateAdminApplications()
-  return {}
+  redirect("/admin/applications")
 }

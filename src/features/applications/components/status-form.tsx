@@ -127,12 +127,10 @@ export function ApplicationStatusForm({
                     kind === "adoption"
                       ? await deleteAdoptionApplication(id)
                       : await deleteVolunteerApplication(id)
-                  if (result.error) {
+                  if (result?.error) {
                     setError(`삭제 실패: ${result.error}`)
                     setConfirmDelete(false)
-                    return
                   }
-                  window.location.href = "/admin/applications"
                 })
               }}
               disabled={deleting}
