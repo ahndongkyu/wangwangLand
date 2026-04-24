@@ -2,11 +2,10 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, ExternalLink } from "lucide-react"
+import { ChevronDown, ExternalLink, LogOut, Moon, Sun, User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 
-import { ThemeToggle } from "@/shared/components/theme-toggle"
-import { Button } from "@/shared/components/ui/button"
+import { useTheme } from "@/shared/components/theme-provider"
 import { cn } from "@/shared/lib/utils"
 
 type NavGroup = {
@@ -99,28 +98,13 @@ export function AdminHeader({
           </ul>
         </nav>
 
-        {/* 오른쪽: 유저 정보 + 로그아웃 */}
-        <div className="flex items-center gap-3 justify-self-end">
-          <span className="hidden text-xs text-muted-foreground sm:inline">
-            {adminName}{" "}
-            <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-              {ROLE_LABEL[adminRole] ?? adminRole}
-            </span>
-          </span>
-          <ThemeToggle />
-          <Link
-            href="/"
-            target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <ExternalLink className="size-3.5" />
-            메인사이트
-          </Link>
-          <form action={logoutAction}>
-            <Button type="submit" variant="outline" size="sm">
-              로그아웃
-            </Button>
-          </form>
+        {/* 오른쪽: 유저 드롭다운 */}
+        <div className="flex items-center justify-self-end">
+          <AdminUserMenu
+            adminName={adminName}
+            adminRole={adminRole}
+            logoutAction={logoutAction}
+          />
         </div>
       </div>
 
@@ -154,6 +138,99 @@ export function AdminHeader({
         </ul>
       </nav>
     </header>
+  )
+}
+
+function AdminUserMenu({
+  adminName,
+  adminRole,
+  logoutAction,
+}: {
+  adminName: string
+  adminRole: string
+  logoutAction: () => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full px-1 py-1 transition-opacity hover:opacity-80 outline-none"
+        aria-label="계정 메뉴"
+      >
+        <div className="flex size-9 items-center justify-center rounded-full border-2 border-primary/30 bg-primary/10">
+          <User className="size-4 text-primary" />
+        </div>
+        <span className="hidden max-w-[80px] truncate text-sm font-medium text-foreground sm:block">
+          {adminName}
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+          {/* 프로필 헤더 */}
+          <div className="border-b border-border px-4 py-3">
+            <p className="font-semibold text-foreground">{adminName}</p>
+            <span className="mt-0.5 inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+              {ROLE_LABEL[adminRole] ?? adminRole}
+            </span>
+          </div>
+
+          <div className="p-1">
+            {/* 다크모드 토글 */}
+            <button
+              type="button"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+            >
+              <span className="flex items-center gap-2">
+                {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
+                {isDark ? "다크 모드" : "라이트 모드"}
+              </span>
+              <span className="text-xs text-muted-foreground">전환</span>
+            </button>
+
+            {/* 메인사이트 */}
+            <Link
+              href="/"
+              target="_blank"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+            >
+              <ExternalLink className="size-4" />
+              메인사이트
+            </Link>
+
+            <div className="mx-2 my-1 border-t border-border" />
+
+            {/* 로그아웃 */}
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="size-4" />
+                로그아웃
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
