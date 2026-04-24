@@ -14,6 +14,8 @@ import { UserMenu } from "@/features/members/components/user-menu"
 import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
 import { RoleBadge } from "@/shared/components/role-badge"
+import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
+import type { PendingCounts } from "@/shared/lib/pending-counts"
 import {
   BrandIcon,
   type BrandIconName,
@@ -38,9 +40,10 @@ import {
 interface HeaderProps {
   recentNotices?: RecentNoticeMeta[]
   profile?: Profile | null
+  pendingCounts?: PendingCounts | null
 }
 
-export function Header({ recentNotices = [], profile }: HeaderProps) {
+export function Header({ recentNotices = [], profile, pendingCounts }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -110,6 +113,7 @@ export function Header({ recentNotices = [], profile }: HeaderProps) {
 
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
         <div className="flex items-center justify-end gap-2 justify-self-end">
+          {pendingCounts && <AdminNotificationBell counts={pendingCounts} />}
           {profile ? (
             <UserMenu profile={profile} />
           ) : (
