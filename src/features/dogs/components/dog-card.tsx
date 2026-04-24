@@ -76,12 +76,12 @@ export function DogCard({ dog }: { dog: Dog }) {
               </span>
             )}
             {formatAge(dog) && (
-              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full bg-[#F0DFC8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {formatAge(dog)}
               </span>
             )}
             {dog.size && (
-              <span className="inline-flex items-center rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-xs font-medium text-foreground">
+              <span className="inline-flex items-center rounded-full bg-[#F0DFC8] px-2.5 py-0.5 text-xs font-medium text-foreground">
                 {dog.size}형
               </span>
             )}
