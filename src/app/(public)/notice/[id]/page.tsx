@@ -4,6 +4,7 @@ import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
+import { CommentSection } from "@/features/comments"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { ImageLightbox } from "@/shared/components/image-lightbox"
 import { LinkifiedText } from "@/shared/components/linkified-text"
@@ -82,6 +83,8 @@ export default async function NoticeDetailPage({
       {notice.images && notice.images.length > 0 && (
         <ImageLightbox images={notice.images} />
       )}
+
+      <CommentSection postType="notice" postId={notice.id} />
     </div>
   )
 }

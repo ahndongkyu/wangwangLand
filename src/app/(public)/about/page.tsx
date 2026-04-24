@@ -34,8 +34,6 @@ export default async function AboutPage() {
           />
           <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.40)" }} />
           <div className="absolute bottom-5 left-5 text-white">
-            <p className="text-sm font-semibold">봉사자들과 함께</p>
-            <p className="mt-0.5 text-xs opacity-75">2025.11 · 왕왕랜드</p>
           </div>
         </div>
 
@@ -81,7 +79,7 @@ export default async function AboutPage() {
           badge="100% 안락사 없는 보호소"
           title="우리가 하는 일"
           list={[
-            "길 위의 아이들을 구조하고 건강·사회성을 회복시킵니다.",
+            "아이들을 구조하고 건강·사회성을 회복시킵니다.",
             "평생 가족이 되어줄 따뜻한 분들과 연결합니다.",
             "입양 후에도 아이와 가족이 잘 지내는지 함께 소통합니다.",
           ]}
@@ -89,7 +87,7 @@ export default async function AboutPage() {
         <InfoCard
           badge="함께해요"
           title="당신의 참여가 생명을 살려요"
-          body="입양, 봉사, 후원 — 어떤 방법이든 좋습니다. 작은 마음 하나하나가 한 생명을 살립니다."
+          body="입양, 봉사, 후원 어떤 방법이든 좋습니다./n작은 마음 하나하나가 한 생명을 살립니다."
           className="md:col-span-2 lg:col-span-1"
         />
       </div>

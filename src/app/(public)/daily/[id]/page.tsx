@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
 import { getDailyPost } from "@/features/daily"
+import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
 
 export const revalidate = 60
@@ -81,6 +82,8 @@ export default async function DailyDetailPage({
           {post.content}
         </article>
       )}
+
+      <CommentSection postType="daily" postId={post.id} />
     </div>
   )
 }

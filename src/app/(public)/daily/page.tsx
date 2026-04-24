@@ -1,6 +1,9 @@
+import Link from "next/link"
 import type { Metadata } from "next"
+import { PenSquare } from "lucide-react"
 
 import { DailyCard, listDailyPosts } from "@/features/daily"
+import { getCurrentProfile } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 
@@ -23,12 +26,12 @@ export default async function DailyPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { posts, total } = await listDailyPosts({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [{ posts, total }, profile] = await Promise.all([
+    listDailyPosts({ query: activeQuery || undefined, limit: PAGE_SIZE, offset }),
+    getCurrentProfile(),
+  ])
 
+  const canWrite = profile?.status === "approved" && !profile.is_banned
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
@@ -42,9 +45,20 @@ export default async function DailyPage({
             왕왕랜드에서 펼쳐지는 하루하루, 봉사 활동과 아이들 근황을 기록합니다.
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          총 <span className="font-bold text-foreground">{total}</span>건
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            총 <span className="font-bold text-foreground">{total}</span>건
+          </p>
+          {canWrite && (
+            <Link
+              href="/daily/new"
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <PenSquare className="size-3.5" />
+              작성하기
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="mb-8 max-w-md">

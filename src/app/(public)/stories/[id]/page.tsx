@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
 import { getAdoptionStory } from "@/features/stories"
+import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
@@ -83,6 +84,8 @@ export default async function StoryDetailPage({
       <article className="whitespace-pre-wrap text-base leading-relaxed text-foreground/90">
         {story.content}
       </article>
+
+      <CommentSection postType="story" postId={story.id} />
 
       {story.dog && (
         <div className="mt-10 rounded-lg border border-border bg-secondary/30 p-6 text-center">
