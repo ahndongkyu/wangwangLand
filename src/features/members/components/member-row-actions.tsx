@@ -99,7 +99,7 @@ export function MemberRowActions({
 
   function handleReApprove() {
     setOpen(false)
-    const targetRole: Profile["role"] = role === "rejected" ? "member" : role
+    const targetRole: Profile["role"] = role
     startTransition(async () => {
       const result = await approveMember(profile.id, targetRole)
       if (result.error) toast.error(`실패: ${result.error}`)
