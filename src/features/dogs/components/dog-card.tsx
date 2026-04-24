@@ -72,7 +72,7 @@ export function DogCard({ dog }: { dog: Dog }) {
                     : "bg-pink-50 text-pink-500"
                 )}
               >
-                {dog.gender === "수컷" ? "♂ 남아" : "♀ 여아"}
+                {dog.gender === "수컷" ? "♂" : "♀"}
               </span>
             )}
             {formatAge(dog) && (
