@@ -67,12 +67,10 @@ export function UserMenu({ profile }: { profile: Profile }) {
         <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
           {/* 프로필 헤더 */}
           <div className="border-b border-border px-4 py-3">
-            <p className="flex items-center gap-1.5 font-semibold text-foreground">
-              {profile.nickname}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${ROLE_COLOR[profile.role]}`}>
-                {ROLE_LABEL[profile.role]}
-              </span>
-            </p>
+            <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold ${ROLE_COLOR[profile.role]}`}>
+              {ROLE_LABEL[profile.role]}
+            </span>
+            <p className="mt-0.5 font-semibold text-foreground">{profile.nickname}</p>
           </div>
 
           <div className="p-1">
