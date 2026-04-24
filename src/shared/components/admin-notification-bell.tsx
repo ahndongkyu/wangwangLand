@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Bell, Users, Heart, HandHeart } from "lucide-react"
+import { cn } from "@/shared/lib/utils"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function AdminNotificationBell({ counts }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const hasItems = counts.total > 0
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -20,15 +22,6 @@ export function AdminNotificationBell({ counts }: Props) {
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
-
-  // 알림 없을 때 — 클릭 안 됨
-  if (counts.total === 0) {
-    return (
-      <div className="relative flex size-9 items-center justify-center rounded-full text-foreground/40">
-        <Bell className="size-5" />
-      </div>
-    )
-  }
 
   const items = [
     counts.members > 0 && {
@@ -64,17 +57,24 @@ export function AdminNotificationBell({ counts }: Props) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
-        aria-label={`알림 ${counts.total}건`}
+        onClick={() => hasItems && setOpen((v) => !v)}
+        className={cn(
+          "relative flex size-9 items-center justify-center rounded-full transition-colors",
+          hasItems
+            ? "text-foreground/70 hover:bg-secondary hover:text-foreground"
+            : "text-foreground/40 cursor-default"
+        )}
+        aria-label={hasItems ? `처리 대기 알림 ${counts.total}건` : "대기 알림 없음"}
       >
         <Bell className="size-5" />
-        <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
-          {counts.total > 99 ? "99+" : counts.total}
-        </span>
+        {hasItems && (
+          <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
+            {counts.total > 99 ? "99+" : counts.total}
+          </span>
+        )}
       </button>
 
-      {open && (
+      {open && hasItems && (
         <div className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
           <div className="border-b border-border px-4 py-2.5">
             <p className="text-xs font-semibold text-muted-foreground">처리 대기 알림</p>

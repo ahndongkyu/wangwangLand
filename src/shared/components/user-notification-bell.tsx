@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Bell } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
+import { cn } from "@/shared/lib/utils"
 import { markAllNotificationsRead, markNotificationRead } from "@/features/notifications/api/actions"
 import type { UserNotification } from "@/features/notifications/api/queries"
 
@@ -30,6 +31,7 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const hasItems = notifications.length > 0
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -38,15 +40,6 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
-
-  // 알림 없으면 클릭 안 됨
-  if (notifications.length === 0) {
-    return (
-      <div className="relative flex size-9 items-center justify-center rounded-full text-foreground/40">
-        <Bell className="size-5" />
-      </div>
-    )
-  }
 
   function handleClickNotif(n: UserNotification) {
     setOpen(false)
@@ -67,9 +60,14 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
-        aria-label={`알림 ${unreadCount}개`}
+        onClick={() => hasItems && setOpen((v) => !v)}
+        className={cn(
+          "relative flex size-9 items-center justify-center rounded-full transition-colors",
+          hasItems
+            ? "text-foreground/70 hover:bg-secondary hover:text-foreground"
+            : "text-foreground/40 cursor-default"
+        )}
+        aria-label={hasItems ? `알림 ${unreadCount}개` : "알림 없음"}
       >
         <Bell className="size-5" />
         {unreadCount > 0 && (
@@ -79,7 +77,7 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
         )}
       </button>
 
-      {open && (
+      {open && hasItems && (
         <div className="absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
             <p className="text-xs font-semibold text-muted-foreground">알림</p>
@@ -101,7 +99,10 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
                 <button
                   type="button"
                   onClick={() => handleClickNotif(n)}
-                  className={`w-full px-4 py-3 text-left transition-colors hover:bg-secondary ${!n.is_read ? "bg-primary/5" : ""}`}
+                  className={cn(
+                    "w-full px-4 py-3 text-left transition-colors hover:bg-secondary",
+                    !n.is_read && "bg-primary/5"
+                  )}
                 >
                   <p className="text-sm text-foreground leading-snug">
                     {!n.is_read && (
