@@ -54,7 +54,7 @@ export function AnimalImageUploader({
     setImages((prev) => [...prev, data.publicUrl].slice(0, maxImages))
   }
 
-  function handleCropDone(file: File) {
+  function handleCropDone(file: File, _previewUrl: string) {
     setCropSrc(null)
     pendingFileRef.current = null
     startTransition(() => uploadFile(file))

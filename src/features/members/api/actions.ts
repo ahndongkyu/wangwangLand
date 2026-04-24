@@ -76,7 +76,8 @@ export async function updateProfile(
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) return { error: "로그인이 필요합니다." }
 
   // 닉네임 중복 확인
@@ -99,7 +100,7 @@ export async function updateProfile(
     const { error: uploadErr } = await supabase.storage
       .from("avatars")
       .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
-    if (uploadErr) return { error: "이미지 업로드에 실패했습니다." }
+    if (uploadErr) return { error: `이미지 업로드에 실패했습니다: ${uploadErr.message}` }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
     avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
   }

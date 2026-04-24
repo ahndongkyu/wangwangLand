@@ -1,11 +1,15 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import Cropper from "react-easy-crop"
-import type { Area } from "react-easy-crop"
+import { useState, useRef, useCallback } from "react"
+import ReactCrop, {
+  type Crop,
+  type PixelCrop,
+  centerCrop,
+  makeAspectCrop,
+} from "react-image-crop"
+import "react-image-crop/dist/ReactCrop.css"
 import { getCroppedImg } from "@/shared/lib/crop-image"
 import { Button } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
 
 interface Props {
   imageSrc: string
@@ -15,27 +19,60 @@ interface Props {
   onCancel: () => void
 }
 
+function centerAspectCrop(
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect: number
+): Crop {
+  return centerCrop(
+    makeAspectCrop({ unit: "%", width: 80 }, aspect, mediaWidth, mediaHeight),
+    mediaWidth,
+    mediaHeight
+  )
+}
+
 export function ImageCropModal({
   imageSrc,
-  aspect = 1,
+  aspect,
   circular = false,
   onDone,
   onCancel,
 }: Props) {
-  const [crop, setCrop] = useState({ x: 0, y: 0 })
-  const [zoom, setZoom] = useState(1)
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+  const [crop, setCrop] = useState<Crop>()
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
   const [loading, setLoading] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
 
-  const onCropComplete = useCallback((_: Area, areaPixels: Area) => {
-    setCroppedAreaPixels(areaPixels)
-  }, [])
+  const onImageLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const { naturalWidth: width, naturalHeight: height } = e.currentTarget
+      const initialAspect = circular ? 1 : aspect
+      if (initialAspect) {
+        setCrop(centerAspectCrop(width, height, initialAspect))
+      } else {
+        // 자유 선택: 기본 80% 영역으로 시작
+        setCrop({ unit: "%", x: 10, y: 10, width: 80, height: 80 })
+      }
+    },
+    [aspect, circular]
+  )
 
   async function handleConfirm() {
-    if (!croppedAreaPixels) return
+    if (!completedCrop || !imgRef.current) return
     setLoading(true)
     try {
-      const file = await getCroppedImg(imageSrc, croppedAreaPixels, circular)
+      // react-image-crop completedCrop은 자연 이미지 기준이 아닌 표시 크기 기준이므로
+      // 실제 픽셀 크기로 스케일링
+      const img = imgRef.current
+      const scaleX = img.naturalWidth / img.width
+      const scaleY = img.naturalHeight / img.height
+      const scaledCrop = {
+        x: completedCrop.x * scaleX,
+        y: completedCrop.y * scaleY,
+        width: completedCrop.width * scaleX,
+        height: completedCrop.height * scaleY,
+      }
+      const file = await getCroppedImg(imageSrc, scaledCrop, circular)
       const previewUrl = URL.createObjectURL(file)
       onDone(file, previewUrl)
     } catch {
@@ -51,42 +88,33 @@ export function ImageCropModal({
         <h2 className="text-center text-base font-semibold text-foreground">
           {circular ? "프로필 사진 자르기" : "사진 자르기"}
         </h2>
+        <p className="text-center text-xs text-muted-foreground -mt-2">
+          {circular
+            ? "원형 영역을 드래그해서 위치를 조정하세요"
+            : "모서리·가장자리를 드래그해서 크기를 조정하세요"}
+        </p>
 
         {/* 크롭 영역 */}
-        <div className="relative h-72 w-full overflow-hidden rounded-xl bg-black">
-          <Cropper
-            image={imageSrc}
+        <div className="flex max-h-[420px] justify-center overflow-auto rounded-xl bg-black">
+          <ReactCrop
             crop={crop}
-            zoom={zoom}
-            aspect={aspect}
-            cropShape={circular ? "round" : "rect"}
-            showGrid={!circular}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-            classes={{
-              containerClassName: "!rounded-xl",
-              cropAreaClassName: cn(
-                "!border-2 !border-primary",
-                circular && "!rounded-full"
-              ),
-            }}
-          />
-        </div>
-
-        {/* 줌 슬라이더 */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">축소</span>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.05}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="h-1.5 w-full cursor-pointer accent-primary"
-          />
-          <span className="text-xs text-muted-foreground">확대</span>
+            onChange={(c) => setCrop(c)}
+            onComplete={(c) => setCompletedCrop(c)}
+            aspect={circular ? 1 : aspect}
+            circularCrop={circular}
+            keepSelection
+            minWidth={40}
+            minHeight={40}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              ref={imgRef}
+              src={imageSrc}
+              alt="크롭 이미지"
+              onLoad={onImageLoad}
+              style={{ maxHeight: 420, objectFit: "contain" }}
+            />
+          </ReactCrop>
         </div>
 
         {/* 버튼 */}
@@ -104,7 +132,7 @@ export function ImageCropModal({
             type="button"
             className="flex-1"
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || !completedCrop}
           >
             {loading ? "처리 중..." : "자르기"}
           </Button>
