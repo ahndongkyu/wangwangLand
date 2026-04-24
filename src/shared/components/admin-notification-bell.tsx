@@ -21,17 +21,24 @@ export function AdminNotificationBell({ counts }: Props) {
     return () => document.removeEventListener("mousedown", handler)
   }, [])
 
+  const bellButton = (
+    <button
+      type="button"
+      onClick={() => setOpen((v) => !v)}
+      className="relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+      aria-label={counts.total > 0 ? `알림 ${counts.total}건` : "알림"}
+    >
+      <Bell className="size-5" />
+      {counts.total > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
+          {counts.total > 99 ? "99+" : counts.total}
+        </span>
+      )}
+    </button>
+  )
+
   if (counts.total === 0) {
-    return (
-      <button
-        type="button"
-        className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        aria-label="알림"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <Bell className="size-5" />
-      </button>
-    )
+    return bellButton
   }
 
   const items = [
@@ -66,17 +73,7 @@ export function AdminNotificationBell({ counts }: Props) {
 
   return (
     <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="relative flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary"
-        aria-label={`알림 ${counts.total}건`}
-      >
-        <Bell className="size-5" />
-        <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
-          {counts.total > 99 ? "99+" : counts.total}
-        </span>
-      </button>
+      {bellButton}
 
       {open && (
         <div className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
