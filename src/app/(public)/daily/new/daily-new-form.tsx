@@ -43,10 +43,10 @@ export function DailyNewForm() {
       )}
 
       <div className="flex gap-3">
-        <Link href="/daily" className="flex-1 rounded-lg border border-border px-4 py-2.5 text-center text-sm font-medium text-foreground hover:bg-secondary">
+        <Link href="/daily" className="flex h-10 flex-1 items-center justify-center rounded-lg border border-border text-sm font-medium text-foreground hover:bg-secondary">
           취소
         </Link>
-        <Button type="submit" disabled={pending} className="flex-1">
+        <Button type="submit" disabled={pending} className="h-10 flex-1">
           {pending ? "등록 중..." : "등록하기"}
         </Button>
       </div>
