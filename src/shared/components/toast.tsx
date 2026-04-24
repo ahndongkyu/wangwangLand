@@ -210,31 +210,32 @@ function ToastItem({
       role={toast.type === "error" ? "alert" : "status"}
       aria-live={toast.type === "error" ? "assertive" : "polite"}
       className={cn(
-        "pointer-events-auto flex items-center gap-2.5 rounded-full px-3.5 py-2",
+        // 레이아웃 + 필 형태
+        "pointer-events-auto flex w-max min-w-[180px] max-w-[420px] items-center gap-2.5 rounded-full px-3 py-2",
         // 배경 + 텍스트
         "bg-white text-[#2C2C2A]",
         "dark:bg-[#2B2520] dark:text-[#F5EDE0]",
         // 테두리 + 그림자
-        "border border-transparent dark:border-[#3A3229]",
-        "shadow-[0_8px_20px_rgba(60,40,20,0.12)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)]",
+        "border border-black/[0.04] dark:border-[#3A3229]",
+        "shadow-[0_4px_16px_rgba(60,40,20,0.10)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)]",
         // 애니메이션
         "transition-all duration-200",
         mounted
           ? "translate-y-0 opacity-100"
-          : "-translate-y-2 opacity-0 sm:-translate-y-2",
+          : "-translate-y-2 opacity-0",
       )}
     >
       {/* 아이콘 */}
       <span
         className={cn(
-          "flex size-5 shrink-0 items-center justify-center rounded-full",
+          "flex size-[22px] shrink-0 items-center justify-center rounded-full",
           cfg.iconBg, cfg.iconColor,
           cfg.darkIconBg, cfg.darkIconColor,
         )}
       >
         <cfg.Icon
           className={cn(
-            "size-3",
+            "size-[11px]",
             toast.type === "loading" && "animate-spin"
           )}
           aria-hidden
@@ -242,7 +243,7 @@ function ToastItem({
       </span>
 
       {/* 메시지 */}
-      <p className="min-w-0 flex-1 text-[13px] font-medium leading-snug">
+      <p className="text-[13px] font-medium leading-none">
         {toast.message}
       </p>
 
@@ -254,7 +255,7 @@ function ToastItem({
             action.onClick()
             onDismiss(toast.id, true)
           }}
-          className="shrink-0 rounded-full bg-[#FAF3E8] px-2.5 py-0.5 text-[12px] font-semibold text-[#C06B2A] transition-opacity hover:opacity-80 dark:bg-[#3D2815] dark:text-[#F0B079]"
+          className="ml-1 shrink-0 rounded-full bg-[#FAF3E8] px-2.5 py-1 text-[12px] font-semibold text-[#C06B2A] transition-opacity hover:opacity-80 dark:bg-[#3D2815] dark:text-[#F0B079]"
         >
           {action.label}
         </button>
@@ -266,9 +267,9 @@ function ToastItem({
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="닫기"
-          className="shrink-0 rounded-full p-0.5 opacity-40 transition-opacity hover:opacity-80"
+          className="ml-0.5 shrink-0 rounded-full p-1 opacity-30 transition-opacity hover:opacity-70"
         >
-          <X className="size-3" aria-hidden />
+          <X className="size-2.5" aria-hidden />
         </button>
       )}
     </div>
