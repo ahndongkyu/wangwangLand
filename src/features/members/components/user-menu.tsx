@@ -3,7 +3,7 @@
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { LogOut, User } from "lucide-react"
+import { LogOut, Settings, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import type { Profile } from "../api/queries"
 
@@ -73,6 +73,16 @@ export function UserMenu({ profile }: { profile: Profile }) {
           </div>
 
           <div className="p-1">
+            {(profile.role === "staff" || profile.role === "admin") && (
+              <Link
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+              >
+                <Settings className="size-4" />
+                어드민 페이지
+              </Link>
+            )}
             <Link
               href="/profile"
               onClick={() => setOpen(false)}

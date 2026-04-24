@@ -147,8 +147,6 @@ export async function GET(request: Request) {
       redirectPath = "/pending"
     } else if (profile.status === "rejected") {
       redirectPath = "/rejected"
-    } else if (profile.role === "admin" || profile.role === "staff") {
-      redirectPath = "/admin"
     }
 
     // 7. 쿠키를 redirect 응답에 직접 붙여서 반환
