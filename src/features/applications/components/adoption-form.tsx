@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import React, { useState, useTransition } from "react"
 
 import { submitAdoptionApplication } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
@@ -27,8 +27,11 @@ export function AdoptionForm({ dogId, dogName }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
+
+    const formData = new FormData(e.currentTarget)
 
     const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
     if (!nameCheck.valid) {
@@ -73,7 +76,7 @@ export function AdoptionForm({ dogId, dogName }: Props) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {dogId && (
         <>
           <input type="hidden" name="dog_id" value={dogId} />

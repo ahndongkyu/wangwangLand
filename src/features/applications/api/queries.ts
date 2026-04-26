@@ -126,7 +126,8 @@ export async function listVolunteerApplications({
 export async function getAdoptionApplication(
   id: string
 ): Promise<AdoptionRow | null> {
-  const supabase = await createClient()
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from("adoption_applications")
@@ -145,7 +146,8 @@ export async function getAdoptionApplication(
 export async function getVolunteerApplication(
   id: string
 ): Promise<VolunteerApplication | null> {
-  const supabase = await createClient()
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const supabase = createAdminClient()
 
   const { data, error } = await supabase
     .from("volunteer_applications")
