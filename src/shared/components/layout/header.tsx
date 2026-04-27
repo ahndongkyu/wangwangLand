@@ -158,7 +158,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="w-[min(320px,85vw)] flex flex-col p-0 bg-white dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="w-[min(320px,85vw)] flex flex-col p-0 bg-[#FAF6F0] dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{SITE.name}</SheetTitle>
@@ -231,7 +231,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
                         href={SITE.sns.naverCafe}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-white py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#E2D6C8] bg-[#F7F2EA] py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
                       >
                         <span className="inline-flex h-[16px] w-[16px] items-center justify-center rounded bg-[#03C75A] text-[9px] font-black text-white">N</span>
                         네이버 카페
@@ -242,7 +242,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
                         href={SITE.sns.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-white py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#E2D6C8] bg-[#F7F2EA] py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
                       >
                         <InstaIcon />
                         인스타
@@ -396,7 +396,7 @@ function MobileProfileSection({
           <Link
             href="/signup"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-[#E89B5E] bg-white py-2 text-center text-xs font-medium text-[#C06B2A] dark:border-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#FFD4A1]"
+            className="flex-1 rounded-lg border border-[#E89B5E] bg-[#FDF8F3] py-2 text-center text-xs font-medium text-[#C06B2A] dark:border-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#FFD4A1]"
           >
             회원가입
           </Link>
