@@ -125,6 +125,12 @@ export default async function AdminMemberDetailPage({
             </div>
             <p className="text-sm text-muted-foreground">
               {profile.email ?? "이메일 정보 없음"}
+              {profile.phone && (
+                <>
+                  {" · "}
+                  <span className="text-foreground">{profile.phone}</span>
+                </>
+              )}
             </p>
             <p className="text-xs text-muted-foreground">
               가입 {formatJoinedAt(profile.created_at)}

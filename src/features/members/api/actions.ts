@@ -91,12 +91,13 @@ export async function updateNickname(
   redirect("/")
 }
 
-/** 프로필 업데이트 — 닉네임 + 아바타 */
+/** 프로필 업데이트 — 닉네임 + 아바타 + 핸드폰번호 */
 export async function updateProfile(
   _prev: { error: string | null; success?: boolean },
   formData: FormData
 ): Promise<{ error: string | null; success?: boolean }> {
   const nickname = (formData.get("nickname") as string | null)?.trim() ?? ""
+  const phoneRaw = (formData.get("phone") as string | null)?.trim() ?? ""
   const avatarFile = formData.get("avatar") as File | null
 
   if (nickname.length < 2 || nickname.length > 20) {
@@ -104,6 +105,15 @@ export async function updateProfile(
   }
   if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
     return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
+  }
+
+  // 핸드폰번호: 빈 값이면 null, 그 외엔 숫자/하이픈만 허용
+  let phone: string | null = null
+  if (phoneRaw) {
+    if (!/^[0-9-]+$/.test(phoneRaw)) {
+      return { error: "핸드폰번호는 숫자와 하이픈(-)만 입력 가능합니다." }
+    }
+    phone = phoneRaw
   }
 
   const supabase = await createClient()
@@ -138,6 +148,7 @@ export async function updateProfile(
 
   const updates: Record<string, unknown> = {
     nickname,
+    phone,
     updated_at: new Date().toISOString(),
   }
   if (avatarUrl) updates.avatar_url = avatarUrl

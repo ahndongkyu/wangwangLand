@@ -107,6 +107,24 @@ export function ProfileForm({ profile }: Props) {
         <p className="text-xs text-muted-foreground">한글, 영문, 숫자, _ 사용 가능 (2~20자)</p>
       </div>
 
+      {/* 핸드폰번호 */}
+      <div className="space-y-1.5">
+        <label htmlFor="phone" className="text-sm font-medium text-foreground">
+          핸드폰번호 <span className="text-xs text-muted-foreground">(선택)</span>
+        </label>
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          defaultValue={profile.phone ?? ""}
+          placeholder="010-0000-0000"
+          inputMode="tel"
+        />
+        <p className="text-xs text-muted-foreground">
+          입양·봉사·후원 신청 시 운영진 연락용 (어드민만 확인)
+        </p>
+      </div>
+
       {/* 에러 / 성공 */}
       {state.error && (
         <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">

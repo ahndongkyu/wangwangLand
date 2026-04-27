@@ -34,6 +34,12 @@ const STATUS_COLOR: Record<Profile["status"], string> = {
   rejected: "bg-destructive/15 text-destructive",
 }
 
+// 헤더와 행이 공유하는 grid 정의
+//   sm 이상: 번호 / 닉네임 / 핸드폰 / 상태 / 권한 / 가입일
+//   sm 미만: 번호 / 닉네임 / 가입일
+const ROW_GRID =
+  "grid grid-cols-[48px_1fr_84px] sm:grid-cols-[48px_minmax(0,1fr)_140px_72px_84px_84px] gap-3 items-center"
+
 export default async function AdminMembersPage({
   searchParams,
 }: {
@@ -66,7 +72,7 @@ export default async function AdminMembersPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">회원 관리</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -121,11 +127,13 @@ export default async function AdminMembersPage({
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            {/* 헤더 — 행과 동일한 grid 사용 */}
+            <div className={cn(ROW_GRID, "border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground")}>
               <span className="text-center">번호</span>
               <span>닉네임</span>
-              <span className="hidden text-right sm:block">상태</span>
-              <span className="hidden text-right sm:block">권한</span>
+              <span className="hidden sm:block">핸드폰</span>
+              <span className="hidden sm:block">상태</span>
+              <span className="hidden sm:block">권한</span>
               <span className="text-right">가입일</span>
             </div>
             <ul className="divide-y divide-border">
@@ -135,18 +143,15 @@ export default async function AdminMembersPage({
                   <li key={p.id} className={cn(p.is_banned && "opacity-60")}>
                     <Link
                       href={`/admin/members/${p.id}`}
-                      className="grid grid-cols-[56px_1fr_auto_auto_90px] items-center gap-2 px-4 py-3 transition-colors hover:bg-secondary/50"
+                      className={cn(ROW_GRID, "px-4 py-3 transition-colors hover:bg-secondary/50")}
                     >
                       <span className="text-center text-xs text-muted-foreground">{num}</span>
+
+                      {/* 닉네임 */}
                       <span className="flex min-w-0 items-center gap-2.5">
                         <span className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
                           {p.avatar_url ? (
-                            <Image
-                              src={p.avatar_url}
-                              alt={p.nickname}
-                              fill
-                              className="object-cover"
-                            />
+                            <Image src={p.avatar_url} alt={p.nickname} fill className="object-cover" />
                           ) : (
                             <User className="size-full p-1.5 text-muted-foreground" />
                           )}
@@ -162,7 +167,14 @@ export default async function AdminMembersPage({
                           )}
                         </span>
                       </span>
-                      <span className="hidden text-right sm:block">
+
+                      {/* 핸드폰 */}
+                      <span className="hidden truncate text-xs text-muted-foreground sm:block">
+                        {p.phone ?? "—"}
+                      </span>
+
+                      {/* 상태 */}
+                      <span className="hidden sm:block">
                         <span
                           className={cn(
                             "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
@@ -172,15 +184,19 @@ export default async function AdminMembersPage({
                           {STATUS_LABEL[p.status]}
                         </span>
                       </span>
-                      <span className="hidden text-right sm:block">
+
+                      {/* 권한 */}
+                      <span className="hidden sm:block">
                         <RoleBadge role={p.role} />
                       </span>
+
+                      {/* 가입일 */}
                       <span className="text-right text-xs text-muted-foreground">
                         {new Date(p.created_at).toLocaleDateString("ko-KR", {
                           year: "2-digit",
                           month: "2-digit",
                           day: "2-digit",
-                        }).replace(/\.\s?$/, "")}
+                        }).replace(/\.\s*$/, "")}
                       </span>
                     </Link>
                   </li>
