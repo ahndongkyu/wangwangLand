@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
@@ -53,8 +53,13 @@ export function NoticeForm({ notice }: Props) {
       ? customPrefix.trim()
       : noticeType              // "공지" | "이벤트" | ""
 
-  async function handleSubmit(formData: FormData) {
+  const contentRef = useRef<string>(notice?.content ?? "")
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
+    const formData = new FormData(e.currentTarget)
+    formData.set("content", contentRef.current)
     startTransition(async () => {
       const result = isEdit && notice
         ? await updateNotice(notice.id, formData)
@@ -64,7 +69,7 @@ export function NoticeForm({ notice }: Props) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* 공지 유형 */}
       <div className="space-y-1.5">
@@ -131,6 +136,7 @@ export function NoticeForm({ notice }: Props) {
           defaultValue={notice?.content ?? ""}
           placeholder="공지 본문을 입력하세요."
           folder="notices"
+          onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
