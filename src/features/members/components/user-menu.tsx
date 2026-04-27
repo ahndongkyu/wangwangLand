@@ -3,18 +3,11 @@
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ClipboardList, LogOut, Moon, Settings, Sun, User } from "lucide-react"
+import { ChevronRight, ClipboardList, LogOut, Moon, Settings, Sun, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
 import { RoleBadge } from "@/shared/components/role-badge"
 import type { Profile } from "../api/queries"
-
-const ROLE_LABEL: Record<Profile["role"], string> = {
-  member: "일반회원",
-  full_member: "정회원",
-  staff: "운영진",
-  admin: "관리자",
-}
 
 export function UserMenu({ profile }: { profile: Profile }) {
   const [open, setOpen] = useState(false)
@@ -36,8 +29,11 @@ export function UserMenu({ profile }: { profile: Profile }) {
     startTransition(() => signOut())
   }
 
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+
   return (
     <div ref={ref} className="relative">
+      {/* 트리거 버튼 */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -52,7 +48,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
             <User className="size-full p-1.5 text-muted-foreground" />
           )}
         </div>
-        <div className="hidden flex-col items-start gap-1 sm:flex">
+        <div className="hidden flex-col items-start gap-0.5 sm:flex">
           <RoleBadge role={profile.role} />
           <span className="max-w-[80px] truncate text-sm font-medium leading-snug text-foreground">
             {profile.nickname}
@@ -61,68 +57,125 @@ export function UserMenu({ profile }: { profile: Profile }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 z-50 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
-          {/* 프로필 헤더 */}
-          <div className="border-b border-border px-4 py-3">
-            <p className="flex items-center gap-1.5 font-semibold text-foreground">
-              {profile.nickname}
+        <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+
+          {/* ── 프로필 헤더 (마이페이지 링크) ── */}
+          <Link
+            href="/my"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/60"
+          >
+            <div className="relative size-9 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-muted">
+              {profile.avatar_url ? (
+                <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
+              ) : (
+                <User className="size-full p-1.5 text-muted-foreground" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
               <RoleBadge role={profile.role} />
-            </p>
+              <p className="truncate text-sm font-semibold text-foreground">{profile.nickname}</p>
+            </div>
+            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
+          </Link>
+
+          <div className="h-px bg-border" />
+
+          {/* ── 계정 메뉴 ── */}
+          <div className="p-1.5 space-y-0.5">
+            {isStaff && (
+              <DropdownItem
+                href="/admin"
+                icon={<Settings className="size-4" />}
+                label="어드민 페이지"
+                accent
+                onClose={() => setOpen(false)}
+              />
+            )}
+            <DropdownItem
+              href="/profile"
+              icon={<User className="size-4" />}
+              label="프로필 설정"
+              onClose={() => setOpen(false)}
+            />
+            <DropdownItem
+              href="/my/applications"
+              icon={<ClipboardList className="size-4" />}
+              label="나의 신청 내역"
+              onClose={() => setOpen(false)}
+            />
           </div>
 
-          <div className="p-1">
-            {(profile.role === "staff" || profile.role === "admin") && (
-              <Link
-                href="/admin"
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
-              >
-                <Settings className="size-4" />
-                어드민 페이지
-              </Link>
-            )}
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
-            >
-              <User className="size-4" />
-              프로필 설정
-            </Link>
-            <Link
-              href="/my/applications"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
-            >
-              <ClipboardList className="size-4" />
-              나의 신청 내역
-            </Link>
+          <div className="h-px bg-border" />
 
-            {/* 다크/라이트 모드 토글 */}
+          {/* ── 테마 토글 ── */}
+          <div className="p-1.5">
             <button
               type="button"
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
             >
-              <span className="flex items-center gap-2">
-                {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
-                {isDark ? "다크 모드" : "라이트 모드"}
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary">
+                {isDark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
               </span>
-              <span className="text-xs text-muted-foreground">전환</span>
+              <span className="flex-1 text-left">{isDark ? "다크 모드" : "라이트 모드"}</span>
+              <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                전환
+              </span>
             </button>
+          </div>
 
-            <div className="mx-2 my-1 border-t border-border" />
+          <div className="h-px bg-border" />
+
+          {/* ── 로그아웃 ── */}
+          <div className="p-1.5">
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
             >
-              <LogOut className="size-4" />
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-destructive/10">
+                <LogOut className="size-3.5" />
+              </span>
               로그아웃
             </button>
           </div>
+
         </div>
       )}
     </div>
+  )
+}
+
+function DropdownItem({
+  href,
+  icon,
+  label,
+  accent,
+  onClose,
+}: {
+  href: string
+  icon: React.ReactNode
+  label: string
+  accent?: boolean
+  onClose: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+        accent
+          ? "font-medium text-primary hover:bg-primary/10"
+          : "text-foreground hover:bg-secondary"
+      }`}
+    >
+      <span className={`flex size-7 shrink-0 items-center justify-center rounded-md ${
+        accent ? "bg-primary/10" : "bg-secondary"
+      }`}>
+        {icon}
+      </span>
+      {label}
+    </Link>
   )
 }
