@@ -6,7 +6,6 @@ import { Pencil } from "lucide-react"
 import { getDailyPost, DailyDeleteButton } from "@/features/daily"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
-import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 
 export const revalidate = 60
@@ -92,14 +91,6 @@ export default async function DailyDetailPage({
           {post.title}
         </h1>
       </header>
-
-      <div className="mb-8">
-        <PhotoGallery
-          images={post.images}
-          alt={post.title}
-          fallback="📷"
-        />
-      </div>
 
       {post.content && (
         <article>

@@ -6,7 +6,6 @@ import { Pencil } from "lucide-react"
 import { getAdoptionStory, StoryDeleteButton } from "@/features/stories"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
-import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
@@ -100,10 +99,6 @@ export default async function StoryDetailPage({
           </p>
         )}
       </header>
-
-      <div className="mb-8">
-        <PhotoGallery images={story.images} alt={story.title} fallback="💕" />
-      </div>
 
       <article>
         <RichTextContent html={story.content} />
