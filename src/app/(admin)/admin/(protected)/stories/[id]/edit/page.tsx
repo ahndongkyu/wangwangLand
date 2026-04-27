@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { listDogs } from "@/features/dogs"
-import { StoryForm, getAdoptionStory } from "@/features/stories"
+import { StoryForm, StoryDeleteButton, getAdoptionStory } from "@/features/stories"
 
 export const dynamic = "force-dynamic"
 
@@ -32,10 +32,11 @@ export default async function AdminStoriesEditPage({
           ← 입양 후기 목록
         </Link>
       </nav>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           입양 후기 수정
         </h1>
+        <StoryDeleteButton id={id} title={story.title} redirectTo="/admin/stories" />
       </header>
       <StoryForm story={story} dogs={dogOptions} />
     </div>

@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { Pencil } from "lucide-react"
 
-import { getDailyPost } from "@/features/daily"
+import { getDailyPost, DailyDeleteButton } from "@/features/daily"
+import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { RichTextContent } from "@/shared/components/rich-text-content"
@@ -44,16 +46,37 @@ export default async function DailyDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const post = await getDailyPost(id)
+  const [post, profile] = await Promise.all([
+    getDailyPost(id),
+    getCurrentProfile(),
+  ])
 
   if (!post) notFound()
 
+  const isStaff = profile?.role === "staff" || profile?.role === "admin"
+  const isAuthor = profile?.id === post.created_by
+  const canEdit = isAuthor || isStaff
+  // staff는 admin 수정 페이지로, 일반 작성자는 public 수정 페이지로
+  const editHref = isStaff ? `/admin/daily/${id}/edit` : `/daily/${id}/edit`
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
-      <nav className="mb-4 text-sm text-muted-foreground">
+      <nav className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <Link href="/daily" className="hover:text-foreground">
           ← 일상 목록
         </Link>
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={editHref}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+            >
+              <Pencil className="size-3.5" />
+              수정
+            </Link>
+            <DailyDeleteButton id={id} title={post.title} redirectTo="/daily" />
+          </div>
+        )}
       </nav>
 
       <header className="mb-8 border-b border-border pb-6">

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { DailyForm, getDailyPost } from "@/features/daily"
+import { DailyForm, DailyDeleteButton, getDailyPost } from "@/features/daily"
 
 export const dynamic = "force-dynamic"
 
@@ -22,10 +22,11 @@ export default async function AdminDailyEditPage({
           ← 일상 목록
         </Link>
       </nav>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           일상 수정
         </h1>
+        <DailyDeleteButton id={id} title={post.title} redirectTo="/admin/daily" />
       </header>
       <DailyForm post={post} />
     </div>

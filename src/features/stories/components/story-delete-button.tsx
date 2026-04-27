@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 
 import { deleteAdoptionStory } from "../api/mutations"
@@ -11,13 +12,16 @@ import { Button } from "@/shared/components/ui/button"
 export function StoryDeleteButton({
   id,
   title,
+  redirectTo,
 }: {
   id: string
   title: string
+  redirectTo?: string
 }) {
   const [pending, startTransition] = useTransition()
   const confirm = useConfirm()
   const toast = useToast()
+  const router = useRouter()
 
   async function handleClick() {
     const ok = await confirm({
@@ -29,20 +33,24 @@ export function StoryDeleteButton({
     if (!ok) return
     startTransition(async () => {
       const result = await deleteAdoptionStory(id)
-      if (result?.error) toast.error(`삭제 실패: ${result.error}`)
-      else toast.success("입양 후기를 삭제했습니다.")
+      if (result?.error) {
+        toast.error(`삭제 실패: ${result.error}`)
+      } else {
+        toast.success("입양 후기를 삭제했습니다.")
+        if (redirectTo) router.push(redirectTo)
+      }
     })
   }
 
   return (
     <Button
-      variant="ghost"
+      variant="destructive"
       size="sm"
       onClick={handleClick}
       disabled={pending}
-      aria-label="삭제"
     >
-      <Trash2 className="size-4" />
+      <Trash2 className="mr-1.5 size-4" />
+      삭제
     </Button>
   )
 }

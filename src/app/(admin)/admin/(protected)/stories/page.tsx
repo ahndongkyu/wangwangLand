@@ -1,8 +1,7 @@
-import Image from "next/image"
 import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
-import { StoryRowActions, listAdoptionStories } from "@/features/stories"
+import { listAdoptionStories } from "@/features/stories"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -22,7 +21,7 @@ export default async function AdminStoriesPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const [me, { stories, total }] = await Promise.all([
+  const [, { stories, total }] = await Promise.all([
     getCurrentAdmin(),
     listAdoptionStories({
       query: activeQuery || undefined,
@@ -31,7 +30,6 @@ export default async function AdminStoriesPage({
       includeDrafts: true,
     }),
   ])
-  const canDelete = !!me
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -64,103 +62,51 @@ export default async function AdminStoriesPage({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[480px]">
-              <thead className="border-b border-border bg-secondary/40 text-left text-sm">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">사진</th>
-                  <th className="px-4 py-3 font-semibold">제목</th>
-                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    연결된 아이
-                  </th>
-                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    상태
-                  </th>
-                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    작성자
-                  </th>
-                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    작성일
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">작업</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stories.map((s) => {
-                  const cover = s.images[0]
-                  const isPublished = s.published_at !== null
-                  return (
-                    <tr
-                      key={s.id}
-                      className="border-b border-border last:border-0"
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="grid grid-cols-[56px_1fr_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+              <span className="text-center">번호</span>
+              <span>제목</span>
+              <span className="hidden sm:block">작성자</span>
+              <span className="text-right">작성일</span>
+            </div>
+            <ul className="divide-y divide-border">
+              {stories.map((s, i) => {
+                const num = total - offset - i
+                const isPublished = s.published_at !== null
+                return (
+                  <li key={s.id}>
+                    <Link
+                      href={`/admin/stories/${s.id}/edit`}
+                      className="grid grid-cols-[56px_1fr_auto_90px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
                     >
-                      <td className="px-4 py-3">
-                        <div className="relative size-12 overflow-hidden rounded-md bg-muted">
-                          {cover ? (
-                            <Image
-                              src={cover}
-                              alt={s.title}
-                              fill
-                              sizes="48px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-lg">
-                              💕
-                            </div>
+                      <span className="text-center text-xs text-muted-foreground">{num}</span>
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span className="truncate text-sm font-medium text-foreground">{s.title}</span>
+                        <span className="flex items-center gap-2">
+                          {s.dog && (
+                            <span className="text-[11px] text-primary/80">{s.dog.name}</span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-medium">{s.title}</td>
-                      <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                        {s.dog ? (
-                          <span className="flex items-center gap-1">
-                            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-4" />
-                            {s.dog.name}
+                          <span className={`inline-flex rounded-full px-1.5 py-px text-[10px] font-semibold ${
+                            isPublished ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                          }`}>
+                            {isPublished ? "공개" : "임시저장"}
                           </span>
-                        ) : "—"}
-                      </td>
-                      <td className="hidden px-4 py-3 md:table-cell">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full px-2 py-0.5 text-xs font-semibold",
-                            isPublished
-                              ? "bg-primary/15 text-primary"
-                              : "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {isPublished ? "공개" : "임시저장"}
                         </span>
-                      </td>
-                      <td className="hidden px-4 py-3 text-sm md:table-cell">
-                        {s.author ? (
-                          <span className="flex items-center gap-1">
-                            <span>{s.author.nickname}</span>
-                            {s.author.role !== "admin" && (
-                              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                유저
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                        {new Date(s.created_at).toLocaleDateString("ko-KR")}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <StoryRowActions
-                          id={s.id}
-                          title={s.title}
-                          canDelete={canDelete}
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                      </span>
+                      <span className="hidden text-xs text-muted-foreground sm:block">
+                        {s.author?.nickname ?? "—"}
+                      </span>
+                      <span className="text-right text-xs text-muted-foreground">
+                        {new Date(s.created_at).toLocaleDateString("ko-KR", {
+                          month: "2-digit",
+                          day: "2-digit",
+                        })}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
 
           <Pagination

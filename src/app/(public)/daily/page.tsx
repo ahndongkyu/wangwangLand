@@ -1,9 +1,10 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { PenSquare } from "lucide-react"
+import { PenSquare, ImageIcon } from "lucide-react"
 
-import { DailyCard, listDailyPosts } from "@/features/daily"
+import { listDailyPosts } from "@/features/daily"
 import { getCurrentProfile } from "@/features/members"
+import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 
@@ -72,10 +73,49 @@ export default async function DailyPage({
             : "아직 등록된 일상이 없어요. 곧 따뜻한 순간들을 공유할게요 📷"}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => (
-            <DailyCard key={post.id} post={post} />
-          ))}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* 헤더 */}
+          <div className="grid grid-cols-[56px_1fr_auto_80px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <span className="text-center">번호</span>
+            <span>제목</span>
+            <span className="hidden sm:block">작성자</span>
+            <span className="text-right">작성일</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {posts.map((post, i) => {
+              const num = total - offset - i
+              return (
+                <li key={post.id}>
+                  <Link
+                    href={`/daily/${post.id}`}
+                    className="grid grid-cols-[56px_1fr_auto_80px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                  >
+                    <span className="text-center text-xs text-muted-foreground">{num}</span>
+                    <span className="flex items-center gap-2 truncate">
+                      <span className="truncate text-sm font-medium text-foreground">{post.title}</span>
+                      {post.images.length > 0 && (
+                        <ImageIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
+                      )}
+                    </span>
+                    <span className="hidden items-center gap-1.5 sm:flex">
+                      {post.author && (
+                        <>
+                          <RoleBadge role={post.author.role} />
+                          <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
+                        </>
+                      )}
+                    </span>
+                    <span className="text-right text-xs text-muted-foreground">
+                      {new Date(post.posted_at).toLocaleDateString("ko-KR", {
+                        month: "2-digit",
+                        day: "2-digit",
+                      })}
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
 

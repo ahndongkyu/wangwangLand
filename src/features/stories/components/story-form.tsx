@@ -20,9 +20,11 @@ export interface DogOption {
 interface Props {
   story?: StoryWithDog
   dogs: DogOption[]
+  cancelHref?: string
+  returnTo?: string
 }
 
-export function StoryForm({ story, dogs }: Props) {
+export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(story)
@@ -40,6 +42,7 @@ export function StoryForm({ story, dogs }: Props) {
 
   return (
     <form action={handleSubmit} className="space-y-6">
+      {returnTo && <input type="hidden" name="_returnTo" value={returnTo} />}
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
         <Input
@@ -112,7 +115,7 @@ export function StoryForm({ story, dogs }: Props) {
 
       <div className="flex items-center justify-end gap-2">
         <Link
-          href="/admin/stories"
+          href={cancelHref}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           취소

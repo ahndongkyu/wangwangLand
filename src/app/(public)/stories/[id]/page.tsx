@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { Pencil } from "lucide-react"
 
-import { getAdoptionStory } from "@/features/stories"
+import { getAdoptionStory, StoryDeleteButton } from "@/features/stories"
+import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { PhotoGallery } from "@/shared/components/photo-gallery"
 import { RichTextContent } from "@/shared/components/rich-text-content"
@@ -46,16 +48,36 @@ export default async function StoryDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const story = await getAdoptionStory(id)
+  const [story, profile] = await Promise.all([
+    getAdoptionStory(id),
+    getCurrentProfile(),
+  ])
 
   if (!story) notFound()
 
+  const isStaff = profile?.role === "staff" || profile?.role === "admin"
+  const isAuthor = profile?.id === story.created_by
+  const canEdit = isAuthor || isStaff
+  const editHref = isStaff ? `/admin/stories/${id}/edit` : `/stories/${id}/edit`
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
-      <nav className="mb-4 text-sm text-muted-foreground">
+      <nav className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <Link href="/stories" className="hover:text-foreground">
           ← 입양 후기 목록
         </Link>
+        {canEdit && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={editHref}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+            >
+              <Pencil className="size-3.5" />
+              수정
+            </Link>
+            <StoryDeleteButton id={id} title={story.title} redirectTo="/stories" />
+          </div>
+        )}
       </nav>
 
       <header className="mb-8 border-b border-border pb-6">

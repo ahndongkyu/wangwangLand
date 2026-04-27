@@ -12,6 +12,8 @@ import type { DailyPost } from "@/shared/types/database"
 
 interface Props {
   post?: DailyPost
+  cancelHref?: string
+  returnTo?: string
 }
 
 function toDateValue(iso?: string) {
@@ -23,7 +25,7 @@ function toDateValue(iso?: string) {
   return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10)
 }
 
-export function DailyForm({ post }: Props) {
+export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(post)
@@ -47,6 +49,7 @@ export function DailyForm({ post }: Props) {
 
   return (
     <form action={handleSubmit} className="space-y-6">
+      {returnTo && <input type="hidden" name="_returnTo" value={returnTo} />}
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
         <Input
@@ -92,7 +95,7 @@ export function DailyForm({ post }: Props) {
 
       <div className="flex items-center justify-end gap-2">
         <Link
-          href="/admin/daily"
+          href={cancelHref}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           취소

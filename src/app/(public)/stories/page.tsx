@@ -1,9 +1,10 @@
 import Link from "next/link"
 import type { Metadata } from "next"
-import { PenSquare } from "lucide-react"
+import { PenSquare, ImageIcon } from "lucide-react"
 
-import { StoryCard, listAdoptionStories } from "@/features/stories"
+import { listAdoptionStories } from "@/features/stories"
 import { getCurrentProfile } from "@/features/members"
+import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 
@@ -72,10 +73,55 @@ export default async function StoriesPage({
             : "아직 등록된 후기가 없어요. 첫 번째 행복한 이야기를 준비 중입니다 💕"}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {stories.map((story) => (
-            <StoryCard key={story.id} story={story} />
-          ))}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* 헤더 */}
+          <div className="grid grid-cols-[56px_1fr_auto_80px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <span className="text-center">번호</span>
+            <span>제목</span>
+            <span className="hidden sm:block">작성자</span>
+            <span className="text-right">작성일</span>
+          </div>
+          <ul className="divide-y divide-border">
+            {stories.map((story, i) => {
+              const num = total - offset - i
+              return (
+                <li key={story.id}>
+                  <Link
+                    href={`/stories/${story.id}`}
+                    className="grid grid-cols-[56px_1fr_auto_80px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                  >
+                    <span className="text-center text-xs text-muted-foreground">{num}</span>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="flex items-center gap-2 truncate">
+                        <span className="truncate text-sm font-medium text-foreground">{story.title}</span>
+                        {story.images.length > 0 && (
+                          <ImageIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
+                        )}
+                      </span>
+                      {story.dog && (
+                        <span className="text-xs text-primary/80">{story.dog.name}</span>
+                      )}
+                    </span>
+                    <span className="hidden items-center gap-1.5 sm:flex">
+                      {story.author && (
+                        <>
+                          <RoleBadge role={story.author.role} />
+                          <span className="text-xs text-muted-foreground">{story.author.nickname}</span>
+                        </>
+                      )}
+                    </span>
+                    <span className="text-right text-xs text-muted-foreground">
+                      {story.published_at &&
+                        new Date(story.published_at).toLocaleDateString("ko-KR", {
+                          month: "2-digit",
+                          day: "2-digit",
+                        })}
+                    </span>
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
 

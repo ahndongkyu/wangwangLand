@@ -6,8 +6,6 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
-const MAX_IMAGES = 10
-
 export interface DailyMutationResult {
   error?: string
   id?: string
@@ -22,7 +20,6 @@ interface DailyInput {
 
 function parseFormData(formData: FormData): DailyInput {
   const content = String(formData.get("content") ?? "")
-  // 에디터 HTML 에서 이미지 URL 자동 추출 → 썸네일/갤러리에 활용
   const images = extractImagesFromHtml(content)
   const postedAt = String(formData.get("posted_at") ?? "").trim()
 
@@ -44,26 +41,31 @@ function revalidateAll(id?: string) {
   }
 }
 
+/** 현재 로그인한 유저의 profile과 role을 반환. 없거나 이용 불가면 null. */
+async function getApprovedProfile(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, role, status, is_banned")
+    .eq("id", userId)
+    .maybeSingle()
+  if (!data || data.status !== "approved" || data.is_banned) return null
+  return data
+}
+
 export async function createDailyPost(
   formData: FormData
 ): Promise<DailyMutationResult> {
   const input = parseFormData(formData)
+  const returnTo = String(formData.get("_returnTo") ?? "/daily")
 
   if (!input.title) return { error: "제목은 필수입니다." }
 
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle()
-  if (!admin) return { error: "운영진 권한이 없습니다." }
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
 
   const { error } = await supabase
     .from("daily_posts")
@@ -72,10 +74,8 @@ export async function createDailyPost(
       content: input.content || null,
       images: input.images,
       posted_at: input.posted_at ?? new Date().toISOString(),
-      created_by: admin.id,
+      created_by: user.id,
     })
-    .select("id")
-    .single()
 
   if (error) {
     console.error("[createDailyPost]", error)
@@ -83,7 +83,7 @@ export async function createDailyPost(
   }
 
   revalidateAll()
-  redirect("/admin/daily")
+  redirect(returnTo)
 }
 
 export async function updateDailyPost(
@@ -91,10 +91,30 @@ export async function updateDailyPost(
   formData: FormData
 ): Promise<DailyMutationResult> {
   const input = parseFormData(formData)
+  const returnTo = String(formData.get("_returnTo") ?? "/daily")
 
   if (!input.title) return { error: "제목은 필수입니다." }
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
+
+  // 본인 글 또는 staff/admin만 수정 가능
+  const { data: post } = await supabase
+    .from("daily_posts")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (!post) return { error: "글을 찾을 수 없습니다." }
+
+  const isAuthor = post.created_by === user.id
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+  if (!isAuthor && !isStaff) return { error: "수정 권한이 없습니다." }
+
   const { error } = await supabase
     .from("daily_posts")
     .update({
@@ -111,13 +131,32 @@ export async function updateDailyPost(
   }
 
   revalidateAll(id)
-  redirect("/admin/daily")
+  redirect(returnTo)
 }
 
 export async function deleteDailyPost(
   id: string
 ): Promise<DailyMutationResult> {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
+
+  // 본인 글 또는 staff/admin만 삭제 가능
+  const { data: post } = await supabase
+    .from("daily_posts")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (!post) return { error: "글을 찾을 수 없습니다." }
+
+  const isAuthor = post.created_by === user.id
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+  if (!isAuthor && !isStaff) return { error: "삭제 권한이 없습니다." }
+
   const { error } = await supabase.from("daily_posts").delete().eq("id", id)
 
   if (error) {

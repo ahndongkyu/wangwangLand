@@ -6,8 +6,6 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
-const MAX_IMAGES = 10
-
 export interface StoryMutationResult {
   error?: string
   id?: string
@@ -51,26 +49,31 @@ function revalidateAll(id?: string) {
   }
 }
 
+/** 현재 로그인한 유저의 profile을 반환. 없거나 이용 불가면 null. */
+async function getApprovedProfile(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, role, status, is_banned")
+    .eq("id", userId)
+    .maybeSingle()
+  if (!data || data.status !== "approved" || data.is_banned) return null
+  return data
+}
+
 export async function createAdoptionStory(
   formData: FormData
 ): Promise<StoryMutationResult> {
   const input = parseFormData(formData)
+  const returnTo = String(formData.get("_returnTo") ?? "/stories")
   const err = validate(input)
   if (err) return { error: err }
 
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle()
-  if (!admin) return { error: "운영진 권한이 없습니다." }
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
 
   const { error } = await supabase
     .from("adoption_stories")
@@ -80,10 +83,8 @@ export async function createAdoptionStory(
       dog_id: input.dog_id,
       images: input.images,
       published_at: input.published ? new Date().toISOString() : null,
-      created_by: admin.id,
+      created_by: user.id,
     })
-    .select("id")
-    .single()
 
   if (error) {
     console.error("[createAdoptionStory]", error)
@@ -91,7 +92,7 @@ export async function createAdoptionStory(
   }
 
   revalidateAll()
-  redirect("/admin/stories")
+  redirect(returnTo)
 }
 
 export async function updateAdoptionStory(
@@ -99,20 +100,33 @@ export async function updateAdoptionStory(
   formData: FormData
 ): Promise<StoryMutationResult> {
   const input = parseFormData(formData)
+  const returnTo = String(formData.get("_returnTo") ?? "/stories")
   const err = validate(input)
   if (err) return { error: err }
 
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
-  const { data: current } = await supabase
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
+
+  // 본인 글 또는 staff/admin만 수정 가능
+  const { data: story } = await supabase
     .from("adoption_stories")
-    .select("published_at")
+    .select("created_by, published_at")
     .eq("id", id)
     .maybeSingle()
 
+  if (!story) return { error: "글을 찾을 수 없습니다." }
+
+  const isAuthor = story.created_by === user.id
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+  if (!isAuthor && !isStaff) return { error: "수정 권한이 없습니다." }
+
   let published_at: string | null
   if (input.published) {
-    published_at = current?.published_at ?? new Date().toISOString()
+    published_at = story.published_at ?? new Date().toISOString()
   } else {
     published_at = null
   }
@@ -134,13 +148,32 @@ export async function updateAdoptionStory(
   }
 
   revalidateAll(id)
-  redirect("/admin/stories")
+  redirect(returnTo)
 }
 
 export async function deleteAdoptionStory(
   id: string
 ): Promise<StoryMutationResult> {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const profile = await getApprovedProfile(supabase, user.id)
+  if (!profile) return { error: "권한이 없습니다." }
+
+  // 본인 글 또는 staff/admin만 삭제 가능
+  const { data: story } = await supabase
+    .from("adoption_stories")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (!story) return { error: "글을 찾을 수 없습니다." }
+
+  const isAuthor = story.created_by === user.id
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+  if (!isAuthor && !isStaff) return { error: "삭제 권한이 없습니다." }
+
   const { error } = await supabase.from("adoption_stories").delete().eq("id", id)
 
   if (error) {
