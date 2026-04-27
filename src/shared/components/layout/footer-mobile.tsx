@@ -53,6 +53,27 @@ export function MobileFooter() {
         </div>
       </div>
 
+      {/* 계좌 후원 */}
+      <div className="mb-3 rounded-[10px] border-[0.5px] border-transparent bg-white p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
+            계좌 후원
+          </span>
+          <span className="text-[10px] text-[#9B8F80] dark:text-[#B8A78F]">
+            예금주 · {d.accountHolder}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 rounded-md bg-[#FAF3E8] px-2 py-0.5 text-[10px] font-medium text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.1)] dark:text-[#FFD4A1]">
+            {d.bankName}
+          </span>
+          <span className="min-w-0 flex-1 truncate font-mono text-[13px] font-semibold tracking-wide text-[#2C2C2A] dark:text-[#F5EDE0]">
+            {d.accountNumber}
+          </span>
+          <CopyButton value={d.accountNumber} label="계좌번호" />
+        </div>
+      </div>
+
       {/* SNS */}
       {(SITE.sns.naverCafe || SITE.sns.instagram || SITE.sns.youtube) && (
         <div className="mb-3 grid grid-cols-2 gap-2.5">
@@ -91,27 +112,6 @@ export function MobileFooter() {
           )}
         </div>
       )}
-
-      {/* 계좌 후원 */}
-      <div className="mb-3 rounded-[10px] border-[0.5px] border-transparent bg-white p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
-            계좌 후원
-          </span>
-          <span className="text-[10px] text-[#9B8F80] dark:text-[#B8A78F]">
-            예금주 · {d.accountHolder}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded-md bg-[#FAF3E8] px-2 py-0.5 text-[10px] font-medium text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.1)] dark:text-[#FFD4A1]">
-            {d.bankName}
-          </span>
-          <span className="min-w-0 flex-1 truncate font-mono text-[13px] font-semibold tracking-wide text-[#2C2C2A] dark:text-[#F5EDE0]">
-            {d.accountNumber}
-          </span>
-          <CopyButton value={d.accountNumber} label="계좌번호" />
-        </div>
-      </div>
 
       {/* 메인 링크 4개 */}
       <div className="mb-3 grid grid-cols-2 gap-2">
