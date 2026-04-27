@@ -405,13 +405,15 @@ function MobileProfileSection({
     )
   }
 
+  const isStaff = profile.role === "staff" || profile.role === "admin"
+
   return (
-    <div className="border-b border-[#E5DDD0] dark:border-[#3A3229]">
+    <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
       {/* 프로필 영역 */}
       <Link
         href="/my"
         onClick={onClose}
-        className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
+        className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
       >
         <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
           {profile.avatar_url ? (
@@ -431,13 +433,13 @@ function MobileProfileSection({
         </span>
       </Link>
 
-      {/* 빠른 링크 */}
-      <div className="flex border-t border-[#E5DDD0] dark:border-[#3A3229]">
-        {(profile.role === "staff" || profile.role === "admin") && (
+      {/* 빠른 링크 — divide-x로 border 자동 처리 */}
+      <div className="flex divide-x divide-[#E5DDD0] border-t border-[#E5DDD0] dark:divide-[#3A3229] dark:border-[#3A3229]">
+        {isStaff && (
           <Link
             href="/admin"
             onClick={onClose}
-            className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-primary hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
+            className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-primary hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
           >
             <Settings className="size-3.5" />
             어드민
@@ -446,12 +448,12 @@ function MobileProfileSection({
         <Link
           href="/my/applications"
           onClick={onClose}
-          className="flex flex-1 items-center justify-center gap-1.5 border-l border-[#E5DDD0] py-2.5 text-[11px] font-medium text-[#5F5048] hover:bg-[#FAF3E8] dark:border-[#3A3229] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-[#5F5048] hover:bg-[rgba(192,107,42,0.06)] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
         >
           <ClipboardList className="size-3.5" />
           신청 내역
         </Link>
-        <form action={signOut} className="flex flex-1 border-l border-[#E5DDD0] dark:border-[#3A3229]">
+        <form action={signOut} className="flex flex-1">
           <button
             type="submit"
             onClick={onClose}
