@@ -151,7 +151,7 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex h-[260px] sm:h-[320px] md:h-[480px]"
+        className="flex h-[260px] sm:h-[320px] md:h-[480px] lg:h-[560px] xl:h-[640px] 2xl:h-[720px]"
         style={{
           gap: `${GAP}px`,
           paddingLeft: `${leftPad}px`,
