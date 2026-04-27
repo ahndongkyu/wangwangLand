@@ -36,24 +36,31 @@ export function HeroCarousel({
   interval = 5000,
   autoPlayInitial = true,
 }: Props) {
-  const [index, setIndex] = useState(0)
-  const [playing, setPlaying] = useState(autoPlayInitial)
-  const [slideW, setSlideW] = useState(0)
-  const [leftPad, setLeftPad] = useState(40)
-  const sectionRef = useRef<HTMLElement>(null)
-  const touchStartX = useRef<number | null>(null)
   const count = slides.length
 
-  // 컨테이너 폭 측정 → 슬라이드 폭 계산
+  // 클론 포함 슬라이드: [last, ...slides, first]
+  const cloned = count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides
+
+  // virtualIdx: 1 = 첫 번째 실제 슬라이드
+  const [virtualIdx, setVirtualIdx] = useState(count > 1 ? 1 : 0)
+  const [animated, setAnimated] = useState(true)
+  const [playing, setPlaying] = useState(autoPlayInitial)
+  const [slideW, setSlideW] = useState(0)
+  const [leftPad, setLeftPad] = useState(0)
+  const sectionRef = useRef<HTMLElement>(null)
+  const touchStartX = useRef<number | null>(null)
+  const isSnapping = useRef(false)
+
+  // 실제 슬라이드 인덱스 (도트용)
+  const realIndex = count > 1 ? virtualIdx - 1 : virtualIdx
+
+  // 컨테이너 폭 측정
   useEffect(() => {
     function measure() {
       if (!sectionRef.current) return
       const w = sectionRef.current.offsetWidth
-      // 슬라이드 폭: 모바일 80%, 데스크탑 78%
       const sw = Math.round(w * (w < 768 ? 0.80 : 0.78))
-      // 양쪽 대칭 peek: (containerW - slideW) / 2
-      const lp = Math.round((w - sw) / 2)
-      setLeftPad(lp)
+      setLeftPad(Math.round((w - sw) / 2))
       setSlideW(sw)
     }
     measure()
@@ -62,21 +69,52 @@ export function HeroCarousel({
     return () => ro.disconnect()
   }, [])
 
-  const goTo = useCallback(
-    (next: number) => setIndex(((next % count) + count) % count),
-    [count]
-  )
-  const next = useCallback(() => setIndex((i) => (i + 1) % count), [count])
-  const prev = useCallback(() => setIndex((i) => (i - 1 + count) % count), [count])
+  // 클론 끝에 닿으면 애니메이션 없이 진짜 슬라이드로 점프
+  useEffect(() => {
+    if (count <= 1) return
+    if (virtualIdx === 0 || virtualIdx === cloned.length - 1) {
+      isSnapping.current = true
+      const timer = setTimeout(() => {
+        setAnimated(false)
+        setVirtualIdx(virtualIdx === 0 ? count : 1)
+        // 다음 프레임에 애니메이션 다시 켜기
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setAnimated(true)
+            isSnapping.current = false
+          })
+        })
+      }, 500) // transition duration과 맞춤
+      return () => clearTimeout(timer)
+    }
+  }, [virtualIdx, count, cloned.length])
+
+  const next = useCallback(() => {
+    if (isSnapping.current) return
+    setAnimated(true)
+    setVirtualIdx((i) => i + 1)
+  }, [])
+
+  const prev = useCallback(() => {
+    if (isSnapping.current) return
+    setAnimated(true)
+    setVirtualIdx((i) => i - 1)
+  }, [])
+
+  const goTo = useCallback((realI: number) => {
+    if (isSnapping.current) return
+    setAnimated(true)
+    setVirtualIdx(count > 1 ? realI + 1 : realI)
+  }, [count])
 
   // 자동 재생
   useEffect(() => {
     if (!playing || count < 2) return
-    const id = window.setInterval(() => setIndex((i) => (i + 1) % count), interval)
+    const id = window.setInterval(next, interval)
     return () => window.clearInterval(id)
-  }, [playing, count, interval])
+  }, [playing, count, interval, next])
 
-  // 키보드 좌/우
+  // 키보드
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowLeft") prev()
@@ -98,7 +136,7 @@ export function HeroCarousel({
 
   if (count === 0) return null
 
-  const translateX = slideW ? -(index * (slideW + GAP)) : 0
+  const translateX = slideW ? -(virtualIdx * (slideW + GAP)) : 0
 
   return (
     <section
@@ -113,85 +151,87 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex h-[340px] transition-transform duration-500 ease-out md:h-[480px]"
+        className="flex h-[340px] md:h-[480px]"
         style={{
           gap: `${GAP}px`,
           paddingLeft: `${leftPad}px`,
           transform: `translateX(${translateX}px)`,
+          transition: animated ? "transform 500ms ease-out" : "none",
         }}
       >
-        {slides.map((slide, i) => (
-          <div
-            key={i}
-            aria-hidden={i !== index}
-            role="group"
-            aria-roledescription="slide"
-            className="relative flex-shrink-0 overflow-hidden rounded-2xl"
-            style={{
-              width: slideW > 0 ? `${slideW}px` : "80%",
-              transform: i === index ? "scale(1)" : "scale(0.88)",
-              transition: "transform 500ms ease-out",
-              transformOrigin: "center center",
-            }}
-          >
-            <Image
-              src={slide.image}
-              alt=""
-              fill
-              priority={i === 0}
-              sizes="90vw"
-              className="object-cover object-center"
-            />
+        {cloned.map((slide, i) => {
+          const isActive = i === virtualIdx
+          return (
+            <div
+              key={i}
+              aria-hidden={!isActive}
+              role="group"
+              aria-roledescription="slide"
+              className="relative flex-shrink-0 overflow-hidden rounded-2xl"
+              style={{
+                width: slideW > 0 ? `${slideW}px` : "80%",
+                transform: isActive ? "scale(1)" : "scale(0.88)",
+                transition: animated ? "transform 500ms ease-out" : "none",
+                transformOrigin: "center center",
+              }}
+            >
+              <Image
+                src={slide.image}
+                alt=""
+                fill
+                priority={i === 1}
+                sizes="90vw"
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/60" />
 
-            {/* 그라디언트 오버레이 */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/60" />
-
-            {/* 텍스트 + CTA */}
-            <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
-              {slide.badge && (
-                <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
-                  {slide.badge}
-                </span>
-              )}
-              <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_8px_rgb(0_0_0_/_30%)]">
-                {slide.title}
-              </h1>
-              <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
-                {slide.description}
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                <CTALink cta={slide.primary} variant="primary" />
-                {slide.secondary && (
-                  <CTALink cta={slide.secondary} variant="outline" />
+              {/* 텍스트 + CTA */}
+              <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
+                {slide.badge && (
+                  <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+                    {slide.badge}
+                  </span>
                 )}
+                <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_8px_rgb(0_0_0_/_30%)]">
+                  {slide.title}
+                </h1>
+                <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
+                  {slide.description}
+                </p>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <CTALink cta={slide.primary} variant="primary" />
+                  {slide.secondary && (
+                    <CTALink cta={slide.secondary} variant="outline" />
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* 인디케이터 도트 — 슬라이드 내부에 위치 */}
-            {count > 1 && i === index && (
-              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
-                {slides.map((_, di) => (
-                  <button
-                    key={di}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); goTo(di) }}
-                    aria-label={`${di + 1}번째 슬라이드로 이동`}
-                    aria-current={di === index}
-                    className={cn(
-                      "rounded-full transition-all duration-300",
-                      di === index
-                        ? "h-2 w-6 bg-white shadow-sm"
-                        : "size-2 bg-white/50 hover:bg-white/75"
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+              {/* 인디케이터 도트 — 활성 슬라이드 내부 */}
+              {count > 1 && isActive && (
+                <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+                  {slides.map((_, di) => (
+                    <button
+                      key={di}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); goTo(di) }}
+                      aria-label={`${di + 1}번째 슬라이드로 이동`}
+                      aria-current={di === realIndex}
+                      className={cn(
+                        "rounded-full transition-all duration-300",
+                        di === realIndex
+                          ? "h-2 w-6 bg-white shadow-sm"
+                          : "size-2 bg-white/50 hover:bg-white/75"
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {/* 화살표 — 데스크탑만, 슬라이드 안쪽에 위치 */}
+      {/* 화살표 — 데스크탑만, 슬라이드 안쪽 */}
       {count > 1 && slideW > 0 && (
         <>
           <button

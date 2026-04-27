@@ -68,73 +68,58 @@ export default async function HomePage() {
 
       {/* 1. 미션 블록 */}
       <section className="border-t border-border/60 bg-card">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
-          <div className="flex flex-col items-center gap-10 md:flex-row md:gap-16">
+        <div className="mx-auto w-full max-w-4xl px-4 py-16 md:px-6 md:py-20">
+          {/* 헤더 */}
+          <div className="mb-10 text-center">
+            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              우리의 약속
+            </span>
+            <h2 className="mt-4 text-3xl font-bold leading-snug text-foreground md:text-4xl">
+              어떤 이유로도 아이들의 생명을
+              <br />
+              <span className="text-primary">포기하지 않습니다</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              {SITE.name}는 100% 안락사 없는 보호소입니다.<br />
+              모든 아이가 새로운 가족을 만날 때까지 사랑으로 끝까지 책임집니다.
+            </p>
+          </div>
 
-            {/* 왼쪽: 강아지 사진 */}
-            <div className="relative flex w-full shrink-0 items-end justify-center md:w-[420px]">
-              {/* 배경 원형 데코 */}
-              <div className="absolute bottom-0 left-1/2 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-primary/10 md:h-[360px] md:w-[360px]" />
-              <img
-                src="/images/dogs.png"
-                alt="왕왕랜드 아이들"
-                className="relative z-10 h-[280px] w-auto drop-shadow-xl md:h-[380px]"
-              />
-            </div>
+          {/* 액션 영역: 5열 그리드 */}
+          <div className="grid grid-cols-5 gap-3 md:gap-4">
+            {/* 왼쪽 2열: 메인 후원 CTA */}
+            <Link
+              href="/donate"
+              className="relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-4 py-8 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: "linear-gradient(135deg, #E89B6C 0%, #D4855A 100%)" }}
+            >
+              {/* 데코 원 */}
+              <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
+              <span className="pointer-events-none absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-white/10" />
+              <BrandIcon name="heart" size={36} decorative />
+              <span className="relative z-10 mt-3 text-lg font-bold leading-tight">후원하기</span>
+              <span className="relative z-10 mt-1 text-xs text-white/80">소중한 생명을 지켜주세요</span>
+            </Link>
 
-            {/* 오른쪽: 텍스트 + 링크 버튼 */}
-            <div className="w-full">
-              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                우리의 약속
-              </span>
-              <h2 className="mt-4 text-3xl font-bold leading-snug text-foreground md:text-4xl">
-                어떤 이유로도 아이들의 생명을
-                <br />
-                <span className="text-primary">포기하지 않습니다</span>
-              </h2>
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
-                {SITE.name}는 100% 안락사 없는 보호소입니다.
-                병들거나 나이 든 아이도, 사회성 훈련이 필요한 아이도
-                새로운 가족을 만날 때까지 사랑으로 끝까지 책임집니다.
-              </p>
-
-              {/* 액션 버튼 목록 */}
-              <div className="mt-7 space-y-2.5">
-                {/* 후원 2개 — 나란히 */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <MissionLink href="/donate" label="물품 후원" icon="📦" />
-                  <MissionLink href="/donate" label="후원하기" icon="💛" />
-                </div>
-                {/* 신청 3개 — 세로 */}
-                <MissionLink href="/adopt" label="임보 신청" icon="🏠" />
-                <MissionLink href="/adopt" label="입양 신청" icon="🐾" />
-                <MissionLink href="/volunteer" label="봉사 신청" icon="🤝" />
-                {/* SNS 2개 — 나란히 */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <MissionLink
-                    href={SITE.sns.instagram}
-                    label="인스타그램"
-                    icon="📷"
-                    external
-                  />
-                  <MissionLink
-                    href={SITE.sns.naverCafe}
-                    label="네이버 카페"
-                    icon="☕"
-                    external
-                  />
-                </div>
-              </div>
+            {/* 오른쪽 3열: 2×2 액션 버튼 */}
+            <div className="col-span-3 grid grid-cols-2 gap-3 md:gap-4">
+              <MissionActionButton href="/adopt" label="입양 신청" icon="adopted" />
+              <MissionActionButton href="/adopt" label="임보 신청" icon="home-shelter" />
+              <MissionActionButton href="/volunteer" label="봉사 신청" icon="volunteer" />
+              <MissionActionButton href="/donate" label="물품 후원" icon="heart" />
             </div>
           </div>
         </div>
       </section>
 
       {/* 2. 실적 카운터 */}
-      <section className="border-t border-border/60 bg-background">
+      <section className="border-t border-primary/10 bg-primary/5">
         <div className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6 md:py-16">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-foreground md:text-3xl">
+            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              우리의 기록
+            </span>
+            <h2 className="mt-3 text-2xl font-bold text-foreground md:text-3xl">
               지금까지의 기록
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -271,7 +256,7 @@ export default async function HomePage() {
                 >
                   <Link
                     href={`/notice/${n.id}`}
-                    className="grid grid-cols-[16px_1fr_auto] items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40"
+                    className="grid grid-cols-[16px_1fr_auto] items-center gap-3 px-5 py-5 transition-colors hover:bg-secondary/40"
                   >
                     <span className="flex items-center justify-center">
                       {n.is_pinned && (
@@ -367,32 +352,24 @@ export default async function HomePage() {
   )
 }
 
-function MissionLink({
+function MissionActionButton({
   href,
   label,
   icon,
-  external,
 }: {
   href: string
   label: string
-  icon: string
-  external?: boolean
+  icon: BrandIconName
 }) {
-  const cls =
-    "flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
-  const content = (
-    <>
-      <span className="text-base leading-none">{icon}</span>
-      <span className="flex-1">{label}</span>
-      <svg className="size-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
-    </>
+  return (
+    <Link
+      href={href}
+      className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-background py-5 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
+    >
+      <BrandIcon name={icon} size={28} decorative />
+      {label}
+    </Link>
   )
-  if (external) {
-    return <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{content}</a>
-  }
-  return <Link href={href} className={cls}>{content}</Link>
 }
 
 function CounterCard({

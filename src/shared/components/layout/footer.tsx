@@ -1,126 +1,120 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
+import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
-import { CountUp } from "@/shared/components/count-up"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { FOOTER_LEGAL, FOOTER_LINK_GROUPS, SITE } from "@/shared/constants/site"
-import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
 
-export async function Footer() {
+export function Footer() {
   const year = new Date().getFullYear()
   const phones = SITE.contact.phones.filter((p) => p.number)
   const d = SITE.donation
   const reg = SITE.registration
-  const stats = await getSiteStats()
   const hasRegistration = Boolean(
     reg.representativeName || reg.shelterNumber || reg.businessNumber
   )
 
   return (
     <footer className="mt-auto border-t border-border/60 bg-secondary/40">
-      {/* 0) 계좌 후원 배너 — 최상단 포인트 */}
-      <section className="border-b-2 border-primary/30 bg-primary/10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-7 md:flex-row md:items-center md:justify-between md:px-6">
-          <div className="flex items-center gap-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-              <BrandIcon name="heart" size={22} decorative />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
-                계좌 후원
+      {/* 0) 통합 후원 CTA 카드 */}
+      <section className="border-b border-border/60 px-4 py-10 md:px-6 md:py-12">
+        <div
+          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-8 py-9 md:px-12 md:py-10
+            bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)]
+            dark:bg-[linear-gradient(135deg,#3D2815_0%,#2D1F12_100%)]"
+        >
+          {/* 배경 데코 원 2개 */}
+          <span className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-[rgba(232,155,94,0.12)] dark:bg-[rgba(232,155,94,0.18)]" />
+          <span className="pointer-events-none absolute right-20 top-7 size-12 rounded-full bg-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.15)]" />
+
+          {/* 좌우 분할: 모바일 1단 → 데스크탑 2단 */}
+          <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-[1.1fr_1fr] md:items-center md:gap-8">
+
+            {/* 왼쪽: 라벨 + 헤드라인 + 설명 */}
+            <div className="self-center">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-sm
+                  bg-white text-[#C06B2A]
+                  dark:bg-[rgba(255,212,161,0.15)] dark:text-[#FFD4A1] dark:shadow-none"
+              >
+                <BrandIcon name="heart" size={13} decorative />
+                함께해 주세요
+              </span>
+              <h3
+                className="mt-4 text-2xl font-bold leading-snug md:text-3xl
+                  text-[#2C2C2A] dark:text-[#F5EDE0]"
+              >
+                한 그릇의 사료가<br />한 생명을 살립니다
+              </h3>
+              <p
+                className="mt-2 text-sm leading-relaxed
+                  text-[#6B5D4F] dark:text-[#B8A78F]"
+              >
+                왕왕랜드의 100여 마리 아이들이<br />
+                매일 밥과 약, 따뜻한 잠자리를 기다려요.
               </p>
-              <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <span className="text-sm text-muted-foreground">{d.bankName}</span>
-                <span className="font-mono text-2xl font-bold tracking-wide text-foreground">
-                  {d.accountNumber}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  예금주 {d.accountHolder}
-                </span>
+            </div>
+
+            {/* 오른쪽: 계좌 박스 + 버튼 */}
+            <div className="flex flex-col gap-3">
+              {/* 계좌 정보 박스 */}
+              <div
+                className="rounded-2xl px-4 py-4
+                  bg-white shadow-[0_2px_8px_rgba(60,40,20,0.04)]
+                  dark:bg-black/25 dark:shadow-none"
+              >
+                <div className="mb-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-medium tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
+                    계좌 후원
+                  </span>
+                  <span className="text-[11px] text-[#9B8F80] dark:text-[#B8A78F]">
+                    예금주 · {d.accountHolder}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="shrink-0 rounded-md px-2.5 py-1 text-[11px] font-medium
+                      bg-[#FAF3E8] text-[#6B5D4F]
+                      dark:bg-[rgba(255,212,161,0.1)] dark:text-[#FFD4A1]"
+                  >
+                    {d.bankName}
+                  </span>
+                  <span
+                    className="flex-1 font-mono text-[15px] font-semibold tracking-wide
+                      text-[#2C2C2A] dark:text-[#F5EDE0]"
+                  >
+                    {d.accountNumber}
+                  </span>
+                  <CopyButton value={d.accountNumber} label="계좌번호" />
+                </div>
+              </div>
+
+              {/* 버튼 2개 */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <Link
+                  href="/donate"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl py-3.5 text-sm font-semibold transition-all hover:-translate-y-px
+                    bg-[#E89B5E] text-white shadow-[0_4px_12px_rgba(232,155,94,0.3)] hover:shadow-[0_6px_16px_rgba(232,155,94,0.4)]
+                    dark:text-[#2C2C2A]"
+                >
+                  <BrandIcon name="heart" size={16} decorative className="brightness-0 invert dark:invert-0" />
+                  후원하기
+                </Link>
+                <Link
+                  href="/donate"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border-[1.5px] py-3.5 text-sm font-semibold transition-all hover:-translate-y-px
+                    bg-white border-[#E89B5E] text-[#C06B2A] hover:bg-[#E89B5E] hover:text-white
+                    dark:bg-[rgba(255,212,161,0.08)] dark:border-[rgba(255,212,161,0.4)] dark:text-[#FFD4A1] dark:hover:bg-[#E89B5E] dark:hover:text-[#2C2C2A]"
+                >
+                  <BrandIcon name="heart" size={16} decorative />
+                  물품 후원하기
+                </Link>
               </div>
             </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 md:gap-3">
-            <CopyButton value={d.accountNumber} label="계좌번호" />
-            <Link
-              href="/donate"
-              className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
-            >
-              <BrandIcon name="heart" size={16} decorative className="brightness-0 invert" />
-              후원하기
-            </Link>
-          </div>
-        </div>
-      </section>
 
-      {/* 1) 최종 CTA 배너 */}
-      <section className="border-b border-border/60 bg-primary/5">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 px-4 py-10 text-center md:px-6 md:py-12">
-          <div>
-            <h3 className="text-xl font-bold text-foreground md:text-2xl">
-              함께해 주세요
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground md:text-base">
-              작은 손길 하나가 아이들의 하루를 바꿉니다.
-            </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Link
-              href="/dogs"
-              className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
-            >
-              <BrandIcon name="dog" size={18} decorative />
-              입양 대기 보기
-            </Link>
-            <Link
-              href="/volunteer"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "gap-1.5"
-              )}
-            >
-              <BrandIcon name="volunteer" size={18} decorative />
-              봉사 신청
-            </Link>
-            <Link
-              href="/donate"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "gap-1.5"
-              )}
-            >
-              <BrandIcon name="heart" size={18} decorative />
-              후원하기
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 1.5) 활동 실적 */}
-      <section className="border-b border-border/60 bg-background">
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-3 gap-2 px-4 py-6 text-center md:gap-6 md:px-6 md:py-8">
-          <StatItem
-            label="누적 구조"
-            value={stats.rescued}
-            suffix="마리"
-            icon="heart"
-          />
-          <StatItem
-            label="입양 완료"
-            value={stats.adopted}
-            suffix="마리"
-            icon="adopted"
-          />
-          <StatItem
-            label="누적 봉사자"
-            value={stats.volunteers}
-            suffix="명"
-            icon="volunteer"
-            fallbackText="모집 중"
-          />
         </div>
       </section>
 
@@ -295,42 +289,6 @@ function NavGroup({
           </li>
         ))}
       </ul>
-    </div>
-  )
-}
-
-function StatItem({
-  label,
-  value,
-  suffix,
-  icon,
-  fallbackText,
-}: {
-  label: string
-  value: number
-  suffix: string
-  icon: BrandIconName
-  fallbackText?: string
-}) {
-  const showFallback = value === 0 && !!fallbackText
-  return (
-    <div>
-      <p className="flex items-center justify-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:text-xs">
-        <BrandIcon name={icon} size={18} decorative />
-        {label}
-      </p>
-      {showFallback ? (
-        <p className="mt-1 text-base font-bold text-primary md:text-lg">
-          {fallbackText}
-        </p>
-      ) : (
-        <p className="mt-1 text-xl font-bold text-foreground md:text-2xl">
-          <CountUp value={value} />
-          <span className="ml-0.5 text-xs font-medium text-muted-foreground">
-            {suffix}
-          </span>
-        </p>
-      )}
     </div>
   )
 }
