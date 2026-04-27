@@ -5,7 +5,7 @@ import { listAdoptionStories } from "@/features/stories"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
+import { cn, formatShortDate } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -98,10 +98,7 @@ export default async function AdminStoriesPage({
                         {s.author?.nickname ?? "—"}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
-                        {new Date(s.created_at).toLocaleDateString("ko-KR", {
-                          month: "2-digit",
-                          day: "2-digit",
-                        })}
+                        {formatShortDate(s.created_at)}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
                         {s.view_count}

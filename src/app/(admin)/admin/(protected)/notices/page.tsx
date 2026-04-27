@@ -7,7 +7,7 @@ import { RoleBadge } from "@/shared/components/role-badge"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
+import { cn, formatShortDate } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -107,12 +107,7 @@ export default async function AdminNoticesPage({
                         )}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
-                        {n.published_at
-                          ? new Date(n.published_at).toLocaleDateString("ko-KR", {
-                              month: "2-digit",
-                              day: "2-digit",
-                            })
-                          : "-"}
+                        {n.published_at ? formatShortDate(n.published_at) : "-"}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
                         {n.view_count}

@@ -7,6 +7,7 @@ import { getCurrentProfile } from "@/features/members"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { formatShortDate } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
   title: "입양 후기",
@@ -112,11 +113,7 @@ export default async function StoriesPage({
                       )}
                     </span>
                     <span className="text-right text-xs text-muted-foreground">
-                      {story.published_at &&
-                        new Date(story.published_at).toLocaleDateString("ko-KR", {
-                          month: "2-digit",
-                          day: "2-digit",
-                        })}
+                      {story.published_at && formatShortDate(story.published_at)}
                     </span>
                     <span className="text-right text-xs text-muted-foreground">
                       {story.view_count}

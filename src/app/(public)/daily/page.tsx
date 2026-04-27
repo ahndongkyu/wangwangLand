@@ -7,6 +7,7 @@ import { getCurrentProfile } from "@/features/members"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { formatShortDate } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
   title: "왕왕랜드 일상",
@@ -107,10 +108,7 @@ export default async function DailyPage({
                       )}
                     </span>
                     <span className="text-right text-xs text-muted-foreground">
-                      {new Date(post.posted_at).toLocaleDateString("ko-KR", {
-                        month: "2-digit",
-                        day: "2-digit",
-                      })}
+                      {formatShortDate(post.posted_at)}
                     </span>
                     <span className="text-right text-xs text-muted-foreground">
                       {post.view_count}

@@ -6,6 +6,7 @@ import { listNotices, MarkNoticesSeen } from "@/features/notices"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { formatShortDate } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
   title: "공지사항",
@@ -108,11 +109,7 @@ export default async function NoticePage({
 
                     {/* 날짜 */}
                     <span className="text-right text-xs text-muted-foreground">
-                      {n.published_at &&
-                        new Date(n.published_at).toLocaleDateString("ko-KR", {
-                          month: "2-digit",
-                          day: "2-digit",
-                        })}
+                      {n.published_at && formatShortDate(n.published_at)}
                     </span>
 
                     {/* 조회수 */}
