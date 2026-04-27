@@ -30,8 +30,10 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(post)
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
+    const formData = new FormData(e.currentTarget)
     // Convert posted_at (date) to ISO at noon local time for stable display
     const date = String(formData.get("posted_at") ?? "")
     if (date) {
@@ -48,7 +50,7 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {returnTo && <input type="hidden" name="_returnTo" value={returnTo} />}
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>

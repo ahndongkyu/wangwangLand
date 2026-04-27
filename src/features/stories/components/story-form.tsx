@@ -29,8 +29,10 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(story)
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
+    const formData = new FormData(e.currentTarget)
     startTransition(async () => {
       const result =
         isEdit && story
@@ -41,7 +43,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {returnTo && <input type="hidden" name="_returnTo" value={returnTo} />}
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
