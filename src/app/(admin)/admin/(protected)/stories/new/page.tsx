@@ -25,7 +25,7 @@ export default async function AdminStoriesNewPage() {
           새 입양 후기 작성
         </h1>
       </header>
-      <StoryForm dogs={dogOptions} />
+      <StoryForm dogs={dogOptions} cancelHref="/admin/stories" returnTo="/admin/stories" />
     </div>
   )
 }

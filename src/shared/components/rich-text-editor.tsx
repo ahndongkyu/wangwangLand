@@ -42,6 +42,8 @@ interface Props {
   maxImages?: number
   /** 이미지 1장 최대 용량 MB (기본 10) */
   maxFileSizeMB?: number
+  /** 콘텐츠가 변경될 때마다 호출되는 콜백 */
+  onChange?: (html: string) => void
 }
 
 export function RichTextEditor({
@@ -51,6 +53,7 @@ export function RichTextEditor({
   folder = "posts",
   maxImages = 10,
   maxFileSizeMB = 10,
+  onChange,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -81,6 +84,7 @@ export function RichTextEditor({
     onUpdate({ editor }) {
       const html = editor.getHTML()
       if (hiddenRef.current) hiddenRef.current.value = html
+      onChange?.(html)
       setImageCount((html.match(/<img/g) ?? []).length)
     },
     onSelectionUpdate() {

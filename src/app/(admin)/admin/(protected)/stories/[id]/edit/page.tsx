@@ -38,7 +38,7 @@ export default async function AdminStoriesEditPage({
         </h1>
         <StoryDeleteButton id={id} title={story.title} redirectTo="/admin/stories" />
       </header>
-      <StoryForm story={story} dogs={dogOptions} />
+      <StoryForm story={story} dogs={dogOptions} cancelHref="/admin/stories" returnTo="/admin/stories" />
     </div>
   )
 }

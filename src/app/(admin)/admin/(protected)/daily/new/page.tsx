@@ -15,7 +15,7 @@ export default function AdminDailyNewPage() {
           새 일상 작성
         </h1>
       </header>
-      <DailyForm />
+      <DailyForm cancelHref="/admin/daily" returnTo="/admin/daily" />
     </div>
   )
 }

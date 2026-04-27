@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
 import type { StoryWithDog } from "../api/queries"
@@ -28,11 +28,14 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(story)
+  const contentRef = useRef<string>(story?.content ?? "")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const formData = new FormData(e.currentTarget)
+    // hidden input 대신 ref로 추적한 최신 콘텐츠를 직접 삽입
+    formData.set("content", contentRef.current)
     startTransition(async () => {
       const result =
         isEdit && story
@@ -87,6 +90,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
           defaultValue={story?.content ?? ""}
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
+          onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.

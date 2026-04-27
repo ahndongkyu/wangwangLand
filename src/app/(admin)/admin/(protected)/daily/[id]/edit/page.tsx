@@ -28,7 +28,7 @@ export default async function AdminDailyEditPage({
         </h1>
         <DailyDeleteButton id={id} title={post.title} redirectTo="/admin/daily" />
       </header>
-      <DailyForm post={post} />
+      <DailyForm post={post} cancelHref="/admin/daily" returnTo="/admin/daily" />
     </div>
   )
 }

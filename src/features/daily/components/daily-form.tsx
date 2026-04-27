@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 
 import { createDailyPost, updateDailyPost } from "../api/mutations"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
@@ -29,11 +29,14 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(post)
+  const contentRef = useRef<string>(post?.content ?? "")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const formData = new FormData(e.currentTarget)
+    // hidden input 대신 ref로 추적한 최신 콘텐츠를 직접 삽입
+    formData.set("content", contentRef.current)
     // Convert posted_at (date) to ISO at noon local time for stable display
     const date = String(formData.get("posted_at") ?? "")
     if (date) {
@@ -83,6 +86,7 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
           defaultValue={post?.content ?? ""}
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
           folder="daily"
+          onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
