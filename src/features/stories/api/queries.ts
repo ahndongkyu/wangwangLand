@@ -75,6 +75,37 @@ export async function listAdoptionStories({
   return { stories, total: count ?? 0 }
 }
 
+/** 어드민 회원 상세에서 사용: 특정 user 의 입양후기 목록 (최근순, 임시저장 포함) */
+export async function listAdoptionStoriesByUser(
+  userId: string,
+  limit = 5
+): Promise<StoryWithDog[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("adoption_stories")
+    .select("*, dog:dogs(id, name, images, thumbnail_index)")
+    .eq("created_by", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+  if (error) {
+    console.error("[listAdoptionStoriesByUser]", error)
+    return []
+  }
+  return (data ?? []).map((s) => ({
+    ...(s as unknown as AdoptionStory & { dog: StoryDogRef | null }),
+    author: null,
+  }))
+}
+
+export async function countAdoptionStoriesByUser(userId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from("adoption_stories")
+    .select("*", { count: "exact", head: true })
+    .eq("created_by", userId)
+  return count ?? 0
+}
+
 export async function getAdoptionStory(
   id: string,
   { includeDrafts = false }: { includeDrafts?: boolean } = {}

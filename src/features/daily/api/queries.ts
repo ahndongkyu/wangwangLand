@@ -50,6 +50,37 @@ export async function listDailyPosts({
   return { posts, total: count ?? 0 }
 }
 
+/** 어드민 회원 상세에서 사용: 특정 user 의 일상 글 목록 (최근순) */
+export async function listDailyPostsByUser(
+  userId: string,
+  limit = 5
+): Promise<DailyPostWithAuthor[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("daily_posts")
+    .select("id, title, images, content, posted_at, created_by, view_count")
+    .eq("created_by", userId)
+    .order("posted_at", { ascending: false })
+    .limit(limit)
+  if (error) {
+    console.error("[listDailyPostsByUser]", error)
+    return []
+  }
+  return (data ?? []).map((p) => ({
+    ...(p as unknown as DailyPost),
+    author: null,
+  }))
+}
+
+export async function countDailyPostsByUser(userId: string): Promise<number> {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from("daily_posts")
+    .select("*", { count: "exact", head: true })
+    .eq("created_by", userId)
+  return count ?? 0
+}
+
 export async function getDailyPost(id: string): Promise<DailyPostWithAuthor | null> {
   const supabase = await createClient()
 

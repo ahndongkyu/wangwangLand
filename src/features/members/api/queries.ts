@@ -30,6 +30,34 @@ export interface PaginatedProfiles {
   total: number
 }
 
+/** 어드민 상세 페이지용: 특정 회원의 프로필 + 이메일(auth.users 에서 조회) */
+export interface ProfileDetail extends Profile {
+  email: string | null
+}
+
+export async function getProfileDetail(id: string): Promise<ProfileDetail | null> {
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, nickname, avatar_url, role, status, is_banned, created_at")
+    .eq("id", id)
+    .maybeSingle()
+  if (!profile) return null
+
+  // auth.users 의 email 은 service role 만 조회 가능
+  let email: string | null = null
+  try {
+    const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+    const admin = createAdminClient()
+    const { data } = await admin.auth.admin.getUserById(id)
+    email = data?.user?.email ?? null
+  } catch (e) {
+    console.warn("[getProfileDetail] failed to fetch email:", e)
+  }
+
+  return { ...(profile as Profile), email }
+}
+
 export type ProfileSort = "name" | "joined" | "status"
 
 export async function listProfiles({

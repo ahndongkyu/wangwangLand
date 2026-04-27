@@ -2,6 +2,7 @@
 
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { MoreHorizontal, User } from "lucide-react"
 
 import { approveMember, rejectMember, updateMemberRole, toggleMemberBan } from "../api/actions"
@@ -122,7 +123,10 @@ export function MemberRowActions({
       )}
       {/* 닉네임 */}
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2.5">
+        <Link
+          href={`/admin/members/${profile.id}`}
+          className="flex items-center gap-2.5 transition-colors hover:text-primary"
+        >
           <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
             {profile.avatar_url ? (
               <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
@@ -131,14 +135,14 @@ export function MemberRowActions({
             )}
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="font-medium text-foreground">{profile.nickname}</span>
+            <span className="font-medium">{profile.nickname}</span>
             {isBanned && (
               <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
                 차단
               </span>
             )}
           </div>
-        </div>
+        </Link>
       </td>
 
       {/* 상태 */}

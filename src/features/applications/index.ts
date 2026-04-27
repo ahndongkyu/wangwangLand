@@ -18,6 +18,7 @@ export {
   getApplicationStats,
   listRecentApplications,
   getMonthlyVolunteerStats,
+  listApplicationsByEmail,
 } from "./api/queries"
 export type {
   RecentApplication,

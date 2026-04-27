@@ -163,6 +163,34 @@ export async function getVolunteerApplication(
   return data as VolunteerApplication | null
 }
 
+/** 어드민 회원 상세에서 사용: 이메일 매칭으로 회원의 신청 내역 조회 */
+export async function listApplicationsByEmail(email: string): Promise<{
+  adoption: AdoptionRow[]
+  volunteer: VolunteerApplication[]
+}> {
+  if (!email) return { adoption: [], volunteer: [] }
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const supabase = createAdminClient()
+
+  const [adoptionRes, volunteerRes] = await Promise.all([
+    supabase
+      .from("adoption_applications")
+      .select("*, dog:dogs(id, name), cat:cats(id, name)")
+      .ilike("email", email)
+      .order("submitted_at", { ascending: false }),
+    supabase
+      .from("volunteer_applications")
+      .select("*")
+      .ilike("email", email)
+      .order("submitted_at", { ascending: false }),
+  ])
+
+  return {
+    adoption: (adoptionRes.data ?? []) as AdoptionRow[],
+    volunteer: (volunteerRes.data ?? []) as VolunteerApplication[],
+  }
+}
+
 export async function countPendingApplications(): Promise<{
   adoption: number
   volunteer: number
