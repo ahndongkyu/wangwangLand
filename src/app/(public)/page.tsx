@@ -98,9 +98,7 @@ export default async function HomePage() {
               <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
               <span className="pointer-events-none absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-white/10" />
               <Heart
-                className="relative z-10 size-9 drop-shadow-[0_4px_8px_rgba(0,0,0,0.2)] md:size-11"
-                style={{ fill: "#FF8FA3" }}
-                stroke="white"
+                className="relative z-10 size-9 fill-[#FF8FA3] stroke-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.25)] dark:fill-[#FFB6C1] md:size-11"
                 strokeWidth={1.75}
                 aria-hidden
               />
