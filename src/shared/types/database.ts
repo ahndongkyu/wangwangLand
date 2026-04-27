@@ -89,6 +89,33 @@ export interface AdoptionStory {
   view_count: number
 }
 
+export type DonationType = "cash" | "goods"
+export type DonationStatus = "pending" | "approved" | "rejected"
+
+export interface Donation {
+  id: string
+  donor_name: string
+  phone: string | null
+  email: string
+  user_id: string | null
+  display_name: string | null
+  is_anonymous: boolean
+  message: string | null
+  type: DonationType
+  amount: number | null
+  item_description: string | null
+  item_quantity: string | null
+  donated_at: string
+  status: DonationStatus
+  approved_at: string | null
+  approved_by: string | null
+  rejection_reason: string | null
+  receipt_issued: boolean
+  receipt_issued_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AdoptionApplication {
   id: string
   dog_id: string | null

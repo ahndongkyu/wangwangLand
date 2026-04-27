@@ -1,0 +1,187 @@
+"use server"
+
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+
+import { createClient } from "@/shared/lib/supabase/server"
+import type { DonationType } from "@/shared/types/database"
+
+export interface DonationMutationResult {
+  error?: string
+  id?: string
+}
+
+interface DonationInput {
+  type: DonationType
+  donor_name: string
+  phone: string | null
+  email: string
+  display_name: string | null
+  is_anonymous: boolean
+  message: string | null
+  amount: number | null
+  item_description: string | null
+  item_quantity: string | null
+  donated_at: string
+}
+
+function parseFormData(formData: FormData): DonationInput {
+  const type = (String(formData.get("type") ?? "cash") as DonationType)
+  const amountRaw = String(formData.get("amount") ?? "").replace(/[^0-9]/g, "")
+  const amount = amountRaw ? Number(amountRaw) : null
+
+  return {
+    type,
+    donor_name: String(formData.get("donor_name") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim() || null,
+    email: String(formData.get("email") ?? "").trim(),
+    display_name: String(formData.get("display_name") ?? "").trim() || null,
+    is_anonymous: formData.get("is_anonymous") === "on",
+    message: String(formData.get("message") ?? "").trim() || null,
+    amount: type === "cash" ? amount : null,
+    item_description:
+      type === "goods"
+        ? String(formData.get("item_description") ?? "").trim() || null
+        : null,
+    item_quantity:
+      type === "goods"
+        ? String(formData.get("item_quantity") ?? "").trim() || null
+        : null,
+    donated_at: String(formData.get("donated_at") ?? "").trim(),
+  }
+}
+
+function validate(input: DonationInput): string | null {
+  if (!input.donor_name) return "이름을 입력해주세요."
+  if (!input.email) return "이메일을 입력해주세요."
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) return "올바른 이메일 형식이 아닙니다."
+  if (!input.donated_at) return "후원 일자를 입력해주세요."
+  if (input.type === "cash") {
+    if (!input.amount || input.amount <= 0) return "후원 금액을 입력해주세요."
+  } else {
+    if (!input.item_description) return "물품명을 입력해주세요."
+  }
+  return null
+}
+
+export async function createDonation(
+  formData: FormData
+): Promise<DonationMutationResult> {
+  const input = parseFormData(formData)
+  const err = validate(input)
+  if (err) return { error: err }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const { data, error } = await supabase
+    .from("donations")
+    .insert({
+      ...input,
+      user_id: user?.id ?? null,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    console.error("[createDonation]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/donate")
+  revalidatePath("/admin/donations")
+  if (user?.id) revalidatePath("/my/donations")
+
+  redirect(`/donate/register/done?id=${data.id}`)
+}
+
+/** 어드민: 검토중 → 승인 */
+export async function approveDonation(id: string): Promise<DonationMutationResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle()
+  if (!admin) return { error: "운영진 권한이 없습니다." }
+
+  const { error } = await supabase
+    .from("donations")
+    .update({
+      status: "approved",
+      approved_at: new Date().toISOString(),
+      approved_by: admin.id,
+      rejection_reason: null,
+    })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/donations")
+  revalidatePath("/donate")
+  revalidatePath("/my/donations")
+  return { id }
+}
+
+/** 어드민: 검토중 → 거절 */
+export async function rejectDonation(
+  id: string,
+  reason: string
+): Promise<DonationMutationResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle()
+  if (!admin) return { error: "운영진 권한이 없습니다." }
+
+  const { error } = await supabase
+    .from("donations")
+    .update({
+      status: "rejected",
+      approved_at: null,
+      approved_by: admin.id,
+      rejection_reason: reason || null,
+    })
+    .eq("id", id)
+
+  if (error) return { error: error.message }
+  revalidatePath("/admin/donations")
+  revalidatePath("/my/donations")
+  return { id }
+}
+
+/** 어드민: 승인된 건도 강제 삭제 가능 */
+export async function deleteDonation(id: string): Promise<DonationMutationResult> {
+  const supabase = await createClient()
+  const { error } = await supabase.from("donations").delete().eq("id", id)
+  if (error) return { error: error.message }
+  revalidatePath("/admin/donations")
+  revalidatePath("/my/donations")
+  revalidatePath("/donate")
+  return {}
+}
+
+/** 본인이 검토중(pending) 상태인 본인 글 취소. RLS 정책으로 다른 케이스는 자동 차단. */
+export async function cancelMyPendingDonation(id: string): Promise<DonationMutationResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const { error } = await supabase
+    .from("donations")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+
+  if (error) return { error: error.message }
+  revalidatePath("/my/donations")
+  return {}
+}

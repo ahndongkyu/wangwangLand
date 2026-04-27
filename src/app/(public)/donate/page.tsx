@@ -1,8 +1,11 @@
+import Link from "next/link"
 import type { Metadata } from "next"
 
 import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
+import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
+import { cn } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
   title: "후원 안내",
@@ -106,6 +109,29 @@ export default function DonatePage() {
               ※ {d.parcelAddressNote}
             </p>
           )}
+        </div>
+      </section>
+
+      {/* 후원 등록 안내 */}
+      <section className="mb-6 rounded-xl border border-primary/40 bg-card p-6 text-center">
+        <p className="text-sm font-semibold text-foreground">
+          🌱 후원해주신 분, 잠시만요!
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          입금/물품 발송 후 아래 폼에 등록해주시면
+          <br />
+          기록으로 보관하고, 추후 영수증 발급이 가능해지면 가장 먼저 안내드립니다.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Link href="/donate/register" className={cn(buttonVariants())}>
+            후원 등록하기
+          </Link>
+          <Link
+            href="/my/donations"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            내 후원 내역
+          </Link>
         </div>
       </section>
 

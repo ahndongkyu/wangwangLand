@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, ClipboardList, LogOut, Settings, User } from "lucide-react"
+import { ChevronRight, ClipboardList, Heart, LogOut, Settings, User } from "lucide-react"
 
 import { getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
@@ -63,6 +63,12 @@ export default async function MyPage() {
             icon={<ClipboardList className="size-4" />}
             label="내 신청 내역"
             desc="입양·봉사 신청 현황 확인"
+          />
+          <MenuItem
+            href="/my/donations"
+            icon={<Heart className="size-4" />}
+            label="내 후원 내역"
+            desc="후원 기록 및 영수증 발급 안내"
           />
         </MenuSection>
 
