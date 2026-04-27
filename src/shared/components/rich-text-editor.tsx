@@ -139,12 +139,28 @@ export function RichTextEditor({
 
   const onFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file) return
+      const files = Array.from(e.target.files ?? [])
       e.target.value = ""
-      await handleImageUpload(file)
+      if (files.length === 0) return
+
+      // 동기 업로드 중 setImageCount 가 비동기로 늦게 반영되어 stale closure 이슈 발생
+      // → 미리 maxImages 초과분을 잘라낸다.
+      const remaining = Math.max(0, maxImages - imageCount)
+      if (remaining === 0) {
+        alert(`이미지는 최대 ${maxImages}장까지 삽입할 수 있어요.`)
+        return
+      }
+      const accepted = files.slice(0, remaining)
+      if (files.length > remaining) {
+        alert(`최대 ${maxImages}장 제한으로 ${remaining}장만 업로드합니다.`)
+      }
+
+      // 순차 업로드 (병렬 시 storage 경합 + 에디터 setImage 순서 꼬임 방지)
+      for (const file of accepted) {
+        await handleImageUpload(file)
+      }
     },
-    [handleImageUpload]
+    [handleImageUpload, imageCount, maxImages]
   )
 
   // ── 링크 삽입 ──────────────────────────────────────────────────
@@ -266,7 +282,7 @@ export function RichTextEditor({
             : <ImageIcon className="size-3.5" />
           }
         </button>
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFileChange} />
 
         {/* 이미지 카운터 */}
         <span className={cn(
