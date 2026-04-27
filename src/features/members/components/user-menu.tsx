@@ -3,7 +3,7 @@
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, ClipboardList, LogOut, Moon, Settings, Sun, User } from "lucide-react"
+import { ChevronRight, LogOut, Moon, Settings, Sun, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
 import { RoleBadge } from "@/shared/components/role-badge"
@@ -81,32 +81,21 @@ export function UserMenu({ profile }: { profile: Profile }) {
 
           <div className="h-px bg-border" />
 
-          {/* ── 계정 메뉴 ── */}
-          <div className="p-1.5 space-y-0.5">
-            {isStaff && (
-              <DropdownItem
-                href="/admin"
-                icon={<Settings className="size-4" />}
-                label="어드민 페이지"
-                accent
-                onClose={() => setOpen(false)}
-              />
-            )}
-            <DropdownItem
-              href="/profile"
-              icon={<User className="size-4" />}
-              label="프로필 설정"
-              onClose={() => setOpen(false)}
-            />
-            <DropdownItem
-              href="/my/applications"
-              icon={<ClipboardList className="size-4" />}
-              label="나의 신청 내역"
-              onClose={() => setOpen(false)}
-            />
-          </div>
-
-          <div className="h-px bg-border" />
+          {/* ── 운영진 전용: 어드민 진입 ── */}
+          {isStaff && (
+            <>
+              <div className="p-1.5">
+                <DropdownItem
+                  href="/admin"
+                  icon={<Settings className="size-4" />}
+                  label="어드민 페이지"
+                  accent
+                  onClose={() => setOpen(false)}
+                />
+              </div>
+              <div className="h-px bg-border" />
+            </>
+          )}
 
           {/* ── 테마 토글 ── */}
           <div className="p-1.5">
