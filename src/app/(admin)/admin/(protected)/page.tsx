@@ -5,6 +5,9 @@ import {
   listRecentApplications,
   getMonthlyVolunteerStats,
 } from "@/features/applications"
+import { listNotices } from "@/features/notices"
+import { listDailyPosts } from "@/features/daily"
+import { listAdoptionStories } from "@/features/stories"
 import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
@@ -68,17 +71,26 @@ export default async function AdminDashboardPage() {
   const thisMonth = monthRange(now)
   const prevMonth = monthRange(new Date(now.getFullYear(), now.getMonth() - 1, 15))
 
-  const [appStats, recentApps, monthlyVolunteerStats] =
-    await Promise.all([
-      getApplicationStats({
-        monthFrom: thisMonth.from,
-        monthTo: thisMonth.to,
-        prevMonthFrom: prevMonth.from,
-        prevMonthTo: prevMonth.to,
-      }),
-      listRecentApplications(6),
-      getMonthlyVolunteerStats(6),
-    ])
+  const [
+    appStats,
+    recentApps,
+    monthlyVolunteerStats,
+    noticesCount,
+    dailyCount,
+    storiesCount,
+  ] = await Promise.all([
+    getApplicationStats({
+      monthFrom: thisMonth.from,
+      monthTo: thisMonth.to,
+      prevMonthFrom: prevMonth.from,
+      prevMonthTo: prevMonth.to,
+    }),
+    listRecentApplications(6),
+    getMonthlyVolunteerStats(6),
+    listNotices({ includeDrafts: true, limit: 1 }).then((r) => r.total),
+    listDailyPosts({ limit: 1 }).then((r) => r.total),
+    listAdoptionStories({ includeDrafts: true, limit: 1 }).then((r) => r.total),
+  ])
 
   const monthLabel = now.toLocaleDateString("ko-KR", { month: "long" })
 
@@ -131,10 +143,10 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 2. 이번 달 신청 현황 */}
+      {/* 2. 이번 달 현황 */}
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
-          📅 {monthLabel} 신청 현황
+          📅 {monthLabel} 현황
         </h2>
         {/* 이번 달 카드 */}
         <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -161,17 +173,17 @@ export default async function AdminDashboardPage() {
             suffix="건"
           />
         </div>
-        {/* 신청 상태별 누적 */}
+        {/* 신청 상태별 누적 + 게시글 현황 */}
         <div className="grid gap-4 md:grid-cols-2">
           <StatusBreakdown
             title="📋 입양 신청 누적"
             counts={appStats.adoption.allTime}
             basePath="/admin/applications?type=adoption"
           />
-          <StatusBreakdown
-            title="🐾 구조 현황"
-            counts={appStats.volunteer.allTime}
-            basePath="/admin/applications?type=volunteer"
+          <PostsBreakdown
+            notices={noticesCount}
+            daily={dailyCount}
+            stories={storiesCount}
           />
         </div>
       </section>
@@ -354,6 +366,49 @@ function StatusBreakdown({
           <Link
             key={r.label}
             href={`${basePath}&status=${r.label}`}
+            className="flex flex-col rounded-md border border-border bg-background p-3 transition-colors hover:border-primary/50"
+          >
+            <span className="text-[11px] text-muted-foreground">{r.label}</span>
+            <span className="mt-0.5 text-lg font-bold text-foreground">
+              {r.value}
+            </span>
+          </Link>
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function PostsBreakdown({
+  notices,
+  daily,
+  stories,
+}: {
+  notices: number
+  daily: number
+  stories: number
+}) {
+  const total = notices + daily + stories
+  const rows: Array<{ label: string; value: number; href: string }> = [
+    { label: "공지사항", value: notices, href: "/admin/notices" },
+    { label: "일상", value: daily, href: "/admin/daily" },
+    { label: "입양후기", value: stories, href: "/admin/stories" },
+  ]
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-foreground">
+          📝 게시글 현황
+          <span className="ml-2 text-xs font-normal text-muted-foreground">
+            총 {total}건
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid grid-cols-3 gap-2">
+        {rows.map((r) => (
+          <Link
+            key={r.label}
+            href={r.href}
             className="flex flex-col rounded-md border border-border bg-background p-3 transition-colors hover:border-primary/50"
           >
             <span className="text-[11px] text-muted-foreground">{r.label}</span>
