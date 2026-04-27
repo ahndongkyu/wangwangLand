@@ -31,6 +31,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
+import { compressImage } from "@/shared/lib/compress-image"
 import { createClient } from "@/shared/lib/supabase/client"
 
 interface Props {
@@ -139,22 +140,35 @@ export function RichTextEditor({
         alert(`이미지는 최대 ${maxImages}장까지 삽입할 수 있어요.`)
         return
       }
-      // 용량 제한
-      if (file.size > maxFileSizeMB * 1024 * 1024) {
-        alert(`이미지 용량은 ${maxFileSizeMB}MB 이하만 가능해요.`)
-        return
-      }
       if (!editor) return
 
       setUploading(true)
       try {
+        // 업로드 전 자동 압축 (PNG / 큰 사진 → 1920px JPG 로 재인코딩)
+        // 클립보드 PNG 가 무손실이라 쉽게 10MB 넘는 이슈 해결.
+        let prepared: File
+        try {
+          prepared = await compressImage(file)
+        } catch (e) {
+          console.warn("[image] compress failed, using original:", e)
+          prepared = file
+        }
+
+        // 압축 후에도 한도 초과면 거부
+        if (prepared.size > maxFileSizeMB * 1024 * 1024) {
+          alert(
+            `이미지 용량이 ${maxFileSizeMB}MB 를 초과합니다 (압축 후 ${(prepared.size / 1024 / 1024).toFixed(1)}MB).`
+          )
+          return
+        }
+
         const supabase = createClient()
-        const ext = file.name.split(".").pop() ?? "jpg"
+        const ext = prepared.name.split(".").pop() ?? "jpg"
         const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
         const { error } = await supabase.storage
           .from("public-images")
-          .upload(path, file, { cacheControl: "3600", upsert: false })
+          .upload(path, prepared, { cacheControl: "3600", upsert: false })
 
         if (error) { alert(`이미지 업로드 실패: ${error.message}`); return }
 
