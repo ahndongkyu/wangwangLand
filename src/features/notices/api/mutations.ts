@@ -73,7 +73,7 @@ export async function createNotice(
       is_pinned: input.is_pinned,
       images: input.images,
       published_at: input.publish ? new Date().toISOString() : null,
-      created_by: admin.id,
+      // notices는 admin 전용이므로 created_by는 null (profiles FK 제약 때문)
     })
     .select("id")
     .single()

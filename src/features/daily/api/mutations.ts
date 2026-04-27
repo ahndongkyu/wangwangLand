@@ -41,8 +41,20 @@ function revalidateAll(id?: string) {
   }
 }
 
-/** 현재 로그인한 유저의 profile과 role을 반환. 없거나 이용 불가면 null. */
+/** 현재 로그인한 유저의 profile과 role을 반환. 없거나 이용 불가면 null.
+ *  어드민(admins 테이블)은 profiles 여부와 무관하게 항상 허용. */
 async function getApprovedProfile(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  // admins 테이블 우선 확인
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
+  if (admin) {
+    return { id: userId, role: "admin" as const, status: "approved" as const, is_banned: false }
+  }
+
+  // 일반 회원 profiles 확인
   const { data } = await supabase
     .from("profiles")
     .select("id, role, status, is_banned")
