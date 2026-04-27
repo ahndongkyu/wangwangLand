@@ -56,8 +56,12 @@ export default async function MyPage() {
             href="/profile"
             icon={<User className="size-4" />}
             label="프로필 수정"
-            desc="닉네임·프로필 사진 변경"
+            desc="닉네임·프로필 사진·핸드폰 변경"
           />
+        </MenuSection>
+
+        {/* 내 활동 */}
+        <MenuSection title="내 활동">
           <MenuItem
             href="/my/applications"
             icon={<ClipboardList className="size-4" />}
