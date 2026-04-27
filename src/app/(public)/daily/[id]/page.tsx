@@ -7,6 +7,7 @@ import { getDailyPost, DailyDeleteButton } from "@/features/daily"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
+import { RoleBadge } from "@/shared/components/role-badge"
 
 export const revalidate = 60
 
@@ -79,17 +80,25 @@ export default async function DailyDetailPage({
       </nav>
 
       <header className="mb-8 border-b border-border pb-6">
-        <p className="text-xs text-muted-foreground">
-          {new Date(post.posted_at).toLocaleDateString("ko-KR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            weekday: "short",
-          })}
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           {post.title}
         </h1>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+          {post.author && (
+            <span className="flex items-center gap-1.5">
+              <RoleBadge role={post.author.role} />
+              <span>{post.author.nickname}</span>
+            </span>
+          )}
+          <span>
+            {new Date(post.posted_at).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              weekday: "short",
+            })}
+          </span>
+        </div>
       </header>
 
       {post.content && (

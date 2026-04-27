@@ -7,6 +7,7 @@ import { getAdoptionStory, StoryDeleteButton } from "@/features/stories"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
+import { RoleBadge } from "@/shared/components/role-badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -89,15 +90,23 @@ export default async function StoryDetailPage({
         <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
           {story.title}
         </h1>
-        {story.published_at && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            {new Date(story.published_at).toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        )}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+          {story.author && (
+            <span className="flex items-center gap-1.5">
+              <RoleBadge role={story.author.role} />
+              <span>{story.author.nickname}</span>
+            </span>
+          )}
+          {story.published_at && (
+            <span>
+              {new Date(story.published_at).toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          )}
+        </div>
       </header>
 
       <article>
