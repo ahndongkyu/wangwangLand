@@ -102,7 +102,7 @@ export default async function DogsPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16 2xl:max-w-7xl">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">

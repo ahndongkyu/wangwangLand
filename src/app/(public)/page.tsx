@@ -119,7 +119,7 @@ export default async function HomePage() {
 
       {/* 2. 실적 카운터 */}
       <section className="border-t border-primary/10 bg-primary/5">
-        <div className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6 md:py-16">
+        <div className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6 md:py-16 2xl:max-w-7xl">
           <div className="mb-10 text-center">
             <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               우리의 기록
@@ -168,7 +168,7 @@ export default async function HomePage() {
 
       {/* 3. 새 가족을 기다려요 (강아지) */}
       <section className="border-t border-border/60 bg-background">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
           <div className="mb-10 flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -206,7 +206,7 @@ export default async function HomePage() {
       {/* 4. 입양 후기 — 강아지 섹션 바로 밑으로 승격 */}
       {recentStories.length > 0 && (
         <section className="border-t border-border/60 bg-card">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
             <div className="mb-10 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -223,7 +223,7 @@ export default async function HomePage() {
                 전체 후기 →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {recentStories.map((story) => (
                 <StoryCard key={story.id} story={story} />
               ))}
@@ -235,7 +235,7 @@ export default async function HomePage() {
       {/* 5. 최근 공지사항 — 푸터 CTA 와의 중복을 피하고 운영 활성도 노출 */}
       {recentNotices.length > 0 && (
         <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-16 md:px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-16 md:px-6 2xl:max-w-7xl">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
@@ -284,7 +284,7 @@ export default async function HomePage() {
       {/* 6. 왕왕랜드 일상 */}
       {recentDaily.length > 0 && (
         <section className="border-t border-border/60 bg-card">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
             <div className="mb-10 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -301,7 +301,7 @@ export default async function HomePage() {
                 전체 보기 →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {recentDaily.map((post) => (
                 <DailyCard key={post.id} post={post} />
               ))}
@@ -313,7 +313,7 @@ export default async function HomePage() {
       {/* 7. 고양이 친구들 (보호 중일 때만) */}
       {cats.length > 0 && (
         <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
             <div className="mb-10 flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -330,7 +330,7 @@ export default async function HomePage() {
                 전체 보기 →
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {cats.map((cat) => (
                 <Link
                   key={cat.id}
