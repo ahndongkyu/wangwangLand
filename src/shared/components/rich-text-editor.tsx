@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import { ImageResize } from "tiptap-extension-resize-image"
@@ -64,6 +64,8 @@ export function RichTextEditor({
   const hiddenRef = useRef<HTMLInputElement>(null)
   // 툴바 active 상태를 re-render 시키기 위한 counter
   const [, forceUpdate] = useState(0)
+  // 이미지 버튼 클릭 직전의 selection (mobile에서 file picker 거치며 selection 잃는 것 방지)
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null)
 
   const editor = useEditor({
     extensions: [
@@ -98,6 +100,34 @@ export function RichTextEditor({
       attributes: {
         class: "min-h-[420px] px-4 py-3 focus:outline-none text-sm leading-relaxed",
       },
+      // 클립보드에 이미지가 있으면 그것만 자동 업로드해서 본문 삽입
+      handlePaste(_view, event) {
+        const items = Array.from(event.clipboardData?.items ?? [])
+        const imageItems = items.filter((it) => it.type.startsWith("image/"))
+        if (imageItems.length === 0) return false
+        event.preventDefault()
+        void (async () => {
+          for (const it of imageItems) {
+            const file = it.getAsFile()
+            if (file) await handleImageUploadRef.current(file)
+          }
+        })()
+        return true
+      },
+      // 파일 드래그앤드롭으로 본문에 이미지 삽입
+      handleDrop(_view, event, _slice, moved) {
+        if (moved) return false
+        const dt = (event as DragEvent).dataTransfer
+        const files = Array.from(dt?.files ?? []).filter((f) => f.type.startsWith("image/"))
+        if (files.length === 0) return false
+        event.preventDefault()
+        void (async () => {
+          for (const f of files) {
+            await handleImageUploadRef.current(f)
+          }
+        })()
+        return true
+      },
     },
   })
 
@@ -114,6 +144,7 @@ export function RichTextEditor({
         alert(`이미지 용량은 ${maxFileSizeMB}MB 이하만 가능해요.`)
         return
       }
+      if (!editor) return
 
       setUploading(true)
       try {
@@ -128,14 +159,39 @@ export function RichTextEditor({
         if (error) { alert(`이미지 업로드 실패: ${error.message}`); return }
 
         const { data } = supabase.storage.from("public-images").getPublicUrl(path)
+
+        // 모바일에서 file picker 거치며 lost된 selection 복원.
+        // scrollIntoView: false 로 mobile 화면이 위로 점프하는 현상 방지.
+        // setImage 후 createParagraphNear 로 이미지 다음에 빈 줄 자동 생성 (다음 글쓰기 편하게).
+        const saved = savedSelectionRef.current
+        const chain = editor.chain()
+        if (saved) {
+          chain.setTextSelection(saved)
+          // 다음 이미지를 위해 selection 누적 업데이트는 setImage 이후 onUpdate에서 자연스럽게 진행.
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(editor?.chain().focus() as any).setImage({ src: data.publicUrl }).run()
+        ;(chain as any)
+          .focus(undefined, { scrollIntoView: false })
+          .setImage({ src: data.publicUrl })
+          .createParagraphNear()
+          .run()
+        // 다음 이미지 삽입은 새 paragraph 위치에서 이어지도록 selection 갱신
+        savedSelectionRef.current = {
+          from: editor.state.selection.from,
+          to: editor.state.selection.to,
+        }
       } finally {
         setUploading(false)
       }
     },
     [editor, folder, imageCount, maxImages, maxFileSizeMB]
   )
+
+  // editorProps.handlePaste / handleDrop 이 stale closure 안 되게 ref 로 감싸기
+  const handleImageUploadRef = useRef(handleImageUpload)
+  useEffect(() => {
+    handleImageUploadRef.current = handleImageUpload
+  }, [handleImageUpload])
 
   const onFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -272,6 +328,13 @@ export function RichTextEditor({
         {/* 이미지 */}
         <button
           type="button"
+          onPointerDown={() => {
+            // file picker 열기 전에 현재 selection 저장 (mobile 에서 거치며 lost되는 것 방지)
+            if (editor) {
+              const { from, to } = editor.state.selection
+              savedSelectionRef.current = { from, to }
+            }
+          }}
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading || imageCount >= maxImages}
           className={btn(false)}
