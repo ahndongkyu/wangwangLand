@@ -68,28 +68,64 @@ export default async function HomePage() {
 
       {/* 1. 미션 블록 */}
       <section className="border-t border-border/60 bg-card">
-        <div className="mx-auto w-full max-w-4xl px-4 py-20 text-center md:px-6 md:py-24">
-          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            우리의 약속
-          </span>
-          <h2 className="mt-5 text-3xl font-bold leading-snug text-foreground md:text-4xl">
-            어떤 이유로도 아이들의 생명을
-            <br />
-            포기하지 않습니다
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            {SITE.name}는 100% 안락사 없는 보호소입니다.
-            병들거나 나이 든 아이도, 사회성 훈련이 필요한 아이도 새로운 가족을
-            만날 때까지 사랑으로 끝까지 책임집니다. 매일 봉사자와 운영진이 아이들
-            하나하나를 돌보고 있어요.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/about"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              센터 소개 자세히 보기 →
-            </Link>
+        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 md:py-20">
+          <div className="flex flex-col items-center gap-10 md:flex-row md:gap-16">
+
+            {/* 왼쪽: 강아지 사진 */}
+            <div className="relative flex w-full shrink-0 items-end justify-center md:w-[420px]">
+              {/* 배경 원형 데코 */}
+              <div className="absolute bottom-0 left-1/2 h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-primary/10 md:h-[360px] md:w-[360px]" />
+              <img
+                src="/images/dogs.png"
+                alt="왕왕랜드 아이들"
+                className="relative z-10 h-[280px] w-auto drop-shadow-xl md:h-[380px]"
+              />
+            </div>
+
+            {/* 오른쪽: 텍스트 + 링크 버튼 */}
+            <div className="w-full">
+              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                우리의 약속
+              </span>
+              <h2 className="mt-4 text-3xl font-bold leading-snug text-foreground md:text-4xl">
+                어떤 이유로도 아이들의 생명을
+                <br />
+                <span className="text-primary">포기하지 않습니다</span>
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground md:text-base">
+                {SITE.name}는 100% 안락사 없는 보호소입니다.
+                병들거나 나이 든 아이도, 사회성 훈련이 필요한 아이도
+                새로운 가족을 만날 때까지 사랑으로 끝까지 책임집니다.
+              </p>
+
+              {/* 액션 버튼 목록 */}
+              <div className="mt-7 space-y-2.5">
+                {/* 후원 2개 — 나란히 */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <MissionLink href="/donate" label="물품 후원" icon="📦" />
+                  <MissionLink href="/donate" label="후원하기" icon="💛" />
+                </div>
+                {/* 신청 3개 — 세로 */}
+                <MissionLink href="/adopt" label="임보 신청" icon="🏠" />
+                <MissionLink href="/adopt" label="입양 신청" icon="🐾" />
+                <MissionLink href="/volunteer" label="봉사 신청" icon="🤝" />
+                {/* SNS 2개 — 나란히 */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <MissionLink
+                    href={SITE.sns.instagram}
+                    label="인스타그램"
+                    icon="📷"
+                    external
+                  />
+                  <MissionLink
+                    href={SITE.sns.naverCafe}
+                    label="네이버 카페"
+                    icon="☕"
+                    external
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -329,6 +365,34 @@ export default async function HomePage() {
       )}
     </>
   )
+}
+
+function MissionLink({
+  href,
+  label,
+  icon,
+  external,
+}: {
+  href: string
+  label: string
+  icon: string
+  external?: boolean
+}) {
+  const cls =
+    "flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
+  const content = (
+    <>
+      <span className="text-base leading-none">{icon}</span>
+      <span className="flex-1">{label}</span>
+      <svg className="size-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </>
+  )
+  if (external) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>{content}</a>
+  }
+  return <Link href={href} className={cls}>{content}</Link>
 }
 
 function CounterCard({
