@@ -123,18 +123,18 @@ export default async function AdminMemberDetailPage({
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {profile.email ?? "이메일 정보 없음"}
-              {profile.phone && (
-                <>
-                  {" · "}
-                  <span className="text-foreground">{profile.phone}</span>
-                </>
-              )}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              가입 {formatJoinedAt(profile.created_at)}
-            </p>
+            <dl className="mt-1 grid grid-cols-[64px_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="text-xs text-muted-foreground">이메일</dt>
+              <dd className="text-foreground">{profile.email ?? "—"}</dd>
+              <dt className="text-xs text-muted-foreground">핸드폰</dt>
+              <dd className={profile.phone ? "text-foreground" : "text-muted-foreground"}>
+                {profile.phone ?? "미등록"}
+              </dd>
+              <dt className="text-xs text-muted-foreground">가입일</dt>
+              <dd className="text-xs text-muted-foreground">
+                {formatJoinedAt(profile.created_at)}
+              </dd>
+            </dl>
           </div>
         </div>
         <div className="border-t border-border p-5">
