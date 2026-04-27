@@ -62,6 +62,7 @@ export interface Notice {
   created_at: string
   updated_at: string
   created_by: string | null
+  view_count: number
 }
 
 export interface DailyPost {
@@ -72,6 +73,7 @@ export interface DailyPost {
   posted_at: string
   created_at: string
   created_by: string | null
+  view_count: number
 }
 
 export interface AdoptionStory {
@@ -84,6 +86,7 @@ export interface AdoptionStory {
   created_at: string
   updated_at: string
   created_by: string | null
+  view_count: number
 }
 
 export interface AdoptionApplication {

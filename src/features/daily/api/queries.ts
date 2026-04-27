@@ -24,7 +24,7 @@ export async function listDailyPosts({
 
   let query = supabase
     .from("daily_posts")
-    .select("id, title, images, content, posted_at, created_by", { count: "exact" })
+    .select("id, title, images, content, posted_at, created_by, view_count", { count: "exact" })
     .order("posted_at", { ascending: false })
     .order("id", { ascending: true })
     .range(offset, offset + limit - 1)

@@ -4,9 +4,11 @@ import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
+import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { RichTextContent } from "@/shared/components/rich-text-content"
+import { ViewCounter } from "@/shared/components/view-counter"
 
 export const revalidate = 60
 
@@ -37,13 +39,22 @@ export default async function NoticeDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const notice = await getNotice(id)
+  const [notice, profile] = await Promise.all([
+    getNotice(id),
+    getCurrentProfile(),
+  ])
 
   if (!notice) notFound()
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <MarkNoticesSeen />
+      <ViewCounter
+        table="notices"
+        postId={notice.id}
+        authorId={notice.created_by}
+        currentUserId={profile?.id ?? null}
+      />
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/notice" className="hover:text-foreground">
           ← 공지사항
@@ -63,6 +74,8 @@ export default async function NoticeDetailPage({
                 day: "numeric",
               })}
           </span>
+          <span className="text-xs text-muted-foreground">·</span>
+          <span className="text-xs text-muted-foreground">조회 {notice.view_count}</span>
         </div>
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           {notice.title}

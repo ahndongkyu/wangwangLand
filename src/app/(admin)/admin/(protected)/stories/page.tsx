@@ -63,11 +63,12 @@ export default async function AdminStoriesPage({
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <div className="grid grid-cols-[56px_1fr_auto_90px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
               <span className="text-center">번호</span>
               <span>제목</span>
               <span className="hidden sm:block">작성자</span>
               <span className="text-right">작성일</span>
+              <span className="text-right">조회</span>
             </div>
             <ul className="divide-y divide-border">
               {stories.map((s, i) => {
@@ -77,7 +78,7 @@ export default async function AdminStoriesPage({
                   <li key={s.id}>
                     <Link
                       href={`/admin/stories/${s.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_auto_90px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                      className="grid grid-cols-[56px_1fr_auto_90px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
                     >
                       <span className="text-center text-xs text-muted-foreground">{num}</span>
                       <span className="flex min-w-0 flex-col gap-0.5">
@@ -101,6 +102,9 @@ export default async function AdminStoriesPage({
                           month: "2-digit",
                           day: "2-digit",
                         })}
+                      </span>
+                      <span className="text-right text-xs text-muted-foreground">
+                        {s.view_count}
                       </span>
                     </Link>
                   </li>

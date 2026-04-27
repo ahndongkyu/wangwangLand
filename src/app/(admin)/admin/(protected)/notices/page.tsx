@@ -61,12 +61,13 @@ export default async function AdminNoticesPage({
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <div className="grid grid-cols-[56px_1fr_auto_auto_90px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
               <span className="text-center">번호</span>
               <span>제목</span>
               <span className="hidden sm:block">상태</span>
               <span className="hidden sm:block">작성자</span>
               <span className="text-right">발행일</span>
+              <span className="text-right">조회</span>
             </div>
             <ul className="divide-y divide-border">
               {notices.map((n, i) => {
@@ -75,7 +76,7 @@ export default async function AdminNoticesPage({
                   <li key={n.id}>
                     <Link
                       href={`/admin/notices/${n.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_auto_auto_90px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                      className="grid grid-cols-[56px_1fr_auto_auto_90px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
                     >
                       <span className="text-center text-xs text-muted-foreground">{num}</span>
                       <span className="flex min-w-0 items-center gap-2">
@@ -112,6 +113,9 @@ export default async function AdminNoticesPage({
                               day: "2-digit",
                             })
                           : "-"}
+                      </span>
+                      <span className="text-right text-xs text-muted-foreground">
+                        {n.view_count}
                       </span>
                     </Link>
                   </li>

@@ -8,6 +8,7 @@ import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { RoleBadge } from "@/shared/components/role-badge"
+import { ViewCounter } from "@/shared/components/view-counter"
 
 export const revalidate = 60
 
@@ -61,6 +62,12 @@ export default async function DailyDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
+      <ViewCounter
+        table="daily_posts"
+        postId={post.id}
+        authorId={post.created_by}
+        currentUserId={profile?.id ?? null}
+      />
       <nav className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <Link href="/daily" className="hover:text-foreground">
           ← 일상 목록
@@ -98,6 +105,8 @@ export default async function DailyDetailPage({
               weekday: "short",
             })}
           </span>
+          <span>·</span>
+          <span>조회 {post.view_count}</span>
         </div>
       </header>
 
