@@ -4,7 +4,7 @@ import { notFound } from "next/navigation"
 import { User } from "lucide-react"
 
 import { getCurrentAdmin } from "@/features/auth"
-import { getProfileDetail, MemberRowActions } from "@/features/members"
+import { getProfileDetail, MemberManagePanel } from "@/features/members"
 import { listDailyPostsByUser, countDailyPostsByUser } from "@/features/daily"
 import {
   listAdoptionStoriesByUser,
@@ -18,20 +18,28 @@ import {
 import { Badge } from "@/shared/components/ui/badge"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { cn, formatShortDate } from "@/shared/lib/utils"
+import type { Profile } from "@/features/members"
 
 export const dynamic = "force-dynamic"
 
-const ROLE_LABEL: Record<string, string> = {
-  member: "일반회원",
-  full_member: "정회원",
-  staff: "운영진",
-  admin: "관리자",
+const STATUS_LABEL: Record<Profile["status"], string> = {
+  pending: "승인 대기",
+  approved: "승인됨",
+  rejected: "거절됨",
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "대기",
-  approved: "승인",
-  rejected: "거절",
+const STATUS_COLOR: Record<Profile["status"], string> = {
+  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  approved: "bg-primary/15 text-primary",
+  rejected: "bg-destructive/15 text-destructive",
+}
+
+function formatJoinedAt(iso: string) {
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
 }
 
 export default async function AdminMemberDetailPage({
@@ -59,7 +67,9 @@ export default async function AdminMemberDetailPage({
     listAdoptionStoriesByUser(id, 5),
     countDailyPostsByUser(id),
     countAdoptionStoriesByUser(id),
-    profile.email ? listApplicationsByEmail(profile.email) : Promise.resolve({ adoption: [], volunteer: [] }),
+    profile.email
+      ? listApplicationsByEmail(profile.email)
+      : Promise.resolve({ adoption: [], volunteer: [] }),
     listDonationsByUser(id),
   ])
 
@@ -78,38 +88,58 @@ export default async function AdminMemberDetailPage({
         </Link>
       </nav>
 
-      {/* 프로필 헤더 */}
-      <section className="mb-6 rounded-lg border border-border bg-card p-5">
-        <div className="flex flex-wrap items-start gap-4">
+      {/* ─── 회원 정보 ─── */}
+      <Section title="회원 정보">
+        <div className="flex flex-wrap items-start gap-4 p-5">
           <div className="relative size-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
             {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
+              <Image
+                src={profile.avatar_url}
+                alt={profile.nickname}
+                fill
+                className="object-cover"
+              />
             ) : (
               <User className="size-full p-3 text-muted-foreground" />
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground md:text-2xl">{profile.nickname}</h1>
+              <h1 className="text-xl font-bold text-foreground md:text-2xl">
+                {profile.nickname}
+              </h1>
               <RoleBadge role={profile.role} />
+              <span
+                className={cn(
+                  "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  STATUS_COLOR[profile.status]
+                )}
+              >
+                {STATUS_LABEL[profile.status]}
+              </span>
               {profile.is_banned && (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                  차단
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                  차단됨
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{profile.email ?? "이메일 없음"}</p>
+            <p className="text-sm text-muted-foreground">
+              {profile.email ?? "이메일 정보 없음"}
+            </p>
             <p className="text-xs text-muted-foreground">
-              가입 {new Date(profile.created_at).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
-              {" · "}상태 {STATUS_LABEL[profile.status]}
-              {" · "}권한 {ROLE_LABEL[profile.role]}
+              가입 {formatJoinedAt(profile.created_at)}
             </p>
           </div>
         </div>
-      </section>
+        <div className="border-t border-border p-5">
+          <p className="mb-3 text-xs font-semibold text-muted-foreground">관리</p>
+          <MemberManagePanel profile={profile} isTopAdmin={isTopAdmin} />
+        </div>
+      </Section>
 
-      {/* 활동 요약 */}
-      <section className="mb-6 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+      {/* ─── 활동 요약 ─── */}
+      <SectionTitle>📊 활동 요약</SectionTitle>
+      <div className="mb-8 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <Stat label="작성 일상" value={`${dailyCount}건`} />
         <Stat label="작성 입양후기" value={`${storiesCount}건`} />
         <Stat
@@ -118,33 +148,17 @@ export default async function AdminMemberDetailPage({
         />
         <Stat
           label="후원 기록완료"
-          value={`${approvedCash.toLocaleString()}원 · 물품 ${approvedGoodsCount}`}
+          value={`${approvedCash.toLocaleString()}원${approvedGoodsCount ? ` · 물품 ${approvedGoodsCount}` : ""}`}
         />
-      </section>
+      </div>
 
-      {/* 권한·상태 관리 */}
-      <section className="mb-8 rounded-lg border border-border bg-card">
-        <p className="border-b border-border/60 px-4 py-2 text-xs font-semibold text-muted-foreground">
-          권한·상태 관리
-        </p>
-        <table className="w-full">
-          <thead className="sr-only">
-            <tr>
-              <th>닉네임</th>
-              <th>상태</th>
-              <th>권한</th>
-              <th>가입일</th>
-              <th>작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            <MemberRowActions profile={profile} isTopAdmin={isTopAdmin} />
-          </tbody>
-        </table>
-      </section>
-
-      {/* 작성 게시글 */}
-      <SectionTitle title="📝 작성 일상" linkLabel={dailyCount > 5 ? `전체 ${dailyCount}건` : undefined} linkHref={`/admin/daily?author=${id}`} />
+      {/* ─── 작성 일상 ─── */}
+      <SectionTitle
+        linkLabel={dailyCount > 5 ? `전체 ${dailyCount}건` : undefined}
+        linkHref={`/admin/daily`}
+      >
+        📝 작성 일상 (최근 5)
+      </SectionTitle>
       {dailyPosts.length === 0 ? (
         <Empty text="작성한 일상이 없습니다." />
       ) : (
@@ -155,15 +169,25 @@ export default async function AdminMemberDetailPage({
                 href={`/admin/daily/${p.id}/edit`}
                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
               >
-                <span className="truncate text-sm font-medium text-foreground">{p.title}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatShortDate(p.posted_at)}</span>
+                <span className="truncate text-sm font-medium text-foreground">
+                  {p.title}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {formatShortDate(p.posted_at)}
+                </span>
               </Link>
             </li>
           ))}
         </ul>
       )}
 
-      <SectionTitle title="🐾 작성 입양후기" linkLabel={storiesCount > 5 ? `전체 ${storiesCount}건` : undefined} linkHref={`/admin/stories?author=${id}`} />
+      {/* ─── 작성 입양후기 ─── */}
+      <SectionTitle
+        linkLabel={storiesCount > 5 ? `전체 ${storiesCount}건` : undefined}
+        linkHref={`/admin/stories`}
+      >
+        🐾 작성 입양후기 (최근 5)
+      </SectionTitle>
       {storiesPosts.length === 0 ? (
         <Empty text="작성한 입양후기가 없습니다." />
       ) : (
@@ -175,20 +199,26 @@ export default async function AdminMemberDetailPage({
                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium text-foreground">{s.title}</span>
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {s.title}
+                  </span>
                   {s.dog && (
-                    <span className="text-[11px] text-primary/80">{s.dog.name}</span>
+                    <span className="text-[11px] text-primary/80">
+                      {s.dog.name}
+                    </span>
                   )}
                 </span>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatShortDate(s.created_at)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {formatShortDate(s.created_at)}
+                </span>
               </Link>
             </li>
           ))}
         </ul>
       )}
 
-      {/* 입양 신청 */}
-      <SectionTitle title="🏠 입양 신청" />
+      {/* ─── 입양 신청 ─── */}
+      <SectionTitle>🏠 입양 신청</SectionTitle>
       {apps.adoption.length === 0 ? (
         <Empty text="입양 신청 내역이 없습니다." />
       ) : (
@@ -200,7 +230,9 @@ export default async function AdminMemberDetailPage({
                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <Badge className={cn("border-0 text-[10px]", appStatusClass(a.status))}>
+                  <Badge
+                    className={cn("border-0 text-[10px]", appStatusClass(a.status))}
+                  >
                     {a.status}
                   </Badge>
                   <span className="truncate text-sm text-foreground">
@@ -218,8 +250,8 @@ export default async function AdminMemberDetailPage({
         </ul>
       )}
 
-      {/* 봉사 신청 */}
-      <SectionTitle title="🤝 봉사 신청" />
+      {/* ─── 봉사 신청 ─── */}
+      <SectionTitle>🤝 봉사 신청</SectionTitle>
       {apps.volunteer.length === 0 ? (
         <Empty text="봉사 신청 내역이 없습니다." />
       ) : (
@@ -231,7 +263,9 @@ export default async function AdminMemberDetailPage({
                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <Badge className={cn("border-0 text-[10px]", appStatusClass(v.status))}>
+                  <Badge
+                    className={cn("border-0 text-[10px]", appStatusClass(v.status))}
+                  >
                     {v.status}
                   </Badge>
                   <span className="truncate text-sm text-foreground">
@@ -247,8 +281,8 @@ export default async function AdminMemberDetailPage({
         </ul>
       )}
 
-      {/* 후원 내역 */}
-      <SectionTitle title="💰 후원 내역" linkLabel={donations.length > 0 ? "어드민 후원관리에서 처리" : undefined} linkHref="/admin/donations" />
+      {/* ─── 후원 내역 ─── */}
+      <SectionTitle>💰 후원 내역</SectionTitle>
       {donations.length === 0 ? (
         <Empty text="후원 내역이 없습니다." />
       ) : (
@@ -264,7 +298,9 @@ export default async function AdminMemberDetailPage({
                   <span className="truncate text-sm text-foreground">
                     {d.type === "cash"
                       ? `${(d.amount ?? 0).toLocaleString()}원`
-                      : [d.item_description, d.item_quantity].filter(Boolean).join(" · ")}
+                      : [d.item_description, d.item_quantity]
+                          .filter(Boolean)
+                          .join(" · ")}
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
@@ -279,32 +315,49 @@ export default async function AdminMemberDetailPage({
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 truncate text-base font-bold text-foreground">{value}</p>
-    </div>
+    <section className="mb-8 overflow-hidden rounded-lg border border-border bg-card">
+      <p className="border-b border-border bg-secondary/40 px-5 py-2.5 text-xs font-semibold text-muted-foreground">
+        {title}
+      </p>
+      {children}
+    </section>
   )
 }
 
 function SectionTitle({
-  title,
+  children,
   linkLabel,
   linkHref,
 }: {
-  title: string
+  children: React.ReactNode
   linkLabel?: string
   linkHref?: string
 }) {
   return (
     <div className="mb-2 flex items-end justify-between">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{children}</h2>
       {linkLabel && linkHref && (
         <Link href={linkHref} className="text-xs text-primary hover:underline">
           {linkLabel} →
         </Link>
       )}
+    </div>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 truncate text-base font-bold text-foreground">{value}</p>
     </div>
   )
 }
