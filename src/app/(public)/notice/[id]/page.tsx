@@ -6,7 +6,6 @@ import { Pin } from "lucide-react"
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
 import { CommentSection } from "@/features/comments"
 import { RoleBadge } from "@/shared/components/role-badge"
-import { ImageLightbox } from "@/shared/components/image-lightbox"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 
 export const revalidate = 60
@@ -79,10 +78,6 @@ export default async function NoticeDetailPage({
       <article>
         <RichTextContent html={notice.content} />
       </article>
-
-      {notice.images && notice.images.length > 0 && (
-        <ImageLightbox images={notice.images} />
-      )}
 
       <CommentSection postType="notice" postId={notice.id} />
     </div>
