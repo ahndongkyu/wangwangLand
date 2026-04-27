@@ -29,6 +29,8 @@ interface Props {
   autoPlayInitial?: boolean
 }
 
+const GAP = 12 // px between slides
+
 export function HeroCarousel({
   slides,
   interval = 5000,
@@ -36,8 +38,29 @@ export function HeroCarousel({
 }: Props) {
   const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(autoPlayInitial)
+  const [slideW, setSlideW] = useState(0)
+  const [leftPad, setLeftPad] = useState(40)
+  const sectionRef = useRef<HTMLElement>(null)
   const touchStartX = useRef<number | null>(null)
   const count = slides.length
+
+  // 컨테이너 폭 측정 → 슬라이드 폭 계산
+  useEffect(() => {
+    function measure() {
+      if (!sectionRef.current) return
+      const w = sectionRef.current.offsetWidth
+      // 슬라이드 폭: 모바일 80%, 데스크탑 78%
+      const sw = Math.round(w * (w < 768 ? 0.80 : 0.78))
+      // 양쪽 대칭 peek: (containerW - slideW) / 2
+      const lp = Math.round((w - sw) / 2)
+      setLeftPad(lp)
+      setSlideW(sw)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (sectionRef.current) ro.observe(sectionRef.current)
+    return () => ro.disconnect()
+  }, [])
 
   const goTo = useCallback(
     (next: number) => setIndex(((next % count) + count) % count),
@@ -75,9 +98,12 @@ export function HeroCarousel({
 
   if (count === 0) return null
 
+  const translateX = slideW ? -(index * (slideW + GAP)) : 0
+
   return (
     <section
-      className="relative min-h-[420px] overflow-hidden md:min-h-[560px]"
+      ref={sectionRef}
+      className="relative overflow-hidden py-4"
       aria-roledescription="carousel"
       aria-label="메인 배너"
       onMouseEnter={() => setPlaying(false)}
@@ -87,111 +113,128 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${index * 100}%)` }}
+        className="flex h-[340px] transition-transform duration-500 ease-out md:h-[480px]"
+        style={{
+          gap: `${GAP}px`,
+          paddingLeft: `${leftPad}px`,
+          transform: `translateX(${translateX}px)`,
+        }}
       >
         {slides.map((slide, i) => (
-          <SlideView key={i} slide={slide} active={i === index} />
+          <div
+            key={i}
+            aria-hidden={i !== index}
+            role="group"
+            aria-roledescription="slide"
+            className="relative flex-shrink-0 overflow-hidden rounded-2xl"
+            style={{
+              width: slideW > 0 ? `${slideW}px` : "80%",
+              transform: i === index ? "scale(1)" : "scale(0.88)",
+              transition: "transform 500ms ease-out",
+              transformOrigin: "center center",
+            }}
+          >
+            <Image
+              src={slide.image}
+              alt=""
+              fill
+              priority={i === 0}
+              sizes="90vw"
+              className="object-cover object-center"
+            />
+
+            {/* 그라디언트 오버레이 */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/60" />
+
+            {/* 텍스트 + CTA */}
+            <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
+              {slide.badge && (
+                <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+                  {slide.badge}
+                </span>
+              )}
+              <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_8px_rgb(0_0_0_/_30%)]">
+                {slide.title}
+              </h1>
+              <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
+                {slide.description}
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <CTALink cta={slide.primary} variant="primary" />
+                {slide.secondary && (
+                  <CTALink cta={slide.secondary} variant="outline" />
+                )}
+              </div>
+            </div>
+
+            {/* 인디케이터 도트 — 슬라이드 내부에 위치 */}
+            {count > 1 && i === index && (
+              <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
+                {slides.map((_, di) => (
+                  <button
+                    key={di}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); goTo(di) }}
+                    aria-label={`${di + 1}번째 슬라이드로 이동`}
+                    aria-current={di === index}
+                    className={cn(
+                      "rounded-full transition-all duration-300",
+                      di === index
+                        ? "h-2 w-6 bg-white shadow-sm"
+                        : "size-2 bg-white/50 hover:bg-white/75"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
-      {count > 1 && (
+      {/* 화살표 — 데스크탑만, 슬라이드 안쪽에 위치 */}
+      {count > 1 && slideW > 0 && (
         <>
-          {/* 화살표 — 모바일 숨김 */}
           <button
             type="button"
             onClick={prev}
             aria-label="이전 슬라이드"
             className={cn(
-              "absolute left-6 z-20 hidden md:flex",
-              "top-[55%] -translate-y-1/2",
-              "size-11 items-center justify-center rounded-2xl",
-              "bg-white/70 shadow-md backdrop-blur-sm",
-              "transition-transform duration-150 hover:scale-110 hover:bg-white/90"
+              "absolute top-1/2 z-20 hidden -translate-y-1/2 md:flex",
+              "size-10 items-center justify-center rounded-full",
+              "border border-white/30 bg-white/15 shadow-xl backdrop-blur-md",
+              "text-white transition-all duration-200 hover:scale-105 hover:bg-white/25"
             )}
+            style={{ left: leftPad + 16 }}
           >
-            <ChevronLeft className="size-5 stroke-[1.5] text-foreground" />
+            <ChevronLeft className="size-5 stroke-[1.5]" />
           </button>
           <button
             type="button"
             onClick={next}
             aria-label="다음 슬라이드"
             className={cn(
-              "absolute right-6 z-20 hidden md:flex",
-              "top-[55%] -translate-y-1/2",
-              "size-11 items-center justify-center rounded-2xl",
-              "bg-white/70 shadow-md backdrop-blur-sm",
-              "transition-transform duration-150 hover:scale-110 hover:bg-white/90"
+              "absolute top-1/2 z-20 hidden -translate-y-1/2 md:flex",
+              "size-10 items-center justify-center rounded-full",
+              "border border-white/30 bg-white/15 shadow-xl backdrop-blur-md",
+              "text-white transition-all duration-200 hover:scale-105 hover:bg-white/25"
             )}
+            style={{ right: leftPad + 16 }}
           >
-            <ChevronRight className="size-5 stroke-[1.5] text-foreground" />
+            <ChevronRight className="size-5 stroke-[1.5]" />
           </button>
-
-          {/* 인디케이터 도트 */}
-          <div className="absolute bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => goTo(i)}
-                aria-label={`${i + 1}번째 슬라이드로 이동`}
-                aria-current={i === index}
-                className={cn(
-                  "rounded-full transition-all duration-300",
-                  i === index
-                    ? "h-2 w-6 bg-white shadow-sm"
-                    : "size-2 bg-white/50 hover:bg-white/75"
-                )}
-              />
-            ))}
-          </div>
         </>
       )}
     </section>
   )
 }
 
-function SlideView({ slide, active }: { slide: HeroSlide; active: boolean }) {
-  return (
-    <div
-      className="relative w-full flex-shrink-0"
-      aria-hidden={!active}
-      role="group"
-      aria-roledescription="slide"
-    >
-      <Image
-        src={slide.image}
-        alt=""
-        fill
-        priority={active}
-        sizes="100vw"
-        className="object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background/30" />
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center px-4 py-20 pb-24 text-center md:px-6 md:py-28 md:pb-32">
-        {slide.badge && (
-          <span className="rounded-full bg-background/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
-            {slide.badge}
-          </span>
-        )}
-        <h1 className="mt-6 text-3xl font-bold leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl [text-shadow:_0_2px_8px_rgb(245_239_228_/_50%)]">
-          {slide.title}
-        </h1>
-        <p className="mt-5 max-w-xl whitespace-pre-line text-base font-medium text-foreground md:text-lg [text-shadow:_0_1px_4px_rgb(245_239_228_/_80%)]">
-          {slide.description}
-        </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <CTALink cta={slide.primary} variant="primary" />
-          {slide.secondary && (
-            <CTALink cta={slide.secondary} variant="outline" />
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CTALink({ cta, variant }: { cta: HeroSlideCTA; variant: "primary" | "outline" }) {
+function CTALink({
+  cta,
+  variant,
+}: {
+  cta: HeroSlideCTA
+  variant: "primary" | "outline"
+}) {
   const className = cn(
     buttonVariants({
       size: "lg",
@@ -201,7 +244,7 @@ function CTALink({ cta, variant }: { cta: HeroSlideCTA; variant: "primary" | "ou
     variant === "primary" &&
       "shadow-lg shadow-primary/30 transition-transform hover:-translate-y-0.5",
     variant === "outline" &&
-      "border-2 bg-background/90 backdrop-blur-sm transition-transform hover:-translate-y-0.5"
+      "border-2 bg-white/80 backdrop-blur-sm transition-transform hover:-translate-y-0.5"
   )
 
   if (cta.external) {
