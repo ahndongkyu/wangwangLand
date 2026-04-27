@@ -64,11 +64,13 @@ export type ProfileSort = "name" | "joined" | "status"
 export async function listProfiles({
   status,
   sort = "status",
+  query: searchQuery,
   limit = 30,
   offset = 0,
 }: {
   status?: Profile["status"]
   sort?: ProfileSort
+  query?: string
   limit?: number
   offset?: number
 } = {}): Promise<PaginatedProfiles> {
@@ -89,11 +91,17 @@ export async function listProfiles({
       .order("created_at", { ascending: false })
   }
 
-  query = query.range(offset, offset + limit - 1)
-
   if (status) {
     query = query.eq("status", status)
   }
+
+  if (searchQuery && searchQuery.trim()) {
+    const term = searchQuery.trim().replace(/[%,]/g, "")
+    // 닉네임 또는 핸드폰번호 부분 일치
+    query = query.or(`nickname.ilike.%${term}%,phone.ilike.%${term}%`)
+  }
+
+  query = query.range(offset, offset + limit - 1)
 
   const { data, count, error } = await query
   if (error) {

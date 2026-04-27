@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
-import { User } from "lucide-react"
 
 import { listProfiles } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { RoleBadge } from "@/shared/components/role-badge"
+import { SearchBox } from "@/shared/components/search-box"
 import { cn } from "@/shared/lib/utils"
 import type { Profile } from "@/features/members"
 
@@ -35,10 +34,10 @@ const STATUS_COLOR: Record<Profile["status"], string> = {
 }
 
 // 헤더와 행이 공유하는 grid 정의
-//   sm 이상: 번호 / 닉네임 / 핸드폰 / 상태 / 권한 / 가입일
+//   sm 이상: 번호 / 닉네임 / 상태 / 권한 / 가입일
 //   sm 미만: 번호 / 닉네임 / 가입일
 const ROW_GRID =
-  "grid grid-cols-[48px_1fr_84px] sm:grid-cols-[48px_minmax(0,1fr)_140px_72px_84px_84px] gap-3 items-center"
+  "grid grid-cols-[48px_1fr_84px] sm:grid-cols-[48px_minmax(0,1fr)_72px_84px_84px] gap-3 items-center"
 
 export default async function AdminMembersPage({
   searchParams,
@@ -49,12 +48,14 @@ export default async function AdminMembersPage({
   const filterStatus = (params.status ?? "") as Profile["status"] | ""
   const sortRaw = (params.sort ?? "status") as string
   const sort: SortValue = (SORT_OPTIONS.find((o) => o.value === sortRaw)?.value ?? "status") as SortValue
+  const activeQuery = (params.q ?? "").trim()
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
   const { profiles, total } = await listProfiles({
     status: filterStatus || undefined,
     sort,
+    query: activeQuery || undefined,
     limit: PAGE_SIZE,
     offset,
   })
@@ -67,6 +68,7 @@ export default async function AdminMembersPage({
     const so = next.sort ?? sort
     if (s) sp.set("status", s)
     if (so && so !== "status") sp.set("sort", so)
+    if (activeQuery) sp.set("q", activeQuery)
     const qs = sp.toString()
     return qs ? `/admin/members?${qs}` : "/admin/members"
   }
@@ -120,18 +122,23 @@ export default async function AdminMembersPage({
         ))}
       </div>
 
+      {/* 검색 */}
+      <div className="mb-4 max-w-md">
+        <SearchBox placeholder="닉네임 또는 핸드폰번호로 검색" />
+      </div>
+
       {profiles.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          해당하는 회원이 없습니다.
+          {activeQuery
+            ? `'${activeQuery}' 검색 결과가 없습니다.`
+            : "해당하는 회원이 없습니다."}
         </div>
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            {/* 헤더 — 행과 동일한 grid 사용 */}
             <div className={cn(ROW_GRID, "border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground")}>
               <span className="text-center">번호</span>
               <span>닉네임</span>
-              <span className="hidden sm:block">핸드폰</span>
               <span className="hidden sm:block">상태</span>
               <span className="hidden sm:block">권한</span>
               <span className="text-right">가입일</span>
@@ -148,29 +155,15 @@ export default async function AdminMembersPage({
                       <span className="text-center text-xs text-muted-foreground">{num}</span>
 
                       {/* 닉네임 */}
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-                          {p.avatar_url ? (
-                            <Image src={p.avatar_url} alt={p.nickname} fill className="object-cover" />
-                          ) : (
-                            <User className="size-full p-1.5 text-muted-foreground" />
-                          )}
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {p.nickname}
                         </span>
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          <span className="truncate text-sm font-medium text-foreground">
-                            {p.nickname}
+                        {p.is_banned && (
+                          <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                            차단
                           </span>
-                          {p.is_banned && (
-                            <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                              차단
-                            </span>
-                          )}
-                        </span>
-                      </span>
-
-                      {/* 핸드폰 */}
-                      <span className="hidden truncate text-xs text-muted-foreground sm:block">
-                        {p.phone ?? "—"}
+                        )}
                       </span>
 
                       {/* 상태 */}
@@ -212,6 +205,7 @@ export default async function AdminMembersPage({
             searchParams={{
               status: filterStatus || undefined,
               sort: sort !== "status" ? sort : undefined,
+              q: activeQuery || undefined,
             }}
           />
         </>
