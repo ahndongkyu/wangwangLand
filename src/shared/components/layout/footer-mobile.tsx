@@ -39,7 +39,7 @@ export function MobileFooter() {
       </div>
 
       {/* 주소 박스 */}
-      <div className="mb-3 rounded-[10px] border-[0.5px] border-transparent bg-white p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
+      <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
         <div className="flex items-start gap-2">
           <PinIcon />
           <div className="text-xs leading-relaxed">
@@ -54,7 +54,7 @@ export function MobileFooter() {
       </div>
 
       {/* 계좌 후원 */}
-      <div className="mb-3 rounded-[10px] border-[0.5px] border-transparent bg-white p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
+      <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
             계좌 후원
@@ -74,52 +74,13 @@ export function MobileFooter() {
         </div>
       </div>
 
-      {/* SNS */}
-      {(SITE.sns.naverCafe || SITE.sns.instagram || SITE.sns.youtube) && (
-        <div className="mb-3 grid grid-cols-2 gap-2.5">
-          {SITE.sns.naverCafe && (
-            <a
-              href={SITE.sns.naverCafe}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-transparent bg-white py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
-            >
-              <NaverIcon />
-              네이버 카페
-            </a>
-          )}
-          {SITE.sns.instagram && (
-            <a
-              href={SITE.sns.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-transparent bg-white py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
-            >
-              <InstagramIcon />
-              인스타그램
-            </a>
-          )}
-          {SITE.sns.youtube && (
-            <a
-              href={SITE.sns.youtube}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-transparent bg-white py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
-            >
-              <YouTubeIcon />
-              유튜브
-            </a>
-          )}
-        </div>
-      )}
-
       {/* 메인 링크 4개 */}
       <div className="mb-3 grid grid-cols-2 gap-2">
         {MOBILE_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="flex items-center justify-center rounded-lg border-[0.5px] border-transparent bg-white py-2.5 text-[11px] font-medium text-[#5F5048] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+            className="flex items-center justify-center rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#5F5048] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
           >
             {link.label} →
           </Link>
@@ -128,7 +89,7 @@ export function MobileFooter() {
 
       {/* 연락처 (번호 있을 때만) */}
       {phones.length > 0 && (
-        <div className="mb-3 rounded-[10px] border-[0.5px] border-transparent bg-white p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
+        <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
           <p className="mb-1.5 text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
             연락처
           </p>
@@ -148,6 +109,45 @@ export function MobileFooter() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* SNS */}
+      {(SITE.sns.naverCafe || SITE.sns.instagram || SITE.sns.youtube) && (
+        <div className="mb-3 grid grid-cols-2 gap-2.5">
+          {SITE.sns.naverCafe && (
+            <a
+              href={SITE.sns.naverCafe}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+            >
+              <NaverIcon />
+              네이버 카페
+            </a>
+          )}
+          {SITE.sns.instagram && (
+            <a
+              href={SITE.sns.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+            >
+              <InstagramIcon />
+              인스타그램
+            </a>
+          )}
+          {SITE.sns.youtube && (
+            <a
+              href={SITE.sns.youtube}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+            >
+              <YouTubeIcon />
+              유튜브
+            </a>
+          )}
         </div>
       )}
 
