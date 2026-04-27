@@ -5,7 +5,7 @@ import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogsForHome } from "@/features/dogs"
 import { listNotices } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
-import { Pin } from "lucide-react"
+import { Heart, Pin } from "lucide-react"
 import {
   BrandIcon,
   type BrandIconName,
@@ -18,6 +18,7 @@ import {
 import { OrganizationJsonLd } from "@/shared/components/structured-data"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
+import { formatShortDate } from "@/shared/lib/utils"
 import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
 
@@ -96,7 +97,10 @@ export default async function HomePage() {
             >
               <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
               <span className="pointer-events-none absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-white/10" />
-              <BrandIcon name="heart" size={28} decorative className="md:size-9" />
+              <Heart
+                className="relative z-10 size-7 fill-white text-white drop-shadow md:size-9"
+                aria-hidden
+              />
               <span className="relative z-10 mt-2 text-sm font-bold leading-tight md:mt-3 md:text-lg">후원하기</span>
               <span className="relative z-10 mt-1 text-[10px] text-white/80 md:text-xs">소중한 생명을 지켜주세요</span>
             </Link>
@@ -252,23 +256,22 @@ export default async function HomePage() {
               {recentNotices.map((n) => (
                 <li
                   key={n.id}
-                  className="border-b border-border last:border-0"
+                  className={`border-b border-border last:border-0 ${
+                    n.is_pinned ? "bg-primary/5" : ""
+                  }`}
                 >
                   <Link
                     href={`/notice/${n.id}`}
-                    className="grid grid-cols-[16px_1fr_auto] items-center gap-3 px-5 py-5 transition-colors hover:bg-secondary/40"
+                    className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-secondary/50"
                   >
-                    <span className="flex items-center justify-center">
-                      {n.is_pinned && (
-                        <Pin className="size-3.5 text-primary" aria-label="상단고정" />
-                      )}
-                    </span>
-                    <span className="truncate font-medium text-foreground">
+                    {n.is_pinned && (
+                      <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
+                    )}
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                       {n.title}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {n.published_at &&
-                        new Date(n.published_at).toLocaleDateString("ko-KR")}
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {n.published_at && formatShortDate(n.published_at)}
                     </span>
                   </Link>
                 </li>
