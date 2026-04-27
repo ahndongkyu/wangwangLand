@@ -8,13 +8,23 @@ export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 30
 
+const SORT_OPTIONS = [
+  { label: "상태순", value: "status" },
+  { label: "이름순", value: "name" },
+  { label: "가입순", value: "joined" },
+] as const
+
+type SortValue = (typeof SORT_OPTIONS)[number]["value"]
+
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string; q?: string }>
+  searchParams: Promise<{ status?: string; page?: string; q?: string; sort?: string }>
 }) {
   const params = await searchParams
   const filterStatus = (params.status ?? "") as "pending" | "approved" | "rejected" | ""
+  const sortRaw = (params.sort ?? "status") as string
+  const sort: SortValue = (SORT_OPTIONS.find((o) => o.value === sortRaw)?.value ?? "status") as SortValue
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
@@ -23,13 +33,22 @@ export default async function AdminMembersPage({
 
   const { profiles, total } = await listProfiles({
     status: filterStatus || undefined,
+    sort,
     limit: PAGE_SIZE,
     offset,
   })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const filterHref = (s: string) =>
-    s ? `/admin/members?status=${s}` : "/admin/members"
+
+  function buildHref(next: { status?: string; sort?: string }) {
+    const sp = new URLSearchParams()
+    const s = next.status ?? filterStatus
+    const so = next.sort ?? sort
+    if (s) sp.set("status", s)
+    if (so && so !== "status") sp.set("sort", so)
+    const qs = sp.toString()
+    return qs ? `/admin/members?${qs}` : "/admin/members"
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -41,7 +60,7 @@ export default async function AdminMembersPage({
       </header>
 
       {/* 상태 필터 */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         {[
           { label: "전체", value: "" },
           { label: "대기", value: "pending" },
@@ -50,7 +69,7 @@ export default async function AdminMembersPage({
         ].map((f) => (
           <a
             key={f.value}
-            href={filterHref(f.value)}
+            href={buildHref({ status: f.value })}
             className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
               filterStatus === f.value
                 ? "bg-primary text-primary-foreground"
@@ -62,6 +81,24 @@ export default async function AdminMembersPage({
         ))}
       </div>
 
+      {/* 정렬 */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-muted-foreground">정렬</span>
+        {SORT_OPTIONS.map((o) => (
+          <a
+            key={o.value}
+            href={buildHref({ sort: o.value })}
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+              sort === o.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </a>
+        ))}
+      </div>
+
       {profiles.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
           해당하는 회원이 없습니다.
@@ -69,9 +106,10 @@ export default async function AdminMembersPage({
       ) : (
         <>
           <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[480px]">
+            <table className="w-full min-w-[560px]">
               <thead className="border-b border-border bg-secondary/40 text-left text-sm">
                 <tr>
+                  <th className="px-4 py-3 text-center font-semibold w-14">번호</th>
                   <th className="px-4 py-3 font-semibold">닉네임</th>
                   <th className="px-4 py-3 font-semibold">상태</th>
                   <th className="hidden px-4 py-3 font-semibold md:table-cell">권한</th>
@@ -80,8 +118,13 @@ export default async function AdminMembersPage({
                 </tr>
               </thead>
               <tbody>
-                {profiles.map((p) => (
-                  <MemberRowActions key={p.id} profile={p} isTopAdmin={isTopAdmin} />
+                {profiles.map((p, i) => (
+                  <MemberRowActions
+                    key={p.id}
+                    profile={p}
+                    isTopAdmin={isTopAdmin}
+                    num={total - offset - i}
+                  />
                 ))}
               </tbody>
             </table>
@@ -91,7 +134,10 @@ export default async function AdminMembersPage({
             currentPage={pageNum}
             totalPages={totalPages}
             basePath="/admin/members"
-            searchParams={{ status: filterStatus || undefined }}
+            searchParams={{
+              status: filterStatus || undefined,
+              sort: sort !== "status" ? sort : undefined,
+            }}
           />
         </>
       )}

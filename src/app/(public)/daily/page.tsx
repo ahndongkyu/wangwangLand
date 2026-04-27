@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 20
 
 export default async function DailyPage({
   searchParams,
@@ -36,7 +36,7 @@ export default async function DailyPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">
@@ -62,7 +62,7 @@ export default async function DailyPage({
         </div>
       </header>
 
-      <div className="mb-8 max-w-md">
+      <div className="mb-6 max-w-md">
         <SearchBox placeholder="제목으로 검색" />
       </div>
 
@@ -75,7 +75,7 @@ export default async function DailyPage({
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-card">
           {/* 헤더 */}
-          <div className="grid grid-cols-[56px_1fr_auto_80px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+          <div className="grid grid-cols-[48px_1fr_auto_72px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
             <span className="text-center">번호</span>
             <span>제목</span>
             <span className="hidden sm:block">작성자</span>
@@ -88,7 +88,7 @@ export default async function DailyPage({
                 <li key={post.id}>
                   <Link
                     href={`/daily/${post.id}`}
-                    className="grid grid-cols-[56px_1fr_auto_80px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                    className="grid grid-cols-[48px_1fr_auto_72px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
                   >
                     <span className="text-center text-xs text-muted-foreground">{num}</span>
                     <span className="flex items-center gap-2 truncate">

@@ -30,12 +30,16 @@ export interface PaginatedProfiles {
   total: number
 }
 
+export type ProfileSort = "name" | "joined" | "status"
+
 export async function listProfiles({
   status,
+  sort = "status",
   limit = 30,
   offset = 0,
 }: {
   status?: Profile["status"]
+  sort?: ProfileSort
   limit?: number
   offset?: number
 } = {}): Promise<PaginatedProfiles> {
@@ -44,9 +48,19 @@ export async function listProfiles({
   let query = supabase
     .from("profiles")
     .select("id, nickname, avatar_url, role, status, is_banned, created_at", { count: "exact" })
-    .order("status", { ascending: true }) // pending 먼저
-    .order("created_at", { ascending: false })
-    .range(offset, offset + limit - 1)
+
+  if (sort === "name") {
+    query = query.order("nickname", { ascending: true })
+  } else if (sort === "joined") {
+    query = query.order("created_at", { ascending: false })
+  } else {
+    // status: pending 먼저, 그 다음 가입일 최신순
+    query = query
+      .order("status", { ascending: true })
+      .order("created_at", { ascending: false })
+  }
+
+  query = query.range(offset, offset + limit - 1)
 
   if (status) {
     query = query.eq("status", status)

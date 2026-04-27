@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { Pin } from "lucide-react"
 
-import { getCurrentAdmin } from "@/features/auth"
-import { listNotices, NoticeRowActions } from "@/features/notices"
+import { listNotices } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
@@ -23,16 +22,12 @@ export default async function AdminNoticesPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const [me, { notices, total }] = await Promise.all([
-    getCurrentAdmin(),
-    listNotices({
-      includeDrafts: true,
-      query: activeQuery || undefined,
-      limit: PAGE_SIZE,
-      offset,
-    }),
-  ])
-  const canDelete = !!me
+  const { notices, total } = await listNotices({
+    includeDrafts: true,
+    query: activeQuery || undefined,
+    limit: PAGE_SIZE,
+    offset,
+  })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
@@ -64,57 +59,53 @@ export default async function AdminNoticesPage({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full min-w-[480px]">
-              <thead className="border-b border-border bg-secondary/40 text-left text-sm">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">제목</th>
-                  <th className="px-4 py-3 font-semibold">상태</th>
-                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                    발행일
-                  </th>
-                  <th className="px-4 py-3 text-right font-semibold">작업</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notices.map((n) => (
-                  <tr
-                    key={n.id}
-                    className="border-b border-border last:border-0"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="grid grid-cols-[56px_1fr_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+              <span className="text-center">번호</span>
+              <span>제목</span>
+              <span className="hidden sm:block">상태</span>
+              <span className="text-right">발행일</span>
+            </div>
+            <ul className="divide-y divide-border">
+              {notices.map((n, i) => {
+                const num = total - offset - i
+                return (
+                  <li key={n.id}>
+                    <Link
+                      href={`/admin/notices/${n.id}/edit`}
+                      className="grid grid-cols-[56px_1fr_auto_90px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                    >
+                      <span className="text-center text-xs text-muted-foreground">{num}</span>
+                      <span className="flex min-w-0 items-center gap-2">
                         {n.is_pinned && (
-                          <Pin className="size-3.5 text-primary" aria-label="상단고정" />
+                          <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
                         )}
-                        <span className="font-medium">{n.title}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {n.published_at ? (
-                        <Badge className="border-0 bg-primary/15 text-primary">
-                          공개
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">임시저장</Badge>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                      {n.published_at
-                        ? new Date(n.published_at).toLocaleDateString("ko-KR")
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <NoticeRowActions
-                        id={n.id}
-                        title={n.title}
-                        canDelete={canDelete}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {n.title}
+                        </span>
+                      </span>
+                      <span className="hidden sm:block">
+                        {n.published_at ? (
+                          <Badge className="border-0 bg-primary/15 text-primary">
+                            공개
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">임시저장</Badge>
+                        )}
+                      </span>
+                      <span className="text-right text-xs text-muted-foreground">
+                        {n.published_at
+                          ? new Date(n.published_at).toLocaleDateString("ko-KR", {
+                              month: "2-digit",
+                              day: "2-digit",
+                            })
+                          : "-"}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
 
           <Pagination

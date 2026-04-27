@@ -31,9 +31,11 @@ const ROLE_LABEL: Record<Profile["role"], string> = {
 export function MemberRowActions({
   profile,
   isTopAdmin = false,
+  num,
 }: {
   profile: Profile
   isTopAdmin?: boolean
+  num?: number
 }) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -112,6 +114,12 @@ export function MemberRowActions({
 
   return (
     <tr className={cn("border-b border-border last:border-0", isBanned && "opacity-60")}>
+      {/* 번호 */}
+      {num !== undefined && (
+        <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+          {num}
+        </td>
+      )}
       {/* 닉네임 */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">

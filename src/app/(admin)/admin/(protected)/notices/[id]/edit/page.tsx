@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { getNotice, NoticeForm } from "@/features/notices"
+import { getNotice, NoticeForm, NoticeDeleteButton } from "@/features/notices"
 
 export const dynamic = "force-dynamic"
 
@@ -22,10 +22,11 @@ export default async function AdminNoticeEditPage({
           ← 공지 목록
         </Link>
       </nav>
-      <header className="mb-6">
+      <header className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           공지 수정
         </h1>
+        <NoticeDeleteButton id={id} title={notice.title} redirectTo="/admin/notices" />
       </header>
       <NoticeForm notice={notice} />
     </div>
