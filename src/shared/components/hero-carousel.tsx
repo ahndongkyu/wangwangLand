@@ -151,7 +151,7 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex h-[340px] md:h-[480px]"
+        className="flex h-[260px] sm:h-[320px] md:h-[480px]"
         style={{
           gap: `${GAP}px`,
           paddingLeft: `${leftPad}px`,
@@ -183,7 +183,7 @@ export function HeroCarousel({
                 sizes="90vw"
                 className="object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/30 to-black/60" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
 
               {/* 텍스트 + CTA */}
               <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
@@ -192,7 +192,7 @@ export function HeroCarousel({
                     {slide.badge}
                   </span>
                 )}
-                <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_8px_rgb(0_0_0_/_30%)]">
+                <h1 className="mt-4 text-xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_12px_rgb(0_0_0_/_60%)]">
                   {slide.title}
                 </h1>
                 <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">

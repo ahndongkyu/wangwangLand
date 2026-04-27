@@ -119,13 +119,15 @@ export function AdminHeader({
 
       {/* 모바일 네비 */}
       <nav className="md:hidden">
-        <ul className="flex overflow-x-auto border-t border-border px-2 py-2 text-sm">
+        <ul className="flex overflow-x-auto border-t border-border px-2 py-1.5 text-sm gap-1">
           <li className="flex-shrink-0">
             <Link
               href="/admin"
               className={cn(
-                "rounded-md px-3 py-1.5 font-medium",
-                pathname === "/admin" ? "text-primary" : "text-foreground/70"
+                "inline-flex items-center rounded-lg px-3 py-2 font-medium transition-colors",
+                pathname === "/admin"
+                  ? "bg-primary/10 text-primary"
+                  : "text-foreground/70 hover:bg-secondary"
               )}
             >
               대시보드
@@ -136,8 +138,10 @@ export function AdminHeader({
               <Link
                 href={item.href}
                 className={cn(
-                  "rounded-md px-3 py-1.5 font-medium",
-                  isActive(item.href) ? "text-primary" : "text-foreground/70"
+                  "inline-flex items-center rounded-lg px-3 py-2 font-medium transition-colors",
+                  isActive(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/70 hover:bg-secondary"
                 )}
               >
                 {item.label}

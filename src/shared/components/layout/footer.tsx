@@ -21,7 +21,7 @@ export function Footer() {
       {/* 0) 통합 후원 CTA 카드 */}
       <section className="border-b border-border/60 px-4 py-10 md:px-6 md:py-12">
         <div
-          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-8 py-9 md:px-12 md:py-10
+          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-10
             bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)]
             dark:bg-[linear-gradient(135deg,#3D2815_0%,#2D1F12_100%)]"
         >
@@ -30,7 +30,7 @@ export function Footer() {
           <span className="pointer-events-none absolute right-20 top-7 size-12 rounded-full bg-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.15)]" />
 
           {/* 좌우 분할: 모바일 1단 → 데스크탑 2단 */}
-          <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-[1.1fr_1fr] md:items-center md:gap-8">
+          <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.3fr] md:items-center md:gap-10">
 
             {/* 왼쪽: 라벨 + 헤드라인 + 설명 */}
             <div className="self-center">
@@ -43,7 +43,7 @@ export function Footer() {
                 함께해 주세요
               </span>
               <h3
-                className="mt-4 text-2xl font-bold leading-snug md:text-3xl
+                className="mt-4 text-xl font-bold leading-snug md:text-3xl
                   text-[#2C2C2A] dark:text-[#F5EDE0]"
               >
                 한 그릇의 사료가<br />한 생명을 살립니다
@@ -65,7 +65,7 @@ export function Footer() {
                   bg-white shadow-[0_2px_8px_rgba(60,40,20,0.04)]
                   dark:bg-black/25 dark:shadow-none"
               >
-                <div className="mb-2.5 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="text-[11px] font-medium tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
                     계좌 후원
                   </span>
@@ -73,16 +73,16 @@ export function Footer() {
                     예금주 · {d.accountHolder}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <span
-                    className="shrink-0 rounded-md px-2.5 py-1 text-[11px] font-medium
+                    className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium
                       bg-[#FAF3E8] text-[#6B5D4F]
                       dark:bg-[rgba(255,212,161,0.1)] dark:text-[#FFD4A1]"
                   >
                     {d.bankName}
                   </span>
                   <span
-                    className="flex-1 font-mono text-[15px] font-semibold tracking-wide
+                    className="min-w-0 flex-1 truncate font-mono text-[13px] font-semibold tracking-wide sm:text-[15px]
                       text-[#2C2C2A] dark:text-[#F5EDE0]"
                   >
                     {d.accountNumber}
@@ -92,7 +92,7 @@ export function Footer() {
               </div>
 
               {/* 버튼 2개 */}
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <Link
                   href="/donate"
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl py-3.5 text-sm font-semibold transition-all hover:-translate-y-px
@@ -120,7 +120,7 @@ export function Footer() {
 
       {/* 2) 메인 그리드 — 4열: 브랜드 / 아이들 만나기 / 함께하기 / 정보 */}
       <div className="mx-auto w-full max-w-6xl px-4 py-12 md:px-6">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-8">
           {/* 브랜드 */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2">

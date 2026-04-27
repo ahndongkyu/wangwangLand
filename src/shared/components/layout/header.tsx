@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, ClipboardList, LogOut, Menu as MenuIcon, Moon, Settings, Sun, User } from "lucide-react"
+import { ChevronDown, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
@@ -33,6 +33,7 @@ import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/components/ui/button"
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -68,11 +69,11 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             alt={`${SITE.name} 로고`}
             width={52}
             height={52}
-            className="size-12 rounded-full md:size-13"
+            className="size-10 rounded-full md:size-13"
             priority
           />
           <div className="flex flex-col leading-tight">
-            <span className="text-xl font-bold tracking-tight text-foreground">
+            <span className="text-lg font-bold tracking-tight text-foreground md:text-xl">
               {SITE.name}
             </span>
             <span className="hidden text-xs text-muted-foreground sm:inline">
@@ -128,7 +129,9 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             <UserMenu profile={profile} />
           ) : (
             <>
-              <ThemeToggle />
+              <span className="hidden md:inline-flex">
+                <ThemeToggle />
+              </span>
               <Link
                 href="/login"
                 className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}
@@ -152,48 +155,102 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             >
               <MenuIcon className="size-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 flex flex-col p-0">
+            <SheetContent
+              side="right"
+              showCloseButton={false}
+              className="w-[min(320px,85vw)] flex flex-col p-0 bg-white dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+            >
               <SheetHeader className="sr-only">
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
 
-              {/* 프로필 섹션 */}
+              {/* ── 드로어 헤더 ── */}
+              <div className="flex items-center justify-between border-b border-[#E5DDD0] px-4 py-3.5 dark:border-[#3A3229]">
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={SITE.logo}
+                    alt={`${SITE.name} 로고`}
+                    width={28}
+                    height={28}
+                    className="size-7 rounded-full"
+                  />
+                  <span className="text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                    {SITE.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <MobileThemeToggle />
+                  <SheetClose
+                    render={
+                      <button
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
+                        aria-label="메뉴 닫기"
+                      />
+                    }
+                  >
+                    <X className="size-4" />
+                  </SheetClose>
+                </div>
+              </div>
+
+              {/* ── 로그인 / 프로필 영역 ── */}
               <MobileProfileSection profile={profile} onClose={() => setMobileOpen(false)} />
 
-              {/* 구분선 */}
-              <div className="mx-4 border-t border-border" />
+              {/* ── 메뉴 그룹 ── */}
+              <nav className="flex-1 overflow-y-auto py-2">
+                <MobileNavGroup label="아이들 만나기">
+                  <MobileNavItem href="/dogs" icon="dog" label="강아지" isActive={isActive("/dogs")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/cats" icon="paw" label="고양이" isActive={isActive("/cats")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/stories" icon="heart" label="입양 후기" isActive={isActive("/stories")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/daily" icon="camera" label="일상" isActive={isActive("/daily")} onClose={() => setMobileOpen(false)} />
+                </MobileNavGroup>
 
-              {/* 네비 메뉴 */}
-              <nav className="flex-1 overflow-y-auto py-3">
-                <div className="flex flex-col gap-0.5 px-3">
-                  {MAIN_NAV.map((item) => {
-                    const icon = MOBILE_NAV_ICONS[item.href]
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2.5 text-base font-medium transition-colors",
-                          isActive(item.href)
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground/80 hover:bg-secondary"
-                        )}
-                      >
-                        {icon && (
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                            <BrandIcon name={icon} size={22} decorative />
-                          </span>
-                        )}
-                        <span className="flex-1">{item.label}</span>
-                        {item.href === "/notice" && (
-                          <NoticeBadge notices={recentNotices} />
-                        )}
-                      </Link>
-                    )
-                  })}
-                </div>
+                <MobileDivider />
+
+                <MobileNavGroup label="참여하기">
+                  <MobileNavItem href="/volunteer" icon="volunteer" label="봉사 신청" isActive={isActive("/volunteer")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/donate" icon="heart" label="후원하기" isActive={isActive("/donate")} onClose={() => setMobileOpen(false)} highlighted />
+                </MobileNavGroup>
+
+                <MobileDivider />
+
+                <MobileNavGroup label="정보">
+                  <MobileNavItem href="/about" icon="home-shelter" label="센터 소개" isActive={isActive("/about")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/notice" icon="notification" label="공지사항" isActive={isActive("/notice")} onClose={() => setMobileOpen(false)} noticeBadge={recentNotices} />
+                  <MobileNavItem href="/contact" icon={null} label="오시는 길" isActive={isActive("/contact")} onClose={() => setMobileOpen(false)} isLocation />
+                </MobileNavGroup>
               </nav>
+
+              {/* ── 하단 SNS ── */}
+              {(SITE.sns.naverCafe || SITE.sns.instagram) && (
+                <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3 dark:border-[#3A3229] dark:bg-black/20">
+                  <div className="flex gap-2">
+                    {SITE.sns.naverCafe && (
+                      <a
+                        href={SITE.sns.naverCafe}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-white py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                      >
+                        <span className="inline-flex h-[16px] w-[16px] items-center justify-center rounded bg-[#03C75A] text-[9px] font-black text-white">N</span>
+                        네이버 카페
+                      </a>
+                    )}
+                    {SITE.sns.instagram && (
+                      <a
+                        href={SITE.sns.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent bg-white py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                      >
+                        <InstaIcon />
+                        인스타
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </SheetContent>
           </Sheet>
         </div>
@@ -202,17 +259,115 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
   )
 }
 
-const MOBILE_NAV_ICONS: Record<string, BrandIconName> = {
-  "/about": "home-shelter",
-  "/dogs": "dog",
-  "/cats": "paw",
-  "/daily": "camera",
-  "/stories": "heart",
-  "/volunteer": "volunteer",
-  "/donate": "gift",
-  "/notice": "notification",
+/* ─── 모바일 드로어 헬퍼 컴포넌트 ─── */
+
+function MobileThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
+      aria-label="테마 변경"
+    >
+      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </button>
+  )
 }
 
+function MobileNavGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="px-4 py-1">
+      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-[#9B8F80]">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function MobileNavItem({
+  href,
+  icon,
+  label,
+  isActive,
+  onClose,
+  highlighted,
+  badge,
+  noticeBadge,
+  isLocation,
+}: {
+  href: string
+  icon: BrandIconName | null
+  label: string
+  isActive: boolean
+  onClose: () => void
+  highlighted?: boolean
+  badge?: string
+  noticeBadge?: RecentNoticeMeta[]
+  isLocation?: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg px-1 py-2.5 transition-colors",
+        isActive && "bg-primary/8",
+        highlighted
+          ? "bg-[rgba(232,155,94,0.08)]"
+          : !isActive && "hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
+      )}
+    >
+      <span className={cn(
+        "flex h-4 w-4 shrink-0 items-center justify-center",
+        highlighted ? "text-[#C06B2A] dark:text-[#FFD4A1]" : "text-[#C06B2A] dark:text-[#FFD4A1]"
+      )}>
+        {isLocation
+          ? <MapPin className="size-4" />
+          : icon && <BrandIcon name={icon} size={16} decorative />
+        }
+      </span>
+      <span className={cn(
+        "flex-1 text-[13px]",
+        highlighted
+          ? "font-medium text-[#C06B2A] dark:text-[#FFD4A1]"
+          : isActive
+            ? "font-medium text-primary"
+            : "text-[#2C2C2A] dark:text-[#F5EDE0]"
+      )}>
+        {label}
+      </span>
+      {badge && (
+        <span className="rounded-full bg-[#E89B5E] px-1.5 py-0.5 text-[9px] font-semibold text-white dark:text-[#2C2C2A]">
+          {badge}
+        </span>
+      )}
+      {noticeBadge && <NoticeBadge notices={noticeBadge} />}
+      <ChevronRight className="size-3.5 text-[#9B8F80]" />
+    </Link>
+  )
+}
+
+function MobileDivider() {
+  return <div className="mx-4 my-1.5 h-px bg-[#E5DDD0] dark:bg-[#3A3229]" />
+}
+
+function InstaIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <defs>
+        <linearGradient id="drawer-ig" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#F58529" />
+          <stop offset="50%" stopColor="#DD2A7B" />
+          <stop offset="100%" stopColor="#8134AF" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="20" height="20" rx="5" fill="url(#drawer-ig)" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="white" strokeWidth="2" />
+      <circle cx="17.5" cy="6.5" r="1" fill="white" />
+    </svg>
+  )
+}
 
 function MobileProfileSection({
   profile,
@@ -225,95 +380,87 @@ function MobileProfileSection({
   const isDark = resolvedTheme === "dark"
 
   if (!profile) {
-    // 비로그인
     return (
-      <div className="flex flex-col gap-3 px-4 py-5">
-        <p className="text-sm text-muted-foreground">로그인하고 더 많은 기능을 이용하세요</p>
-        <div className="flex items-center gap-2">
+      <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FCE9D9] to-[#F5E1C8] px-4 py-3.5 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.12)] dark:to-[rgba(192,107,42,0.08)]">
+        <p className="mb-2 text-[11px] text-[#6B5D4F] dark:text-[#B8A78F]">
+          로그인하고 관심 아이를 저장해 보세요
+        </p>
+        <div className="flex gap-1.5">
           <Link
             href="/login"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-foreground"
+            className="flex-1 rounded-lg bg-[#E89B5E] py-2 text-center text-xs font-semibold text-white dark:text-[#2C2C2A]"
           >
             로그인
           </Link>
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            className="flex size-10 items-center justify-center rounded-xl border border-border text-foreground/70 hover:bg-secondary"
-            aria-label="테마 전환"
+          <Link
+            href="/signup"
+            onClick={onClose}
+            className="flex-1 rounded-lg border border-[#E89B5E] bg-white py-2 text-center text-xs font-medium text-[#C06B2A] dark:border-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#FFD4A1]"
           >
-            {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
-          </button>
+            회원가입
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-4 py-5">
-      {/* 아바타 + 닉네임 */}
-      <div className="flex items-center gap-3">
-        <div className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+    <div className="border-b border-[#E5DDD0] dark:border-[#3A3229]">
+      {/* 프로필 영역 */}
+      <Link
+        href="/my"
+        onClick={onClose}
+        className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
+      >
+        <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
           {profile.avatar_url ? (
             <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
           ) : (
-            <User className="size-full p-2.5 text-muted-foreground" />
+            <User className="size-full p-2 text-muted-foreground" />
           )}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <RoleBadge role={profile.role} />
-          <p className="mt-0.5 truncate font-semibold text-foreground">{profile.nickname}</p>
+          <p className="truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+            {profile.nickname}
+          </p>
         </div>
-      </div>
+        <span className="text-[11px] font-medium text-[#C06B2A] dark:text-[#FFD4A1]">
+          마이페이지 →
+        </span>
+      </Link>
 
-      {/* 빠른 액션 버튼들 */}
-      <div className="mt-4 flex flex-col gap-1">
+      {/* 빠른 링크 */}
+      <div className="flex border-t border-[#E5DDD0] dark:border-[#3A3229]">
         {(profile.role === "staff" || profile.role === "admin") && (
           <Link
             href="/admin"
             onClick={onClose}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+            className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-primary hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
           >
-            <Settings className="size-4" />
-            어드민 페이지
+            <Settings className="size-3.5" />
+            어드민
           </Link>
         )}
         <Link
-          href="/profile"
-          onClick={onClose}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
-        >
-          <User className="size-4" />
-          프로필 설정
-        </Link>
-        <Link
           href="/my/applications"
           onClick={onClose}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
+          className="flex flex-1 items-center justify-center gap-1.5 border-l border-[#E5DDD0] py-2.5 text-[11px] font-medium text-[#5F5048] hover:bg-[#FAF3E8] dark:border-[#3A3229] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
         >
-          <ClipboardList className="size-4" />
-          나의 신청 내역
+          <ClipboardList className="size-3.5" />
+          신청 내역
         </Link>
-        <button
-          type="button"
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-foreground hover:bg-secondary"
-        >
-          <span className="flex items-center gap-2">
-            {isDark ? <Moon className="size-4" /> : <Sun className="size-4" />}
-            {isDark ? "다크 모드" : "라이트 모드"}
-          </span>
-          <span className="text-xs text-muted-foreground">전환</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => { onClose(); signOut() }}
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
-        >
-          <LogOut className="size-4" />
-          로그아웃
-        </button>
+        <form action={signOut} className="flex flex-1 border-l border-[#E5DDD0] dark:border-[#3A3229]">
+          <button
+            type="submit"
+            onClick={onClose}
+            className="flex w-full items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-destructive hover:bg-destructive/5"
+          >
+            <LogOut className="size-3.5" />
+            로그아웃
+          </button>
+        </form>
       </div>
     </div>
   )

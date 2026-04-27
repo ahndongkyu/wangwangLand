@@ -85,24 +85,24 @@ export default async function HomePage() {
             </p>
           </div>
 
-          {/* 액션 영역: 5열 그리드 */}
-          <div className="grid grid-cols-5 gap-3 md:gap-4">
-            {/* 왼쪽 2열: 메인 후원 CTA */}
+          {/* 액션 영역: 항상 5열 (후원하기 2열 + 버튼 3열) */}
+          <div className="grid grid-cols-5 gap-3">
+            {/* 후원하기 CTA */}
             <Link
               href="/donate"
-              className="relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-4 py-8 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: "linear-gradient(135deg, #E89B6C 0%, #D4855A 100%)" }}
+              className="relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-2 py-5 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5 md:py-8
+                bg-[linear-gradient(135deg,#E89B6C_0%,#D4855A_100%)]
+                dark:bg-[linear-gradient(135deg,#C4784A_0%,#A8623A_100%)]"
             >
-              {/* 데코 원 */}
               <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
               <span className="pointer-events-none absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-white/10" />
-              <BrandIcon name="heart" size={36} decorative />
-              <span className="relative z-10 mt-3 text-lg font-bold leading-tight">후원하기</span>
-              <span className="relative z-10 mt-1 text-xs text-white/80">소중한 생명을 지켜주세요</span>
+              <BrandIcon name="heart" size={28} decorative className="md:size-9" />
+              <span className="relative z-10 mt-2 text-sm font-bold leading-tight md:mt-3 md:text-lg">후원하기</span>
+              <span className="relative z-10 mt-1 text-[10px] text-white/80 md:text-xs">소중한 생명을 지켜주세요</span>
             </Link>
 
-            {/* 오른쪽 3열: 2×2 액션 버튼 */}
-            <div className="col-span-3 grid grid-cols-2 gap-3 md:gap-4">
+            {/* 2×2 버튼 그리드 */}
+            <div className="col-span-3 grid grid-cols-2 gap-2 md:gap-4">
               <MissionActionButton href="/adopt" label="입양 신청" icon="adopted" />
               <MissionActionButton href="/adopt" label="임보 신청" icon="home-shelter" />
               <MissionActionButton href="/volunteer" label="봉사 신청" icon="volunteer" />
@@ -230,7 +230,7 @@ export default async function HomePage() {
       {/* 5. 최근 공지사항 — 푸터 CTA 와의 중복을 피하고 운영 활성도 노출 */}
       {recentNotices.length > 0 && (
         <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-16 md:px-6">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
@@ -326,7 +326,7 @@ export default async function HomePage() {
                 전체 보기 →
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {cats.map((cat) => (
                 <Link
                   key={cat.id}
@@ -364,9 +364,9 @@ function MissionActionButton({
   return (
     <Link
       href={href}
-      className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-background py-5 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
+      className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-2 py-3 text-[11px] font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm md:py-5 md:text-sm"
     >
-      <BrandIcon name={icon} size={28} decorative />
+      <BrandIcon name={icon} size={22} decorative className="md:size-7" />
       {label}
     </Link>
   )
@@ -392,22 +392,22 @@ function CounterCard({
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-card p-6 text-center transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+      className="group rounded-xl border border-border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md md:p-6"
     >
       <div className="flex justify-center">
-        <BrandIcon name={icon} size={48} decorative />
+        <BrandIcon name={icon} size={36} decorative className="md:size-12" />
       </div>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:mt-3 md:text-xs">
         {label}
       </p>
       {showFallback ? (
-        <p className="mt-1 text-2xl font-bold text-primary md:text-3xl">
+        <p className="mt-1 text-xl font-bold text-primary md:text-3xl">
           {fallbackText}
         </p>
       ) : (
-        <p className="mt-1 text-3xl font-bold text-foreground md:text-4xl">
+        <p className="mt-1 text-2xl font-bold text-foreground md:text-4xl">
           <CountUp value={value} />
-          <span className="ml-0.5 text-sm font-medium text-muted-foreground">
+          <span className="ml-0.5 text-xs font-medium text-muted-foreground">
             {suffix}
           </span>
         </p>

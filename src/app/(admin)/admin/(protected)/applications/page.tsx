@@ -256,8 +256,8 @@ export default async function AdminApplicationsPage({
           해당 조건의 신청이 없습니다.
         </div>
       ) : activeType === "adoption" ? (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="w-full min-w-[520px]">
             <thead className="border-b border-border bg-secondary/40 text-left text-sm">
               <tr>
                 <th className="px-4 py-3 font-semibold">신청자</th>
@@ -314,8 +314,8 @@ export default async function AdminApplicationsPage({
           </table>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="w-full min-w-[520px]">
             <thead className="border-b border-border bg-secondary/40 text-left text-sm">
               <tr>
                 <th className="px-4 py-3 font-semibold">신청자</th>

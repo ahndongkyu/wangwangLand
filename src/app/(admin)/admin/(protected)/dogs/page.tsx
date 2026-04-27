@@ -262,8 +262,8 @@ export default async function AdminDogsPage({
             ))}
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <table className="w-full min-w-[480px]">
               <thead className="border-b border-border bg-secondary/40 text-left text-sm">
                 <tr>
                   <th className="px-4 py-3 font-semibold">사진</th>

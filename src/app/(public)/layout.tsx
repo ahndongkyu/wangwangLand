@@ -3,6 +3,7 @@ import { getCurrentProfile } from "@/features/members"
 import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { listMyNotifications, getUnreadCount } from "@/features/notifications/api/queries"
 import { Footer } from "@/shared/components/layout/footer"
+import { MobileFooter } from "@/shared/components/layout/footer-mobile"
 import { Header } from "@/shared/components/layout/header"
 import { MobileCtaBar } from "@/shared/components/mobile-cta-bar"
 import { ScrollButtons } from "@/shared/components/scroll-buttons"
@@ -37,7 +38,8 @@ export default async function PublicLayout({
       />
       {/* 모바일 하단 CTA 바와 겹치지 않도록 main 하단에 padding */}
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
-      <Footer />
+      <div className="md:hidden"><MobileFooter /></div>
+      <div className="hidden md:block"><Footer /></div>
       <ScrollButtons />
       <MobileCtaBar />
     </div>
