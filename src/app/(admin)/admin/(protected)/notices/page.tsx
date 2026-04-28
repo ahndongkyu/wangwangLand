@@ -66,7 +66,7 @@ export default async function AdminNoticesPage({
               <span>제목</span>
               <span className="hidden sm:block">상태</span>
               <span className="hidden sm:block">작성자</span>
-              <span className="text-right">발행일</span>
+              <span className="text-right">작성일</span>
               <span className="text-right">조회</span>
             </div>
             <ul className="divide-y divide-border">
@@ -76,7 +76,7 @@ export default async function AdminNoticesPage({
                   <li key={n.id}>
                     <Link
                       href={`/admin/notices/${n.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_auto_auto_90px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                      className="grid grid-cols-[56px_1fr_64px_140px_72px_56px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/50"
                     >
                       <span className="text-center text-xs text-muted-foreground">{num}</span>
                       <span className="flex min-w-0 items-center gap-2">
@@ -107,7 +107,7 @@ export default async function AdminNoticesPage({
                         )}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
-                        {n.published_at ? formatShortDate(n.published_at) : "-"}
+                        {formatShortDate(n.created_at)}
                       </span>
                       <span className="text-right text-xs text-muted-foreground">
                         {n.view_count}
