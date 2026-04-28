@@ -1,0 +1,118 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { Calendar, MapPin, Users } from "lucide-react"
+
+import {
+  CATEGORY_COLOR,
+  CATEGORY_LABEL,
+  getEventWithMySignup,
+} from "@/features/events"
+import { SignupForm } from "@/features/events/components/signup-form"
+import { formatKoreanDayLabel } from "@/features/events/lib/date"
+import { createClient } from "@/shared/lib/supabase/server"
+import { cn } from "@/shared/lib/utils"
+
+export const dynamic = "force-dynamic"
+
+export default async function EventDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const event = await getEventWithMySignup(id)
+  if (!event) notFound()
+
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const color = CATEGORY_COLOR[event.category]
+  const pastEvent = new Date(event.ends_at) < new Date()
+
+  return (
+    <div className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
+      <nav className="mb-4 text-sm text-muted-foreground">
+        <Link href="/calendar" className="hover:text-foreground">
+          ← 일정 목록
+        </Link>
+      </nav>
+
+      <header className="mb-6">
+        <span
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold",
+            color.soft,
+            color.softText
+          )}
+        >
+          {CATEGORY_LABEL[event.category]}
+        </span>
+        <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
+          {event.title}
+        </h1>
+      </header>
+
+      <section className="mb-6 space-y-2 rounded-lg border border-border bg-card p-5 text-sm">
+        <Row icon={Calendar} label="일시">
+          <span>{formatKoreanDayLabel(event.starts_at, event.all_day)}</span>
+          {!event.all_day && (
+            <span className="text-muted-foreground">
+              {" "}
+              ~ {formatKoreanDayLabel(event.ends_at, false)}
+            </span>
+          )}
+        </Row>
+        {event.location && (
+          <Row icon={MapPin} label="장소">
+            <span>{event.location}</span>
+          </Row>
+        )}
+      </section>
+
+      {event.description && (
+        <section className="mb-6 rounded-lg border border-border bg-card p-5">
+          <h2 className="mb-2 text-sm font-semibold text-foreground">상세 안내</h2>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+            {event.description}
+          </p>
+        </section>
+      )}
+
+      <section>
+        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Users className="size-4 text-muted-foreground" aria-hidden />
+          신청
+        </h2>
+        <SignupForm
+          eventId={event.id}
+          signupEnabled={event.signup_enabled}
+          pastEvent={pastEvent}
+          isLoggedIn={!!session?.user}
+          mySignup={event.my_signup}
+        />
+      </section>
+    </div>
+  )
+}
+
+function Row({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: typeof Calendar
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="flex w-16 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <Icon className="size-3.5" aria-hidden />
+        {label}
+      </span>
+      <span className="min-w-0 flex-1 text-foreground">{children}</span>
+    </div>
+  )
+}

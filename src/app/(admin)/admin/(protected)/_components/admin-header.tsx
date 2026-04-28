@@ -75,6 +75,7 @@ export function AdminHeader({
         { label: "회원 관리", href: "/admin/members" },
         { label: "신청 관리", href: "/admin/applications" },
         { label: "후원 관리", href: "/admin/donations" },
+        { label: "일정 관리", href: "/admin/calendar" },
         ...(isTopAdmin ? [{ label: "운영진 관리", href: "/admin/admins" }] : []),
       ],
     },

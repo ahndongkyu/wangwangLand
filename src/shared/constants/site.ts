@@ -109,6 +109,7 @@ export const HEADER_NAV_GROUPS: ReadonlyArray<
     kind: "group",
     label: "참여",
     items: [
+      { label: "일정", href: "/calendar", desc: "다가오는 봉사·행사", icon: "calendar" },
       { label: "봉사 신청", href: "/volunteer", desc: "매주 봉사자를 기다려요", icon: "volunteer" },
       { label: "후원하기", href: "/donate", desc: "작은 정성이 큰 힘이 됩니다", icon: "gift" },
     ],
