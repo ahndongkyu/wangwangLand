@@ -14,8 +14,7 @@ export interface DonationMutationResult {
 interface DonationInput {
   type: DonationType
   donor_name: string
-  phone: string | null
-  email: string
+  phone: string
   display_name: string | null
   is_anonymous: boolean
   message: string | null
@@ -33,8 +32,7 @@ function parseFormData(formData: FormData): DonationInput {
   return {
     type,
     donor_name: String(formData.get("donor_name") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim() || null,
-    email: String(formData.get("email") ?? "").trim(),
+    phone: String(formData.get("phone") ?? "").trim(),
     display_name: String(formData.get("display_name") ?? "").trim() || null,
     is_anonymous: formData.get("is_anonymous") === "on",
     message: String(formData.get("message") ?? "").trim() || null,
@@ -53,8 +51,8 @@ function parseFormData(formData: FormData): DonationInput {
 
 function validate(input: DonationInput): string | null {
   if (!input.donor_name) return "이름을 입력해주세요."
-  if (!input.email) return "이메일을 입력해주세요."
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) return "올바른 이메일 형식이 아닙니다."
+  if (!input.phone) return "연락처를 입력해주세요."
+  if (!/^[0-9-]{9,}$/.test(input.phone)) return "올바른 연락처 형식이 아닙니다."
   if (!input.donated_at) return "후원 일자를 입력해주세요."
   if (input.type === "cash") {
     if (!input.amount || input.amount <= 0) return "후원 금액을 입력해주세요."
@@ -74,10 +72,13 @@ export async function createDonation(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // 회원이면 카카오 OAuth email 자동 저장 (폼에선 받지 않음).
+  // 비회원은 email = null. 운영진은 phone 으로 연락.
   const { data, error } = await supabase
     .from("donations")
     .insert({
       ...input,
+      email: user?.email ?? null,
       user_id: user?.id ?? null,
     })
     .select("id")
