@@ -61,7 +61,7 @@ export default async function AdminNoticesPage({
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_auto_90px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <div className="grid grid-cols-[56px_1fr_64px_140px_72px_56px] gap-3 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
               <span className="text-center">번호</span>
               <span>제목</span>
               <span className="hidden sm:block">상태</span>
