@@ -199,6 +199,11 @@ export async function listSimilarDogs(
 export async function listDogsForHome(limit = 8): Promise<Dog[]> {
   const supabase = await createClient()
 
+  // 사진 등록된 아이만 노출하기 위해 여유 있게 가져온 후 필터.
+  // (images 가 빈 배열인 row 도 같이 오므로 클라이언트에서 거른다)
+  const fetchLimit = Math.max(limit * 3, 24)
+  const hasImages = (d: Dog) => (d.images ?? []).length > 0
+
   // 고정 먼저
   const { data: pinned } = await supabase
     .from("dogs")
@@ -206,15 +211,15 @@ export async function listDogsForHome(limit = 8): Promise<Dog[]> {
     .eq("is_pinned", true)
     .in("status", ["보호중", "임시보호중"])
     .order("pin_order", { ascending: true, nullsFirst: false })
-    .limit(limit)
+    .limit(fetchLimit)
 
-  const pinnedDogs = (pinned ?? []) as Dog[]
+  const pinnedDogs = ((pinned ?? []) as Dog[]).filter(hasImages)
+
+  if (pinnedDogs.length >= limit) return pinnedDogs.slice(0, limit)
+
   const remaining = limit - pinnedDogs.length
-
-  if (remaining <= 0) return pinnedDogs
-
-  // 나머지 슬롯을 최신 입소순 비고정 아이로 채움
   const pinnedIds = pinnedDogs.map((d) => d.id)
+
   let fillQuery = supabase
     .from("dogs")
     .select(DOG_CARD_COLS)
@@ -222,15 +227,18 @@ export async function listDogsForHome(limit = 8): Promise<Dog[]> {
     .in("status", ["보호중", "임시보호중"])
     .order("rescue_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
-    .limit(remaining)
+    .limit(fetchLimit)
 
-  // 고정 아이가 있으면 중복 제거
   if (pinnedIds.length > 0) {
     fillQuery = fillQuery.not("id", "in", `(${pinnedIds.join(",")})`)
   }
 
   const { data: filler } = await fillQuery
-  return [...pinnedDogs, ...((filler ?? []) as Dog[])]
+  const fillerWithImages = ((filler ?? []) as Dog[])
+    .filter(hasImages)
+    .slice(0, remaining)
+
+  return [...pinnedDogs, ...fillerWithImages]
 }
 
 /** 현재 고정된 강아지 수 (최대 8개 제한용) */
