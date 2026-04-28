@@ -131,9 +131,20 @@ export async function GET(request: Request) {
     // 6. 프로필 확인
     const { data: profile } = await admin
       .from("profiles")
-      .select("nickname, status, is_banned, role")
+      .select("nickname, status, is_banned, role, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version")
       .eq("id", userId)
       .maybeSingle()
+
+    // 현재 약관/개인정보 처리방침 버전 (terms/page.tsx, privacy/page.tsx 와 동기화)
+    const CURRENT_TERMS_VERSION = "2026-04-27"
+    const CURRENT_PRIVACY_VERSION = "2026-04-27"
+
+    function needsAgreement() {
+      if (!profile) return false
+      if (!profile.terms_agreed_at || profile.terms_version !== CURRENT_TERMS_VERSION) return true
+      if (!profile.privacy_agreed_at || profile.privacy_version !== CURRENT_PRIVACY_VERSION) return true
+      return false
+    }
 
     // 리다이렉트 목적지 결정
     let redirectPath = "/"
@@ -147,6 +158,9 @@ export async function GET(request: Request) {
       redirectPath = "/pending"
     } else if (profile.status === "rejected") {
       redirectPath = "/rejected"
+    } else if (needsAgreement()) {
+      // 기존 회원이 신규/개정된 약관에 미동의 → 재동의 페이지로
+      redirectPath = "/agreement"
     }
 
     // 7. 쿠키를 redirect 응답에 직접 붙여서 반환

@@ -180,6 +180,43 @@ export async function updateProfile(
   return { error: null, success: true }
 }
 
+/** 약관 재동의 — 기존 회원이 약관 미동의 또는 버전 불일치 시 동의 시각/버전 갱신 */
+export async function acceptAgreements(
+  _prev: { error: string | null },
+  formData: FormData
+): Promise<{ error: string | null }> {
+  const termsOk = formData.get("terms_agree") === "on"
+  const privacyOk = formData.get("privacy_agree") === "on"
+  const marketingOk = formData.get("marketing_agree") === "on"
+  const termsVersion = (formData.get("terms_version") as string | null) ?? null
+  const privacyVersion = (formData.get("privacy_version") as string | null) ?? null
+
+  if (!termsOk) return { error: "이용약관 동의가 필요합니다." }
+  if (!privacyOk) return { error: "개인정보 처리방침 동의가 필요합니다." }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      terms_agreed_at: now,
+      terms_version: termsVersion,
+      privacy_agreed_at: now,
+      privacy_version: privacyVersion,
+      // 마케팅: 체크면 시각 기록, 미체크면 null 로 명시 (이전 동의 철회 효과)
+      marketing_agreed_at: marketingOk ? now : null,
+      updated_at: now,
+    })
+    .eq("id", user.id)
+
+  if (error) return { error: "저장에 실패했습니다." }
+
+  redirect("/")
+}
+
 /** 어드민: 회원 승인 (상태 + 권한 동시 설정) */
 export async function approveMember(
   id: string,
