@@ -236,6 +236,12 @@ export async function approveMember(
     if (me?.role !== "admin") return { error: "관리자만 해당 권한을 부여할 수 있습니다." }
   }
 
+  // admin 이었던 회원을 다른 권한으로 재승인하면 admin 강등 → 마지막 admin 보호
+  if (role !== "admin") {
+    const guardError = await ensureNotLastAdmin(id)
+    if (guardError) return { error: guardError }
+  }
+
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin
@@ -252,6 +258,10 @@ export async function approveMember(
 export async function rejectMember(
   id: string
 ): Promise<{ error?: string }> {
+  // admin 거절은 사실상 어드민 권한 박탈 → 마지막 admin 보호
+  const guardError = await ensureNotLastAdmin(id)
+  if (guardError) return { error: guardError }
+
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin
@@ -269,6 +279,11 @@ export async function updateMemberStatus(
   id: string,
   status: "approved" | "rejected"
 ): Promise<{ error?: string }> {
+  if (status === "rejected") {
+    const guardError = await ensureNotLastAdmin(id)
+    if (guardError) return { error: guardError }
+  }
+
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin
@@ -298,6 +313,36 @@ export async function toggleMemberBan(
   return {}
 }
 
+/**
+ * profiles.role 기준으로 시스템에 admin 이 1명만 남았는지 검증.
+ * 마지막 admin 의 강등/거절을 막아 어드민 페이지 잠금을 방지.
+ */
+async function ensureNotLastAdmin(targetId: string): Promise<string | null> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+
+  // 대상이 admin 인지 먼저 확인
+  const { data: target } = await admin
+    .from("profiles")
+    .select("role, status")
+    .eq("id", targetId)
+    .maybeSingle()
+  if (!target || target.role !== "admin") return null
+
+  // approved 상태인 다른 admin 수
+  const { count } = await admin
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("role", "admin")
+    .eq("status", "approved")
+    .neq("id", targetId)
+
+  if ((count ?? 0) === 0) {
+    return "관리자는 최소 1명 이상 유지되어야 합니다. 다른 회원을 관리자로 임명한 뒤 다시 시도해주세요."
+  }
+  return null
+}
+
 /** 어드민: 회원 권한 변경 */
 export async function updateMemberRole(
   id: string,
@@ -315,6 +360,12 @@ export async function updateMemberRole(
       .eq("id", session.user.id)
       .maybeSingle()
     if (me?.role !== "admin") return { error: "관리자만 해당 권한을 부여할 수 있습니다." }
+  }
+
+  // admin → 다른 권한 강등 시 마지막 admin 보호
+  if (role !== "admin") {
+    const guardError = await ensureNotLastAdmin(id)
+    if (guardError) return { error: guardError }
   }
 
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
