@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Mail, MessageSquare, Phone, User } from "lucide-react"
+import { KeyRound, MessageSquare, Phone, User } from "lucide-react"
 
 import {
   ApplicationStatusForm,
@@ -12,6 +12,23 @@ export const dynamic = "force-dynamic"
 function yesNo(value: boolean | null) {
   if (value == null) return "—"
   return value ? "있음" : "없음"
+}
+
+function providerLabel(provider: string | null): string {
+  switch (provider) {
+    case "kakao":
+      return "카카오"
+    case "google":
+      return "구글"
+    case "naver":
+      return "네이버"
+    case "apple":
+      return "애플"
+    case "email":
+      return "이메일"
+    default:
+      return "—"
+  }
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -90,13 +107,6 @@ export default async function AdoptionApplicationDetailPage({
             icon={MessageSquare}
             label="문자"
           />
-          {app.email && (
-            <ContactButton
-              href={`mailto:${app.email}`}
-              icon={Mail}
-              label="이메일"
-            />
-          )}
         </div>
       </header>
 
@@ -137,18 +147,11 @@ export default async function AdoptionApplicationDetailPage({
               </a>
             }
           />
-          {app.email && (
+          {isMember && (
             <Row
-              icon={Mail}
-              label="이메일"
-              value={
-                <a
-                  href={`mailto:${app.email}`}
-                  className="text-primary hover:underline"
-                >
-                  {app.email}
-                </a>
-              }
+              icon={KeyRound}
+              label="가입 방법"
+              value={providerLabel(app.signup_provider)}
             />
           )}
           <Row label="주소" value={app.address} />

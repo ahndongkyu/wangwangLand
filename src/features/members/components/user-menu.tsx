@@ -48,7 +48,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
             <User className="size-full p-1.5 text-muted-foreground" />
           )}
         </div>
-        <div className="hidden flex-col items-start gap-0.5 sm:flex">
+        <div className="hidden flex-col items-center gap-0.5 sm:flex">
           <RoleBadge role={profile.role} />
           <span className="max-w-[80px] truncate text-sm font-medium leading-snug text-foreground">
             {profile.nickname}

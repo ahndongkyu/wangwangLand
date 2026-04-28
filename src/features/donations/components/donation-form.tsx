@@ -1,11 +1,12 @@
 "use client"
 
 import { Banknote, ChevronDown, PackageOpen, Sprout } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import { createDonation } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
-import { Button } from "@/shared/components/ui/button"
+import { FormFooter } from "@/shared/components/form-footer"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -31,6 +32,7 @@ const today = () => {
 }
 
 export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props) {
+  const router = useRouter()
   const [type, setType] = useState<DonationType>("cash")
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -255,9 +257,12 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
         </p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "등록 중..." : "후원 등록하기"}
-      </Button>
+      <FormFooter
+        pending={pending}
+        submitLabel="후원 등록하기"
+        pendingLabel="등록 중..."
+        onCancel={() => router.back()}
+      />
     </form>
   )
 }

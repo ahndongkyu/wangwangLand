@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ChevronRight, ClipboardList, Heart, LogOut, Settings, User } from "lucide-react"
 
-import { getCurrentProfile } from "@/features/members"
+import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
 import { RoleBadge } from "@/shared/components/role-badge"
 
@@ -106,6 +106,9 @@ export default async function MyPage() {
             </button>
           </form>
         </div>
+
+        {/* 회원 탈퇴 (가장 하단, 작게) */}
+        <DeleteAccountButton />
 
       </div>
     </div>

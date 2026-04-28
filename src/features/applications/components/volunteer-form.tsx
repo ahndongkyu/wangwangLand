@@ -1,11 +1,12 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import React, { useState, useTransition } from "react"
 import { User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
-import { Button } from "@/shared/components/ui/button"
+import { FormFooter } from "@/shared/components/form-footer"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -272,9 +274,12 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
         </p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "접수 중..." : "봉사 신청하기"}
-      </Button>
+      <FormFooter
+        pending={pending}
+        submitLabel="봉사 신청하기"
+        pendingLabel="접수 중..."
+        onCancel={() => router.back()}
+      />
     </form>
   )
 }

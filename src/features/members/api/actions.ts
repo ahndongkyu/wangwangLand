@@ -385,3 +385,50 @@ export async function updateMemberRole(
   revalidatePath("/admin/members")
   return {}
 }
+
+/**
+ * 회원 본인이 직접 계정을 삭제(회원 탈퇴).
+ * - auth.users 삭제 시 profiles 등 FK CASCADE 로 함께 정리.
+ * - 마지막 admin 계정은 탈퇴 차단.
+ */
+export async function deleteAccount(): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return { error: "로그인이 필요합니다." }
+
+  const userId = session.user.id
+
+  // 마지막 admin 보호
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle()
+
+  if (me?.role === "admin") {
+    const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+    const admin = createAdminClient()
+    const { count } = await admin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "admin")
+    if ((count ?? 0) <= 1) {
+      return {
+        error:
+          "유일한 관리자 계정은 탈퇴할 수 없습니다. 다른 관리자에게 권한을 위임한 뒤 다시 시도해주세요.",
+      }
+    }
+  }
+
+  await supabase.auth.signOut()
+
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.deleteUser(userId)
+  if (error) {
+    console.error("[deleteAccount]", error)
+    return { error: `탈퇴 처리에 실패했습니다: ${error.message}` }
+  }
+
+  redirect("/")
+}

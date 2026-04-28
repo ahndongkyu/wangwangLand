@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import {
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/shared/components/ui/button"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
+import { useToast } from "@/shared/components/toast"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
@@ -35,22 +37,27 @@ export function ApplicationStatusForm({
   currentNote,
   applicantName,
 }: Props) {
+  const router = useRouter()
+  const toast = useToast()
   const [pending, startTransition] = useTransition()
   const [deleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
 
   async function handleSubmit(formData: FormData) {
     setError(null)
-    setSaved(false)
     startTransition(async () => {
       const result =
         kind === "adoption"
           ? await updateAdoptionApplication(id, formData)
           : await updateVolunteerApplication(id, formData)
-      if (result.error) setError(result.error)
-      else setSaved(true)
+      if (result.error) {
+        setError(result.error)
+        toast.error(`저장 실패: ${result.error}`)
+      } else {
+        toast.success("저장되었습니다")
+        router.push("/admin/applications")
+      }
     })
   }
 
@@ -98,9 +105,6 @@ export function ApplicationStatusForm({
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
-      )}
-      {saved && !error && (
-        <p className="text-sm text-primary">저장되었습니다.</p>
       )}
 
       <div className="flex items-center justify-between gap-2 pt-2">

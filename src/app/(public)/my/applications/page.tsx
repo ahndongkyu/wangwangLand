@@ -38,13 +38,18 @@ export default async function MyApplicationsPage() {
 
   if (!session) redirect("/login")
 
+  // RLS SELECT 정책이 운영진만 허용하므로, 본인 신청도 차단됨.
+  // 세션으로 본인 인증은 끝났으니, 본인 created_by 필터만 강제하고 admin client 로 우회.
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+
   const [adoptionRes, volunteerRes] = await Promise.all([
-    supabase
+    admin
       .from("adoption_applications")
       .select("id, status, submitted_at, admin_note, dog:dogs(name), cat:cats(name)")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
-    supabase
+    admin
       .from("volunteer_applications")
       .select("id, status, submitted_at, admin_note, available_days, activities")
       .eq("created_by", session.user.id)

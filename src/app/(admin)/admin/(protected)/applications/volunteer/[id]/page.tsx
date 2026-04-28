@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Mail, MessageSquare, Phone, Users } from "lucide-react"
+import { KeyRound, MessageSquare, Phone, Users } from "lucide-react"
 
 import {
   ApplicationStatusForm,
@@ -8,6 +8,23 @@ import {
 } from "@/features/applications"
 
 export const dynamic = "force-dynamic"
+
+function providerLabel(provider: string | null): string {
+  switch (provider) {
+    case "kakao":
+      return "카카오"
+    case "google":
+      return "구글"
+    case "naver":
+      return "네이버"
+    case "apple":
+      return "애플"
+    case "email":
+      return "이메일"
+    default:
+      return "—"
+  }
+}
 
 const STATUS_COLOR: Record<string, string> = {
   접수: "bg-primary/15 text-primary",
@@ -90,13 +107,6 @@ export default async function VolunteerApplicationDetailPage({
             icon={MessageSquare}
             label="문자"
           />
-          {app.email && (
-            <ContactButton
-              href={`mailto:${app.email}`}
-              icon={Mail}
-              label="이메일"
-            />
-          )}
         </div>
       </header>
 
@@ -123,18 +133,11 @@ export default async function VolunteerApplicationDetailPage({
             label="인원수"
             value={`${app.party_size}명${isGroup ? " (단체)" : ""}`}
           />
-          {app.email && (
+          {isMember && (
             <Row
-              icon={Mail}
-              label="이메일"
-              value={
-                <a
-                  href={`mailto:${app.email}`}
-                  className="text-primary hover:underline"
-                >
-                  {app.email}
-                </a>
-              }
+              icon={KeyRound}
+              label="가입 방법"
+              value={providerLabel(app.signup_provider)}
             />
           )}
         </Card>

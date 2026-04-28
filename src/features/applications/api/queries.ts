@@ -123,9 +123,21 @@ export async function listVolunteerApplications({
   }
 }
 
+/** auth.users 의 provider(가입 방법) 조회. 어드민 권한 필요. */
+async function getSignupProvider(userId: string | null | undefined): Promise<string | null> {
+  if (!userId) return null
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.getUserById(userId)
+  if (error || !data?.user) return null
+  // app_metadata.provider 가 OAuth provider (kakao, google, ...). 없으면 email.
+  const provider = (data.user.app_metadata?.provider as string | undefined) ?? "email"
+  return provider
+}
+
 export async function getAdoptionApplication(
   id: string
-): Promise<AdoptionRow | null> {
+): Promise<(AdoptionRow & { signup_provider: string | null }) | null> {
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -139,13 +151,17 @@ export async function getAdoptionApplication(
     console.error("[getAdoptionApplication]", error)
     return null
   }
+  if (!data) return null
 
-  return data as AdoptionRow | null
+  const signup_provider = await getSignupProvider(
+    (data as AdoptionRow).created_by
+  )
+  return { ...(data as AdoptionRow), signup_provider }
 }
 
 export async function getVolunteerApplication(
   id: string
-): Promise<VolunteerApplication | null> {
+): Promise<(VolunteerApplication & { signup_provider: string | null }) | null> {
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -159,8 +175,12 @@ export async function getVolunteerApplication(
     console.error("[getVolunteerApplication]", error)
     return null
   }
+  if (!data) return null
 
-  return data as VolunteerApplication | null
+  const signup_provider = await getSignupProvider(
+    (data as VolunteerApplication).created_by
+  )
+  return { ...(data as VolunteerApplication), signup_provider }
 }
 
 /** 어드민 회원 상세에서 사용: 이메일 매칭으로 회원의 신청 내역 조회 */

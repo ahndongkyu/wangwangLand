@@ -1,11 +1,12 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import React, { useState, useTransition } from "react"
 
 import { submitAdoptionApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
 import { AddressSearchInput } from "@/shared/components/address-search-input"
-import { Button } from "@/shared/components/ui/button"
+import { FormFooter } from "@/shared/components/form-footer"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -270,9 +272,12 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
         </p>
       )}
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "접수 중..." : "입양 신청하기"}
-      </Button>
+      <FormFooter
+        pending={pending}
+        submitLabel="입양 신청하기"
+        pendingLabel="접수 중..."
+        onCancel={() => router.back()}
+      />
     </form>
   )
 }
