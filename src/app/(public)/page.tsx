@@ -236,7 +236,7 @@ export default async function HomePage() {
       {/* 5. 최근 공지사항 — 푸터 CTA 와의 중복을 피하고 운영 활성도 노출 */}
       {recentNotices.length > 0 && (
         <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-6xl px-4 pb-8 pt-16 md:px-6 2xl:max-w-7xl">
+          <div className="mx-auto w-full max-w-4xl px-4 pb-8 pt-16 md:px-6">
             <div className="mb-8 flex items-end justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
@@ -254,7 +254,7 @@ export default async function HomePage() {
                 전체 공지 →
               </Link>
             </div>
-            <ul className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-border bg-card">
+            <ul className="overflow-hidden rounded-xl border border-border bg-card">
               {recentNotices.map((n) => (
                 <li
                   key={n.id}
