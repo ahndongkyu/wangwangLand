@@ -295,8 +295,9 @@ async function upsertVolunteerEventForApplication(opts: {
   // 일시가 비었으면 등록 스킵 (운영진이 수기 입력 안 한 경우).
   if (!scheduledStart || !scheduledEnd) return
 
-  const starts = new Date(scheduledStart)
-  const ends = new Date(scheduledEnd)
+  // datetime-local 은 timezone 이 없으니 KST(+09:00) 로 강제 해석.
+  const starts = new Date(`${scheduledStart}:00+09:00`)
+  const ends = new Date(`${scheduledEnd}:00+09:00`)
   if (
     Number.isNaN(starts.getTime()) ||
     Number.isNaN(ends.getTime()) ||

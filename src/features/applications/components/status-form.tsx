@@ -31,6 +31,8 @@ interface Props {
   applicantName: string
   /** 봉사일 때 캘린더 자동 등록용 — 신청자가 적은 가능 시간대 표시 */
   hint?: { availableDays?: string[]; availableTime?: string | null }
+  /** 이미 등록된 캘린더 이벤트 (재편집용 — 시간 미리 채움) */
+  linkedEvent?: { id: string; starts_at: string; ends_at: string } | null
 }
 
 export function ApplicationStatusForm({
@@ -40,6 +42,7 @@ export function ApplicationStatusForm({
   currentNote,
   applicantName,
   hint,
+  linkedEvent,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -51,6 +54,18 @@ export function ApplicationStatusForm({
 
   const showSchedule = kind === "volunteer" && status === "승인"
 
+  // ISO → datetime-local 형식 (KST). "2026-04-30T10:00"
+  function isoToLocalKst(iso: string): string {
+    const d = new Date(iso)
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
+    const dd = String(kst.getUTCDate()).padStart(2, "0")
+    const hh = String(kst.getUTCHours()).padStart(2, "0")
+    const mi = String(kst.getUTCMinutes()).padStart(2, "0")
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
+  }
+
   // 오늘 KST 기준 datetime-local 기본값
   const todayInput = (() => {
     const now = new Date()
@@ -60,6 +75,13 @@ export function ApplicationStatusForm({
     const dd = String(kst.getUTCDate()).padStart(2, "0")
     return `${yyyy}-${mm}-${dd}`
   })()
+
+  const defaultStart = linkedEvent
+    ? isoToLocalKst(linkedEvent.starts_at)
+    : `${todayInput}T10:00`
+  const defaultEnd = linkedEvent
+    ? isoToLocalKst(linkedEvent.ends_at)
+    : `${todayInput}T12:00`
 
   async function handleSubmit(formData: FormData) {
     setError(null)
@@ -123,10 +145,12 @@ export function ApplicationStatusForm({
         <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
           <div>
             <Label className="text-sm font-semibold text-foreground">
-              캘린더 자동 등록
+              {linkedEvent ? "캘린더 일정 수정" : "캘린더 자동 등록"}
             </Label>
             <p className="mt-1 text-xs text-muted-foreground">
-              승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요.
+              {linkedEvent
+                ? "이미 캘린더에 등록된 일정입니다. 시간을 바꾸려면 수정 후 저장해주세요."
+                : "승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요."}
             </p>
             {(hint?.availableDays?.length || hint?.availableTime) && (
               <p className="mt-1 text-[11px] text-muted-foreground/80">
@@ -151,7 +175,7 @@ export function ApplicationStatusForm({
                 id="scheduled_starts_at"
                 name="scheduled_starts_at"
                 type="datetime-local"
-                defaultValue={`${todayInput}T10:00`}
+                defaultValue={defaultStart}
               />
             </div>
             <div className="space-y-1.5">
@@ -162,7 +186,7 @@ export function ApplicationStatusForm({
                 id="scheduled_ends_at"
                 name="scheduled_ends_at"
                 type="datetime-local"
-                defaultValue={`${todayInput}T12:00`}
+                defaultValue={defaultEnd}
               />
             </div>
           </div>

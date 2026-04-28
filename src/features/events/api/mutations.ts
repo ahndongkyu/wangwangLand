@@ -60,10 +60,13 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
     return { error: "시작·종료 시간을 입력해주세요." }
   }
 
-  // datetime-local("2026-04-30T10:00") 또는 date("2026-04-30") 둘 다 허용.
-  const starts = new Date(all_day ? `${startsRaw}T00:00:00+09:00` : startsRaw)
+  // datetime-local 은 timezone 이 없어서 서버에서 그대로 new Date() 하면 UTC 로 해석됨.
+  // 항상 KST(+09:00) 로 강제 해석.
+  const starts = new Date(
+    all_day ? `${startsRaw}T00:00:00+09:00` : `${startsRaw}:00+09:00`
+  )
   const ends = new Date(
-    all_day ? `${endsRaw}T23:59:59+09:00` : endsRaw
+    all_day ? `${endsRaw}T23:59:59+09:00` : `${endsRaw}:00+09:00`
   )
   if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime())) {
     return { error: "시간 형식이 올바르지 않습니다." }

@@ -43,6 +43,20 @@ export default async function VolunteerApplicationDetailPage({
 
   if (!app) notFound()
 
+  // 승인 시 자동 등록된 캘린더 이벤트가 있으면 재편집용으로 시간 미리 채움
+  let linkedEvent: { id: string; starts_at: string; ends_at: string } | null = null
+  {
+    const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+    const admin = createAdminClient()
+    const { data } = await admin
+      .from("events")
+      .select("id, starts_at, ends_at")
+      .eq("source_application_type", "volunteer")
+      .eq("source_application_id", id)
+      .maybeSingle()
+    linkedEvent = data ?? null
+  }
+
   const isMember = !!app.created_by
   const isGroup = app.party_size > 1
 
@@ -211,6 +225,7 @@ export default async function VolunteerApplicationDetailPage({
           availableDays: app.available_days,
           availableTime: app.available_time,
         }}
+        linkedEvent={linkedEvent}
       />
     </div>
   )
