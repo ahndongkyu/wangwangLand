@@ -76,7 +76,7 @@ export function AdoptionForm({ dogId, dogName }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {dogId && (
         <>
           <input type="hidden" name="dog_id" value={dogId} />

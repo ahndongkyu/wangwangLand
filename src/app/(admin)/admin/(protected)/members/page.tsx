@@ -5,6 +5,7 @@ import { listProfiles } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { SearchBox } from "@/shared/components/search-box"
+import { EmptyState } from "@/shared/components/empty-state"
 import { cn } from "@/shared/lib/utils"
 import type { Profile } from "@/features/members"
 
@@ -128,11 +129,7 @@ export default async function AdminMembersPage({
       </div>
 
       {profiles.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          {activeQuery
-            ? `'${activeQuery}' 검색 결과가 없습니다.`
-            : "해당하는 회원이 없습니다."}
-        </div>
+        <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "해당하는 회원이 없습니다"} />
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">

@@ -38,7 +38,7 @@ export function DonationForm({ defaultDonor }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* 후원 종류 */}
       <div className="space-y-2">
         <Label>후원 종류 *</Label>

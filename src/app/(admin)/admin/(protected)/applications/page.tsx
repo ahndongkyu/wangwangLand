@@ -4,6 +4,7 @@ import {
   listAdoptionApplications,
   listVolunteerApplications,
 } from "@/features/applications"
+import { EmptyState } from "@/shared/components/empty-state"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
@@ -252,9 +253,7 @@ export default async function AdminApplicationsPage({
       </p>
 
       {current.rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          해당 조건의 신청이 없습니다.
-        </div>
+        <EmptyState title="해당 조건의 신청이 없습니다" />
       ) : activeType === "adoption" ? (
         <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full min-w-[520px]">

@@ -7,6 +7,7 @@ import {
 } from "@/features/donations"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { EmptyState } from "@/shared/components/empty-state"
 import { formatShortDate } from "@/shared/lib/utils"
 import type { DonationStatus, DonationType } from "@/shared/types/database"
 
@@ -117,9 +118,7 @@ export default async function AdminDonationsPage({
       </div>
 
       {donations.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          {activeQuery ? `'${activeQuery}' 검색 결과가 없습니다.` : "후원 내역이 없습니다."}
-        </div>
+        <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "후원 내역이 없습니다"} />
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">

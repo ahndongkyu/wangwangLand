@@ -5,6 +5,7 @@ import { listNotices } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { SearchBox } from "@/shared/components/search-box"
+import { EmptyState } from "@/shared/components/empty-state"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn, formatShortDate } from "@/shared/lib/utils"
@@ -53,11 +54,7 @@ export default async function AdminNoticesPage({
       </div>
 
       {notices.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          {activeQuery
-            ? `'${activeQuery}' 검색 결과가 없습니다.`
-            : "아직 등록된 공지가 없습니다."}
-        </div>
+        <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 공지가 없습니다"} />
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">

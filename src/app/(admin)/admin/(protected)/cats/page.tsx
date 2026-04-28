@@ -7,6 +7,7 @@ import type { CatSort } from "@/features/cats/api/queries"
 import { FilterGroup } from "@/shared/components/filter-group"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 import type { DogGender, DogStatus } from "@/shared/types/database"
@@ -204,11 +205,7 @@ export default async function AdminCatsPage({
       </div>
 
       {cats.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          {activeQuery
-            ? `'${activeQuery}' 검색 결과가 없습니다.`
-            : "아직 등록된 고양이가 없습니다. 위 버튼을 눌러 첫 아이를 등록해 보세요."}
-        </div>
+        <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 고양이가 없습니다"} />
       ) : (
         <>
           {/* Page size selector */}

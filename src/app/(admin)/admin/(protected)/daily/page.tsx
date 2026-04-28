@@ -4,6 +4,7 @@ import { getCurrentAdmin } from "@/features/auth"
 import { listDailyPosts } from "@/features/daily"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
+import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 
@@ -53,11 +54,7 @@ export default async function AdminDailyPage({
       </div>
 
       {posts.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-          {activeQuery
-            ? `'${activeQuery}' 검색 결과가 없습니다.`
-            : "아직 등록된 일상이 없습니다."}
-        </div>
+        <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 일상이 없습니다"} />
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
