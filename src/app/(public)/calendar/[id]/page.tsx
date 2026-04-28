@@ -4,7 +4,8 @@ import { Calendar, MapPin, Users } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
-  CATEGORY_LABEL,
+  customColorStyle,
+  eventDisplayLabel,
   getEventWithMySignup,
 } from "@/features/events"
 import { SignupForm } from "@/features/events/components/signup-form"
@@ -28,7 +29,9 @@ export default async function EventDetailPage({
     data: { session },
   } = await supabase.auth.getSession()
 
+  const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
+  const customStyle = isCustom ? customColorStyle(event.custom_color) : null
   const pastEvent = new Date(event.ends_at) < new Date()
 
   return (
@@ -41,13 +44,14 @@ export default async function EventDetailPage({
 
       <header className="mb-6">
         <span
+          style={customStyle?.soft}
           className={cn(
             "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-            color.soft,
-            color.softText
+            !isCustom && color.soft,
+            !isCustom && color.softText
           )}
         >
-          {CATEGORY_LABEL[event.category]}
+          {eventDisplayLabel(event)}
         </span>
         <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
           {event.title}

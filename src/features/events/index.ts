@@ -5,7 +5,12 @@ export type {
   EventWithMySignup,
   EventWithSignupCount,
 } from "./types"
-export { CATEGORY_COLOR, CATEGORY_LABEL } from "./types"
+export {
+  CATEGORY_COLOR,
+  CATEGORY_LABEL,
+  customColorStyle,
+  eventDisplayLabel,
+} from "./types"
 export {
   getEventWithMySignup,
   listEventsInRange,

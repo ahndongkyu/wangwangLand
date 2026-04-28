@@ -10,6 +10,7 @@ import {
   updateVolunteerApplication,
 } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { useToast } from "@/shared/components/toast"
@@ -28,6 +29,8 @@ interface Props {
   currentStatus: ApplicationStatus
   currentNote: string | null
   applicantName: string
+  /** 봉사일 때 캘린더 자동 등록용 — 신청자가 적은 가능 시간대 표시 */
+  hint?: { availableDays?: string[]; availableTime?: string | null }
 }
 
 export function ApplicationStatusForm({
@@ -36,6 +39,7 @@ export function ApplicationStatusForm({
   currentStatus,
   currentNote,
   applicantName,
+  hint,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -43,6 +47,19 @@ export function ApplicationStatusForm({
   const [deleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<ApplicationStatus>(currentStatus)
+
+  const showSchedule = kind === "volunteer" && status === "승인"
+
+  // 오늘 KST 기준 datetime-local 기본값
+  const todayInput = (() => {
+    const now = new Date()
+    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+    const yyyy = kst.getUTCFullYear()
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
+    const dd = String(kst.getUTCDate()).padStart(2, "0")
+    return `${yyyy}-${mm}-${dd}`
+  })()
 
   async function handleSubmit(formData: FormData) {
     setError(null)
@@ -78,7 +95,8 @@ export function ApplicationStatusForm({
                 type="radio"
                 name="status"
                 value={s}
-                defaultChecked={s === currentStatus}
+                checked={s === status}
+                onChange={() => setStatus(s)}
                 className="sr-only"
               />
               {s}
@@ -100,6 +118,59 @@ export function ApplicationStatusForm({
           className="mt-2"
         />
       </div>
+
+      {showSchedule && (
+        <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+          <div>
+            <Label className="text-sm font-semibold text-foreground">
+              캘린더 자동 등록
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요.
+            </p>
+            {(hint?.availableDays?.length || hint?.availableTime) && (
+              <p className="mt-1 text-[11px] text-muted-foreground/80">
+                <span className="font-medium text-foreground/80">신청자 요청:</span>{" "}
+                {[
+                  hint.availableDays?.length
+                    ? `${hint.availableDays.join(", ")}요일`
+                    : null,
+                  hint.availableTime,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="scheduled_starts_at" className="text-xs">
+                시작 일시
+              </Label>
+              <Input
+                id="scheduled_starts_at"
+                name="scheduled_starts_at"
+                type="datetime-local"
+                defaultValue={`${todayInput}T10:00`}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="scheduled_ends_at" className="text-xs">
+                종료 일시
+              </Label>
+              <Input
+                id="scheduled_ends_at"
+                name="scheduled_ends_at"
+                type="datetime-local"
+                defaultValue={`${todayInput}T12:00`}
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground/80">
+            비워두면 캘린더 등록은 건너뛰고 상태만 승인됩니다.
+          </p>
+        </div>
+      )}
 
       {error && (
         <p className="text-sm text-destructive" role="alert">

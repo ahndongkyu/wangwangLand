@@ -13,6 +13,11 @@ interface RangeOptions {
   /** ISO timestamp (미포함). */
   to?: string
   categories?: EventCategory[]
+  /**
+   * true 면 internal 까지 포함 (운영진 전용 페이지).
+   * 기본 false → public 만. RLS 가 internal 을 차단하지만 명시적으로도 필터.
+   */
+  includeInternal?: boolean
 }
 
 /** 기간 내 이벤트 목록. 신청 수 포함. */
@@ -20,6 +25,7 @@ export async function listEventsInRange({
   from,
   to,
   categories,
+  includeInternal = false,
 }: RangeOptions): Promise<EventWithSignupCount[]> {
   const supabase = await createClient()
 
@@ -31,6 +37,7 @@ export async function listEventsInRange({
   if (from) q = q.gte("starts_at", from)
   if (to) q = q.lt("starts_at", to)
   if (categories && categories.length > 0) q = q.in("category", categories)
+  if (!includeInternal) q = q.eq("visibility", "public")
 
   const { data, error } = await q
   if (error || !data) {
@@ -48,7 +55,7 @@ export async function listEventsInRange({
   }))
 }
 
-/** 다가오는 이벤트 N개 (회원 페이지 카드 리스트용) */
+/** 다가오는 이벤트 N개 (회원 페이지 카드 리스트용) — public 만 */
 export async function listUpcomingEvents(
   limit = 20,
   opts: { categories?: EventCategory[] } = {}
@@ -57,6 +64,7 @@ export async function listUpcomingEvents(
   let q = supabase
     .from("events")
     .select("*")
+    .eq("visibility", "public")
     .gte("ends_at", new Date().toISOString())
     .order("starts_at", { ascending: true })
     .limit(limit)

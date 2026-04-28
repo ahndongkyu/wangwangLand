@@ -19,6 +19,8 @@ export interface ActionResult {
 
 interface EventInput {
   category: EventCategory
+  custom_label?: string | null
+  custom_color?: string | null
   title: string
   description?: string
   location?: string
@@ -30,8 +32,21 @@ interface EventInput {
 
 function parseEventInput(formData: FormData): EventInput | { error: string } {
   const category = String(formData.get("category") ?? "") as EventCategory
-  if (!["volunteer", "event", "closed"].includes(category)) {
+  if (!["volunteer", "event", "closed", "custom"].includes(category)) {
     return { error: "카테고리를 선택해주세요." }
+  }
+
+  let custom_label: string | null = null
+  let custom_color: string | null = null
+  if (category === "custom") {
+    custom_label = String(formData.get("custom_label") ?? "").trim() || null
+    if (!custom_label) {
+      return { error: "직접 입력 카테고리 이름을 입력해주세요." }
+    }
+    const rawColor = String(formData.get("custom_color") ?? "").trim()
+    if (rawColor && /^#[0-9A-Fa-f]{6}$/.test(rawColor)) {
+      custom_color = rawColor
+    }
   }
 
   const title = String(formData.get("title") ?? "").trim()
@@ -62,6 +77,8 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
 
   return {
     category,
+    custom_label,
+    custom_color,
     title,
     description: String(formData.get("description") ?? "").trim() || undefined,
     location: String(formData.get("location") ?? "").trim() || undefined,

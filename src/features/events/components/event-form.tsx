@@ -15,9 +15,12 @@ import { cn } from "@/shared/lib/utils"
 interface Props {
   /** 수정 모드면 기존 이벤트 */
   event?: CalendarEvent
+  /** 신규 등록 시 선택된 날짜 (YYYY-MM-DD). 캘린더 셀 클릭에서 채워짐. */
+  defaultDate?: string
 }
 
-const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed"]
+const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed", "custom"]
+const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
 
 /** Date(UTC) → datetime-local 입력값 (KST) */
 function toLocalInput(iso: string, allDay: boolean): string {
@@ -33,7 +36,31 @@ function toLocalInput(iso: string, allDay: boolean): string {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
 }
 
-export function EventForm({ event }: Props) {
+/** 기본값: 시작 10:00, 종료 12:00 (KST). datetime-local 입력 형식. */
+function defaultStartFor(date: string): string {
+  return `${date}T10:00`
+}
+function defaultEndFor(date: string): string {
+  return `${date}T12:00`
+}
+
+function pickContrast(hex: string): string {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "#FFFFFF"
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return lum > 0.6 ? "#1F1B16" : "#FFFFFF"
+}
+
+/** 오늘 KST 의 YYYY-MM-DD */
+function todayKstDate(): string {
+  const now = new Date()
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}-${String(kst.getUTCDate()).padStart(2, "0")}`
+}
+
+export function EventForm({ event, defaultDate }: Props) {
   const router = useRouter()
   const toast = useToast()
   const [pending, startTransition] = useTransition()
@@ -44,6 +71,10 @@ export function EventForm({ event }: Props) {
   const [allDay, setAllDay] = useState(event?.all_day ?? false)
   const [signupEnabled, setSignupEnabled] = useState(
     event?.signup_enabled ?? (event?.category !== "closed")
+  )
+  const [customLabel, setCustomLabel] = useState(event?.custom_label ?? "")
+  const [customColor, setCustomColor] = useState(
+    event?.custom_color ?? DEFAULT_CUSTOM_COLOR
   )
 
   const isEdit = !!event
@@ -65,7 +96,7 @@ export function EventForm({ event }: Props) {
       <div>
         <Label className="mb-2 block text-sm font-semibold">카테고리</Label>
         <input type="hidden" name="category" value={category} />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {CATEGORIES.map((c) => (
             <button
               key={c}
@@ -78,11 +109,58 @@ export function EventForm({ event }: Props) {
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
               )}
             >
-              {CATEGORY_LABEL[c]}
+              {c === "custom" ? "직접 입력" : CATEGORY_LABEL[c]}
             </button>
           ))}
         </div>
       </div>
+
+      {/* 직접 입력 카테고리 — 이름 + 색상 */}
+      {category === "custom" && (
+        <div className="space-y-3 rounded-md border border-border bg-secondary/30 p-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="custom_label" className="text-xs font-semibold">
+              카테고리 이름 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="custom_label"
+              name="custom_label"
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              maxLength={20}
+              placeholder="예: 정기 회의, 교육"
+              required
+            />
+          </div>
+          <div className="flex items-end gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="custom_color" className="text-xs font-semibold">
+                색상
+              </Label>
+              <input
+                id="custom_color"
+                name="custom_color"
+                type="color"
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                className="h-9 w-16 cursor-pointer rounded-md border border-border bg-card p-0.5"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="mb-1 text-[11px] text-muted-foreground">미리보기</p>
+              <span
+                className="inline-block rounded-sm px-2 py-1 text-[11px] font-medium"
+                style={{
+                  backgroundColor: customColor,
+                  color: pickContrast(customColor),
+                }}
+              >
+                {customLabel || "카테고리 이름"}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 제목 */}
       <div className="space-y-1.5">
@@ -126,7 +204,13 @@ export function EventForm({ event }: Props) {
             type={allDay ? "date" : "datetime-local"}
             required
             defaultValue={
-              event ? toLocalInput(event.starts_at, allDay) : undefined
+              event
+                ? toLocalInput(event.starts_at, allDay)
+                : allDay
+                  ? defaultDate ?? todayKstDate()
+                  : defaultDate
+                    ? defaultStartFor(defaultDate)
+                    : defaultStartFor(todayKstDate())
             }
           />
         </div>
@@ -140,7 +224,13 @@ export function EventForm({ event }: Props) {
             type={allDay ? "date" : "datetime-local"}
             required
             defaultValue={
-              event ? toLocalInput(event.ends_at, allDay) : undefined
+              event
+                ? toLocalInput(event.ends_at, allDay)
+                : allDay
+                  ? defaultDate ?? todayKstDate()
+                  : defaultDate
+                    ? defaultEndFor(defaultDate)
+                    : defaultEndFor(todayKstDate())
             }
           />
         </div>

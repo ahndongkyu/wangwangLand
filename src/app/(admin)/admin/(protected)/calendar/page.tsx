@@ -42,6 +42,7 @@ export default async function AdminCalendarPage({
     from,
     to,
     categories: categories.length > 0 ? categories : undefined,
+    includeInternal: true,
   })
 
   return (
@@ -79,6 +80,7 @@ export default async function AdminCalendarPage({
         yearMonth={yearMonth}
         events={events}
         hrefBase="/admin/calendar"
+        addHrefBase="/admin/calendar/new"
       />
     </div>
   )

@@ -210,12 +210,18 @@ export async function updateVolunteerApplication(
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
 
+  // 승인일 때만 캘린더 등록용 일시
+  const scheduledStart = String(formData.get("scheduled_starts_at") ?? "")
+  const scheduledEnd = String(formData.get("scheduled_ends_at") ?? "")
+
   const supabase = await createClient()
 
-  // 상태 변경 전 created_by 조회
+  // 상태 변경 전 신청 정보 조회 (캘린더 칩 제목용 + created_by)
   const { data: prev } = await supabase
     .from("volunteer_applications")
-    .select("created_by, status")
+    .select(
+      "id, applicant_name, party_size, activities, available_time, message, created_by, status"
+    )
     .eq("id", id)
     .maybeSingle()
 
@@ -241,9 +247,104 @@ export async function updateVolunteerApplication(
     })
   }
 
+  // 승인 시 캘린더 자동 등록 (운영진 전용 internal 이벤트)
+  if (status === "승인" && prev) {
+    await upsertVolunteerEventForApplication({
+      applicationId: id,
+      applicantName: prev.applicant_name,
+      partySize: prev.party_size ?? 1,
+      activities: (prev.activities ?? []) as string[],
+      availableTime: prev.available_time ?? null,
+      message: prev.message ?? null,
+      scheduledStart,
+      scheduledEnd,
+    })
+  }
+
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/volunteer/${id}`)
+  revalidatePath("/admin/calendar")
   return { id }
+}
+
+/**
+ * 봉사 신청 → 캘린더 internal 이벤트 upsert.
+ * 같은 신청 id 의 이벤트가 이미 있으면 update, 없으면 insert.
+ */
+async function upsertVolunteerEventForApplication(opts: {
+  applicationId: string
+  applicantName: string
+  partySize: number
+  activities: string[]
+  availableTime: string | null
+  message: string | null
+  scheduledStart: string  // datetime-local 또는 빈 값
+  scheduledEnd: string
+}) {
+  const {
+    applicationId,
+    applicantName,
+    partySize,
+    activities,
+    availableTime,
+    message,
+    scheduledStart,
+    scheduledEnd,
+  } = opts
+
+  // 일시가 비었으면 등록 스킵 (운영진이 수기 입력 안 한 경우).
+  if (!scheduledStart || !scheduledEnd) return
+
+  const starts = new Date(scheduledStart)
+  const ends = new Date(scheduledEnd)
+  if (
+    Number.isNaN(starts.getTime()) ||
+    Number.isNaN(ends.getTime()) ||
+    ends < starts
+  ) {
+    return
+  }
+
+  const title =
+    partySize > 1
+      ? `${applicantName} 외 ${partySize - 1}명`
+      : applicantName
+
+  const description = [
+    activities.length > 0 ? `희망 활동: ${activities.join(", ")}` : null,
+    availableTime ? `요청 시간대: ${availableTime}` : null,
+    message ? `메모: ${message}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  const admin = createAdminClient()
+
+  const { data: existing } = await admin
+    .from("events")
+    .select("id")
+    .eq("source_application_type", "volunteer")
+    .eq("source_application_id", applicationId)
+    .maybeSingle()
+
+  const payload = {
+    category: "volunteer" as const,
+    title,
+    description: description || null,
+    starts_at: starts.toISOString(),
+    ends_at: ends.toISOString(),
+    all_day: false,
+    signup_enabled: false,
+    visibility: "internal" as const,
+    source_application_type: "volunteer" as const,
+    source_application_id: applicationId,
+  }
+
+  if (existing) {
+    await admin.from("events").update(payload).eq("id", existing.id)
+  } else {
+    await admin.from("events").insert(payload)
+  }
 }
 
 export async function deleteAdoptionApplication(

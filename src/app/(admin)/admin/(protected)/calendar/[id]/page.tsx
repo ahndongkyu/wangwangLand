@@ -4,7 +4,8 @@ import { Calendar, MapPin, Phone, Users } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
-  CATEGORY_LABEL,
+  customColorStyle,
+  eventDisplayLabel,
   getEventWithMySignup,
   listEventSignups,
 } from "@/features/events"
@@ -26,7 +27,9 @@ export default async function AdminEventDetailPage({
   ])
   if (!event) notFound()
 
+  const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
+  const customStyle = isCustom ? customColorStyle(event.custom_color) : null
   const totalParty = signups
     .filter((s) => s.status === "접수")
     .reduce((sum, s) => sum + s.party_size, 0)
@@ -42,13 +45,14 @@ export default async function AdminEventDetailPage({
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <span
+            style={customStyle?.soft}
             className={cn(
               "inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold",
-              color.soft,
-              color.softText
+              !isCustom && color.soft,
+              !isCustom && color.softText
             )}
           >
-            {CATEGORY_LABEL[event.category]}
+            {eventDisplayLabel(event)}
           </span>
           <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
             {event.title}

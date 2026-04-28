@@ -1,7 +1,13 @@
 import Link from "next/link"
 import { Calendar, MapPin, Users } from "lucide-react"
 
-import { CATEGORY_COLOR, CATEGORY_LABEL, type EventWithSignupCount } from "../types"
+import {
+  CATEGORY_COLOR,
+  CATEGORY_LABEL,
+  customColorStyle,
+  eventDisplayLabel,
+  type EventWithSignupCount,
+} from "../types"
 import { formatKoreanDayLabel } from "../lib/date"
 import { cn } from "@/shared/lib/utils"
 
@@ -12,7 +18,9 @@ interface Props {
 }
 
 export function EventCard({ event, basePath = "/calendar" }: Props) {
+  const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
+  const customStyle = isCustom ? customColorStyle(event.custom_color) : null
 
   return (
     <Link
@@ -22,13 +30,14 @@ export function EventCard({ event, basePath = "/calendar" }: Props) {
       <div className="flex items-start gap-3">
         {/* 카테고리 칩 */}
         <span
+          style={customStyle?.soft}
           className={cn(
             "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-            color.soft,
-            color.softText
+            !isCustom && color.soft,
+            !isCustom && color.softText
           )}
         >
-          {CATEGORY_LABEL[event.category]}
+          {eventDisplayLabel(event)}
         </span>
         <h3 className="min-w-0 flex-1 truncate text-base font-bold text-foreground sm:text-lg">
           {event.title}
