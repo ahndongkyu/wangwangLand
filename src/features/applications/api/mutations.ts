@@ -56,7 +56,12 @@ export async function submitAdoptionApplication(
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
 
-  const { data, error } = await supabase
+  // 비회원도 INSERT 가능하지만, RLS 의 SELECT 정책은 운영진만 허용.
+  // 따라서 .select() returning 시 RLS 차단 → admin client(service role)로 우회.
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+
+  const { data, error } = await admin
     .from("adoption_applications")
     .insert({
       dog_id: dogId || null,
@@ -116,7 +121,11 @@ export async function submitVolunteerApplication(
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
 
-  const { data, error } = await supabase
+  // 비회원도 INSERT 가능하지만 SELECT 는 운영진만. .select() returning 위해 admin client.
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+
+  const { data, error } = await admin
     .from("volunteer_applications")
     .insert({
       applicant_name,
