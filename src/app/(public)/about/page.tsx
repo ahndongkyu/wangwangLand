@@ -50,10 +50,10 @@ export default async function AboutPage() {
             누군가의 이름이 아닌 아이들의 평온으로 기억되길 바랍니다.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/volunteer" className={cn(buttonVariants({ size: "sm" }))}>
+            <Link href="/volunteer" className={cn(buttonVariants())}>
               봉사 신청하기
             </Link>
-            <Link href="/donate" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+            <Link href="/donate" className={cn(buttonVariants({ variant: "outline" }))}>
               후원하기
             </Link>
           </div>

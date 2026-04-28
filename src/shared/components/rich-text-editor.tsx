@@ -266,76 +266,76 @@ export function RichTextEditor({
       {/* ── 툴바 ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-secondary/30 px-2 py-1.5">
         {/* 되돌리기 */}
-        <button type="button" onClick={() => editor.chain().focus().undo().run()} className={btn(false)} title="되돌리기">
+        <button type="button" onClick={() => editor.chain().focus().undo().run()} className={btn(false)} title="되돌리기" aria-label="되돌리기">
           <Undo2 className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().redo().run()} className={btn(false)} title="다시 실행">
+        <button type="button" onClick={() => editor.chain().focus().redo().run()} className={btn(false)} title="다시 실행" aria-label="다시 실행">
           <Redo2 className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 제목 크기 */}
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={btn(editor.isActive("heading", { level: 1 }))} title="제목 1 (H1)">
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={btn(editor.isActive("heading", { level: 1 }))} title="제목 1 (H1)" aria-label="제목 1 (H1)">
           <Heading1 className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btn(editor.isActive("heading", { level: 2 }))} title="제목 2 (H2)">
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btn(editor.isActive("heading", { level: 2 }))} title="제목 2 (H2)" aria-label="제목 2 (H2)">
           <Heading2 className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={btn(editor.isActive("heading", { level: 3 }))} title="제목 3 (H3)">
+        <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={btn(editor.isActive("heading", { level: 3 }))} title="제목 3 (H3)" aria-label="제목 3 (H3)">
           <Heading3 className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 텍스트 스타일 */}
-        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))} title="굵게 (Ctrl+B)">
+        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive("bold"))} title="굵게 (Ctrl+B)" aria-label="굵게 (Ctrl+B)">
           <Bold className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))} title="기울임 (Ctrl+I)">
+        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive("italic"))} title="기울임 (Ctrl+I)" aria-label="기울임 (Ctrl+I)">
           <Italic className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive("underline"))} title="밑줄 (Ctrl+U)">
+        <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive("underline"))} title="밑줄 (Ctrl+U)" aria-label="밑줄 (Ctrl+U)">
           <UnderlineIcon className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 정렬 */}
-        <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()} className={btn(editor.isActive({ textAlign: "left" }))} title="왼쪽 정렬">
+        <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()} className={btn(editor.isActive({ textAlign: "left" }))} title="왼쪽 정렬" aria-label="왼쪽 정렬">
           <AlignLeft className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()} className={btn(editor.isActive({ textAlign: "center" }))} title="가운데 정렬">
+        <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()} className={btn(editor.isActive({ textAlign: "center" }))} title="가운데 정렬" aria-label="가운데 정렬">
           <AlignCenter className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()} className={btn(editor.isActive({ textAlign: "right" }))} title="오른쪽 정렬">
+        <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()} className={btn(editor.isActive({ textAlign: "right" }))} title="오른쪽 정렬" aria-label="오른쪽 정렬">
           <AlignRight className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 목록 */}
-        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))} title="글머리 목록">
+        <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive("bulletList"))} title="글머리 목록" aria-label="글머리 목록">
           <List className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive("orderedList"))} title="번호 목록">
+        <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive("orderedList"))} title="번호 목록" aria-label="번호 목록">
           <ListOrdered className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 인용 · 구분선 */}
-        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive("blockquote"))} title="인용구">
+        <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btn(editor.isActive("blockquote"))} title="인용구" aria-label="인용구">
           <Quote className="size-3.5" />
         </button>
-        <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()} className={btn(false)} title="구분선">
+        <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()} className={btn(false)} title="구분선" aria-label="구분선">
           <Minus className="size-3.5" />
         </button>
 
         <span className="mx-1 h-4 w-px bg-border" />
 
         {/* 링크 */}
-        <button type="button" onClick={handleLink} className={btn(editor.isActive("link"))} title="링크 삽입">
+        <button type="button" onClick={handleLink} className={btn(editor.isActive("link"))} title="링크 삽입" aria-label="링크 삽입">
           <Link2 className="size-3.5" />
         </button>
 

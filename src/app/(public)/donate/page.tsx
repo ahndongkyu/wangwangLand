@@ -1,7 +1,8 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { Heart, Home, Stethoscope, UtensilsCrossed, type LucideIcon } from "lucide-react"
 
-import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
+import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
@@ -33,18 +34,10 @@ export default function DonatePage() {
           후원금은 이렇게 쓰여요
         </h2>
         <ul className="grid gap-3 md:grid-cols-2">
-          <UsageItem icon="food-bowl" title="사료 · 간식" desc="아이들의 한 끼" />
-          <UsageItem icon="health" title="의료비" desc="예방 접종, 치료, 수술" />
-          <UsageItem
-            icon="home-shelter"
-            title="보호 환경"
-            desc="시설 유지 및 개선"
-          />
-          <UsageItem
-            icon="heart"
-            title="구조 활동"
-            desc="버려진 아이들을 찾아가는 비용"
-          />
+          <UsageItem Icon={UtensilsCrossed} title="사료 · 간식" desc="아이들의 한 끼" />
+          <UsageItem Icon={Stethoscope} title="의료비" desc="예방 접종, 치료, 수술" />
+          <UsageItem Icon={Home} title="보호 환경" desc="시설 유지 및 개선" />
+          <UsageItem Icon={Heart} title="구조 활동" desc="버려진 아이들을 찾아가는 비용" />
         </ul>
       </section>
 
@@ -143,17 +136,19 @@ export default function DonatePage() {
 }
 
 function UsageItem({
-  icon,
+  Icon,
   title,
   desc,
 }: {
-  icon: BrandIconName
+  Icon: LucideIcon
   title: string
   desc: string
 }) {
   return (
     <li className="flex items-start gap-3 rounded-lg border border-border bg-card p-4">
-      <BrandIcon name={icon} size={36} decorative />
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="size-5" aria-hidden />
+      </span>
       <div>
         <p className="font-semibold text-foreground">{title}</p>
         <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>
