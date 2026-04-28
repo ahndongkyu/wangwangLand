@@ -12,8 +12,15 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import {
+  KOREAN_PHONE_PATTERN_RAW,
+  NAME_HINT,
+  NAME_PATTERN_RAW,
+  ORG_OR_PERSON_HINT,
+  ORG_OR_PERSON_PATTERN_RAW,
+  PHONE_HINT,
   validateKoreanPhone,
   validateName,
+  validateOrgOrPersonName,
   validatePartySize,
 } from "@/shared/lib/validation"
 import type { VolunteerActivity } from "@/shared/types/database"
@@ -49,7 +56,11 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
 
     const formData = new FormData(e.currentTarget)
 
-    const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
+    const rawName = String(formData.get("applicant_name") ?? "")
+    const nameCheck =
+      partyType === "group"
+        ? validateOrgOrPersonName(rawName)
+        : validateName(rawName)
     if (!nameCheck.valid) return setError(nameCheck.error!)
     const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
     if (!phoneCheck.valid) return setError(phoneCheck.error!)
@@ -121,13 +132,22 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
               name="applicant_name"
               required
               minLength={2}
-              maxLength={50}
+              maxLength={partyType === "group" ? 30 : 20}
+              pattern={
+                partyType === "group"
+                  ? ORG_OR_PERSON_PATTERN_RAW
+                  : NAME_PATTERN_RAW
+              }
+              title={partyType === "group" ? ORG_OR_PERSON_HINT : NAME_HINT}
               placeholder={
                 partyType === "group"
                   ? "예: ○○대학교 봉사동아리 / 인솔자 홍길동"
                   : "홍길동"
               }
             />
+            <p className="text-[11px] text-muted-foreground/80">
+              {partyType === "group" ? ORG_OR_PERSON_HINT : NAME_HINT}
+            </p>
           </Field>
           <Field id="phone" label={partyType === "group" ? "인솔자 연락처" : "연락처"} required>
             <Input
@@ -135,9 +155,11 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
               name="phone"
               type="tel"
               required
-              pattern="^0\d{1,2}[- ]?\d{3,4}[- ]?\d{4}$"
+              pattern={KOREAN_PHONE_PATTERN_RAW}
+              title={PHONE_HINT}
               placeholder="010-0000-0000"
             />
+            <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
           </Field>
           <Field id="party_size" label="인원수" required>
             <Input

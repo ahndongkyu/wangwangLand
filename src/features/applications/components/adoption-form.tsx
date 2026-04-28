@@ -12,6 +12,10 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import {
+  KOREAN_PHONE_PATTERN_RAW,
+  NAME_HINT,
+  NAME_PATTERN_RAW,
+  PHONE_HINT,
   validateKoreanPhone,
   validateName,
 } from "@/shared/lib/validation"
@@ -113,9 +117,12 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
               name="applicant_name"
               required
               minLength={2}
-              maxLength={50}
+              maxLength={20}
+              pattern={NAME_PATTERN_RAW}
+              title={NAME_HINT}
               placeholder="홍길동"
             />
+            <p className="text-[11px] text-muted-foreground/80">{NAME_HINT}</p>
           </Field>
           <Field id="phone" label="연락처" required>
             <Input
@@ -123,9 +130,11 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
               name="phone"
               type="tel"
               required
-              pattern="^0\d{1,2}[- ]?\d{3,4}[- ]?\d{4}$"
+              pattern={KOREAN_PHONE_PATTERN_RAW}
+              title={PHONE_HINT}
               placeholder="010-0000-0000"
             />
+            <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
           </Field>
           <Field id="address" label="주소" required className="md:col-span-2">
             <AddressSearchInput

@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
+import {
+  validateKoreanPhone,
+  validateNickname,
+} from "@/shared/lib/validation"
 
 /** 카카오 OAuth URL 반환 — Supabase를 거치지 않고 카카오 직접 연동 */
 export async function getKakaoLoginUrl(): Promise<string | null> {
@@ -67,16 +71,10 @@ export async function updateNickname(
   const termsVersion = (formData.get("terms_version") as string | null) ?? null
   const privacyVersion = (formData.get("privacy_version") as string | null) ?? null
 
-  if (nickname.length < 2 || nickname.length > 20) {
-    return { error: "닉네임은 2~20자 사이로 입력해주세요." }
-  }
-  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
-    return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
-  }
-  if (!phone) return { error: "핸드폰번호를 입력해주세요." }
-  if (!/^[0-9-]{9,}$/.test(phone)) {
-    return { error: "올바른 핸드폰번호 형식이 아닙니다." }
-  }
+  const nicknameCheck = validateNickname(nickname)
+  if (!nicknameCheck.valid) return { error: nicknameCheck.error! }
+  const phoneCheck = validateKoreanPhone(phone)
+  if (!phoneCheck.valid) return { error: phoneCheck.error! }
   if (!ageOk) return { error: "만 14세 이상 동의가 필요합니다." }
   if (!termsOk) return { error: "이용약관 동의가 필요합니다." }
   if (!privacyOk) return { error: "개인정보 처리방침 동의가 필요합니다." }
@@ -125,19 +123,14 @@ export async function updateProfile(
   const phoneRaw = (formData.get("phone") as string | null)?.trim() ?? ""
   const avatarFile = formData.get("avatar") as File | null
 
-  if (nickname.length < 2 || nickname.length > 20) {
-    return { error: "닉네임은 2~20자 사이로 입력해주세요." }
-  }
-  if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
-    return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
-  }
+  const nicknameCheck = validateNickname(nickname)
+  if (!nicknameCheck.valid) return { error: nicknameCheck.error! }
 
-  // 핸드폰번호: 빈 값이면 null, 그 외엔 숫자/하이픈만 허용
+  // 핸드폰번호: 빈 값이면 null, 그 외엔 한국 형식 검증
   let phone: string | null = null
   if (phoneRaw) {
-    if (!/^[0-9-]+$/.test(phoneRaw)) {
-      return { error: "핸드폰번호는 숫자와 하이픈(-)만 입력 가능합니다." }
-    }
+    const phoneCheck = validateKoreanPhone(phoneRaw)
+    if (!phoneCheck.valid) return { error: phoneCheck.error! }
     phone = phoneRaw
   }
 

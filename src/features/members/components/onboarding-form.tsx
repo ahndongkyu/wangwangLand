@@ -8,6 +8,12 @@ import {
   PrivacyContent,
   TermsContent,
 } from "@/features/legal"
+import {
+  KOREAN_PHONE_PATTERN_RAW,
+  NICKNAME_HINT,
+  NICKNAME_PATTERN_RAW,
+  PHONE_HINT,
+} from "@/shared/lib/validation"
 
 const initialState = { error: null as string | null }
 
@@ -64,13 +70,16 @@ export function OnboardingForm({
           name="nickname"
           type="text"
           defaultValue={defaultNickname}
+          minLength={2}
           maxLength={20}
+          pattern={NICKNAME_PATTERN_RAW}
+          title={NICKNAME_HINT}
           required
           className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="예: 강아지러버"
         />
         <p className="mt-1 text-[11px] text-muted-foreground/80">
-          한글·영문·숫자·_ · 2~20자
+          {NICKNAME_HINT}
         </p>
       </div>
 
@@ -84,12 +93,14 @@ export function OnboardingForm({
           name="phone"
           type="tel"
           inputMode="tel"
+          pattern={KOREAN_PHONE_PATTERN_RAW}
+          title={PHONE_HINT}
           required
           className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="010-0000-0000"
         />
         <p className="mt-1 text-[11px] text-muted-foreground/80">
-          운영진 연락용. 운영진만 확인합니다.
+          {PHONE_HINT} · 운영진만 확인합니다.
         </p>
       </div>
 

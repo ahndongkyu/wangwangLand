@@ -10,6 +10,12 @@ import { FormFooter } from "@/shared/components/form-footer"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
+import {
+  KOREAN_PHONE_PATTERN_RAW,
+  ORG_OR_PERSON_HINT,
+  ORG_OR_PERSON_PATTERN_RAW,
+  PHONE_HINT,
+} from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
 
 type DonationType = "cash" | "goods"
@@ -148,14 +154,21 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
         badge={isMember ? "회원 정보 자동 채움" : undefined}
       >
         <div className="grid gap-3 md:grid-cols-2">
-          <Field id="donor_name" label="이름" required>
+          <Field id="donor_name" label="이름 / 단체명" required>
             <Input
               id="donor_name"
               name="donor_name"
               required
+              minLength={2}
+              maxLength={30}
+              pattern={ORG_OR_PERSON_PATTERN_RAW}
+              title={ORG_OR_PERSON_HINT}
               defaultValue={defaultDonor?.name ?? ""}
-              placeholder="실명"
+              placeholder="실명 또는 단체·회사명"
             />
+            <p className="text-[11px] text-muted-foreground/80">
+              {ORG_OR_PERSON_HINT}
+            </p>
           </Field>
           <Field id="phone" label="연락처" required>
             <Input
@@ -163,9 +176,12 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
               name="phone"
               type="tel"
               required
+              pattern={KOREAN_PHONE_PATTERN_RAW}
+              title={PHONE_HINT}
               defaultValue={defaultDonor?.phone ?? ""}
               placeholder="010-0000-0000"
             />
+            <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
           </Field>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">

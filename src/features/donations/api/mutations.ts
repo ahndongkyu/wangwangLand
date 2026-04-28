@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import {
+  validateKoreanPhone,
+  validateOrgOrPersonName,
+} from "@/shared/lib/validation"
 import type { DonationType } from "@/shared/types/database"
 
 export interface DonationMutationResult {
@@ -50,9 +54,10 @@ function parseFormData(formData: FormData): DonationInput {
 }
 
 function validate(input: DonationInput): string | null {
-  if (!input.donor_name) return "이름을 입력해주세요."
-  if (!input.phone) return "연락처를 입력해주세요."
-  if (!/^[0-9-]{9,}$/.test(input.phone)) return "올바른 연락처 형식이 아닙니다."
+  const nameCheck = validateOrgOrPersonName(input.donor_name)
+  if (!nameCheck.valid) return nameCheck.error ?? "이름을 확인해주세요."
+  const phoneCheck = validateKoreanPhone(input.phone)
+  if (!phoneCheck.valid) return phoneCheck.error ?? "연락처를 확인해주세요."
   if (!input.donated_at) return "후원 일자를 입력해주세요."
   if (input.type === "cash") {
     if (!input.amount || input.amount <= 0) return "후원 금액을 입력해주세요."

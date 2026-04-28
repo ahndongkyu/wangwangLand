@@ -7,6 +7,12 @@ import { updateProfile } from "../api/actions"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { ImageCropModal } from "@/shared/components/image-crop-modal"
+import {
+  KOREAN_PHONE_PATTERN_RAW,
+  NICKNAME_HINT,
+  NICKNAME_PATTERN_RAW,
+  PHONE_HINT,
+} from "@/shared/lib/validation"
 import type { Profile } from "../api/queries"
 
 interface Props {
@@ -101,10 +107,13 @@ export function ProfileForm({ profile }: Props) {
           id="nickname"
           name="nickname"
           defaultValue={profile.nickname}
+          minLength={2}
           maxLength={20}
+          pattern={NICKNAME_PATTERN_RAW}
+          title={NICKNAME_HINT}
           placeholder="닉네임 입력"
         />
-        <p className="text-xs text-muted-foreground">한글, 영문, 숫자, _ 사용 가능 (2~20자)</p>
+        <p className="text-xs text-muted-foreground">{NICKNAME_HINT}</p>
       </div>
 
       {/* 핸드폰번호 */}
@@ -117,11 +126,13 @@ export function ProfileForm({ profile }: Props) {
           name="phone"
           type="tel"
           defaultValue={profile.phone ?? ""}
+          pattern={KOREAN_PHONE_PATTERN_RAW}
+          title={PHONE_HINT}
           placeholder="010-0000-0000"
           inputMode="tel"
         />
         <p className="text-xs text-muted-foreground">
-          입양·봉사·후원 신청 시 운영진 연락용 (어드민만 확인)
+          {PHONE_HINT} · 운영진만 확인합니다
         </p>
       </div>
 
