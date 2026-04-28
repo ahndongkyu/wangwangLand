@@ -53,12 +53,18 @@ export async function signOut() {
   redirect("/")
 }
 
-/** 온보딩: 닉네임 설정 */
+/** 온보딩: 닉네임 + 약관/개인정보 동의 (필수) + 마케팅 수신(선택) */
 export async function updateNickname(
   _prev: { error: string | null },
   formData: FormData
 ): Promise<{ error: string | null }> {
   const nickname = (formData.get("nickname") as string | null)?.trim() ?? ""
+  const ageOk = formData.get("age_agree") === "on"
+  const termsOk = formData.get("terms_agree") === "on"
+  const privacyOk = formData.get("privacy_agree") === "on"
+  const marketingOk = formData.get("marketing_agree") === "on"
+  const termsVersion = (formData.get("terms_version") as string | null) ?? null
+  const privacyVersion = (formData.get("privacy_version") as string | null) ?? null
 
   if (nickname.length < 2 || nickname.length > 20) {
     return { error: "닉네임은 2~20자 사이로 입력해주세요." }
@@ -66,6 +72,9 @@ export async function updateNickname(
   if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
     return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
   }
+  if (!ageOk) return { error: "만 14세 이상 동의가 필요합니다." }
+  if (!termsOk) return { error: "이용약관 동의가 필요합니다." }
+  if (!privacyOk) return { error: "개인정보 처리방침 동의가 필요합니다." }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -81,9 +90,19 @@ export async function updateNickname(
 
   if (dup) return { error: "이미 사용 중인 닉네임입니다." }
 
+  const now = new Date().toISOString()
   const { error } = await supabase
     .from("profiles")
-    .update({ nickname, status: "approved", updated_at: new Date().toISOString() })
+    .update({
+      nickname,
+      status: "approved",
+      terms_agreed_at: now,
+      terms_version: termsVersion,
+      privacy_agreed_at: now,
+      privacy_version: privacyVersion,
+      marketing_agreed_at: marketingOk ? now : null,
+      updated_at: now,
+    })
     .eq("id", user.id)
 
   if (error) return { error: "저장에 실패했습니다." }

@@ -11,7 +11,7 @@ export async function getCurrentAdmin(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, role, status, is_banned, created_at")
+    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at")
     .eq("id", user.id)
     .in("role", ["staff", "admin"])
     .maybeSingle()

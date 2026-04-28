@@ -14,7 +14,7 @@ export default async function AdminAdminsPage() {
   const adminClient = createAdminClient()
   const { data: staffList } = await adminClient
     .from("profiles")
-    .select("id, nickname, avatar_url, role, status, is_banned, created_at")
+    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at")
     .in("role", ["staff", "admin"])
     .order("role", { ascending: true })
     .order("created_at", { ascending: true })

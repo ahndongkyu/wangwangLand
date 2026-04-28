@@ -141,6 +141,29 @@ export default async function AdminMemberDetailPage({
           <p className="mb-3 text-xs font-semibold text-muted-foreground">관리</p>
           <MemberManagePanel profile={profile} isTopAdmin={isTopAdmin} />
         </div>
+
+        {/* 약관 동의 정보 */}
+        <div className="border-t border-border p-5">
+          <p className="mb-3 text-xs font-semibold text-muted-foreground">약관 동의</p>
+          <dl className="grid gap-2 text-sm sm:grid-cols-3">
+            <AgreementItem
+              label="이용약관"
+              agreedAt={profile.terms_agreed_at}
+              version={profile.terms_version}
+              required
+            />
+            <AgreementItem
+              label="개인정보 처리방침"
+              agreedAt={profile.privacy_agreed_at}
+              version={profile.privacy_version}
+              required
+            />
+            <AgreementItem
+              label="마케팅 수신"
+              agreedAt={profile.marketing_agreed_at}
+            />
+          </dl>
+        </div>
       </Section>
 
       {/* ─── 활동 요약 ─── */}
@@ -372,6 +395,49 @@ function Empty({ text }: { text: string }) {
   return (
     <div className="mb-8 rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
       {text}
+    </div>
+  )
+}
+
+function AgreementItem({
+  label,
+  agreedAt,
+  version,
+  required,
+}: {
+  label: string
+  agreedAt: string | null
+  version?: string | null
+  required?: boolean
+}) {
+  const ok = !!agreedAt
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+            ok
+              ? "bg-primary/15 text-primary"
+              : required
+                ? "bg-destructive/15 text-destructive"
+                : "bg-secondary text-muted-foreground"
+          )}
+        >
+          {ok ? "동의" : required ? "미동의" : "선택 X"}
+        </span>
+      </div>
+      {ok && (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {new Date(agreedAt).toLocaleString("ko-KR", {
+            timeZone: "Asia/Seoul",
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
+          {version && <> · v{version}</>}
+        </p>
+      )}
     </div>
   )
 }
