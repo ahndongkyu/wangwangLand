@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
+import { User } from "lucide-react"
 
 import { listProfiles } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
@@ -35,10 +37,10 @@ const STATUS_COLOR: Record<Profile["status"], string> = {
 }
 
 // 헤더와 행이 공유하는 grid 정의
-//   sm 이상: 번호 / 닉네임 / 상태 / 권한 / 가입일
-//   sm 미만: 번호 / 닉네임 / 가입일
+//   sm 이상: 아바타 / 닉네임 / 상태 / 권한 / 가입일
+//   sm 미만: 아바타 / 닉네임 / 가입일
 const ROW_GRID =
-  "grid grid-cols-[48px_1fr_84px] sm:grid-cols-[48px_minmax(0,1fr)_72px_84px_84px] gap-3 items-center"
+  "grid grid-cols-[40px_1fr_84px] sm:grid-cols-[40px_minmax(0,1fr)_72px_84px_84px] gap-3 items-center"
 
 export default async function AdminMembersPage({
   searchParams,
@@ -134,22 +136,34 @@ export default async function AdminMembersPage({
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className={cn(ROW_GRID, "border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground")}>
-              <span className="text-center">번호</span>
+              <span aria-hidden />
               <span>닉네임</span>
               <span className="hidden sm:block">상태</span>
               <span className="hidden sm:block">권한</span>
               <span className="text-right">가입일</span>
             </div>
             <ul className="divide-y divide-border">
-              {profiles.map((p, i) => {
-                const num = total - offset - i
+              {profiles.map((p) => {
                 return (
                   <li key={p.id} className={cn(p.is_banned && "opacity-60")}>
                     <Link
                       href={`/admin/members/${p.id}`}
                       className={cn(ROW_GRID, "px-4 py-3 transition-colors hover:bg-secondary/50")}
                     >
-                      <span className="text-center text-xs text-muted-foreground">{num}</span>
+                      {/* 아바타 */}
+                      <span className="relative size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+                        {p.avatar_url ? (
+                          <Image
+                            src={p.avatar_url}
+                            alt=""
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <User className="size-full p-2 text-muted-foreground" />
+                        )}
+                      </span>
 
                       {/* 닉네임 */}
                       <span className="flex min-w-0 items-center gap-1.5">

@@ -3,14 +3,22 @@ import Link from "next/link"
 import { getCurrentAdmin } from "@/features/auth"
 import { listAdoptionStories } from "@/features/stories"
 import { Pagination } from "@/shared/components/pagination"
+import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn, formatShortDate } from "@/shared/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 20
+
+function excerpt(content: string | null | undefined, max = 80): string | null {
+  if (!content) return null
+  const plain = content.replace(/\s+/g, " ").trim()
+  if (!plain) return null
+  return plain.length > max ? plain.slice(0, max) + "…" : plain
+}
 
 export default async function AdminStoriesPage({
   searchParams,
@@ -59,53 +67,41 @@ export default async function AdminStoriesPage({
         <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 입양 후기가 없습니다"} />
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_90px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-              <span className="text-center">번호</span>
-              <span>제목</span>
-              <span className="hidden sm:block">작성자</span>
-              <span className="text-right">작성일</span>
-              <span className="text-right">조회</span>
-            </div>
-            <ul className="divide-y divide-border">
-              {stories.map((s, i) => {
-                const num = total - offset - i
-                const isPublished = s.published_at !== null
-                return (
-                  <li key={s.id}>
-                    <Link
-                      href={`/admin/stories/${s.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_auto_90px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
-                    >
-                      <span className="text-center text-xs text-muted-foreground">{num}</span>
-                      <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate text-sm font-medium text-foreground">{s.title}</span>
-                        <span className="flex items-center gap-2">
-                          {s.dog && (
-                            <span className="text-[11px] text-primary/80">{s.dog.name}</span>
-                          )}
-                          <span className={`inline-flex rounded-full px-1.5 py-px text-[10px] font-semibold ${
-                            isPublished ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                          }`}>
-                            {isPublished ? "공개" : "임시저장"}
-                          </span>
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {stories.map((s) => {
+              const dogThumb =
+                s.dog?.images?.[s.dog.thumbnail_index] ??
+                s.dog?.images?.[0] ??
+                null
+              const thumbnail = s.images[0] ?? dogThumb ?? null
+              const isPublished = s.published_at !== null
+              return (
+                <li key={s.id}>
+                  <PostListRow
+                    href={`/admin/stories/${s.id}/edit`}
+                    title={s.title}
+                    subTitle={s.dog ? `${s.dog.name} 입양 후기` : undefined}
+                    thumbnail={thumbnail}
+                    excerpt={excerpt(s.content)}
+                    author={s.author}
+                    date={s.created_at}
+                    viewCount={s.view_count}
+                    statusBadge={
+                      isPublished ? (
+                        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          공개
                         </span>
-                      </span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">
-                        {s.author?.nickname ?? "—"}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {formatShortDate(s.created_at)}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {s.view_count}
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+                      ) : (
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          임시저장
+                        </span>
+                      )
+                    }
+                  />
+                </li>
+              )
+            })}
+          </ul>
 
           <Pagination
             currentPage={pageNum}

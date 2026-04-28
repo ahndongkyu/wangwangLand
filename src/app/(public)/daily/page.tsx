@@ -1,13 +1,18 @@
-import Link from "next/link"
 import type { Metadata } from "next"
-import { ImageIcon } from "lucide-react"
 
 import { listDailyPosts } from "@/features/daily"
-import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
+import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { WriteButton } from "@/shared/components/write-button"
-import { formatShortDate } from "@/shared/lib/utils"
+
+function excerpt(content: string | null | undefined, max = 80): string | null {
+  if (!content) return null
+  // 마크다운/줄바꿈 정리
+  const plain = content.replace(/\s+/g, " ").trim()
+  if (!plain) return null
+  return plain.length > max ? plain.slice(0, max) + "…" : plain
+}
 
 export const metadata: Metadata = {
   title: "왕왕랜드 일상",
@@ -66,51 +71,21 @@ export default async function DailyPage({
             : "아직 등록된 일상이 없어요. 곧 따뜻한 순간들을 공유할게요 📷"}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          {/* 헤더 */}
-          <div className="grid grid-cols-[48px_1fr_auto_72px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-            <span className="text-center">번호</span>
-            <span>제목</span>
-            <span className="hidden sm:block">작성자</span>
-            <span className="text-right">작성일</span>
-            <span className="text-right">조회</span>
-          </div>
-          <ul className="divide-y divide-border">
-            {posts.map((post, i) => {
-              const num = total - offset - i
-              return (
-                <li key={post.id}>
-                  <Link
-                    href={`/daily/${post.id}`}
-                    className="grid grid-cols-[48px_1fr_auto_72px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
-                  >
-                    <span className="text-center text-xs text-muted-foreground">{num}</span>
-                    <span className="flex items-center gap-2 truncate">
-                      <span className="truncate text-sm font-medium text-foreground">{post.title}</span>
-                      {post.images.length > 0 && (
-                        <ImageIcon className="size-3.5 shrink-0 text-muted-foreground/60" />
-                      )}
-                    </span>
-                    <span className="hidden items-center gap-1.5 sm:flex">
-                      {post.author && (
-                        <>
-                          <RoleBadge role={post.author.role} />
-                          <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
-                        </>
-                      )}
-                    </span>
-                    <span className="text-right text-xs text-muted-foreground">
-                      {formatShortDate(post.posted_at)}
-                    </span>
-                    <span className="text-right text-xs text-muted-foreground">
-                      {post.view_count}
-                    </span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <PostListRow
+                href={`/daily/${post.id}`}
+                title={post.title}
+                thumbnail={post.images[0] ?? null}
+                excerpt={excerpt(post.content)}
+                author={post.author}
+                date={post.posted_at}
+                viewCount={post.view_count}
+              />
+            </li>
+          ))}
+        </ul>
       )}
 
       <Pagination

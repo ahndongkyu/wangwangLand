@@ -1,7 +1,16 @@
 import Link from "next/link"
 import Image from "next/image"
 import { notFound } from "next/navigation"
-import { User } from "lucide-react"
+import {
+  BarChart3,
+  HandHeart,
+  Handshake,
+  Home,
+  KeyRound,
+  PawPrint,
+  Pencil,
+  User,
+} from "lucide-react"
 
 import { getCurrentAdmin } from "@/features/auth"
 import { getProfileDetail, MemberManagePanel } from "@/features/members"
@@ -40,6 +49,23 @@ function formatJoinedAt(iso: string) {
     month: "long",
     day: "numeric",
   })
+}
+
+function providerLabel(provider: string | null): string {
+  switch (provider) {
+    case "kakao":
+      return "카카오"
+    case "google":
+      return "구글"
+    case "naver":
+      return "네이버"
+    case "apple":
+      return "애플"
+    case "email":
+      return "이메일"
+    default:
+      return "—"
+  }
 }
 
 export default async function AdminMemberDetailPage({
@@ -123,9 +149,12 @@ export default async function AdminMemberDetailPage({
                 </span>
               )}
             </div>
-            <dl className="mt-1 grid grid-cols-[64px_1fr] gap-x-3 gap-y-1 text-sm">
-              <dt className="text-xs text-muted-foreground">이메일</dt>
-              <dd className="text-foreground">{profile.email ?? "—"}</dd>
+            <dl className="mt-1 grid grid-cols-[72px_1fr] gap-x-3 gap-y-1 text-sm">
+              <dt className="flex items-center gap-1 text-xs text-muted-foreground">
+                <KeyRound className="size-3" aria-hidden />
+                가입 방법
+              </dt>
+              <dd className="text-foreground">{providerLabel(profile.signup_provider)}</dd>
               <dt className="text-xs text-muted-foreground">핸드폰</dt>
               <dd className={profile.phone ? "text-foreground" : "text-muted-foreground"}>
                 {profile.phone ?? "미등록"}
@@ -167,7 +196,7 @@ export default async function AdminMemberDetailPage({
       </Section>
 
       {/* ─── 활동 요약 ─── */}
-      <SectionTitle>📊 활동 요약</SectionTitle>
+      <SectionTitle icon={BarChart3}>활동 요약</SectionTitle>
       <div className="mb-8 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         <Stat label="작성 일상" value={`${dailyCount}건`} />
         <Stat label="작성 입양후기" value={`${storiesCount}건`} />
@@ -183,10 +212,11 @@ export default async function AdminMemberDetailPage({
 
       {/* ─── 작성 일상 ─── */}
       <SectionTitle
+        icon={Pencil}
         linkLabel={dailyCount > 5 ? `전체 ${dailyCount}건` : undefined}
         linkHref={`/admin/daily`}
       >
-        📝 작성 일상 (최근 5)
+        작성 일상 (최근 5)
       </SectionTitle>
       {dailyPosts.length === 0 ? (
         <Empty text="작성한 일상이 없습니다." />
@@ -212,10 +242,11 @@ export default async function AdminMemberDetailPage({
 
       {/* ─── 작성 입양후기 ─── */}
       <SectionTitle
+        icon={PawPrint}
         linkLabel={storiesCount > 5 ? `전체 ${storiesCount}건` : undefined}
         linkHref={`/admin/stories`}
       >
-        🐾 작성 입양후기 (최근 5)
+        작성 입양후기 (최근 5)
       </SectionTitle>
       {storiesPosts.length === 0 ? (
         <Empty text="작성한 입양후기가 없습니다." />
@@ -247,7 +278,7 @@ export default async function AdminMemberDetailPage({
       )}
 
       {/* ─── 입양 신청 ─── */}
-      <SectionTitle>🏠 입양 신청</SectionTitle>
+      <SectionTitle icon={Home}>입양 신청</SectionTitle>
       {apps.adoption.length === 0 ? (
         <Empty text="입양 신청 내역이 없습니다." />
       ) : (
@@ -280,7 +311,7 @@ export default async function AdminMemberDetailPage({
       )}
 
       {/* ─── 봉사 신청 ─── */}
-      <SectionTitle>🤝 봉사 신청</SectionTitle>
+      <SectionTitle icon={Handshake}>봉사 신청</SectionTitle>
       {apps.volunteer.length === 0 ? (
         <Empty text="봉사 신청 내역이 없습니다." />
       ) : (
@@ -311,7 +342,7 @@ export default async function AdminMemberDetailPage({
       )}
 
       {/* ─── 후원 내역 ─── */}
-      <SectionTitle>💰 후원 내역</SectionTitle>
+      <SectionTitle icon={HandHeart}>후원 내역</SectionTitle>
       {donations.length === 0 ? (
         <Empty text="후원 내역이 없습니다." />
       ) : (
@@ -363,16 +394,21 @@ function Section({
 
 function SectionTitle({
   children,
+  icon: Icon,
   linkLabel,
   linkHref,
 }: {
   children: React.ReactNode
+  icon?: typeof User
   linkLabel?: string
   linkHref?: string
 }) {
   return (
     <div className="mb-2 flex items-end justify-between">
-      <h2 className="text-sm font-semibold text-foreground">{children}</h2>
+      <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        {Icon && <Icon className="size-4 text-muted-foreground" aria-hidden />}
+        {children}
+      </h2>
       {linkLabel && linkHref && (
         <Link href={linkHref} className="text-xs text-primary hover:underline">
           {linkLabel} →

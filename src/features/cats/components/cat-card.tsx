@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Mars, Venus } from "lucide-react"
 
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent } from "@/shared/components/ui/card"
@@ -55,8 +56,18 @@ export function CatCard({ cat }: { cat: Cat }) {
               {cat.name}
             </h3>
             {cat.gender && cat.gender !== "미상" && (
-              <span className="text-xs text-muted-foreground">
-                {cat.gender === "수컷" ? "♂" : "♀"} {cat.gender}
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 text-xs",
+                  cat.gender === "수컷" ? "text-sky-600" : "text-pink-500"
+                )}
+              >
+                {cat.gender === "수컷" ? (
+                  <Mars className="size-3" aria-hidden />
+                ) : (
+                  <Venus className="size-3" aria-hidden />
+                )}
+                {cat.gender}
               </span>
             )}
           </div>

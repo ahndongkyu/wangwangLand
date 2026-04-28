@@ -72,9 +72,11 @@ export function UserMenu({ profile }: { profile: Profile }) {
                 <User className="size-full p-1.5 text-muted-foreground" />
               )}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
               <RoleBadge role={profile.role} />
-              <p className="truncate text-sm font-semibold text-foreground">{profile.nickname}</p>
+              <p className="max-w-full truncate text-sm font-semibold text-foreground">
+                {profile.nickname}
+              </p>
             </div>
             <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
           </Link>

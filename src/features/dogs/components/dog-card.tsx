@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Mars, Venus } from "lucide-react"
 
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent } from "@/shared/components/ui/card"
@@ -62,15 +63,20 @@ export function DogCard({ dog }: { dog: Dog }) {
             </p>
           )}
           {/* 메타 뱃지 그룹 */}
-          <div className="mt-3 flex flex-nowrap gap-1.5 overflow-hidden">
+          <div className="mt-3 flex flex-nowrap items-center gap-1.5 overflow-hidden">
             {dog.gender && dog.gender !== "미상" && (
               <span
                 className={cn(
-                  "inline-flex size-6 items-center justify-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8] text-xs font-medium leading-none",
+                  "inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[#E8D5B7] bg-[#FAF3E8]",
                   dog.gender === "수컷" ? "text-sky-600" : "text-pink-500"
                 )}
+                aria-label={dog.gender}
               >
-                {dog.gender === "수컷" ? "♂" : "♀"}
+                {dog.gender === "수컷" ? (
+                  <Mars className="size-3.5" aria-hidden />
+                ) : (
+                  <Venus className="size-3.5" aria-hidden />
+                )}
               </span>
             )}
             {formatAge(dog) && (

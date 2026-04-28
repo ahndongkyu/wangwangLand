@@ -3,14 +3,22 @@ import Link from "next/link"
 import { getCurrentAdmin } from "@/features/auth"
 import { listDailyPosts } from "@/features/daily"
 import { Pagination } from "@/shared/components/pagination"
+import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn, formatShortDate } from "@/shared/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 20
+
+function excerpt(content: string | null | undefined, max = 80): string | null {
+  if (!content) return null
+  const plain = content.replace(/\s+/g, " ").trim()
+  if (!plain) return null
+  return plain.length > max ? plain.slice(0, max) + "…" : plain
+}
 
 export default async function AdminDailyPage({
   searchParams,
@@ -57,40 +65,21 @@ export default async function AdminDailyPage({
         <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 일상이 없습니다"} />
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_90px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-              <span className="text-center">번호</span>
-              <span>제목</span>
-              <span className="hidden sm:block">작성자</span>
-              <span className="text-right">작성일</span>
-              <span className="text-right">조회</span>
-            </div>
-            <ul className="divide-y divide-border">
-              {posts.map((p, i) => {
-                const num = total - offset - i
-                return (
-                  <li key={p.id}>
-                    <Link
-                      href={`/admin/daily/${p.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_auto_90px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
-                    >
-                      <span className="text-center text-xs text-muted-foreground">{num}</span>
-                      <span className="truncate text-sm font-medium text-foreground">{p.title}</span>
-                      <span className="hidden text-xs text-muted-foreground sm:block">
-                        {p.author?.nickname ?? "—"}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {formatShortDate(p.posted_at)}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {p.view_count}
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {posts.map((p) => (
+              <li key={p.id}>
+                <PostListRow
+                  href={`/admin/daily/${p.id}/edit`}
+                  title={p.title}
+                  thumbnail={p.images[0] ?? null}
+                  excerpt={excerpt(p.content)}
+                  author={p.author}
+                  date={p.posted_at}
+                  viewCount={p.view_count}
+                />
+              </li>
+            ))}
+          </ul>
 
           <Pagination
             currentPage={pageNum}

@@ -1,12 +1,9 @@
-import Link from "next/link"
 import type { Metadata } from "next"
-import { Pin } from "lucide-react"
 
 import { listNotices, MarkNoticesSeen } from "@/features/notices"
-import { RoleBadge } from "@/shared/components/role-badge"
 import { Pagination } from "@/shared/components/pagination"
+import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
-import { formatShortDate } from "@/shared/lib/utils"
 
 export const metadata: Metadata = {
   title: "공지사항",
@@ -61,67 +58,20 @@ export default async function NoticePage({
             : "아직 등록된 공지가 없어요."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          {/* 헤더 */}
-          <div className="grid grid-cols-[48px_1fr_auto_72px_56px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-            <span className="text-center">번호</span>
-            <span>제목</span>
-            <span className="hidden sm:block">작성자</span>
-            <span className="text-right">작성일</span>
-            <span className="text-right">조회</span>
-          </div>
-
-          <ul className="divide-y divide-border">
-            {notices.map((n, i) => {
-              const num = total - offset - i
-              return (
-                <li
-                  key={n.id}
-                  className={n.is_pinned ? "bg-primary/5" : undefined}
-                >
-                  <Link
-                    href={`/notice/${n.id}`}
-                    className="grid grid-cols-[48px_1fr_auto_72px_56px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
-                  >
-                    {/* 번호 or 핀 */}
-                    <span className="flex items-center justify-center text-xs text-muted-foreground">
-                      {n.is_pinned ? (
-                        <Pin className="size-3.5 text-primary" aria-label="상단 고정" />
-                      ) : (
-                        num
-                      )}
-                    </span>
-
-                    {/* 제목 */}
-                    <span className="truncate text-sm font-medium text-foreground">
-                      {n.title}
-                    </span>
-
-                    {/* 작성자 */}
-                    <span className="hidden items-center gap-1.5 sm:flex">
-                      {n.author && (
-                        <>
-                          <RoleBadge role={n.author.role} />
-                          <span className="text-xs text-muted-foreground">{n.author.nickname}</span>
-                        </>
-                      )}
-                    </span>
-
-                    {/* 날짜 */}
-                    <span className="text-right text-xs text-muted-foreground">
-                      {n.published_at && formatShortDate(n.published_at)}
-                    </span>
-
-                    {/* 조회수 */}
-                    <span className="text-right text-xs text-muted-foreground">
-                      {n.view_count}
-                    </span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {notices.map((n) => (
+            <li key={n.id} className={n.is_pinned ? "bg-primary/5" : undefined}>
+              <PostListRow
+                href={`/notice/${n.id}`}
+                title={n.title}
+                author={n.author}
+                date={n.published_at}
+                viewCount={n.view_count}
+                pinned={n.is_pinned}
+              />
+            </li>
+          ))}
+        </ul>
       )}
 
       <Pagination

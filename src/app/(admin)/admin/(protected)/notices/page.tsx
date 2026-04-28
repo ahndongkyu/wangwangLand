@@ -1,14 +1,12 @@
 import Link from "next/link"
-import { Pin } from "lucide-react"
 
 import { listNotices } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
-import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn, formatShortDate } from "@/shared/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -57,64 +55,31 @@ export default async function AdminNoticesPage({
         <EmptyState title={activeQuery ? `'${activeQuery}' 검색 결과가 없습니다` : "아직 등록된 공지가 없습니다"} />
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_64px_140px_72px_56px] gap-3 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
-              <span className="text-center">번호</span>
-              <span>제목</span>
-              <span className="hidden sm:block">상태</span>
-              <span className="hidden sm:block">작성자</span>
-              <span className="text-right">작성일</span>
-              <span className="text-right">조회</span>
-            </div>
-            <ul className="divide-y divide-border">
-              {notices.map((n, i) => {
-                const num = total - offset - i
-                return (
-                  <li key={n.id}>
-                    <Link
-                      href={`/admin/notices/${n.id}/edit`}
-                      className="grid grid-cols-[56px_1fr_64px_140px_72px_56px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/50"
-                    >
-                      <span className="text-center text-xs text-muted-foreground">{num}</span>
-                      <span className="flex min-w-0 items-center gap-2">
-                        {n.is_pinned && (
-                          <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
-                        )}
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {n.title}
-                        </span>
+          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {notices.map((n) => (
+              <li key={n.id}>
+                <PostListRow
+                  href={`/admin/notices/${n.id}/edit`}
+                  title={n.title}
+                  author={n.author}
+                  date={n.created_at}
+                  viewCount={n.view_count}
+                  pinned={n.is_pinned}
+                  statusBadge={
+                    n.published_at ? (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        공개
                       </span>
-                      <span className="hidden sm:block">
-                        {n.published_at ? (
-                          <Badge className="border-0 bg-primary/15 text-primary">
-                            공개
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">임시저장</Badge>
-                        )}
+                    ) : (
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                        임시저장
                       </span>
-                      <span className="hidden items-center gap-1.5 sm:flex">
-                        {n.author ? (
-                          <>
-                            <RoleBadge role={n.author.role} />
-                            <span className="text-xs text-muted-foreground">{n.author.nickname}</span>
-                          </>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">운영진</span>
-                        )}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {formatShortDate(n.created_at)}
-                      </span>
-                      <span className="text-right text-xs text-muted-foreground">
-                        {n.view_count}
-                      </span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+                    )
+                  }
+                />
+              </li>
+            ))}
+          </ul>
 
           <Pagination
             currentPage={pageNum}

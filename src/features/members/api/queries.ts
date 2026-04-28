@@ -39,6 +39,8 @@ export interface PaginatedProfiles {
 /** 어드민 상세 페이지용: 특정 회원의 프로필 + 이메일(auth.users 에서 조회) */
 export interface ProfileDetail extends Profile {
   email: string | null
+  /** OAuth provider (kakao / google / ...) 또는 "email". 미상이면 null. */
+  signup_provider: string | null
 }
 
 export async function getProfileDetail(id: string): Promise<ProfileDetail | null> {
@@ -50,18 +52,21 @@ export async function getProfileDetail(id: string): Promise<ProfileDetail | null
     .maybeSingle()
   if (!profile) return null
 
-  // auth.users 의 email 은 service role 만 조회 가능
+  // auth.users 의 email / provider 는 service role 만 조회 가능
   let email: string | null = null
+  let signup_provider: string | null = null
   try {
     const { createAdminClient } = await import("@/shared/lib/supabase/admin")
     const admin = createAdminClient()
     const { data } = await admin.auth.admin.getUserById(id)
     email = data?.user?.email ?? null
+    signup_provider =
+      (data?.user?.app_metadata?.provider as string | undefined) ?? null
   } catch (e) {
-    console.warn("[getProfileDetail] failed to fetch email:", e)
+    console.warn("[getProfileDetail] failed to fetch auth user:", e)
   }
 
-  return { ...(profile as Profile), email }
+  return { ...(profile as Profile), email, signup_provider }
 }
 
 export type ProfileSort = "name" | "joined" | "status"
