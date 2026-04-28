@@ -3,9 +3,9 @@ import Link from "next/link"
 import { listCats } from "@/features/cats"
 import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogsForHome } from "@/features/dogs"
-import { listNotices } from "@/features/notices"
+import { listNotices, RecentNewsSection } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
-import { Heart, Pin } from "lucide-react"
+import { Heart } from "lucide-react"
 import {
   BrandIcon,
   type BrandIconName,
@@ -16,10 +16,8 @@ import {
   type HeroSlide,
 } from "@/shared/components/hero-carousel"
 import { OrganizationJsonLd } from "@/shared/components/structured-data"
-import { RoleBadge } from "@/shared/components/role-badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
-import { formatShortDate } from "@/shared/lib/utils"
 import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
 
@@ -57,7 +55,7 @@ export default async function HomePage() {
       listDailyPosts({ limit: 3 }),
       listAdoptionStories({ limit: 3 }),
       getSiteStats(),
-      listNotices({ limit: 3 }),
+      listNotices({ limit: 4 }),
     ])
   const recentDaily = dailyResult.posts
   const recentStories = storiesResult.stories
@@ -233,65 +231,8 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 5. 최근 공지사항 — 푸터 CTA 와의 중복을 피하고 운영 활성도 노출 */}
-      {recentNotices.length > 0 && (
-        <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-4xl px-4 pb-8 pt-16 md:px-6">
-            <div className="mb-8 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
-                  <BrandIcon name="notification" size={28} decorative />
-                  최근 소식
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  왕왕랜드의 최신 안내·이벤트입니다.
-                </p>
-              </div>
-              <Link
-                href="/notice"
-                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
-              >
-                전체 공지 →
-              </Link>
-            </div>
-            <ul className="overflow-hidden rounded-xl border border-border bg-card">
-              {recentNotices.map((n) => (
-                <li
-                  key={n.id}
-                  className={`border-b border-border last:border-0 ${
-                    n.is_pinned ? "bg-primary/5" : ""
-                  }`}
-                >
-                  <Link
-                    href={`/notice/${n.id}`}
-                    className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-secondary/50"
-                  >
-                    {n.is_pinned && (
-                      <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단고정" />
-                    )}
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                      {n.title}
-                    </span>
-                    <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
-                      {n.author && (
-                        <>
-                          <RoleBadge role={n.author.role} />
-                          <span className="text-xs text-muted-foreground">
-                            {n.author.nickname}
-                          </span>
-                        </>
-                      )}
-                    </span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {n.published_at && formatShortDate(n.published_at)}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      {/* 5. 최근 소식 — 카테고리 카드 그리드 */}
+      <RecentNewsSection notices={recentNotices} />
       {/* 6. 왕왕랜드 일상 */}
       {recentDaily.length > 0 && (
         <section className="border-t border-border/60 bg-card">
