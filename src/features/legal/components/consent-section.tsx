@@ -53,64 +53,62 @@ export function ConsentSection({
       </legend>
 
       {/* 개인정보 수집·이용 동의 */}
-      <div className="space-y-2 rounded-md border border-border/60 bg-secondary/30 p-3">
-        <label className="flex cursor-pointer items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="privacy_agreed"
-            checked={privacyAgreed}
-            onChange={(e) => onPrivacyChange(e.target.checked)}
-            className="mt-0.5 size-4 accent-primary"
-          />
-          <span className="flex-1">
-            <span className="flex items-center gap-1.5">
-              <span className="rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
-                필수
-              </span>
-              <span className="font-medium text-foreground">
-                개인정보 수집·이용 동의
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setOpenModal("privacy")
-                }}
-                className="ml-auto text-xs text-muted-foreground underline hover:text-primary"
-              >
-                전문 보기
-              </button>
+      <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
+        <input
+          type="checkbox"
+          name="privacy_agreed"
+          checked={privacyAgreed}
+          onChange={(e) => onPrivacyChange(e.target.checked)}
+          className="mt-0.5 size-4 shrink-0 accent-primary"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5">
+            <span className="rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
+              필수
             </span>
-            <ul className="mt-1.5 space-y-0.5 text-[11px] leading-relaxed text-muted-foreground">
-              <li>
-                <span className="text-foreground/80">목적</span> · {privacy.purpose}
-              </li>
-              <li>
-                <span className="text-foreground/80">항목</span> · {privacy.items}
-              </li>
-              <li>
-                <span className="text-foreground/80">보유</span> · {privacy.retention}
-              </li>
-            </ul>
-            <p className="mt-1 text-[10px] text-muted-foreground/80">
-              동의 거부 가능. 단, 거부 시 신청이 어렵습니다.
-            </p>
+            <span className="font-medium text-foreground">
+              개인정보 수집·이용 동의
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setOpenModal("privacy")
+              }}
+              className="ml-auto text-xs text-muted-foreground underline hover:text-primary"
+            >
+              전문 보기
+            </button>
           </span>
-        </label>
-      </div>
+          <ul className="mt-1.5 space-y-0.5 text-[11px] leading-relaxed text-muted-foreground">
+            <li>
+              <span className="text-foreground/80">목적</span> · {privacy.purpose}
+            </li>
+            <li>
+              <span className="text-foreground/80">항목</span> · {privacy.items}
+            </li>
+            <li>
+              <span className="text-foreground/80">보유</span> · {privacy.retention}
+            </li>
+          </ul>
+          <p className="mt-1 text-[10px] text-muted-foreground/80">
+            동의 거부 가능. 단, 거부 시 신청이 어렵습니다.
+          </p>
+        </span>
+      </label>
 
-      {/* 이용약관 동의 */}
-      <label className="flex cursor-pointer items-center gap-2 px-1 text-sm">
+      {/* 이용약관 동의 — 개인정보 row 와 동일 패딩으로 좌측 정렬 통일 */}
+      <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
         <input
           type="checkbox"
           name="terms_agreed"
           checked={termsAgreed}
           onChange={(e) => onTermsChange(e.target.checked)}
           disabled={termsAlreadyAgreed}
-          className="size-4 accent-primary"
+          className="size-4 shrink-0 accent-primary"
         />
-        <span className="flex flex-1 items-center gap-1.5">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
             필수
           </span>
@@ -128,7 +126,7 @@ export function ConsentSection({
             e.stopPropagation()
             setOpenModal("terms")
           }}
-          className="text-xs text-muted-foreground underline hover:text-primary"
+          className="ml-auto shrink-0 text-xs text-muted-foreground underline hover:text-primary"
         >
           보기
         </button>
