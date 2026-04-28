@@ -8,14 +8,13 @@ export type Role = "member" | "full_member" | "staff" | "admin"
 interface BadgeStyle {
   bg: string
   color: string
-  icon?: string
 }
 
 const STYLES: Record<Role, BadgeStyle> = {
   member:      { bg: "#F1EFE8", color: "#5F5E5A" },
   full_member: { bg: "#FAEEDA", color: "#BA7517" },
-  staff:       { bg: "#FAECE7", color: "#993C1D", icon: "●" },
-  admin:       { bg: "#FCEBEB", color: "#791F1F", icon: "★" },
+  staff:       { bg: "#FAECE7", color: "#993C1D" },
+  admin:       { bg: "#FCEBEB", color: "#791F1F" },
 }
 
 const LABEL: Record<Role, string> = {
@@ -32,14 +31,13 @@ interface Props {
 
 export function RoleBadge({ role, className = "" }: Props) {
   const key = (role in STYLES ? role : "member") as Role
-  const { bg, color, icon } = STYLES[key]
+  const { bg, color } = STYLES[key]
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold leading-none ${className}`}
       style={{ background: bg, color }}
     >
-      {icon && <span aria-hidden>{icon}</span>}
       {LABEL[key]}
     </span>
   )

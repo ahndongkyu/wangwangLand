@@ -97,14 +97,14 @@ export function UserMenu({ profile }: { profile: Profile }) {
             </>
           )}
 
-          {/* ── 테마 토글 ── */}
-          <div className="p-1.5">
+          {/* ── 테마 토글 + 로그아웃 (한 블록) ── */}
+          <div className="space-y-0.5 p-1.5">
             <button
               type="button"
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary"
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-secondary">
                 {isDark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
               </span>
               <span className="flex-1 text-left">{isDark ? "다크 모드" : "라이트 모드"}</span>
@@ -112,18 +112,12 @@ export function UserMenu({ profile }: { profile: Profile }) {
                 전환
               </span>
             </button>
-          </div>
-
-          <div className="h-px bg-border" />
-
-          {/* ── 로그아웃 ── */}
-          <div className="p-1.5">
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
             >
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-destructive/10">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-destructive/10">
                 <LogOut className="size-3.5" />
               </span>
               로그아웃
