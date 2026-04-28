@@ -42,6 +42,11 @@ export const metadata: Metadata = {
     shortcut: SITE.logo,
     apple: SITE.logo,
   },
+  alternates: {
+    types: {
+      "application/rss+xml": [{ url: "/feed.xml", title: SITE.name }],
+    },
+  },
   openGraph: {
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
