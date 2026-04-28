@@ -81,7 +81,7 @@ export async function submitAdoptionApplication(
 
   if (error) {
     console.error("[submitAdoptionApplication]", error)
-    return { error: "신청 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." }
+    return { error: `신청 실패: ${error.message}` }
   }
 
   return { id: data.id }
@@ -136,7 +136,7 @@ export async function submitVolunteerApplication(
 
   if (error) {
     console.error("[submitVolunteerApplication]", error)
-    return { error: "신청 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." }
+    return { error: `신청 실패: ${error.message}` }
   }
 
   return { id: data.id }

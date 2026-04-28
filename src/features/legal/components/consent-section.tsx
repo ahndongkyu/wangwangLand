@@ -56,11 +56,14 @@ export function ConsentSection({
       <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
         <input
           type="checkbox"
-          name="privacy_agreed"
           checked={privacyAgreed}
           onChange={(e) => onPrivacyChange(e.target.checked)}
           className="mt-0.5 size-4 shrink-0 accent-primary"
         />
+        {/* 서버 액션이 form data 에서 확실히 읽을 수 있도록 hidden 으로 분리 */}
+        {privacyAgreed && (
+          <input type="hidden" name="privacy_agreed" value="on" />
+        )}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className="rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
@@ -102,12 +105,15 @@ export function ConsentSection({
       <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
         <input
           type="checkbox"
-          name="terms_agreed"
           checked={termsAgreed}
           onChange={(e) => onTermsChange(e.target.checked)}
           disabled={termsAlreadyAgreed}
           className="size-4 shrink-0 accent-primary"
         />
+        {/* hidden 으로 form data 보장 (controlled + disabled 케이스 모두 처리) */}
+        {termsAgreed && (
+          <input type="hidden" name="terms_agreed" value="on" />
+        )}
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
             필수
