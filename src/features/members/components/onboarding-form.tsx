@@ -1,9 +1,13 @@
 "use client"
 
-import Link from "next/link"
 import { useActionState, useEffect, useRef, useState } from "react"
 
 import { updateNickname } from "../api/actions"
+import {
+  AgreementModal,
+  PrivacyContent,
+  TermsContent,
+} from "@/features/legal"
 
 const initialState = { error: null as string | null }
 
@@ -26,6 +30,7 @@ export function OnboardingForm({
   const [privacy, setPrivacy] = useState(false)
   const [marketing, setMarketing] = useState(false)
   const [agreeAll, setAgreeAll] = useState(false)
+  const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -97,7 +102,7 @@ export function OnboardingForm({
           checked={terms}
           onChange={setTerms}
           label="이용약관 동의"
-          link={{ href: "/terms", label: "보기" }}
+          onView={() => setOpenModal("terms")}
         />
         <AgreeRow
           name="privacy_agree"
@@ -105,7 +110,7 @@ export function OnboardingForm({
           checked={privacy}
           onChange={setPrivacy}
           label="개인정보 처리방침 동의"
-          link={{ href: "/privacy", label: "보기" }}
+          onView={() => setOpenModal("privacy")}
         />
         <AgreeRow
           name="marketing_agree"
@@ -135,6 +140,21 @@ export function OnboardingForm({
           필수 동의 항목에 모두 체크해야 가입할 수 있습니다.
         </p>
       )}
+
+      <AgreementModal
+        open={openModal === "terms"}
+        onClose={() => setOpenModal(null)}
+        title="이용약관"
+      >
+        <TermsContent embedded />
+      </AgreementModal>
+      <AgreementModal
+        open={openModal === "privacy"}
+        onClose={() => setOpenModal(null)}
+        title="개인정보 처리방침"
+      >
+        <PrivacyContent embedded />
+      </AgreementModal>
     </form>
   )
 }
@@ -145,14 +165,14 @@ function AgreeRow({
   checked,
   onChange,
   label,
-  link,
+  onView,
 }: {
   name: string
   required?: boolean
   checked: boolean
   onChange: (v: boolean) => void
   label: string
-  link?: { href: string; label: string }
+  onView?: () => void
 }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
@@ -173,16 +193,18 @@ function AgreeRow({
         {required ? "필수" : "선택"}
       </span>
       <span className="flex-1">{label}</span>
-      {link && (
-        <Link
-          href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
+      {onView && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onView()
+          }}
           className="text-xs text-muted-foreground underline hover:text-primary"
-          onClick={(e) => e.stopPropagation()}
         >
-          {link.label}
-        </Link>
+          보기
+        </button>
       )}
     </label>
   )
