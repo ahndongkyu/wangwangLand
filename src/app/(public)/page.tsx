@@ -16,6 +16,7 @@ import {
   type HeroSlide,
 } from "@/shared/components/hero-carousel"
 import { OrganizationJsonLd } from "@/shared/components/structured-data"
+import { RoleBadge } from "@/shared/components/role-badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 import { formatShortDate } from "@/shared/lib/utils"
@@ -253,7 +254,7 @@ export default async function HomePage() {
                 전체 공지 →
               </Link>
             </div>
-            <ul className="overflow-hidden rounded-xl border border-border bg-card">
+            <ul className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-border bg-card">
               {recentNotices.map((n) => (
                 <li
                   key={n.id}
@@ -270,6 +271,16 @@ export default async function HomePage() {
                     )}
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                       {n.title}
+                    </span>
+                    <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+                      {n.author && (
+                        <>
+                          <RoleBadge role={n.author.role} />
+                          <span className="text-xs text-muted-foreground">
+                            {n.author.nickname}
+                          </span>
+                        </>
+                      )}
                     </span>
                     <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                       {n.published_at && formatShortDate(n.published_at)}
