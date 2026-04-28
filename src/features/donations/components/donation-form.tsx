@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 
 import { createDonation } from "../api/mutations"
+import { ConsentSection } from "@/features/legal"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
@@ -14,6 +15,8 @@ type DonationType = "cash" | "goods"
 interface Props {
   /** 로그인 사용자 정보가 있으면 일부 필드를 미리 채움 */
   defaultDonor?: { name?: string; email?: string }
+  /** 회원가입 시 약관 동의 완료 시 자동 체크 */
+  termsAlreadyAgreed?: boolean
 }
 
 const today = () => {
@@ -21,14 +24,18 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-export function DonationForm({ defaultDonor }: Props) {
+export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props) {
   const [type, setType] = useState<DonationType>("cash")
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [privacyAgreed, setPrivacyAgreed] = useState(false)
+  const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    if (!privacyAgreed) return setError("개인정보 수집·이용 동의가 필요합니다.")
+    if (!termsAgreed) return setError("이용약관 동의가 필요합니다.")
     const formData = new FormData(e.currentTarget)
     formData.set("type", type)
     startTransition(async () => {
@@ -184,12 +191,29 @@ export function DonationForm({ defaultDonor }: Props) {
         </label>
       </fieldset>
 
-      {/* 안내 */}
+      {/* 영수증 안내 */}
       <div className="rounded-lg bg-primary/5 p-4 text-xs leading-relaxed text-muted-foreground">
         🌱 현재 본 단체는 기부금영수증 발급 자격을 받기 전 단계입니다.
         등록해주신 정보는 후원 기록 보관 및 추후 영수증 발급 안내 목적으로만 사용되며,
         제3자에게 제공되지 않습니다.
       </div>
+
+      {/* 동의 */}
+      <ConsentSection
+        privacy={{
+          purpose: "후원 기록 보관 및 추후 기부금영수증 발급 안내",
+          items:
+            type === "cash"
+              ? "이름, 이메일, 연락처(선택), 후원 금액, 후원 일자"
+              : "이름, 이메일, 연락처(선택), 물품 정보, 발송 일자",
+          retention: "후원일로부터 5년 (회계 결산 공개·영수증 발급 대비)",
+        }}
+        privacyAgreed={privacyAgreed}
+        onPrivacyChange={setPrivacyAgreed}
+        termsAgreed={termsAgreed}
+        onTermsChange={setTermsAgreed}
+        termsAlreadyAgreed={termsAlreadyAgreed}
+      />
 
       {error && (
         <p className="text-sm text-destructive" role="alert">

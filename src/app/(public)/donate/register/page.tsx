@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 
 import { DonationForm } from "@/features/donations"
 import { getCurrentProfile } from "@/features/members"
+import { TERMS_VERSION } from "@/features/legal"
 
 export const metadata: Metadata = {
   title: "후원 등록",
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic"
 
 export default async function DonateRegisterPage() {
   const profile = await getCurrentProfile()
+  const termsAlreadyAgreed =
+    !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -34,9 +37,8 @@ export default async function DonateRegisterPage() {
       </header>
 
       <DonationForm
-        defaultDonor={
-          profile ? { name: profile.nickname } : undefined
-        }
+        defaultDonor={profile ? { name: profile.nickname } : undefined}
+        termsAlreadyAgreed={termsAlreadyAgreed}
       />
     </div>
   )

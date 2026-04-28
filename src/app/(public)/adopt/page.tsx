@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 
 import { getDog } from "@/features/dogs"
 import { AdoptionForm } from "@/features/applications"
+import { getCurrentProfile } from "@/features/members"
+import { TERMS_VERSION } from "@/features/legal"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -15,7 +17,12 @@ export default async function AdoptPage({
   searchParams: Promise<{ dogId?: string }>
 }) {
   const { dogId } = await searchParams
-  const dog = dogId ? await getDog(dogId) : null
+  const [dog, profile] = await Promise.all([
+    dogId ? getDog(dogId) : Promise.resolve(null),
+    getCurrentProfile(),
+  ])
+  const termsAlreadyAgreed =
+    !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -42,7 +49,11 @@ export default async function AdoptPage({
         </ol>
       </section>
 
-      <AdoptionForm dogId={dog?.id} dogName={dog?.name} />
+      <AdoptionForm
+        dogId={dog?.id}
+        dogName={dog?.name}
+        termsAlreadyAgreed={termsAlreadyAgreed}
+      />
     </div>
   )
 }

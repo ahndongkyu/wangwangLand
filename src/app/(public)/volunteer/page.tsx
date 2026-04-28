@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 
 import { VolunteerForm } from "@/features/applications"
+import { getCurrentProfile } from "@/features/members"
+import { TERMS_VERSION } from "@/features/legal"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -8,7 +10,13 @@ export const metadata: Metadata = {
   description: `${SITE.name}에서 아이들과 함께할 봉사자를 모집합니다.`,
 }
 
-export default function VolunteerPage() {
+export const dynamic = "force-dynamic"
+
+export default async function VolunteerPage() {
+  const profile = await getCurrentProfile()
+  const termsAlreadyAgreed =
+    !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <header className="mb-10">
@@ -41,7 +49,7 @@ export default function VolunteerPage() {
         />
       </section>
 
-      <VolunteerForm />
+      <VolunteerForm termsAlreadyAgreed={termsAlreadyAgreed} />
     </div>
   )
 }
