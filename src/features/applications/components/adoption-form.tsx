@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react"
 
 import { submitAdoptionApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
+import { AddressSearchInput } from "@/shared/components/address-search-input"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
@@ -125,13 +126,10 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
             />
           </Field>
           <Field id="address" label="주소" required className="md:col-span-2">
-            <Input
+            <AddressSearchInput
               id="address"
               name="address"
               required
-              minLength={5}
-              maxLength={100}
-              placeholder="시/도 시/군/구까지"
             />
           </Field>
         </div>
