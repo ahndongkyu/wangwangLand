@@ -55,9 +55,9 @@ export const SITE = {
    * 공익성 승격 전이라 기부금 영수증 발급 불가 상태.
    */
   registration: {
-    representativeName: "", // 대표자명
-    shelterNumber: "", // 동물보호센터 등록번호
-    businessNumber: "", // 사업자등록번호 (있다면)
+    representativeName: "", // 대표자명 (※ 채워주세요)
+    shelterNumber: "", // 동물보호센터 등록번호 (있다면)
+    businessNumber: "222-82-77099", // 사업자등록번호
   },
 }
 
