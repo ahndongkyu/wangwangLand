@@ -15,18 +15,26 @@ const TAG_STYLES: Record<
 
 type CategoryKey = keyof typeof TAG_STYLES
 
-/** 제목 prefix("[공지]", "[이벤트]" 등) 또는 NoticeForm 의 prefix 값을 이용해 카테고리 매핑 */
-function detectCategory(title: string): { category: CategoryKey; cleanTitle: string } {
+/**
+ * 제목 prefix("[공지]", "[행사]" 등)에서 카테고리 + 표시 라벨을 추출.
+ *  - 매핑된 prefix(공지/이벤트/모집/안내)면 정해진 라벨·색상 사용
+ *  - 그 외 직접입력은 입력한 텍스트 그대로 라벨에 노출, 색상은 안내 톤 fallback
+ */
+function detectCategory(title: string): {
+  category: CategoryKey
+  customLabel: string | null
+  cleanTitle: string
+} {
   const match = title.match(/^\[([^\]]+)\]\s*/)
-  if (!match) return { category: "info", cleanTitle: title }
+  if (!match) return { category: "info", customLabel: null, cleanTitle: title }
   const tag = match[1].trim()
   const cleanTitle = title.slice(match[0].length)
-  if (tag === "공지") return { category: "notice", cleanTitle }
-  if (tag === "이벤트") return { category: "event", cleanTitle }
-  if (tag === "모집") return { category: "recruit", cleanTitle }
-  if (tag === "안내") return { category: "info", cleanTitle }
-  // 직접입력 등은 안내 톤으로 fallback
-  return { category: "info", cleanTitle }
+  if (tag === "공지") return { category: "notice", customLabel: null, cleanTitle }
+  if (tag === "이벤트") return { category: "event", customLabel: null, cleanTitle }
+  if (tag === "모집") return { category: "recruit", customLabel: null, cleanTitle }
+  if (tag === "안내") return { category: "info", customLabel: null, cleanTitle }
+  // 매핑 안 된 직접입력 — 입력값 그대로 라벨에 노출
+  return { category: "info", customLabel: tag, cleanTitle }
 }
 
 const NEW_THRESHOLD_DAYS = 3
@@ -93,8 +101,9 @@ export function RecentNewsSection({ notices }: Props) {
         {/* 그리드: 모바일 1열 / sm 2열 / lg 4열 */}
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
           {items.map((n) => {
-            const { category, cleanTitle } = detectCategory(n.title)
+            const { category, customLabel, cleanTitle } = detectCategory(n.title)
             const tag = TAG_STYLES[category]
+            const label = customLabel ?? tag.label
             const fresh = isNew(n.published_at)
             const summary = n.content
               ? stripHtml(n.content).slice(0, 80)
@@ -111,7 +120,7 @@ export function RecentNewsSection({ notices }: Props) {
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${tag.bg} ${tag.color}`}
                   >
-                    {tag.label}
+                    {label}
                   </span>
                   {fresh && (
                     <span className="rounded-[3px] bg-primary px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-primary-foreground">

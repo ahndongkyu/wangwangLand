@@ -16,7 +16,7 @@ interface Props {
   notice?: Notice
 }
 
-const PRESET_TYPES = ["공지", "이벤트"] as const
+const PRESET_TYPES = ["공지", "이벤트", "모집"] as const
 type PresetType = (typeof PRESET_TYPES)[number]
 
 /** 기존 제목에서 prefix 감지 후 분리 */
@@ -83,8 +83,9 @@ export function NoticeForm({ notice }: Props) {
             className={cn(selectClass, "max-w-[180px]")}
           >
             <option value="">없음</option>
-            <option value="공지">생성 공지</option>
+            <option value="공지">공지</option>
             <option value="이벤트">이벤트</option>
+            <option value="모집">모집</option>
             <option value="직접입력">직접입력</option>
           </select>
           {noticeType === "직접입력" && (
