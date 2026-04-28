@@ -59,6 +59,7 @@ export async function updateNickname(
   formData: FormData
 ): Promise<{ error: string | null }> {
   const nickname = (formData.get("nickname") as string | null)?.trim() ?? ""
+  const phone = (formData.get("phone") as string | null)?.trim() ?? ""
   const ageOk = formData.get("age_agree") === "on"
   const termsOk = formData.get("terms_agree") === "on"
   const privacyOk = formData.get("privacy_agree") === "on"
@@ -71,6 +72,10 @@ export async function updateNickname(
   }
   if (!/^[가-힣a-zA-Z0-9_]+$/.test(nickname)) {
     return { error: "한글, 영문, 숫자, _만 사용할 수 있습니다." }
+  }
+  if (!phone) return { error: "핸드폰번호를 입력해주세요." }
+  if (!/^[0-9-]{9,}$/.test(phone)) {
+    return { error: "올바른 핸드폰번호 형식이 아닙니다." }
   }
   if (!ageOk) return { error: "만 14세 이상 동의가 필요합니다." }
   if (!termsOk) return { error: "이용약관 동의가 필요합니다." }
@@ -95,6 +100,7 @@ export async function updateNickname(
     .from("profiles")
     .update({
       nickname,
+      phone,
       status: "approved",
       terms_agreed_at: now,
       terms_version: termsVersion,
