@@ -75,7 +75,7 @@ export default async function CalendarPage({
       ) : (
         <div className="space-y-3">
           {events.map((ev) => (
-            <EventCard key={ev.id} event={ev} />
+            <EventCard key={ev.id} event={ev} maskNames />
           ))}
         </div>
       )}

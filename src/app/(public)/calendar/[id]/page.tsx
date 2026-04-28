@@ -7,6 +7,7 @@ import {
   customColorStyle,
   eventDisplayLabel,
   getEventWithMySignup,
+  publicEventTitle,
 } from "@/features/events"
 import { SignupForm } from "@/features/events/components/signup-form"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
@@ -54,7 +55,7 @@ export default async function EventDetailPage({
           {eventDisplayLabel(event)}
         </span>
         <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
-          {event.title}
+          {publicEventTitle(event)}
         </h1>
       </header>
 
@@ -75,7 +76,8 @@ export default async function EventDetailPage({
         )}
       </section>
 
-      {event.description && (
+      {/* 봉사 신청 자동 이벤트의 description 은 신청자 사적 정보(활동·메모·시간대 등)를 포함하므로 공개 화면에서는 숨김. */}
+      {event.description && event.source_application_type !== "volunteer" && (
         <section className="mb-6 rounded-lg border border-border bg-card p-5">
           <h2 className="mb-2 text-sm font-semibold text-foreground">상세 안내</h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">

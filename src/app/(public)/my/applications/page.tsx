@@ -51,7 +51,7 @@ export default async function MyApplicationsPage() {
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, admin_note, available_days, activities")
+      .select("id, status, submitted_at, admin_note, available_days, available_dates, activities")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
   ])
@@ -71,6 +71,7 @@ export default async function MyApplicationsPage() {
     submitted_at: string
     admin_note: string | null
     available_days: string[]
+    available_dates: string[]
     activities: string[]
   }>
 
@@ -121,9 +122,11 @@ export default async function MyApplicationsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <p className="text-sm font-medium text-foreground">
-                          {v.available_days.length > 0
-                            ? v.available_days.join(", ") + " 봉사"
-                            : "봉사 신청"}
+                          {v.available_dates.length > 0
+                            ? `${v.available_dates.join(", ")} 봉사`
+                            : v.available_days.length > 0
+                              ? `${v.available_days.join(", ")} 봉사`
+                              : "봉사 신청"}
                         </p>
                         {v.activities.length > 0 && (
                           <p className="text-xs text-muted-foreground">

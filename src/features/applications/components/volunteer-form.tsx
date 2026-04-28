@@ -6,6 +6,7 @@ import { User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
+import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { FormFooter } from "@/shared/components/form-footer"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
@@ -25,7 +26,6 @@ import {
 } from "@/shared/lib/validation"
 import type { VolunteerActivity } from "@/shared/types/database"
 
-const DAYS = ["월", "화", "수", "목", "금", "토", "일"]
 const ACTIVITIES: VolunteerActivity[] = [
   "산책",
   "목욕·미용",
@@ -198,23 +198,15 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
 
       {/* 3. 일정·활동 */}
       <Card title="활동 일정 · 희망 활동">
-        <fieldset className="space-y-2">
-          <legend className="text-xs font-medium text-muted-foreground">
-            가능한 요일
-          </legend>
-          <div className="flex flex-wrap gap-3">
-            {DAYS.map((day) => (
-              <label
-                key={day}
-                className="flex items-center gap-1.5 text-sm"
-                htmlFor={`day-${day}`}
-              >
-                <Checkbox id={`day-${day}`} name="available_days" value={day} />
-                {day}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground">
+            가능한 날짜
+          </Label>
+          <DateMultiPicker name="available_dates" />
+          <p className="text-[11px] text-muted-foreground/80">
+            여러 날짜 선택 가능. 운영진이 확인 후 가능한 날짜로 일정을 조율합니다.
+          </p>
+        </div>
 
         <Field id="available_time" label="가능한 시간대" className="mt-3">
           <Input

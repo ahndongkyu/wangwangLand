@@ -100,6 +100,41 @@ export function eventDisplayLabel(event: {
 }
 
 /**
+ * 이름 마스킹: 1글자=그대로, 2글자="홍*", 3글자+="홍**".
+ */
+export function maskName(name: string): string {
+  const trimmed = name.trim()
+  if (trimmed.length <= 1) return trimmed
+  if (trimmed.length === 2) return trimmed[0] + "*"
+  return trimmed[0] + "*".repeat(Math.min(trimmed.length - 1, 2))
+}
+
+/**
+ * 봉사 신청 자동 이벤트 제목 마스킹.
+ * "홍길동" → "홍**" / "홍길동 외 2명" → "홍** 외 2명"
+ * source_application_type=volunteer 인 이벤트에만 호출해야 함.
+ */
+export function maskEventTitle(title: string): string {
+  const m = title.match(/^(.+?)( 외 \d+명)?$/)
+  if (!m) return maskName(title)
+  return maskName(m[1]) + (m[2] ?? "")
+}
+
+/**
+ * 공개 화면 표시용 이벤트 제목.
+ * 봉사 신청 자동 등록 이벤트는 마스킹, 그 외는 그대로.
+ */
+export function publicEventTitle(event: {
+  title: string
+  source_application_type: EventSourceApplicationType | null
+}): string {
+  if (event.source_application_type === "volunteer") {
+    return maskEventTitle(event.title)
+  }
+  return event.title
+}
+
+/**
  * 캘린더 칩에 적용할 inline style.
  * custom 카테고리에서만 사용 — bg/text 색을 인라인으로 강제.
  */

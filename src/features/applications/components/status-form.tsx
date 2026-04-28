@@ -30,7 +30,11 @@ interface Props {
   currentNote: string | null
   applicantName: string
   /** 봉사일 때 캘린더 자동 등록용 — 신청자가 적은 가능 시간대 표시 */
-  hint?: { availableDays?: string[]; availableTime?: string | null }
+  hint?: {
+    availableDays?: string[]
+    availableDates?: string[]
+    availableTime?: string | null
+  }
   /** 이미 등록된 캘린더 이벤트 (재편집용 — 시간 미리 채움) */
   linkedEvent?: { id: string; starts_at: string; ends_at: string } | null
 }
@@ -152,13 +156,17 @@ export function ApplicationStatusForm({
                 ? "이미 캘린더에 등록된 일정입니다. 시간을 바꾸려면 수정 후 저장해주세요."
                 : "승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요."}
             </p>
-            {(hint?.availableDays?.length || hint?.availableTime) && (
+            {(hint?.availableDates?.length ||
+              hint?.availableDays?.length ||
+              hint?.availableTime) && (
               <p className="mt-1 text-[11px] text-muted-foreground/80">
                 <span className="font-medium text-foreground/80">신청자 요청:</span>{" "}
                 {[
-                  hint.availableDays?.length
-                    ? `${hint.availableDays.join(", ")}요일`
-                    : null,
+                  hint.availableDates?.length
+                    ? hint.availableDates.join(", ")
+                    : hint.availableDays?.length
+                      ? `${hint.availableDays.join(", ")}요일`
+                      : null,
                   hint.availableTime,
                 ]
                   .filter(Boolean)

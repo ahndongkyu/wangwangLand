@@ -114,7 +114,9 @@ export async function submitVolunteerApplication(
     return { error: "개인정보 수집·이용 동의가 필요합니다." }
   }
 
-  const availableDays = formData.getAll("available_days").map(String)
+  const availableDates = formData.getAll("available_dates").map(String)
+  // available_days(요일) 는 폼에서 제거됐지만 컬럼은 유지(legacy). 빈 배열로 저장.
+  const availableDays: string[] = []
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
 
   const supabase = await createClient()
@@ -134,6 +136,7 @@ export async function submitVolunteerApplication(
       email: user?.email ?? null,
       party_size: partyCheck.partySize!,
       available_days: availableDays,
+      available_dates: availableDates,
       available_time: String(formData.get("available_time") ?? "").trim() || null,
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
@@ -191,7 +194,7 @@ export async function updateAdoptionApplication(
     const admin = createAdminClient()
     await admin.from("notifications").insert({
       user_id: prev.created_by,
-      type: "application_status_changed",
+      type: notificationTypeForStatus(status),
       post_type: "adoption",
       post_id: id,
       actor_id: null,
@@ -201,6 +204,19 @@ export async function updateAdoptionApplication(
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/adoption/${id}`)
   return { id }
+}
+
+function notificationTypeForStatus(status: ApplicationStatus): string {
+  switch (status) {
+    case "승인":
+      return "application_approved"
+    case "반려":
+      return "application_rejected"
+    case "검토중":
+      return "application_under_review"
+    default:
+      return "application_status_changed"
+  }
 }
 
 export async function updateVolunteerApplication(
@@ -220,7 +236,7 @@ export async function updateVolunteerApplication(
   const { data: prev } = await supabase
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_time, message, created_by, status"
+      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status"
     )
     .eq("id", id)
     .maybeSingle()
@@ -240,7 +256,7 @@ export async function updateVolunteerApplication(
     const admin = createAdminClient()
     await admin.from("notifications").insert({
       user_id: prev.created_by,
-      type: "application_status_changed",
+      type: notificationTypeForStatus(status),
       post_type: "volunteer",
       post_id: id,
       actor_id: null,
@@ -336,7 +352,8 @@ async function upsertVolunteerEventForApplication(opts: {
     ends_at: ends.toISOString(),
     all_day: false,
     signup_enabled: false,
-    visibility: "internal" as const,
+    // 공개 캘린더에도 노출 (이름은 표시 시 자동 마스킹)
+    visibility: "public" as const,
     source_application_type: "volunteer" as const,
     source_application_id: applicationId,
   }

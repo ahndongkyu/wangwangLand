@@ -146,6 +146,8 @@ export interface VolunteerApplication {
   email: string | null
   party_size: number
   available_days: string[]
+  /** 회원이 캘린더 픽커에서 선택한 가능 날짜 (YYYY-MM-DD). available_days 보다 우선. */
+  available_dates: string[]
   available_time: string | null
   activities: VolunteerActivity[]
   message: string | null

@@ -1,8 +1,16 @@
 import { createClient } from "@/shared/lib/supabase/server"
 
+export type NotificationType =
+  | "comment_on_post"
+  | "reply_to_comment"
+  | "application_status_changed"
+  | "application_approved"
+  | "application_rejected"
+  | "application_under_review"
+
 export interface UserNotification {
   id: string
-  type: "comment_on_post" | "reply_to_comment" | "application_status_changed"
+  type: NotificationType
   post_type: string
   post_id: string
   comment_id: string | null

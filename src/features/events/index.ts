@@ -10,6 +10,9 @@ export {
   CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
+  maskEventTitle,
+  maskName,
+  publicEventTitle,
 } from "./types"
 export {
   getEventWithMySignup,

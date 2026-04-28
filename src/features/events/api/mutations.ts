@@ -102,15 +102,59 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   } = await supabase.auth.getSession()
   if (!session?.user) return { error: "로그인이 필요합니다." }
 
+  // 봉사 신청에서 가져온 일정이면, 등록 완료 시 신청 status 도 승인 처리.
+  const approveAppId =
+    String(formData.get("approve_application_id") ?? "").trim() || null
+
+  // 신청에서 가져왔으면 source_application_* 자동 채움 + visibility=public (마스킹 표시).
+  const insertPayload: Record<string, unknown> = {
+    ...parsed,
+    created_by: session.user.id,
+  }
+  if (approveAppId) {
+    insertPayload.source_application_type = "volunteer"
+    insertPayload.source_application_id = approveAppId
+    insertPayload.visibility = "public"
+    insertPayload.signup_enabled = false
+  }
+
   const { data, error } = await supabase
     .from("events")
-    .insert({ ...parsed, created_by: session.user.id })
+    .insert(insertPayload)
     .select("id")
     .single()
 
   if (error) {
     console.error("[createEvent]", error)
     return { error: error.message }
+  }
+
+  // 봉사 신청 자동 승인 + 알림
+  if (approveAppId) {
+    const admin = createAdminClient()
+    const { data: app } = await admin
+      .from("volunteer_applications")
+      .select("created_by, status")
+      .eq("id", approveAppId)
+      .maybeSingle()
+
+    await admin
+      .from("volunteer_applications")
+      .update({ status: "승인" })
+      .eq("id", approveAppId)
+
+    if (app?.created_by && app.status !== "승인") {
+      await admin.from("notifications").insert({
+        user_id: app.created_by,
+        type: "application_approved",
+        post_type: "volunteer",
+        post_id: approveAppId,
+        actor_id: null,
+      })
+    }
+
+    revalidatePath("/admin/applications")
+    revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   }
 
   revalidatePath("/admin/calendar")

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import {
   CATEGORY_COLOR,
   customColorStyle,
+  publicEventTitle,
   type CalendarEvent,
 } from "../types"
 import {
@@ -26,6 +27,8 @@ interface Props {
    * 예: "/admin/calendar/new" 이면 "/admin/calendar/new?date=2026-04-30" 로 이동.
    */
   addHrefBase?: string
+  /** true 면 봉사 자동 이벤트의 이름 마스킹 (공개 페이지). */
+  maskNames?: boolean
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -41,6 +44,7 @@ export function MonthGrid({
   events,
   hrefBase = "/admin/calendar",
   addHrefBase,
+  maskNames = false,
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
@@ -138,10 +142,14 @@ export function MonthGrid({
                   <EventChip
                     key={ev.id}
                     event={ev}
+                    maskNames={maskNames}
                     onClick={(e) => {
                       e.stopPropagation()
-                      // 신청 자동 생성 이벤트는 신청 상세로 직행
+                      // 신청 자동 생성 이벤트:
+                      //  - 어드민(maskNames=false) 에서는 신청 상세로 직행
+                      //  - 공개 페이지(maskNames=true) 에서는 일반 이벤트 상세로
                       if (
+                        !maskNames &&
                         ev.source_application_id &&
                         ev.source_application_type
                       ) {
@@ -171,20 +179,23 @@ export function MonthGrid({
 function EventChip({
   event,
   onClick,
+  maskNames,
 }: {
   event: CalendarEvent
   onClick: (e: React.MouseEvent) => void
+  maskNames: boolean
 }) {
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
+  const displayTitle = maskNames ? publicEventTitle(event) : event.title
 
   if (event.all_day) {
     return (
       <button
         type="button"
         onClick={onClick}
-        title={event.title}
+        title={displayTitle}
         style={customStyle?.background}
         className={cn(
           "block w-full truncate rounded-sm px-1.5 py-0.5 text-left text-[11px] font-medium",
@@ -192,7 +203,7 @@ function EventChip({
           !isCustom && color.text
         )}
       >
-        {event.title}
+        {displayTitle}
       </button>
     )
   }
@@ -201,7 +212,7 @@ function EventChip({
     <button
       type="button"
       onClick={onClick}
-      title={`${formatTimeKst(event.starts_at)} ${event.title}`}
+      title={`${formatTimeKst(event.starts_at)} ${displayTitle}`}
       className="flex w-full min-w-0 items-center gap-1 rounded-sm px-1 py-0.5 text-left text-[11px] hover:bg-secondary"
     >
       <span
@@ -211,7 +222,7 @@ function EventChip({
       />
       <span className="min-w-0 truncate text-muted-foreground">
         <span className="text-foreground/80">{formatTimeKst(event.starts_at)}</span>{" "}
-        {event.title}
+        {displayTitle}
       </span>
     </button>
   )

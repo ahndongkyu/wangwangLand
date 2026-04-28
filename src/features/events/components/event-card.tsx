@@ -6,6 +6,7 @@ import {
   CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
+  publicEventTitle,
   type EventWithSignupCount,
 } from "../types"
 import { formatKoreanDayLabel } from "../lib/date"
@@ -15,9 +16,11 @@ interface Props {
   event: EventWithSignupCount
   /** href base. 기본 /calendar */
   basePath?: string
+  /** true 면 봉사 자동 이벤트의 이름을 마스킹. 공개 페이지에서 사용. */
+  maskNames?: boolean
 }
 
-export function EventCard({ event, basePath = "/calendar" }: Props) {
+export function EventCard({ event, basePath = "/calendar", maskNames = false }: Props) {
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
@@ -40,7 +43,7 @@ export function EventCard({ event, basePath = "/calendar" }: Props) {
           {eventDisplayLabel(event)}
         </span>
         <h3 className="min-w-0 flex-1 truncate text-base font-bold text-foreground sm:text-lg">
-          {event.title}
+          {maskNames ? publicEventTitle(event) : event.title}
         </h3>
         {event.signup_enabled && event.signup_count > 0 && (
           <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">

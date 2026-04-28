@@ -158,9 +158,13 @@ export default async function VolunteerApplicationDetailPage({
 
         <Card title="가능 일정">
           <Row
-            label="요일"
+            label="가능 날짜"
             value={
-              app.available_days.length > 0 ? app.available_days.join(", ") : "—"
+              app.available_dates.length > 0
+                ? app.available_dates.join(", ")
+                : app.available_days.length > 0
+                  ? `${app.available_days.join(", ")}요일`
+                  : "—"
             }
           />
           <Row label="시간대" value={app.available_time ?? "—"} />
@@ -223,6 +227,7 @@ export default async function VolunteerApplicationDetailPage({
         applicantName={app.applicant_name}
         hint={{
           availableDays: app.available_days,
+          availableDates: app.available_dates,
           availableTime: app.available_time,
         }}
         linkedEvent={linkedEvent}

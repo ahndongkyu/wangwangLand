@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, Inbox } from "lucide-react"
 
 import {
   CategoryFilter,
@@ -10,6 +10,7 @@ import {
   type EventCategory,
 } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
+import { listVolunteerApplications } from "@/features/applications"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -38,12 +39,16 @@ export default async function AdminCalendarPage({
   const categories = parseCategories(params.cat)
 
   const { from, to } = monthRange(yearMonth)
-  const events = await listEventsInRange({
-    from,
-    to,
-    categories: categories.length > 0 ? categories : undefined,
-    includeInternal: true,
-  })
+  const [events, { rows: pendingApps }] = await Promise.all([
+    listEventsInRange({
+      from,
+      to,
+      categories: categories.length > 0 ? categories : undefined,
+      includeInternal: true,
+    }),
+    // 처리 대기 봉사 신청 (접수·검토중)
+    listVolunteerApplications({ status: "접수", limit: 5 }),
+  ])
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -82,6 +87,51 @@ export default async function AdminCalendarPage({
         hrefBase="/admin/calendar"
         addHrefBase="/admin/calendar/new"
       />
+
+      {/* 처리 대기 봉사 신청 → 캘린더에 등록 */}
+      {pendingApps.length > 0 && (
+        <section className="mt-6 rounded-lg border border-border bg-card">
+          <header className="flex items-center justify-between border-b border-border bg-secondary/40 px-4 py-2.5">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <Inbox className="size-4 text-muted-foreground" aria-hidden />
+              처리 대기 봉사 신청 ({pendingApps.length})
+            </h2>
+            <Link
+              href="/admin/applications"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              전체 보기 →
+            </Link>
+          </header>
+          <ul className="divide-y divide-border">
+            {pendingApps.map((app) => (
+              <li
+                key={app.id}
+                className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
+              >
+                <span className="font-medium text-foreground">
+                  {app.applicant_name}
+                  {app.party_size > 1 && ` 외 ${app.party_size - 1}명`}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {(app.available_dates && app.available_dates.length > 0
+                    ? app.available_dates.join(", ")
+                    : app.available_days.length > 0
+                      ? `${app.available_days.join(", ")}요일`
+                      : "날짜 미정") +
+                    (app.available_time ? ` · ${app.available_time}` : "")}
+                </span>
+                <Link
+                  href={`/admin/calendar/new?from=${app.id}`}
+                  className="ml-auto rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/15"
+                >
+                  캘린더에 등록 →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }

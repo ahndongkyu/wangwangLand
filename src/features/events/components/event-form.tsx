@@ -17,6 +17,19 @@ interface Props {
   event?: CalendarEvent
   /** 신규 등록 시 선택된 날짜 (YYYY-MM-DD). 캘린더 셀 클릭에서 채워짐. */
   defaultDate?: string
+  /**
+   * 봉사 신청에서 가져오기 모드.
+   * 등록 시 해당 신청을 자동 승인 + source_application 연결.
+   */
+  fromApplication?: {
+    id: string
+    applicantName: string
+    partySize: number
+    availableDates: string[]
+    availableTime: string | null
+    activities: string[]
+    message: string | null
+  }
 }
 
 const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed", "custom"]
@@ -60,13 +73,14 @@ function todayKstDate(): string {
   return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}-${String(kst.getUTCDate()).padStart(2, "0")}`
 }
 
-export function EventForm({ event, defaultDate }: Props) {
+export function EventForm({ event, defaultDate, fromApplication }: Props) {
   const router = useRouter()
   const toast = useToast()
   const [pending, startTransition] = useTransition()
 
+  // 신청에서 가져온 모드면 카테고리 강제 volunteer.
   const [category, setCategory] = useState<EventCategory>(
-    event?.category ?? "volunteer"
+    fromApplication ? "volunteer" : (event?.category ?? "volunteer")
   )
   const [allDay, setAllDay] = useState(event?.all_day ?? false)
   const [signupEnabled, setSignupEnabled] = useState(
@@ -80,6 +94,37 @@ export function EventForm({ event, defaultDate }: Props) {
   const isEdit = !!event
   const showSignupToggle = category === "event" // 봉사=항상 true, 휴무=항상 false
 
+  // 신청에서 가져온 모드의 기본 제목 / 일자
+  const defaultTitle = (() => {
+    if (event) return event.title
+    if (fromApplication) {
+      return fromApplication.partySize > 1
+        ? `${fromApplication.applicantName} 외 ${fromApplication.partySize - 1}명`
+        : fromApplication.applicantName
+    }
+    return ""
+  })()
+
+  const fallbackDate =
+    fromApplication?.availableDates[0] ?? defaultDate ?? todayKstDate()
+  const defaultDescription = (() => {
+    if (event) return event.description ?? ""
+    if (fromApplication) {
+      return [
+        fromApplication.activities.length > 0
+          ? `희망 활동: ${fromApplication.activities.join(", ")}`
+          : null,
+        fromApplication.availableTime
+          ? `요청 시간대: ${fromApplication.availableTime}`
+          : null,
+        fromApplication.message ? `메모: ${fromApplication.message}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    }
+    return ""
+  })()
+
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = isEdit
@@ -92,6 +137,36 @@ export function EventForm({ event, defaultDate }: Props) {
 
   return (
     <form action={handleSubmit} className="space-y-5">
+      {fromApplication && (
+        <>
+          <input
+            type="hidden"
+            name="approve_application_id"
+            value={fromApplication.id}
+          />
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs text-foreground">
+            <p className="font-semibold text-primary">
+              봉사 신청에서 가져왔어요
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {fromApplication.applicantName}
+                {fromApplication.partySize > 1 &&
+                  ` 외 ${fromApplication.partySize - 1}명`}
+              </span>
+              {fromApplication.availableDates.length > 0 &&
+                ` · 신청 가능 날짜: ${fromApplication.availableDates.join(", ")}`}
+              {fromApplication.availableTime &&
+                ` · ${fromApplication.availableTime}`}
+            </p>
+            <p className="mt-1 text-[11px] text-muted-foreground/80">
+              일정 등록 시 이 신청은 자동으로 <strong>승인</strong> 처리되고
+              회원에게 알림이 갑니다.
+            </p>
+          </div>
+        </>
+      )}
+
       {/* 카테고리 */}
       <div>
         <Label className="mb-2 block text-sm font-semibold">카테고리</Label>
@@ -172,7 +247,7 @@ export function EventForm({ event, defaultDate }: Props) {
           name="title"
           required
           maxLength={100}
-          defaultValue={event?.title ?? ""}
+          defaultValue={defaultTitle}
           placeholder="예: 보리·뽀삐 산책 봉사"
         />
       </div>
@@ -207,10 +282,8 @@ export function EventForm({ event, defaultDate }: Props) {
               event
                 ? toLocalInput(event.starts_at, allDay)
                 : allDay
-                  ? defaultDate ?? todayKstDate()
-                  : defaultDate
-                    ? defaultStartFor(defaultDate)
-                    : defaultStartFor(todayKstDate())
+                  ? fallbackDate
+                  : defaultStartFor(fallbackDate)
             }
           />
         </div>
@@ -227,10 +300,8 @@ export function EventForm({ event, defaultDate }: Props) {
               event
                 ? toLocalInput(event.ends_at, allDay)
                 : allDay
-                  ? defaultDate ?? todayKstDate()
-                  : defaultDate
-                    ? defaultEndFor(defaultDate)
-                    : defaultEndFor(todayKstDate())
+                  ? fallbackDate
+                  : defaultEndFor(fallbackDate)
             }
           />
         </div>
@@ -255,7 +326,7 @@ export function EventForm({ event, defaultDate }: Props) {
           id="description"
           name="description"
           rows={4}
-          defaultValue={event?.description ?? ""}
+          defaultValue={defaultDescription}
           placeholder="활동 내용·준비물·주의사항 등을 적어주세요."
         />
       </div>

@@ -16,17 +16,27 @@ const POST_PATH: Record<string, string> = {
 }
 
 function notifLabel(n: UserNotification): string {
+  const t = n.post_type === "adoption" ? "입양" : "봉사"
+  if (n.type === "application_approved") return `${t} 신청이 승인되었습니다 🎉`
+  if (n.type === "application_rejected") return `${t} 신청이 반려되었습니다. 사유는 신청 내역에서 확인하세요.`
+  if (n.type === "application_under_review") return `${t} 신청이 검토 중입니다`
   if (n.type === "application_status_changed") {
-    const typeLabel = n.post_type === "adoption" ? "입양" : "봉사"
-    return `${typeLabel} 신청 상태가 변경됐어요. 신청 내역에서 확인해보세요!`
+    return `${t} 신청 상태가 변경됐어요. 신청 내역에서 확인해보세요!`
   }
   const actor = n.actor?.nickname ?? "누군가"
   if (n.type === "reply_to_comment") return `${actor}님이 내 댓글에 답글을 달았어요`
   return `${actor}님이 내 게시글에 댓글을 달았어요`
 }
 
+const APPLICATION_STATUS_TYPES = new Set([
+  "application_status_changed",
+  "application_approved",
+  "application_rejected",
+  "application_under_review",
+])
+
 function notifPath(n: UserNotification): string {
-  if (n.type === "application_status_changed") return "/my/applications"
+  if (APPLICATION_STATUS_TYPES.has(n.type)) return "/my/applications"
   return `${POST_PATH[n.post_type] ?? ""}/${n.post_id}`
 }
 
