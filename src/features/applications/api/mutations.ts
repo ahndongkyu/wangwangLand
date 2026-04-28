@@ -54,6 +54,7 @@ export async function submitAdoptionApplication(
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   const { data, error } = await supabase
     .from("adoption_applications")
@@ -61,6 +62,8 @@ export async function submitAdoptionApplication(
       dog_id: dogId || null,
       applicant_name,
       phone,
+      // 회원이면 카카오 이메일 자동 저장. 비회원은 null.
+      email: user?.email ?? null,
       address,
       reason,
       family_size: familySizeStr ? Number(familySizeStr) : null,
@@ -71,7 +74,7 @@ export async function submitAdoptionApplication(
       past_pet_experience:
         String(formData.get("past_pet_experience") ?? "").trim() || null,
       privacy_agreed: true,
-      created_by: session?.user?.id ?? null,
+      created_by: user?.id ?? null,
     })
     .select("id")
     .single()
@@ -111,19 +114,22 @@ export async function submitVolunteerApplication(
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   const { data, error } = await supabase
     .from("volunteer_applications")
     .insert({
       applicant_name,
       phone,
+      // 회원이면 카카오 이메일 자동 저장. 비회원은 null.
+      email: user?.email ?? null,
       party_size: partyCheck.partySize!,
       available_days: availableDays,
       available_time: String(formData.get("available_time") ?? "").trim() || null,
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
       privacy_agreed: true,
-      created_by: session?.user?.id ?? null,
+      created_by: user?.id ?? null,
     })
     .select("id")
     .single()
