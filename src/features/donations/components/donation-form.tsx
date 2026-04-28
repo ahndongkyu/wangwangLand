@@ -1,6 +1,6 @@
 "use client"
 
-import { Banknote, ChevronDown, PackageOpen } from "lucide-react"
+import { Banknote, ChevronDown, PackageOpen, Sprout } from "lucide-react"
 import { useState, useTransition } from "react"
 
 import { createDonation } from "../api/mutations"
@@ -223,10 +223,13 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
       </details>
 
       {/* 5. 영수증 안내 (톤다운) */}
-      <div className="rounded-md border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-        🌱 현재 본 단체는 기부금영수증 발급 자격을 받기 전 단계입니다. 등록해주신
-        정보는 후원 기록 보관 및 추후 영수증 발급 안내 목적으로만 사용되며,
-        제3자에게 제공되지 않습니다.
+      <div className="flex items-start gap-2 rounded-md border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+        <Sprout className="mt-0.5 size-3.5 shrink-0 text-primary/70" aria-hidden />
+        <p>
+          현재 본 단체는 기부금영수증 발급 자격을 받기 전 단계입니다. 등록해주신
+          정보는 후원 기록 보관 및 추후 영수증 발급 안내 목적으로만 사용되며,
+          제3자에게 제공되지 않습니다.
+        </p>
       </div>
 
       {/* 6. 동의 */}

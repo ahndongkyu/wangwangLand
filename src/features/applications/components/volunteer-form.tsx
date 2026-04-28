@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useTransition } from "react"
+import { User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
@@ -90,12 +91,14 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
         <div className="grid grid-cols-2 gap-2">
           <TypeOption
             active={partyType === "individual"}
-            label="👤 개인 신청"
+            Icon={User}
+            label="개인 신청"
             onClick={() => setPartyType("individual")}
           />
           <TypeOption
             active={partyType === "group"}
-            label="👥 단체 신청"
+            Icon={Users}
+            label="단체 신청"
             desc="학교/기업/종교단체 등"
             onClick={() => setPartyType("group")}
           />
@@ -361,11 +364,13 @@ function CheckRow({
 
 function TypeOption({
   active,
+  Icon,
   label,
   desc,
   onClick,
 }: {
   active: boolean
+  Icon: typeof User
   label: string
   desc?: string
   onClick: () => void
@@ -374,13 +379,19 @@ function TypeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-start gap-0.5 rounded-lg border p-3 text-left transition-colors ${
+      className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all ${
         active
-          ? "border-primary bg-primary/10 text-foreground"
+          ? "-translate-y-0.5 border-primary bg-primary/10 text-foreground shadow-sm"
           : "border-border bg-background text-muted-foreground hover:text-foreground"
       }`}
     >
-      <span className="text-sm font-semibold text-foreground">{label}</span>
+      <span className="flex items-center gap-2">
+        <Icon
+          className={`size-4 ${active ? "text-primary" : "text-muted-foreground"}`}
+          aria-hidden
+        />
+        <span className="text-sm font-semibold text-foreground">{label}</span>
+      </span>
       {desc && <span className="text-xs">{desc}</span>}
     </button>
   )

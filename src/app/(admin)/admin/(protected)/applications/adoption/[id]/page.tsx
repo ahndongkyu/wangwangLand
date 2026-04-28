@@ -123,7 +123,7 @@ export default async function AdoptionApplicationDetailPage({
 
       {/* 신청자 + 가족·주거 + 반려경험 */}
       <section className="mb-6 grid gap-4 md:grid-cols-2">
-        <Card title="👤 신청자 정보">
+        <Card title="신청자 정보">
           <Row icon={User} label="이름" value={app.applicant_name} />
           <Row
             icon={Phone}
@@ -154,7 +154,7 @@ export default async function AdoptionApplicationDetailPage({
           <Row label="주소" value={app.address} />
         </Card>
 
-        <Card title="🏠 가족 · 주거">
+        <Card title="가족 · 주거">
           <Row
             label="가족 구성원"
             value={app.family_size != null ? `${app.family_size}명` : "—"}
@@ -164,7 +164,7 @@ export default async function AdoptionApplicationDetailPage({
           <Row label="소유 형태" value={app.ownership_type ?? "—"} />
         </Card>
 
-        <Card title="🐾 반려 경험" className="md:col-span-2">
+        <Card title="반려 경험" className="md:col-span-2">
           <Row label="현재 반려동물" value={app.current_pets ?? "—"} multi />
           <Row label="과거 경험" value={app.past_pet_experience ?? "—"} multi />
         </Card>
@@ -173,7 +173,7 @@ export default async function AdoptionApplicationDetailPage({
       {/* 입양 결심 이유 */}
       <section className="mb-6 rounded-xl border border-border bg-card p-5">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
-          💌 입양을 결심한 이유
+          입양을 결심한 이유
         </h2>
         <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
           {app.reason}
@@ -183,7 +183,7 @@ export default async function AdoptionApplicationDetailPage({
       {/* 자격 확인 / 동의 (신청 시 폼에서 강제) */}
       <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-900/40 dark:bg-emerald-900/10">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
-          ✅ 신청 시 동의·확인 사항
+          신청 시 동의·확인 사항
         </h2>
         <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
           <li>• 만 19세 이상 성인</li>

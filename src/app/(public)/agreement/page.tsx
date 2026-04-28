@@ -25,11 +25,10 @@ export default async function AgreementPage() {
     <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-12 md:py-20">
       <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm md:p-8">
         <div className="mb-6 text-center">
-          <p className="text-3xl">📄</p>
-          <h1 className="mt-3 text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             {isInitial ? "약관에 동의해 주세요" : "약관이 개정되었습니다"}
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
             {isInitial ? (
               <>
                 서비스 이용을 위해 약관과 개인정보 처리방침에

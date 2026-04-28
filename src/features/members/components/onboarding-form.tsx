@@ -58,9 +58,6 @@ export function OnboardingForm({
         <label htmlFor="nickname" className="block text-sm font-medium text-foreground">
           닉네임 <span className="text-destructive">*</span>
         </label>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          사이트에서 다른 사람에게 보여질 이름. 본명 대신 자유롭게 정해주세요.
-        </p>
         <input
           ref={inputRef}
           id="nickname"
@@ -69,8 +66,8 @@ export function OnboardingForm({
           defaultValue={defaultNickname}
           maxLength={20}
           required
-          className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="예: 강아지러버, 행복한사람"
+          className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="예: 강아지러버"
         />
         <p className="mt-1 text-[11px] text-muted-foreground/80">
           한글·영문·숫자·_ · 2~20자
@@ -82,18 +79,18 @@ export function OnboardingForm({
         <label htmlFor="phone" className="block text-sm font-medium text-foreground">
           핸드폰번호 <span className="text-destructive">*</span>
         </label>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          신청·후원 처리 시 운영진이 연락드립니다. 운영진만 확인합니다.
-        </p>
         <input
           id="phone"
           name="phone"
           type="tel"
           inputMode="tel"
           required
-          className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           placeholder="010-0000-0000"
         />
+        <p className="mt-1 text-[11px] text-muted-foreground/80">
+          운영진 연락용. 운영진만 확인합니다.
+        </p>
       </div>
 
       {/* 약관 동의 */}

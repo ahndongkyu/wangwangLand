@@ -101,7 +101,7 @@ export default async function VolunteerApplicationDetailPage({
       </header>
 
       <section className="mb-6 grid gap-4 md:grid-cols-2">
-        <Card title={isGroup ? "👥 단체 / 인솔자 정보" : "👤 신청자 정보"}>
+        <Card title={isGroup ? "단체 / 인솔자 정보" : "신청자 정보"}>
           <Row
             label={isGroup ? "단체명/인솔자" : "이름"}
             value={app.applicant_name}
@@ -139,7 +139,7 @@ export default async function VolunteerApplicationDetailPage({
           )}
         </Card>
 
-        <Card title="📅 가능 일정">
+        <Card title="가능 일정">
           <Row
             label="요일"
             value={
@@ -149,7 +149,7 @@ export default async function VolunteerApplicationDetailPage({
           <Row label="시간대" value={app.available_time ?? "—"} />
         </Card>
 
-        <Card title="🛠️ 희망 활동" className="md:col-span-2">
+        <Card title="희망 활동" className="md:col-span-2">
           <div className="flex flex-wrap gap-2">
             {app.activities.length === 0 ? (
               <span className="text-sm text-muted-foreground">—</span>
@@ -171,7 +171,7 @@ export default async function VolunteerApplicationDetailPage({
       {app.message && (
         <section className="mb-6 rounded-xl border border-border bg-card p-5">
           <h2 className="mb-2 text-sm font-semibold text-foreground">
-            💬 자기소개 / 메모
+            자기소개 / 메모
           </h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
             {app.message}
@@ -182,7 +182,7 @@ export default async function VolunteerApplicationDetailPage({
       {/* 신청 시 동의 사항 */}
       <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-900/40 dark:bg-emerald-900/10">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
-          ✅ 신청 시 동의·확인 사항
+          신청 시 동의·확인 사항
         </h2>
         <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
           <li>• 봉사 활동 중 위험(물림·스크래치·알레르기) 인지</li>
