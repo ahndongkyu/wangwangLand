@@ -5,10 +5,11 @@ import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { WriteButton } from "@/shared/components/write-button"
+import { stripHtml } from "@/shared/lib/utils"
 
 function excerpt(content: string | null | undefined, max = 80): string | null {
   if (!content) return null
-  const plain = content.replace(/\s+/g, " ").trim()
+  const plain = stripHtml(content)
   if (!plain) return null
   return plain.length > max ? plain.slice(0, max) + "…" : plain
 }

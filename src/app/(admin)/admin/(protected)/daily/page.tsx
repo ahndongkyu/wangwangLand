@@ -7,7 +7,7 @@ import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
+import { cn, stripHtml } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -15,7 +15,7 @@ const PAGE_SIZE = 20
 
 function excerpt(content: string | null | undefined, max = 80): string | null {
   if (!content) return null
-  const plain = content.replace(/\s+/g, " ").trim()
+  const plain = stripHtml(content)
   if (!plain) return null
   return plain.length > max ? plain.slice(0, max) + "…" : plain
 }
