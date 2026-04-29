@@ -64,7 +64,6 @@ export default async function NoticePage({
               <PostListRow
                 href={`/notice/${n.id}`}
                 title={n.title}
-                author={n.author}
                 date={n.published_at}
                 viewCount={n.view_count}
                 pinned={n.is_pinned}

@@ -6,7 +6,6 @@ import { Pin } from "lucide-react"
 import { getNotice, MarkNoticesSeen } from "@/features/notices"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
-import { RoleBadge } from "@/shared/components/role-badge"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { ViewCounter } from "@/shared/components/view-counter"
 
@@ -80,12 +79,6 @@ export default async function NoticeDetailPage({
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           {notice.title}
         </h1>
-        {notice.author && (
-          <div className="mt-3 flex items-center gap-2">
-            <RoleBadge role={notice.author.role} />
-            <span className="text-sm text-muted-foreground">{notice.author.nickname}</span>
-          </div>
-        )}
       </header>
 
       <article>
