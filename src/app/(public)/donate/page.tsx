@@ -2,6 +2,7 @@ import Link from "next/link"
 import type { Metadata } from "next"
 import { Heart, Home, Stethoscope, UtensilsCrossed, type LucideIcon } from "lucide-react"
 
+import { listRecentDonationThanks, ThanksCard } from "@/features/thanks"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -13,8 +14,11 @@ export const metadata: Metadata = {
   description: `${SITE.name}은 여러분의 후원으로 운영됩니다. 계좌 이체와 후원품으로 참여하실 수 있습니다.`,
 }
 
-export default function DonatePage() {
+export const revalidate = 60
+
+export default async function DonatePage() {
   const d = SITE.donation
+  const recentThanks = await listRecentDonationThanks(4)
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -131,6 +135,34 @@ export default function DonatePage() {
       <p className="text-center text-xs text-muted-foreground">
         * 카드·간편 결제 연동은 추후 지원 예정입니다.
       </p>
+
+      {/* 최근 받은 후원 감사글 */}
+      {recentThanks.length > 0 && (
+        <section className="mt-16 border-t border-border/60 pt-10">
+          <header className="mb-5 flex items-end justify-between gap-3">
+            <div>
+              <h2 className="flex items-center gap-1.5 text-xl font-bold text-foreground md:text-2xl">
+                <Heart className="size-5 fill-primary/20 text-primary" aria-hidden />
+                따뜻한 마음들
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                최근 도착한 후원에 감사드립니다.
+              </p>
+            </div>
+            <Link
+              href="/thanks"
+              className="text-sm font-semibold text-primary hover:underline"
+            >
+              전체 보기 →
+            </Link>
+          </header>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {recentThanks.map((p) => (
+              <ThanksCard key={p.id} post={p} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

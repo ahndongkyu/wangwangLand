@@ -67,6 +67,7 @@ export function AdminHeader({
         { label: "공지사항", href: "/admin/notices" },
         { label: "일상", href: "/admin/daily" },
         { label: "입양후기", href: "/admin/stories" },
+        { label: "후원 감사글", href: "/admin/thanks" },
       ],
     },
     {

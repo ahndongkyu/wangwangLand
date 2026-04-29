@@ -50,7 +50,15 @@ export default async function AdminDonationDetailPage({
           </h1>
           <DonationStatusBadge status={donation.status} />
         </div>
-        <DonationAdminActions id={donation.id} status={donation.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/admin/thanks/new?donationId=${donation.id}`}
+            className="rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+          >
+            + 감사글 작성
+          </Link>
+          <DonationAdminActions id={donation.id} status={donation.status} />
+        </div>
       </header>
 
       {/* 후원 내용 */}

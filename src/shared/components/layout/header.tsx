@@ -212,6 +212,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
                   <MobileNavItem href="/calendar" icon="calendar" label="일정" isActive={isActive("/calendar")} onClose={() => setMobileOpen(false)} />
                   <MobileNavItem href="/volunteer" icon="volunteer" label="봉사 신청" isActive={isActive("/volunteer")} onClose={() => setMobileOpen(false)} />
                   <MobileNavItem href="/donate" icon="heart" label="후원하기" isActive={isActive("/donate")} onClose={() => setMobileOpen(false)} highlighted />
+                  <MobileNavItem href="/thanks" icon="heart" label="후원 감사글" isActive={isActive("/thanks")} onClose={() => setMobileOpen(false)} />
                 </MobileNavGroup>
 
                 <MobileDivider />
