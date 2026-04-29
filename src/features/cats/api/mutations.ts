@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
 import { ageMonthsFromBirthDate } from "@/shared/lib/age"
 import type { DogGender, DogStatus } from "@/shared/types/database"
@@ -83,23 +84,12 @@ export async function createCat(formData: FormData): Promise<MutationResult> {
 
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: "로그인이 필요합니다." }
-
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
-    return { error: "운영진 권한이 없습니다." }
-  }
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
 
   const { error } = await supabase
     .from("cats")
-    .insert({ ...input, created_by: user.id })
+    .insert({ ...input, created_by: auth.userId })
     .select("id")
     .single()
 

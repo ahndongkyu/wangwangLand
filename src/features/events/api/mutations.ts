@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { dispatchEventNotification } from "../notify"
+import { localKstToIso } from "../lib/date"
 import type { EventCategory } from "../types"
 
 export interface ActionResult {
@@ -62,15 +63,13 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
 
   // datetime-local 은 timezone 이 없어서 서버에서 그대로 new Date() 하면 UTC 로 해석됨.
   // 항상 KST(+09:00) 로 강제 해석.
-  const starts = new Date(
-    all_day ? `${startsRaw}T00:00:00+09:00` : `${startsRaw}:00+09:00`
-  )
-  const ends = new Date(
-    all_day ? `${endsRaw}T23:59:59+09:00` : `${endsRaw}:00+09:00`
-  )
-  if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime())) {
+  const startsIso = localKstToIso(startsRaw, { allDay: all_day })
+  const endsIso = localKstToIso(endsRaw, { allDay: all_day, isEnd: true })
+  if (!startsIso || !endsIso) {
     return { error: "시간 형식이 올바르지 않습니다." }
   }
+  const starts = new Date(startsIso)
+  const ends = new Date(endsIso)
   if (ends < starts) return { error: "종료 시간이 시작 시간보다 빠릅니다." }
 
   const signup_enabled =
@@ -151,9 +150,11 @@ async function createMultiDateEvents(opts: {
   let skippedCount = 0
   for (const date of selectedDates) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
-    const starts = new Date(`${date}T${startTime}:00+09:00`)
-    const ends = new Date(`${date}T${endTime}:00+09:00`)
-    if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime())) continue
+    const startsIso = localKstToIso(`${date}T${startTime}`)
+    const endsIso = localKstToIso(`${date}T${endTime}`)
+    if (!startsIso || !endsIso) continue
+    const starts = new Date(startsIso)
+    const ends = new Date(endsIso)
 
     const { error } = await admin.from("events").insert({
       category: "volunteer",

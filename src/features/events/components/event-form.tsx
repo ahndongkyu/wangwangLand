@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import { createEvent, updateEvent } from "../api/mutations"
+import { isoToLocalKstInput, todayKstDate } from "../lib/date"
 import { CATEGORY_LABEL, type CalendarEvent, type EventCategory } from "../types"
 import { FormFooter } from "@/shared/components/form-footer"
 import { Input } from "@/shared/components/ui/input"
@@ -35,20 +36,6 @@ interface Props {
 const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed", "custom"]
 const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
 
-/** Date(UTC) → datetime-local 입력값 (KST) */
-function toLocalInput(iso: string, allDay: boolean): string {
-  const d = new Date(iso)
-  // KST 컴포넌트
-  const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-  const yyyy = kst.getUTCFullYear()
-  const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
-  const dd = String(kst.getUTCDate()).padStart(2, "0")
-  if (allDay) return `${yyyy}-${mm}-${dd}`
-  const hh = String(kst.getUTCHours()).padStart(2, "0")
-  const mi = String(kst.getUTCMinutes()).padStart(2, "0")
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
-}
-
 /** 기본값: 시작 10:00, 종료 12:00 (KST). datetime-local 입력 형식. */
 function defaultStartFor(date: string): string {
   return `${date}T10:00`
@@ -64,13 +51,6 @@ function pickContrast(hex: string): string {
   const b = parseInt(hex.slice(5, 7), 16)
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
   return lum > 0.6 ? "#1F1B16" : "#FFFFFF"
-}
-
-/** 오늘 KST 의 YYYY-MM-DD */
-function todayKstDate(): string {
-  const now = new Date()
-  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
-  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}-${String(kst.getUTCDate()).padStart(2, "0")}`
 }
 
 export function EventForm({ event, defaultDate, fromApplication }: Props) {
@@ -370,7 +350,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
               required
               defaultValue={
                 event
-                  ? toLocalInput(event.starts_at, allDay)
+                  ? isoToLocalKstInput(event.starts_at, allDay)
                   : allDay
                     ? fallbackDate
                     : defaultStartFor(fallbackDate)
@@ -388,7 +368,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
               required
               defaultValue={
                 event
-                  ? toLocalInput(event.ends_at, allDay)
+                  ? isoToLocalKstInput(event.ends_at, allDay)
                   : allDay
                     ? fallbackDate
                     : defaultEndFor(fallbackDate)

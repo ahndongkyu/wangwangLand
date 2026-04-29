@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { localKstToIso } from "@/features/events/lib/date"
 import {
   validateKoreanPhone,
   validateName,
@@ -318,15 +319,12 @@ async function upsertVolunteerEventForApplication(opts: {
   if (!scheduledStart || !scheduledEnd) return
 
   // datetime-local 은 timezone 이 없으니 KST(+09:00) 로 강제 해석.
-  const starts = new Date(`${scheduledStart}:00+09:00`)
-  const ends = new Date(`${scheduledEnd}:00+09:00`)
-  if (
-    Number.isNaN(starts.getTime()) ||
-    Number.isNaN(ends.getTime()) ||
-    ends < starts
-  ) {
-    return
-  }
+  const startsIso = localKstToIso(scheduledStart)
+  const endsIso = localKstToIso(scheduledEnd)
+  if (!startsIso || !endsIso) return
+  const starts = new Date(startsIso)
+  const ends = new Date(endsIso)
+  if (ends < starts) return
 
   const title =
     partySize > 1

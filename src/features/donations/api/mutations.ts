@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
 import {
   validateKoreanPhone,
@@ -103,25 +104,17 @@ export async function createDonation(
 
 /** 어드민: 검토중 → 승인 */
 export async function approveDonation(id: string): Promise<DonationMutationResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "로그인이 필요합니다." }
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
-    return { error: "운영진 권한이 없습니다." }
-  }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from("donations")
     .update({
       status: "approved",
       approved_at: new Date().toISOString(),
-      approved_by: user.id,
+      approved_by: auth.userId,
       rejection_reason: null,
     })
     .eq("id", id)
@@ -138,25 +131,17 @@ export async function rejectDonation(
   id: string,
   reason: string
 ): Promise<DonationMutationResult> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: "로그인이 필요합니다." }
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
-    return { error: "운영진 권한이 없습니다." }
-  }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from("donations")
     .update({
       status: "rejected",
       approved_at: null,
-      approved_by: user.id,
+      approved_by: auth.userId,
       rejection_reason: reason || null,
     })
     .eq("id", id)

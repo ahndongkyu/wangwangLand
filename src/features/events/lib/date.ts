@@ -2,7 +2,7 @@
  * KST 기준 캘린더 유틸. 한국 보호소이므로 모든 날짜 계산은 KST.
  */
 
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+export const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 
 /** UTC ISO → KST Date (UTC 컴포넌트가 KST 값) */
 export function toKst(iso: string): Date {
@@ -106,4 +106,46 @@ export function isSameMonth(d: Date, yearMonth: string): boolean {
 
 export function isToday(d: Date): boolean {
   return dateKey(d) === dateKey(todayKst())
+}
+
+/**
+ * UTC ISO → datetime-local 입력값 (KST 기준).
+ *  - allDay=true 면 "YYYY-MM-DD"
+ *  - allDay=false 면 "YYYY-MM-DDTHH:MM"
+ */
+export function isoToLocalKstInput(iso: string, allDay = false): string {
+  const d = new Date(iso)
+  const kst = new Date(d.getTime() + KST_OFFSET_MS)
+  const yyyy = kst.getUTCFullYear()
+  const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
+  const dd = String(kst.getUTCDate()).padStart(2, "0")
+  if (allDay) return `${yyyy}-${mm}-${dd}`
+  const hh = String(kst.getUTCHours()).padStart(2, "0")
+  const mi = String(kst.getUTCMinutes()).padStart(2, "0")
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
+}
+
+/**
+ * datetime-local 입력값 → UTC ISO (KST 강제 해석).
+ *  - "YYYY-MM-DDTHH:MM" / "YYYY-MM-DD" 둘 다 허용.
+ *  - allDay 일 때 isEnd=true 면 23:59:59 까지.
+ *  - 잘못된 형식이면 null.
+ */
+export function localKstToIso(
+  localStr: string,
+  opts: { allDay?: boolean; isEnd?: boolean } = {}
+): string | null {
+  if (!localStr) return null
+  const { allDay = false, isEnd = false } = opts
+  const tail = allDay
+    ? `T${isEnd ? "23:59:59" : "00:00:00"}+09:00`
+    : `:00+09:00`
+  const d = new Date(`${localStr}${tail}`)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString()
+}
+
+/** 오늘 KST 의 YYYY-MM-DD */
+export function todayKstDate(): string {
+  return dateKey(todayKst())
 }

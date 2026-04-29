@@ -3,29 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
-
-/** profiles.role 기반 운영진 체크. 통과 시 user.id 반환, 실패 시 에러 메시지. */
-async function requireAdmin(): Promise<
-  { ok: true; userId: string } | { ok: false; error: string }
-> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: "로그인이 필요합니다." }
-
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
-    return { ok: false, error: "운영진 권한이 없습니다." }
-  }
-  return { ok: true, userId: user.id }
-}
 
 export interface NoticeMutationResult {
   error?: string

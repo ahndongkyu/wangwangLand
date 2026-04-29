@@ -14,6 +14,10 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { useToast } from "@/shared/components/toast"
+import {
+  isoToLocalKstInput,
+  todayKstDate,
+} from "@/features/events/lib/date"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
@@ -58,33 +62,12 @@ export function ApplicationStatusForm({
 
   const showSchedule = kind === "volunteer" && status === "승인"
 
-  // ISO → datetime-local 형식 (KST). "2026-04-30T10:00"
-  function isoToLocalKst(iso: string): string {
-    const d = new Date(iso)
-    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-    const yyyy = kst.getUTCFullYear()
-    const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
-    const dd = String(kst.getUTCDate()).padStart(2, "0")
-    const hh = String(kst.getUTCHours()).padStart(2, "0")
-    const mi = String(kst.getUTCMinutes()).padStart(2, "0")
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
-  }
-
-  // 오늘 KST 기준 datetime-local 기본값
-  const todayInput = (() => {
-    const now = new Date()
-    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
-    const yyyy = kst.getUTCFullYear()
-    const mm = String(kst.getUTCMonth() + 1).padStart(2, "0")
-    const dd = String(kst.getUTCDate()).padStart(2, "0")
-    return `${yyyy}-${mm}-${dd}`
-  })()
-
+  const todayInput = todayKstDate()
   const defaultStart = linkedEvent
-    ? isoToLocalKst(linkedEvent.starts_at)
+    ? isoToLocalKstInput(linkedEvent.starts_at)
     : `${todayInput}T10:00`
   const defaultEnd = linkedEvent
-    ? isoToLocalKst(linkedEvent.ends_at)
+    ? isoToLocalKstInput(linkedEvent.ends_at)
     : `${todayInput}T12:00`
 
   async function handleSubmit(formData: FormData) {
