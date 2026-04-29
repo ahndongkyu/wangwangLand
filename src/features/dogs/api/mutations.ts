@@ -92,17 +92,18 @@ export async function createDog(formData: FormData): Promise<MutationResult> {
   } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
     .maybeSingle()
-
-  if (!admin) return { error: "운영진 권한이 없습니다." }
+  if (!me || !["staff", "admin"].includes(me.role)) {
+    return { error: "운영진 권한이 없습니다." }
+  }
 
   const { error } = await supabase
     .from("dogs")
-    .insert({ ...input, created_by: admin.id })
+    .insert({ ...input, created_by: user.id })
     .select("id")
     .single()
 

@@ -58,12 +58,15 @@ export async function createNotice(
   } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
-  const { data: admin } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
+  // 운영진 체크: profiles.role IN ('staff', 'admin')
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
     .maybeSingle()
-  if (!admin) return { error: "운영진 권한이 없습니다." }
+  if (!me || !["staff", "admin"].includes(me.role)) {
+    return { error: "운영진 권한이 없습니다." }
+  }
 
   const { error } = await supabase
     .from("notices")
