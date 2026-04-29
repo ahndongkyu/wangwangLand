@@ -240,35 +240,19 @@ export default async function AboutPage() {
             </div>
           </div>
 
-          {/* 우측 — 지도 placeholder (장식용. 실제 지도 보기는 좌측의 외부 링크 버튼). */}
-          <a
-            href={`https://map.naver.com/v5/search/${encodeURIComponent(SITE.contact.mapQuery || SITE.contact.address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative flex min-h-64 items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)] dark:bg-[linear-gradient(135deg,#3D2815_0%,#2D1F12_100%)] md:min-h-0"
-          >
-            {/* 배경 데코 */}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-[rgba(232,155,94,0.15)]"
+          {/* 우측 — Google Maps 임베드 (API 키 불필요, 팝업 없음) */}
+          <div className="relative min-h-64 bg-secondary/40 md:min-h-0">
+            <iframe
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                SITE.contact.mapQuery || SITE.contact.address
+              )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              className="absolute inset-0 size-full"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="왕왕랜드 위치"
+              allowFullScreen
             />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -bottom-10 -left-10 size-32 rounded-full bg-[rgba(255,212,161,0.18)]"
-            />
-
-            <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
-              <span className="flex size-14 items-center justify-center rounded-full bg-white/80 shadow-sm transition-transform group-hover:scale-105 dark:bg-black/30">
-                <MapPin className="size-7 text-primary" aria-hidden />
-              </span>
-              <p className="text-sm font-semibold text-foreground">
-                {SITE.contact.addressShort}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                지도에서 길찾기 →
-              </p>
-            </div>
-          </a>
+          </div>
         </div>
       </section>
 
