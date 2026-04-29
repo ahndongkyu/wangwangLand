@@ -18,6 +18,7 @@ export {
   getEventWithMySignup,
   listEventsInRange,
   listEventSignups,
+  listMyUpcomingEvents,
   listMyUpcomingSignups,
   listUpcomingEvents,
 } from "./api/queries"

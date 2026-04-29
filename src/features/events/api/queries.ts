@@ -166,7 +166,7 @@ export async function listEventSignups(eventId: string): Promise<
   }))
 }
 
-/** 본인이 신청한 이벤트 목록 (마이페이지용) */
+/** 본인이 신청한 이벤트 목록 (마이페이지용) — event_signups 직접 신청만 */
 export async function listMyUpcomingSignups(): Promise<
   Array<EventSignup & { event: CalendarEvent }>
 > {
@@ -187,5 +187,69 @@ export async function listMyUpcomingSignups(): Promise<
   if (error || !data) return []
   return (data as Array<EventSignup & { event: CalendarEvent }>).filter(
     (r) => r.event !== null
+  )
+}
+
+/**
+ * 회원 본인이 관여된 다가오는 일정 (회원용 /calendar 리스트).
+ * 두 가지 경로 합침:
+ *  1. 본인 봉사 신청을 어드민이 캘린더에 등록한 이벤트
+ *  2. event_signups 로 직접 신청한 이벤트
+ * 같은 이벤트가 양쪽에 있으면 중복 제거. 시작 시간 가까운 순 정렬.
+ */
+export async function listMyUpcomingEvents(): Promise<CalendarEvent[]> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.user) return []
+
+  const userId = session.user.id
+  const nowIso = new Date().toISOString()
+
+  // 본인 봉사 신청 id 들 (RLS 가 막으므로 admin client 사용)
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { data: myApps } = await admin
+    .from("volunteer_applications")
+    .select("id")
+    .eq("created_by", userId)
+  const appIds = ((myApps ?? []) as Array<{ id: string }>).map((a) => a.id)
+
+  // 1. 봉사 신청 → 자동 등록된 이벤트
+  let appLinkedEvents: CalendarEvent[] = []
+  if (appIds.length > 0) {
+    const { data } = await admin
+      .from("events")
+      .select("*")
+      .eq("source_application_type", "volunteer")
+      .in("source_application_id", appIds)
+      .gte("ends_at", nowIso)
+      .order("starts_at", { ascending: true })
+    appLinkedEvents = (data ?? []) as CalendarEvent[]
+  }
+
+  // 2. 직접 신청한 이벤트
+  const { data: signupRows } = await supabase
+    .from("event_signups")
+    .select("event:events(*)")
+    .eq("user_id", userId)
+    .eq("status", "접수")
+  // supabase 가 단일 join 결과도 배열로 반환하는 경우가 있어 평탄화.
+  const directEvents: CalendarEvent[] = []
+  for (const row of (signupRows ?? []) as Array<{
+    event: CalendarEvent | CalendarEvent[] | null
+  }>) {
+    const e = Array.isArray(row.event) ? row.event[0] : row.event
+    if (e && e.ends_at >= nowIso) directEvents.push(e)
+  }
+
+  // 합치고 dedupe (id 기준)
+  const map = new Map<string, CalendarEvent>()
+  for (const e of appLinkedEvents) map.set(e.id, e)
+  for (const e of directEvents) if (!map.has(e.id)) map.set(e.id, e)
+
+  return Array.from(map.values()).sort((a, b) =>
+    a.starts_at.localeCompare(b.starts_at)
   )
 }

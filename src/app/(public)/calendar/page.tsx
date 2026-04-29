@@ -4,7 +4,7 @@ import { CalendarDays, LayoutGrid } from "lucide-react"
 
 import {
   EventCard,
-  listMyUpcomingSignups,
+  listMyUpcomingEvents,
   listUpcomingEvents,
   type EventWithSignupCount,
 } from "@/features/events"
@@ -28,12 +28,8 @@ export default async function CalendarPage() {
   let isMember = false
   if (session?.user) {
     isMember = true
-    const signups = await listMyUpcomingSignups()
-    events = signups
-      .filter((s) => s.event)
-      .map((s) => ({ ...s.event, signup_count: 0 }))
-      // 시작 시간 가까운 순
-      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    const myEvents = await listMyUpcomingEvents()
+    events = myEvents.map((e) => ({ ...e, signup_count: 0 }))
   } else {
     events = await listUpcomingEvents(40)
   }
