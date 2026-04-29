@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Download, FileText } from "lucide-react"
 
 import { getDog } from "@/features/dogs"
 import { AdoptionForm } from "@/features/applications"
@@ -54,6 +55,87 @@ export default async function AdoptPage({
         dogName={dog?.name}
         termsAlreadyAgreed={termsAlreadyAgreed}
       />
+
+      {/* 자료실 — 입양·임시보호 신청서·유의사항 다운로드 */}
+      <section className="mt-12">
+        <header className="mb-4">
+          <h2 className="flex items-center gap-1.5 text-lg font-bold text-foreground md:text-xl">
+            <FileText className="size-5 text-primary" aria-hidden />
+            자료실
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            인쇄용 신청서 양식과 유의사항 안내문입니다. 보호소 방문 상담 시 작성·지참하면 좋습니다.
+          </p>
+        </header>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <DocCard
+            file="/documents/adoption-application.pdf"
+            title="입양 신청서"
+            desc="입양 설문지 + 신청자 정보 + 필수 준수사항 (PDF · 2장)"
+            tag="입양"
+          />
+          <DocCard
+            file="/documents/adoption-notice.pdf"
+            title="입양 신청 유의사항"
+            desc="신청 전 필수 확인 사항 11개 (PDF · 1장)"
+            tag="입양"
+          />
+          <DocCard
+            file="/documents/foster-application.pdf"
+            title="임시보호 신청서"
+            desc="임시보호 설문지 + 신청자 정보 + 필수 준수사항 (PDF · 2장)"
+            tag="임시보호"
+          />
+          <DocCard
+            file="/documents/foster-notice.pdf"
+            title="임시보호 신청 유의사항"
+            desc="임시보호 전 필수 확인 사항 11개 (PDF · 1장)"
+            tag="임시보호"
+          />
+        </div>
+      </section>
     </div>
+  )
+}
+
+function DocCard({
+  file,
+  title,
+  desc,
+  tag,
+}: {
+  file: string
+  title: string
+  desc: string
+  tag: string
+}) {
+  return (
+    <a
+      href={file}
+      download
+      className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-secondary/30"
+    >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <FileText className="size-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-bold text-foreground/70">
+            {tag}
+          </span>
+          <span className="truncate text-sm font-semibold text-foreground">
+            {title}
+          </span>
+        </span>
+        <span className="mt-1 block text-[11px] leading-relaxed text-muted-foreground">
+          {desc}
+        </span>
+      </span>
+      <Download
+        className="size-4 shrink-0 self-center text-muted-foreground transition-colors group-hover:text-primary"
+        aria-hidden
+      />
+    </a>
   )
 }
