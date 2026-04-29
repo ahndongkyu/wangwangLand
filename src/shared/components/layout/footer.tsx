@@ -13,7 +13,7 @@ export function Footer() {
   const d = SITE.donation
   const reg = SITE.registration
   const hasRegistration = Boolean(
-    reg.representativeName || reg.shelterNumber || reg.businessNumber
+    reg.representativeName || reg.shelterNumber || reg.taxId
   )
 
   return (
@@ -228,9 +228,7 @@ export function Footer() {
             {reg.shelterNumber && (
               <span>동물보호센터 등록번호 {reg.shelterNumber}</span>
             )}
-            {reg.businessNumber && (
-              <span>사업자등록번호 {reg.businessNumber}</span>
-            )}
+            {reg.taxId && <span>고유번호 {reg.taxId}</span>}
           </div>
         )}
 

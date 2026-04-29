@@ -364,7 +364,7 @@ export function PrivacyContent({ embedded = false }: Props) {
           <p className="mt-1">주소: {SITE.contact.address}</p>
           <p>대표 연락처: {repPhone}</p>
           <p>이메일: {contactEmail}</p>
-          {reg.businessNumber && <p>사업자등록번호: {reg.businessNumber}</p>}
+          {reg.taxId && <p>고유번호: {reg.taxId}</p>}
           <p>
             공식 카페: <a href={SITE.sns.naverCafe} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{SITE.sns.naverCafe}</a>
           </p>
