@@ -1,17 +1,19 @@
 "use client"
 
 import { useEffect } from "react"
-import confetti from "canvas-confetti"
 
 /**
  * 후원 등록 완료 시 1회 confetti 효과.
- * 페이지 진입 후 0.3s 지연하여 발사 (mount 부드럽게).
+ * canvas-confetti 라이브러리를 dynamic import 로 로드해서 다른 페이지의
+ * 초기 번들에 포함되지 않게 함.
  */
 export function DonateConfetti() {
   useEffect(() => {
-    const t = setTimeout(() => {
+    let cancelled = false
+    const t = setTimeout(async () => {
+      const confetti = (await import("canvas-confetti")).default
+      if (cancelled) return
       const palette = ["#D85A30", "#F0B079", "#7BBF8F", "#FAF3E8"]
-      // 좌우 양쪽에서 동시에
       const fire = (originX: number) =>
         confetti({
           particleCount: 60,
@@ -25,7 +27,10 @@ export function DonateConfetti() {
       fire(0.25)
       fire(0.75)
     }, 300)
-    return () => clearTimeout(t)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   }, [])
   return null
 }

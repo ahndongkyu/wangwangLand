@@ -33,7 +33,7 @@ export function CatCard({ cat }: { cat: Cat }) {
               src={thumbnailSrc}
               alt={cat.name}
               fill
-              sizes="(max-width: 768px) 50vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (

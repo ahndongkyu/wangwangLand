@@ -12,6 +12,9 @@ import { Header } from "@/shared/components/layout/header"
 import { MobileCtaBar } from "@/shared/components/mobile-cta-bar"
 import { ScrollButtons } from "@/shared/components/scroll-buttons"
 
+// 헤더의 NEW 뱃지·알림 등은 1분 캐시 허용 — 첫 페이지 로드 빨라짐.
+export const revalidate = 60
+
 /**
  * 약관 가드 예외 경로 — 이 경로들은 약관 미동의 상태에서도 접근 가능
  *  - /agreement: 재동의 페이지 본인

@@ -17,9 +17,11 @@ export interface CompressOptions {
 }
 
 const DEFAULTS: Required<CompressOptions> = {
-  maxDimension: 1920,
-  quality: 0.9,
-  passthroughBytes: 2 * 1024 * 1024,
+  // 모바일 화면 최대 폭 + 레티나 = 1280px 충분.
+  // 1920 → 1280 으로 줄이면 픽셀수 약 56% 감소 → 파일 크기 큰 폭 감소.
+  maxDimension: 1280,
+  quality: 0.82,
+  passthroughBytes: 600 * 1024, // 600KB 이하 JPG/WebP 만 재압축 스킵
 }
 
 export async function compressImage(

@@ -180,7 +180,8 @@ export function HeroCarousel({
                 alt=""
                 fill
                 priority={i === 1}
-                sizes="90vw"
+                loading={i === 1 ? "eager" : "lazy"}
+                sizes="(max-width: 640px) 100vw, 90vw"
                 className="object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
