@@ -308,9 +308,12 @@ export default async function AboutPage() {
           <h2 className="text-base font-bold text-foreground">단체 정보</h2>
         </header>
         <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-          {SITE.registration.businessNumber && (
-            <RegistrationRow label="사업자등록번호">
-              {SITE.registration.businessNumber}
+          {SITE.registration.taxId && (
+            <RegistrationRow label="고유번호">
+              {SITE.registration.taxId}
+              <span className="ml-1.5 text-[11px] text-muted-foreground">
+                (수익사업을 하지 않는 비영리법인)
+              </span>
             </RegistrationRow>
           )}
           {SITE.registration.shelterNumber && (

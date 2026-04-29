@@ -55,9 +55,18 @@ export const SITE = {
    * 공익성 승격 전이라 기부금 영수증 발급 불가 상태.
    */
   registration: {
-    representativeName: "", // 대표자명 (※ 채워주세요)
+    representativeName: "박순덕", // 대표자명
+    representativeBirth: "1965년 11월 1일생",
     shelterNumber: "", // 동물보호센터 등록번호 (있다면)
-    businessNumber: "222-82-77099", // 사업자등록번호
+    /**
+     * 국세청 고유번호 — 수익사업을 하지 않는 비영리법인.
+     * 사업자등록번호와 형식은 같지만 의미가 다르므로 표기 시 "고유번호" 로 명시.
+     */
+    taxId: "222-82-77099",
+    /** @deprecated taxId 사용 — 호환성을 위해 유지 */
+    businessNumber: "222-82-77099",
+    issuedAt: "2024년 09월 05일",
+    issuedBy: "인천세무서",
   },
 }
 
