@@ -29,6 +29,8 @@ interface Props {
   addHrefBase?: string
   /** true 면 봉사 자동 이벤트의 이름 마스킹 (공개 페이지). */
   maskNames?: boolean
+  /** true 면 칩 클릭 비활성화 (보기 전용). 회원/게스트 그리드에서 사용. */
+  readOnly?: boolean
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -45,6 +47,7 @@ export function MonthGrid({
   hrefBase = "/admin/calendar",
   addHrefBase,
   maskNames = false,
+  readOnly = false,
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
@@ -143,8 +146,10 @@ export function MonthGrid({
                     key={ev.id}
                     event={ev}
                     maskNames={maskNames}
+                    readOnly={readOnly}
                     onClick={(e) => {
                       e.stopPropagation()
+                      if (readOnly) return
                       // 항상 이벤트 상세 페이지로. 거기서 원본 신청으로 가는 링크 노출.
                       router.push(`${hrefBase}/${ev.id}`)
                     }}
@@ -168,16 +173,54 @@ function EventChip({
   event,
   onClick,
   maskNames,
+  readOnly,
 }: {
   event: CalendarEvent
   onClick: (e: React.MouseEvent) => void
   maskNames: boolean
+  readOnly: boolean
 }) {
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
   const displayTitle = maskNames ? publicEventTitle(event) : event.title
 
+  // 보기 전용 칩 (회원·게스트 그리드)
+  if (readOnly) {
+    if (event.all_day) {
+      return (
+        <span
+          title={displayTitle}
+          style={customStyle?.background}
+          className={cn(
+            "block w-full truncate rounded-sm px-1.5 py-0.5 text-left text-[11px] font-medium",
+            !isCustom && color.bg,
+            !isCustom && color.text
+          )}
+        >
+          {displayTitle}
+        </span>
+      )
+    }
+    return (
+      <span
+        title={`${formatTimeKst(event.starts_at)} ${displayTitle}`}
+        className="flex w-full min-w-0 items-center gap-1 rounded-sm px-1 py-0.5 text-left text-[11px]"
+      >
+        <span
+          aria-hidden
+          style={customStyle?.dot}
+          className={cn("size-1.5 shrink-0 rounded-full", !isCustom && color.dot)}
+        />
+        <span className="min-w-0 truncate text-muted-foreground">
+          <span className="text-foreground/80">{formatTimeKst(event.starts_at)}</span>{" "}
+          {displayTitle}
+        </span>
+      </span>
+    )
+  }
+
+  // 클릭 가능한 칩 (어드민)
   if (event.all_day) {
     return (
       <button

@@ -82,6 +82,7 @@ export default async function CalendarGridPage({
         events={events}
         hrefBase="/calendar"
         maskNames
+        readOnly
       />
     </div>
   )
