@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
 
+import { DonateConfetti } from "./confetti"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -14,6 +15,7 @@ export default async function DonateRegisterDonePage({
   await searchParams // 단순 방문 표시 — 본문에서는 안 씀
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col items-center px-4 py-20 text-center md:px-6">
+      <DonateConfetti />
       <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-primary/15">
         <CheckCircle2 className="size-9 text-primary" />
       </div>

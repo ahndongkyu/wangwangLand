@@ -66,7 +66,7 @@ export function AdminNotificationBell({ counts }: Props) {
         )}
         aria-label={hasItems ? `처리 대기 알림 ${counts.total}건` : "대기 알림 없음"}
       >
-        <Bell className="size-5" />
+        <Bell className={cn("size-5", hasItems && "animate-bell-ring")} />
         {hasItems && (
           <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
             {counts.total > 99 ? "99+" : counts.total}

@@ -239,7 +239,11 @@ export default async function AdminDashboardPage() {
 
       {/* 3. 처리 대기 + 최근 신청 — 운영진이 즉시 액션해야 하는 항목 */}
       <section className="mb-8 grid gap-4 md:grid-cols-2">
-        <Card className={cn(totalPending > 0 && "border-primary")}>
+        <Card
+          className={cn(
+            totalPending > 0 && "border-primary animate-pending-glow"
+          )}
+        >
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <Inbox className="size-4 text-muted-foreground" aria-hidden />

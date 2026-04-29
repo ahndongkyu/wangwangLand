@@ -91,7 +91,7 @@ export default async function HomePage() {
             {/* 후원하기 CTA */}
             <Link
               href="/donate"
-              className="relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-2 py-5 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5 md:py-8
+              className="animate-attention-once relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-2 py-5 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5 md:py-8
                 bg-[linear-gradient(135deg,#E89B6C_0%,#D4855A_100%)]
                 dark:bg-[linear-gradient(135deg,#C4784A_0%,#A8623A_100%)]"
             >

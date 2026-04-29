@@ -265,3 +265,46 @@
   animation: new-shimmer 2.2s linear infinite;
   pointer-events: none;
 }
+
+/* 종 흔들림 — 안 읽은 알림 어필 */
+@keyframes bell-ring {
+  0%, 70%, 100% { transform: rotate(0); }
+  10%, 30%, 50% { transform: rotate(-12deg); }
+  20%, 40%, 60% { transform: rotate(12deg); }
+}
+.animate-bell-ring {
+  animation: bell-ring 4s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+/* 호박색 펄스 — 검토중 상태 */
+@keyframes amber-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.animate-amber-pulse {
+  animation: amber-pulse 2s ease-in-out infinite;
+}
+
+/* 1회 attention scale — 페이지 진입 시 한 번 */
+@keyframes attention-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.animate-attention-once {
+  animation: attention-scale 0.7s ease-in-out 1;
+  animation-delay: 0.4s;
+}
+
+/* 처리 대기 외곽 펄스 — 어드민 대시보드 */
+@keyframes pending-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(216, 90, 48, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(216, 90, 48, 0);
+  }
+}
+.animate-pending-glow {
+  animation: pending-glow 2.4s ease-in-out infinite;
+}

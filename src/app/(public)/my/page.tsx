@@ -37,7 +37,7 @@ function statusBadgeClass(status: ApplicationStatus) {
     case "접수":
       return "bg-primary/20 text-primary"
     case "검토중":
-      return "bg-amber-500/20 text-amber-700"
+      return "bg-amber-500/20 text-amber-700 animate-amber-pulse"
     case "승인":
       return "bg-emerald-600/20 text-emerald-700"
     case "반려":

@@ -88,7 +88,9 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
         )}
         aria-label={hasItems ? `알림 ${unreadCount}개` : "알림 없음"}
       >
-        <Bell className="size-5" />
+        <Bell
+          className={cn("size-5", unreadCount > 0 && "animate-bell-ring")}
+        />
         {unreadCount > 0 && (
           <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
             {unreadCount > 99 ? "99+" : unreadCount}
