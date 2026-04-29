@@ -67,6 +67,7 @@ export default async function NoticePage({
                 date={n.published_at}
                 viewCount={n.view_count}
                 pinned={n.is_pinned}
+                newWithinDays={2}
               />
             </li>
           ))}

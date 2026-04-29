@@ -82,6 +82,7 @@ export default async function DailyPage({
                 author={post.author}
                 date={post.posted_at}
                 viewCount={post.view_count}
+                newWithinDays={2}
               />
             </li>
           ))}
