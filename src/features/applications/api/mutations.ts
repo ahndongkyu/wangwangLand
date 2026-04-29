@@ -384,6 +384,14 @@ export async function deleteAdoptionApplication(
   id: string
 ): Promise<SubmitResult> {
   const admin = createAdminClient()
+
+  // 연결된 캘린더 일정 cascade 삭제 (입양은 보통 자동 등록이 없지만 정합성 위해).
+  await admin
+    .from("events")
+    .delete()
+    .eq("source_application_type", "adoption")
+    .eq("source_application_id", id)
+
   const { error } = await admin
     .from("adoption_applications")
     .delete()
@@ -395,6 +403,8 @@ export async function deleteAdoptionApplication(
   }
 
   revalidateAdminApplications()
+  revalidatePath("/admin/calendar")
+  revalidatePath("/calendar")
   redirect("/admin/applications")
 }
 
@@ -402,6 +412,15 @@ export async function deleteVolunteerApplication(
   id: string
 ): Promise<SubmitResult> {
   const admin = createAdminClient()
+
+  // 캘린더에 연결된 자동 등록 일정 cascade 삭제.
+  // 신청자에게는 deleteVolunteerApplicationByOwner 에서 별도 알림 처리 (운영진 삭제 시 알림 X).
+  await admin
+    .from("events")
+    .delete()
+    .eq("source_application_type", "volunteer")
+    .eq("source_application_id", id)
+
   const { error } = await admin
     .from("volunteer_applications")
     .delete()
@@ -413,5 +432,102 @@ export async function deleteVolunteerApplication(
   }
 
   revalidateAdminApplications()
+  revalidatePath("/admin/calendar")
+  revalidatePath("/calendar")
   redirect("/admin/applications")
+}
+
+/**
+ * 회원이 본인 봉사 신청을 직접 삭제 (취소 + 행 제거).
+ * 연결된 캘린더 일정도 함께 cascade 삭제.
+ */
+export async function cancelOwnVolunteerApplication(
+  id: string
+): Promise<SubmitResult> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.user) return { error: "로그인이 필요합니다." }
+
+  const admin = createAdminClient()
+
+  // 본인 소유 확인 (RLS 우회 admin client 라 명시적 체크 필수)
+  const { data: app } = await admin
+    .from("volunteer_applications")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle()
+  if (!app) return { error: "신청을 찾을 수 없습니다." }
+  if (app.created_by !== session.user.id) {
+    return { error: "본인 신청만 삭제할 수 있습니다." }
+  }
+
+  // 연결 캘린더 일정 cascade 삭제
+  await admin
+    .from("events")
+    .delete()
+    .eq("source_application_type", "volunteer")
+    .eq("source_application_id", id)
+
+  const { error } = await admin
+    .from("volunteer_applications")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    console.error("[cancelOwnVolunteerApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/my/applications")
+  revalidatePath("/calendar")
+  revalidatePath("/admin/applications")
+  revalidatePath("/admin/calendar")
+  return { id }
+}
+
+/**
+ * 회원이 본인 입양 신청을 직접 삭제.
+ */
+export async function cancelOwnAdoptionApplication(
+  id: string
+): Promise<SubmitResult> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.user) return { error: "로그인이 필요합니다." }
+
+  const admin = createAdminClient()
+
+  const { data: app } = await admin
+    .from("adoption_applications")
+    .select("created_by")
+    .eq("id", id)
+    .maybeSingle()
+  if (!app) return { error: "신청을 찾을 수 없습니다." }
+  if (app.created_by !== session.user.id) {
+    return { error: "본인 신청만 삭제할 수 있습니다." }
+  }
+
+  await admin
+    .from("events")
+    .delete()
+    .eq("source_application_type", "adoption")
+    .eq("source_application_id", id)
+
+  const { error } = await admin
+    .from("adoption_applications")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    console.error("[cancelOwnAdoptionApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/my/applications")
+  revalidatePath("/admin/applications")
+  return { id }
 }

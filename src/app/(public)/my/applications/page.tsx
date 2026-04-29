@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 
+import { CancelMyApplicationButton } from "./cancel-button"
 import { createClient } from "@/shared/lib/supabase/server"
 import { Badge } from "@/shared/components/ui/badge"
 import { cn } from "@/shared/lib/utils"
@@ -152,6 +153,9 @@ export default async function MyApplicationsPage() {
                         {v.admin_note}
                       </div>
                     )}
+                    <div className="mt-3 flex justify-end">
+                      <CancelMyApplicationButton id={v.id} kind="volunteer" />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -197,6 +201,9 @@ export default async function MyApplicationsPage() {
                         {a.admin_note}
                       </div>
                     )}
+                    <div className="mt-3 flex justify-end">
+                      <CancelMyApplicationButton id={a.id} kind="adoption" />
+                    </div>
                   </div>
                 ))}
               </div>

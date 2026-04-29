@@ -94,6 +94,23 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
   const isEdit = !!event
   const showSignupToggle = category === "event" // 봉사=항상 true, 휴무=항상 false
 
+  // 다중 날짜 모드 — 봉사 신청에서 가져왔고 가능 날짜가 1개 이상이면 활성화.
+  // 신청자가 여러 날짜를 골랐을 때 운영진이 한 번에 모두 등록할 수 있게 함.
+  const isMultiDateMode =
+    !!fromApplication && fromApplication.availableDates.length > 0
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(
+    () => new Set(fromApplication?.availableDates ?? [])
+  )
+
+  function toggleDate(d: string) {
+    setSelectedDates((prev) => {
+      const next = new Set(prev)
+      if (next.has(d)) next.delete(d)
+      else next.add(d)
+      return next
+    })
+  }
+
   // 신청에서 가져온 모드의 기본 제목 / 일자
   const defaultTitle = (() => {
     if (event) return event.title
@@ -252,60 +269,134 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
         />
       </div>
 
-      {/* 종일 토글 */}
-      <div className="flex items-center gap-2">
-        <input
-          id="all_day"
-          name="all_day"
-          type="checkbox"
-          checked={allDay}
-          onChange={(e) => setAllDay(e.target.checked)}
-          className="size-4 accent-primary"
-        />
-        <Label htmlFor="all_day" className="cursor-pointer text-sm">
-          종일 일정
-        </Label>
-      </div>
+      {/* 종일 토글 — 다중 날짜 모드에선 숨김 */}
+      {!isMultiDateMode && (
+        <div className="flex items-center gap-2">
+          <input
+            id="all_day"
+            name="all_day"
+            type="checkbox"
+            checked={allDay}
+            onChange={(e) => setAllDay(e.target.checked)}
+            className="size-4 accent-primary"
+          />
+          <Label htmlFor="all_day" className="cursor-pointer text-sm">
+            종일 일정
+          </Label>
+        </div>
+      )}
 
-      {/* 시작·종료 */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="starts_at">
-            시작 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="starts_at"
-            name="starts_at"
-            type={allDay ? "date" : "datetime-local"}
-            required
-            defaultValue={
-              event
-                ? toLocalInput(event.starts_at, allDay)
-                : allDay
-                  ? fallbackDate
-                  : defaultStartFor(fallbackDate)
-            }
-          />
+      {isMultiDateMode ? (
+        <>
+          {/* 다중 날짜 선택 */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">
+              등록할 날짜 <span className="text-destructive">*</span>
+            </Label>
+            <p className="text-[11px] text-muted-foreground">
+              신청자가 가능하다고 선택한 날짜들. 체크된 날짜마다 일정이 한 개씩 등록됩니다.
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {fromApplication!.availableDates.map((d) => {
+                const checked = selectedDates.has(d)
+                return (
+                  <label
+                    key={d}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
+                      checked
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleDate(d)}
+                      className="size-3.5 accent-primary"
+                    />
+                    {d}
+                  </label>
+                )
+              })}
+            </div>
+            {Array.from(selectedDates).map((d) => (
+              <input key={d} type="hidden" name="selected_dates" value={d} />
+            ))}
+          </div>
+
+          {/* 시간대 (HH:MM only — 모든 선택 날짜에 동일 적용) */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="start_time">
+                시작 시간 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="start_time"
+                name="start_time"
+                type="time"
+                defaultValue="10:00"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="end_time">
+                종료 시간 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="end_time"
+                name="end_time"
+                type="time"
+                defaultValue="12:00"
+                required
+              />
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground/80">
+            선택한 모든 날짜에 동일 시간대로 등록됩니다.
+          </p>
+        </>
+      ) : (
+        /* 시작·종료 (단일 날짜 + 시간) */
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="starts_at">
+              시작 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="starts_at"
+              name="starts_at"
+              type={allDay ? "date" : "datetime-local"}
+              required
+              defaultValue={
+                event
+                  ? toLocalInput(event.starts_at, allDay)
+                  : allDay
+                    ? fallbackDate
+                    : defaultStartFor(fallbackDate)
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ends_at">
+              종료 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="ends_at"
+              name="ends_at"
+              type={allDay ? "date" : "datetime-local"}
+              required
+              defaultValue={
+                event
+                  ? toLocalInput(event.ends_at, allDay)
+                  : allDay
+                    ? fallbackDate
+                    : defaultEndFor(fallbackDate)
+              }
+            />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="ends_at">
-            종료 <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="ends_at"
-            name="ends_at"
-            type={allDay ? "date" : "datetime-local"}
-            required
-            defaultValue={
-              event
-                ? toLocalInput(event.ends_at, allDay)
-                : allDay
-                  ? fallbackDate
-                  : defaultEndFor(fallbackDate)
-            }
-          />
-        </div>
-      </div>
+      )}
 
       {/* 장소 */}
       <div className="space-y-1.5">

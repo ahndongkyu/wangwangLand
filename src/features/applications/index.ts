@@ -8,6 +8,8 @@ export {
   updateVolunteerApplication,
   deleteAdoptionApplication,
   deleteVolunteerApplication,
+  cancelOwnAdoptionApplication,
+  cancelOwnVolunteerApplication,
 } from "./api/mutations"
 export {
   listAdoptionApplications,

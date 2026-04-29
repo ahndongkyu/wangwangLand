@@ -93,9 +93,128 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
 }
 
 export async function createEvent(formData: FormData): Promise<ActionResult> {
-  const parsed = parseEventInput(formData)
-  if ("error" in parsed) return parsed
+  // 다중 날짜 모드 감지 — 봉사 신청에서 여러 날짜 선택해 한 번에 등록.
+  const approveAppId =
+    String(formData.get("approve_application_id") ?? "").trim() || null
+  const selectedDates = formData
+    .getAll("selected_dates")
+    .map(String)
+    .filter(Boolean)
+  const startTime = String(formData.get("start_time") ?? "").trim()
+  const endTime = String(formData.get("end_time") ?? "").trim()
 
+  if (approveAppId && selectedDates.length > 0 && startTime && endTime) {
+    const supabase = await createClient()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) return { error: "로그인이 필요합니다." }
+    return createMultiDateEvents({
+      formData,
+      approveAppId,
+      selectedDates,
+      startTime,
+      endTime,
+      userId: session.user.id,
+    })
+  }
+
+  return createSingleEvent(formData)
+}
+
+async function createMultiDateEvents(opts: {
+  formData: FormData
+  approveAppId: string
+  selectedDates: string[]
+  startTime: string
+  endTime: string
+  userId: string
+}): Promise<ActionResult> {
+  const { formData, approveAppId, selectedDates, startTime, endTime, userId } = opts
+
+  if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
+    return { error: "시간 형식이 올바르지 않습니다." }
+  }
+  if (endTime <= startTime) {
+    return { error: "종료 시간이 시작 시간보다 빨라요." }
+  }
+
+  const title = String(formData.get("title") ?? "").trim()
+  if (!title) return { error: "제목을 입력해주세요." }
+  const description = String(formData.get("description") ?? "").trim() || null
+  const location = String(formData.get("location") ?? "").trim() || null
+
+  const admin = createAdminClient()
+
+  // 날짜별로 INSERT 시도. unique 제약(같은 시작 시각)에 걸리면 자동 skip → 메시지로 안내.
+  let insertedCount = 0
+  let skippedCount = 0
+  for (const date of selectedDates) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
+    const starts = new Date(`${date}T${startTime}:00+09:00`)
+    const ends = new Date(`${date}T${endTime}:00+09:00`)
+    if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime())) continue
+
+    const { error } = await admin.from("events").insert({
+      category: "volunteer",
+      title,
+      description,
+      location,
+      starts_at: starts.toISOString(),
+      ends_at: ends.toISOString(),
+      all_day: false,
+      signup_enabled: false,
+      visibility: "public",
+      source_application_type: "volunteer",
+      source_application_id: approveAppId,
+      created_by: userId,
+    })
+
+    if (!error) {
+      insertedCount++
+    } else if (error.code === "23505" || /duplicate key/i.test(error.message)) {
+      // 같은 (신청, 시작시각) 조합 중복 — 스킵
+      skippedCount++
+    } else {
+      console.error("[createMultiDateEvents] insert failed", error)
+      return { error: error.message }
+    }
+  }
+
+  if (insertedCount === 0 && skippedCount === 0) {
+    return { error: "등록된 일정이 없습니다. 날짜를 다시 확인해주세요." }
+  }
+
+  // 신청 status 승인 + 알림 (한 번만)
+  const { data: app } = await admin
+    .from("volunteer_applications")
+    .select("created_by, status")
+    .eq("id", approveAppId)
+    .maybeSingle()
+
+  await admin
+    .from("volunteer_applications")
+    .update({ status: "승인" })
+    .eq("id", approveAppId)
+
+  if (app?.created_by && app.status !== "승인") {
+    await admin.from("notifications").insert({
+      user_id: app.created_by,
+      type: "application_approved",
+      post_type: "volunteer",
+      post_id: approveAppId,
+      actor_id: null,
+    })
+  }
+
+  revalidatePath("/admin/applications")
+  revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
+  revalidatePath("/admin/calendar")
+  revalidatePath("/calendar")
+  redirect("/admin/calendar")
+}
+
+async function createSingleEvent(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
   const {
     data: { session },
@@ -105,6 +224,9 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   // 봉사 신청에서 가져온 일정이면, 등록 완료 시 신청 status 도 승인 처리.
   const approveAppId =
     String(formData.get("approve_application_id") ?? "").trim() || null
+
+  const parsed = parseEventInput(formData)
+  if ("error" in parsed) return parsed
 
   // 신청에서 가져왔으면 source_application_* 자동 채움 + visibility=public (마스킹 표시).
   const insertPayload: Record<string, unknown> = {
