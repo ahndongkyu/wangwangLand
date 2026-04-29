@@ -147,6 +147,10 @@ export function ApplicationStatusForm({
 
       {showSchedule && (
         <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+          {/* 수정 대상 이벤트 id (있으면) — 같은 신청에 여러 일정이 있어도 첫 번째 이벤트의 시간을 명확히 수정. */}
+          {linkedEvent && (
+            <input type="hidden" name="linked_event_id" value={linkedEvent.id} />
+          )}
           <div>
             <Label className="text-sm font-semibold text-foreground">
               {linkedEvent ? "캘린더 일정 수정" : "캘린더 자동 등록"}

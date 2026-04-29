@@ -43,19 +43,26 @@ export default async function VolunteerApplicationDetailPage({
 
   if (!app) notFound()
 
-  // 승인 시 자동 등록된 캘린더 이벤트가 있으면 재편집용으로 시간 미리 채움
-  let linkedEvent: { id: string; starts_at: string; ends_at: string } | null = null
+  // 자동 등록된 캘린더 이벤트들 (다중 날짜 신청 지원으로 여러 개 가능).
+  // status form 의 단일 날짜 입력에는 첫 번째만 prefill, 나머지는 별도 카드로 표시.
+  let linkedEvents: Array<{
+    id: string
+    title: string
+    starts_at: string
+    ends_at: string
+  }> = []
   {
     const { createAdminClient } = await import("@/shared/lib/supabase/admin")
     const admin = createAdminClient()
     const { data } = await admin
       .from("events")
-      .select("id, starts_at, ends_at")
+      .select("id, title, starts_at, ends_at")
       .eq("source_application_type", "volunteer")
       .eq("source_application_id", id)
-      .maybeSingle()
-    linkedEvent = data ?? null
+      .order("starts_at", { ascending: true })
+    linkedEvents = data ?? []
   }
+  const linkedEvent = linkedEvents[0] ?? null
 
   const isMember = !!app.created_by
   const isGroup = app.party_size > 1
@@ -215,6 +222,53 @@ export default async function VolunteerApplicationDetailPage({
         <p className="mt-2 text-[11px] text-muted-foreground/80">
           신청 폼에서 위 항목을 모두 체크해야 제출이 가능합니다.
         </p>
+      </section>
+
+      {/* 등록된 캘린더 일정 — 다중 날짜 지원 */}
+      <section className="mb-6 rounded-xl border border-border bg-card p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground">
+            등록된 캘린더 일정 ({linkedEvents.length})
+          </h2>
+          <Link
+            href={`/admin/calendar/new?from=${app.id}`}
+            className="rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+          >
+            + 일정 추가
+          </Link>
+        </div>
+        {linkedEvents.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            아직 캘린더에 등록된 일정이 없습니다. 신청한 날짜가 여러 개라면
+            <strong className="text-foreground"> 일정 추가</strong> 버튼으로 각각 등록하세요.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {linkedEvents.map((ev) => (
+              <li
+                key={ev.id}
+                className="flex items-center justify-between gap-2 py-2 text-sm"
+              >
+                <span className="min-w-0">
+                  <span className="font-medium text-foreground">{ev.title}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {new Date(ev.starts_at).toLocaleString("ko-KR", {
+                      timeZone: "Asia/Seoul",
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                </span>
+                <Link
+                  href={`/admin/calendar/${ev.id}`}
+                  className="shrink-0 text-xs text-primary hover:underline"
+                >
+                  상세 →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* 처리 */}

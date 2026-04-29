@@ -263,8 +263,10 @@ export async function updateVolunteerApplication(
     })
   }
 
-  // 승인 시 캘린더 자동 등록 (운영진 전용 internal 이벤트)
+  // 승인 시 캘린더 자동 등록 (또는 기존 이벤트 시간 수정)
   if (status === "승인" && prev) {
+    const linkedEventId =
+      String(formData.get("linked_event_id") ?? "").trim() || null
     await upsertVolunteerEventForApplication({
       applicationId: id,
       applicantName: prev.applicant_name,
@@ -274,6 +276,7 @@ export async function updateVolunteerApplication(
       message: prev.message ?? null,
       scheduledStart,
       scheduledEnd,
+      linkedEventId,
     })
   }
 
@@ -296,6 +299,8 @@ async function upsertVolunteerEventForApplication(opts: {
   message: string | null
   scheduledStart: string  // datetime-local 또는 빈 값
   scheduledEnd: string
+  /** status form 으로 들어왔을 때, 수정 대상 이벤트의 id. 없으면 새로 insert. */
+  linkedEventId?: string | null
 }) {
   const {
     applicationId,
@@ -306,6 +311,7 @@ async function upsertVolunteerEventForApplication(opts: {
     message,
     scheduledStart,
     scheduledEnd,
+    linkedEventId,
   } = opts
 
   // 일시가 비었으면 등록 스킵 (운영진이 수기 입력 안 한 경우).
@@ -337,12 +343,17 @@ async function upsertVolunteerEventForApplication(opts: {
 
   const admin = createAdminClient()
 
-  const { data: existing } = await admin
-    .from("events")
-    .select("id")
-    .eq("source_application_type", "volunteer")
-    .eq("source_application_id", applicationId)
-    .maybeSingle()
+  // 다중 날짜 등록을 지원하므로 같은 신청에 여러 이벤트가 있을 수 있음.
+  // status form 에서 명시된 linkedEventId 가 있으면 그 행을 update, 없으면 새로 insert.
+  let existing: { id: string } | null = null
+  if (linkedEventId) {
+    const { data } = await admin
+      .from("events")
+      .select("id")
+      .eq("id", linkedEventId)
+      .maybeSingle()
+    existing = data ?? null
+  }
 
   const payload = {
     category: "volunteer" as const,
