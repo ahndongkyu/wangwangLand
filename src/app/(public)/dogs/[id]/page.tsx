@@ -1,7 +1,16 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { Eye } from "lucide-react"
+import {
+  Cake,
+  CheckCircle2,
+  Eye,
+  HeartHandshake,
+  Mars,
+  Ruler,
+  Scale,
+  Venus,
+} from "lucide-react"
 
 import { DogCard, getDog, listSimilarDogs } from "@/features/dogs"
 import { LikeButton } from "@/shared/components/like-button"
@@ -59,8 +68,11 @@ export default async function DogDetailPage({
     4
   )
 
+  const isAdoptable = dog.status === "보호중" || dog.status === "임시보호중"
+  const ageLabel = formatAge(dog)
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 md:px-6 md:py-14">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-32 pt-10 md:px-6 md:pb-14 md:pt-14">
       <ViewTracker kind="dog" id={dog.id} />
 
       <nav className="mb-6 text-sm text-muted-foreground">
@@ -69,6 +81,7 @@ export default async function DogDetailPage({
         </Link>
       </nav>
 
+      {/* 1. 히어로 — 사진 + 핵심 정보 */}
       <div className="grid gap-8 md:grid-cols-[1.1fr_1fr]">
         <PhotoGallery
           images={dog.images}
@@ -77,27 +90,26 @@ export default async function DogDetailPage({
           fallback="🐾"
         />
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <header>
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Badge>{dog.status}</Badge>
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              {dog.breed && (
+                <span className="text-xs text-muted-foreground">{dog.breed}</span>
+              )}
+              <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Eye className="size-3.5" aria-hidden />
-                {(dog.view_count ?? 0).toLocaleString()}회 조회
+                {(dog.view_count ?? 0).toLocaleString()}
               </span>
             </div>
             <h1 className="text-3xl font-bold text-foreground md:text-4xl">
               {dog.name}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {[dog.breed, formatAge(dog)].filter(Boolean).join(" · ")}
+            <p className="mt-1 text-sm text-muted-foreground">
+              왕왕랜드에서 새 가족을 기다리고 있어요
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <LikeButton
-                kind="dog"
-                id={dog.id}
-                initialCount={dog.like_count ?? 0}
-              />
+              <LikeButton kind="dog" id={dog.id} initialCount={dog.like_count ?? 0} />
               <ShareButton
                 title={`${dog.name} · 왕왕랜드`}
                 text={`왕왕랜드에서 새 가족을 기다리는 ${dog.name} 을(를) 소개합니다.`}
@@ -107,66 +119,100 @@ export default async function DogDetailPage({
             </div>
           </header>
 
-          <dl className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-card p-5">
-            <InfoRow label="성별" value={dog.gender} />
-            <InfoRow label="나이" value={formatAge(dog)} />
-            <InfoRow
-              label="몸무게"
-              value={dog.weight_kg != null ? `${dog.weight_kg}kg` : "-"}
-            />
-            <InfoRow
-              label="중성화"
-              value={
-                dog.neutered === true
-                  ? "완료"
-                  : dog.neutered === false
-                    ? "미완료"
-                    : "미상"
-              }
-            />
-          </dl>
+          {/* 퀵 칩 — 한눈에 보는 핵심 정보 */}
+          <div className="flex flex-wrap gap-1.5">
+            {dog.gender && dog.gender !== "미상" && (
+              <Chip
+                icon={
+                  dog.gender === "수컷" ? (
+                    <Mars className="size-3.5 text-sky-600" aria-hidden />
+                  ) : (
+                    <Venus className="size-3.5 text-pink-500" aria-hidden />
+                  )
+                }
+                label={dog.gender}
+              />
+            )}
+            {ageLabel && <Chip icon={<Cake className="size-3.5" aria-hidden />} label={ageLabel} />}
+            {dog.size && (
+              <Chip icon={<Ruler className="size-3.5" aria-hidden />} label={`${dog.size}형`} />
+            )}
+            {dog.weight_kg != null && (
+              <Chip icon={<Scale className="size-3.5" aria-hidden />} label={`${dog.weight_kg}kg`} />
+            )}
+            {dog.neutered === true && (
+              <Chip
+                icon={<CheckCircle2 className="size-3.5 text-emerald-600" aria-hidden />}
+                label="중성화 완료"
+              />
+            )}
+          </div>
 
-          {dog.personality && (
-            <Section title="성격">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {dog.personality}
-              </p>
-            </Section>
-          )}
-
-          {dog.health_info && (
-            <Section title="건강 상태">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {dog.health_info}
-              </p>
-            </Section>
-          )}
-
-          {dog.description && (
-            <Section title="소개 · 특이사항">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                {dog.description}
-              </p>
-            </Section>
-          )}
-
-          {dog.status === "보호중" || dog.status === "임시보호중" ? (
-            <Link
-              href={`/adopt?dogId=${dog.id}`}
-              className={cn(buttonVariants({ size: "lg" }), "w-full")}
-            >
-              {dog.name} 입양 문의하기
-            </Link>
-          ) : (
-            <div className="rounded-lg border border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
-              {dog.status === "입양완료"
-                ? "이미 새 가족을 만난 아이예요 💕"
-                : "무지개다리를 건넌 아이예요 🌈"}
-            </div>
-          )}
+          {/* 데스크탑 CTA — 모바일은 하단 sticky bar 로 */}
+          <div className="hidden md:block">
+            {isAdoptable ? (
+              <Link
+                href={`/adopt?dogId=${dog.id}`}
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "w-full gap-2 shadow-md hover:shadow-lg"
+                )}
+              >
+                <HeartHandshake className="size-4" aria-hidden />
+                {dog.name} 입양 문의하기
+              </Link>
+            ) : (
+              <div className="rounded-lg border border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
+                {dog.status === "입양완료"
+                  ? `${dog.name}는 새 가족을 만났어요 💕`
+                  : `${dog.name}는 무지개다리를 건넜어요 🌈`}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* 2. 스토리 — 성격 / 건강 / 소개 */}
+      {(dog.personality || dog.health_info || dog.description) && (
+        <section className="mt-10 grid gap-4 sm:grid-cols-2 md:mt-12">
+          {dog.personality && (
+            <StoryCard title="성격" emoji="✨">
+              {dog.personality}
+            </StoryCard>
+          )}
+          {dog.health_info && (
+            <StoryCard title="건강 상태" emoji="🩺">
+              {dog.health_info}
+            </StoryCard>
+          )}
+          {dog.description && (
+            <StoryCard
+              title={`${dog.name} 이야기`}
+              emoji="📖"
+              className="sm:col-span-2"
+            >
+              {dog.description}
+            </StoryCard>
+          )}
+        </section>
+      )}
+
+      {/* 3. 입양 절차 안내 */}
+      {isAdoptable && (
+        <section className="mt-10 rounded-2xl border border-primary/20 bg-primary/5 p-5 md:mt-12 md:p-6">
+          <h2 className="mb-3 flex items-center gap-1.5 text-base font-semibold text-foreground">
+            <HeartHandshake className="size-5 text-primary" aria-hidden />
+            입양 절차
+          </h2>
+          <ol className="grid gap-3 sm:grid-cols-3">
+            <Step n={1} title="입양 문의 폼 작성" desc="기본 정보·환경" />
+            <Step n={2} title="운영진 상담" desc="전화·방문" />
+            <Step n={3} title="입양 확정" desc="가정 점검 후 인도" />
+          </ol>
+        </section>
+      )}
+
+      {/* 4. 비슷한 친구 */}
       {similar.length > 0 && (
         <section className="mt-16 border-t border-border/60 pt-10">
           <div className="mb-6 flex items-end justify-between gap-4">
@@ -192,30 +238,85 @@ export default async function DogDetailPage({
           </div>
         </section>
       )}
+
+      {/* 5. 모바일 sticky CTA bar */}
+      {isAdoptable && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-border bg-background/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:hidden">
+          <LikeButton
+            kind="dog"
+            id={dog.id}
+            initialCount={dog.like_count ?? 0}
+          />
+          <ShareButton
+            title={`${dog.name} · 왕왕랜드`}
+            text={`왕왕랜드에서 새 가족을 기다리는 ${dog.name} 을(를) 소개합니다.`}
+            path={`/dogs/${dog.id}`}
+          />
+          <Link
+            href={`/adopt?dogId=${dog.id}`}
+            className={cn(
+              buttonVariants({ size: "lg" }),
+              "ml-auto flex-1 gap-1.5"
+            )}
+          >
+            <HeartHandshake className="size-4" aria-hidden />
+            입양 문의
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
 
-function Section({
-  title,
-  children,
+function Chip({
+  icon,
+  label,
 }: {
-  title: string
-  children: React.ReactNode
+  icon?: React.ReactNode
+  label: string
 }) {
   return (
-    <section>
-      <h2 className="mb-2 text-sm font-semibold text-foreground">{title}</h2>
-      {children}
-    </section>
+    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground">
+      {icon}
+      {label}
+    </span>
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function StoryCard({
+  title,
+  emoji,
+  children,
+  className,
+}: {
+  title: string
+  emoji?: string
+  children: React.ReactNode
+  className?: string
+}) {
   return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 text-sm font-medium text-foreground">{value}</dd>
+    <div className={cn("rounded-xl border border-border bg-card p-5", className)}>
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        {emoji && <span aria-hidden>{emoji}</span>}
+        {title}
+      </h2>
+      <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+        {children}
+      </p>
     </div>
+  )
+}
+
+function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <li className="flex items-start gap-3 rounded-lg bg-background/60 p-3">
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+        {n}
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+    </li>
   )
 }
