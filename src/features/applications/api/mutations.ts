@@ -361,7 +361,22 @@ async function upsertVolunteerEventForApplication(opts: {
   if (existing) {
     await admin.from("events").update(payload).eq("id", existing.id)
   } else {
-    await admin.from("events").insert(payload)
+    const { error: insertErr } = await admin.from("events").insert(payload)
+    // race: 다른 어드민이 동시에 등록한 경우 unique 제약(23505)에 걸리면 그 행을 update.
+    if (
+      insertErr &&
+      (insertErr.code === "23505" || /duplicate key/i.test(insertErr.message))
+    ) {
+      const { data: dup } = await admin
+        .from("events")
+        .select("id")
+        .eq("source_application_type", "volunteer")
+        .eq("source_application_id", applicationId)
+        .maybeSingle()
+      if (dup) await admin.from("events").update(payload).eq("id", dup.id)
+    } else if (insertErr) {
+      console.error("[upsertVolunteerEventForApplication] insert", insertErr)
+    }
   }
 }
 

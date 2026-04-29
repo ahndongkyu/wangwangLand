@@ -116,6 +116,23 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     insertPayload.source_application_id = approveAppId
     insertPayload.visibility = "public"
     insertPayload.signup_enabled = false
+
+    // 다른 어드민이 이미 등록한 경우(중복) 방지.
+    // 1) 명시적 사전 체크 — 정상 케이스의 메시지를 명확하게.
+    const admin0 = createAdminClient()
+    const { data: dup } = await admin0
+      .from("events")
+      .select("id")
+      .eq("source_application_type", "volunteer")
+      .eq("source_application_id", approveAppId)
+      .maybeSingle()
+    if (dup) {
+      return {
+        error:
+          "이미 다른 운영진이 이 신청을 캘린더에 등록했습니다. 새로고침 후 확인해주세요.",
+        id: dup.id,
+      }
+    }
   }
 
   const { data, error } = await supabase
@@ -125,6 +142,13 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     .single()
 
   if (error) {
+    // 2) DB 유니크 제약(uniq_events_source_application) — race 마지막 방어선.
+    if (approveAppId && (error.code === "23505" || /duplicate key/i.test(error.message))) {
+      return {
+        error:
+          "이미 다른 운영진이 이 신청을 캘린더에 등록했습니다. 새로고침 후 확인해주세요.",
+      }
+    }
     console.error("[createEvent]", error)
     return { error: error.message }
   }
