@@ -38,7 +38,7 @@ export function NoticeBadge({ notices, className }: Props) {
   return (
     <span
       className={cn(
-        "ml-1 inline-flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white",
+        "animate-new-shine ml-1 inline-flex size-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white",
         className
       )}
       aria-label="새 공지 있음"

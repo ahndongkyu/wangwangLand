@@ -37,7 +37,7 @@ function detectCategory(title: string): {
   return { category: "info", customLabel: tag, cleanTitle }
 }
 
-const NEW_THRESHOLD_DAYS = 3
+const NEW_THRESHOLD_DAYS = 2
 
 function isNew(publishedAt: string | null): boolean {
   if (!publishedAt) return false
@@ -123,7 +123,7 @@ export function RecentNewsSection({ notices }: Props) {
                     {label}
                   </span>
                   {fresh && (
-                    <span className="rounded-[3px] bg-primary px-1.5 py-0.5 text-[9px] font-medium tracking-wide text-primary-foreground">
+                    <span className="animate-new-shine rounded-[3px] bg-primary px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-primary-foreground">
                       NEW
                     </span>
                   )}
