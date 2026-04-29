@@ -88,7 +88,7 @@ export default async function StoriesPage({
                   author={story.author}
                   date={story.published_at}
                   viewCount={story.view_count}
-                  newWithinDays={2}
+                  newWithinDays={1}
                 />
               </li>
             )
