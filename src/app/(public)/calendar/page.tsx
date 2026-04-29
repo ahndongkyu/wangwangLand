@@ -3,12 +3,12 @@ import Link from "next/link"
 import { CalendarDays, LayoutGrid } from "lucide-react"
 
 import {
-  CategoryFilter,
   EventCard,
+  listMyUpcomingSignups,
   listUpcomingEvents,
-  type EventCategory,
+  type EventWithSignupCount,
 } from "@/features/events"
-import { EmptyState } from "@/shared/components/empty-state"
+import { createClient } from "@/shared/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "일정",
@@ -16,27 +16,27 @@ export const metadata: Metadata = {
 }
 export const dynamic = "force-dynamic"
 
-const VALID_CATS: EventCategory[] = ["volunteer", "event", "closed"]
+export default async function CalendarPage() {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-function parseCategories(raw: string | undefined): EventCategory[] {
-  if (!raw) return []
-  return raw
-    .split(",")
-    .map((s) => s.trim() as EventCategory)
-    .filter((c) => VALID_CATS.includes(c))
-}
-
-export default async function CalendarPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ cat?: string }>
-}) {
-  const params = await searchParams
-  const categories = parseCategories(params.cat)
-
-  const events = await listUpcomingEvents(40, {
-    categories: categories.length > 0 ? categories : undefined,
-  })
+  // 로그인 사용자 → 본인이 신청한 일정만 (마스킹 안 함, 본인 일정이라 OK)
+  // 게스트 → 다가오는 전체 일정 (마스킹)
+  let events: EventWithSignupCount[] = []
+  let isMember = false
+  if (session?.user) {
+    isMember = true
+    const signups = await listMyUpcomingSignups()
+    events = signups
+      .filter((s) => s.event)
+      .map((s) => ({ ...s.event, signup_count: 0 }))
+      // 시작 시간 가까운 순
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+  } else {
+    events = await listUpcomingEvents(40)
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:py-16">
@@ -44,10 +44,12 @@ export default async function CalendarPage({
         <div>
           <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground md:text-4xl">
             <CalendarDays className="size-7 text-primary" aria-hidden />
-            일정
+            {isMember ? "내 일정" : "일정"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            다가오는 봉사·행사를 확인하고 참여를 신청해 주세요.
+            {isMember
+              ? "내가 신청한 봉사·행사 일정입니다. 전체 일정은 캘린더에서 확인하세요."
+              : "다가오는 봉사·행사를 확인하고 참여를 신청해 주세요."}
           </p>
         </div>
         <Link
@@ -59,23 +61,29 @@ export default async function CalendarPage({
         </Link>
       </header>
 
-      <CategoryFilter
-        active={categories}
-        basePath="/calendar"
-      />
-
       {events.length === 0 ? (
-        <EmptyState
-          title={
-            categories.length > 0
-              ? "선택한 카테고리에 해당하는 일정이 없습니다."
-              : "예정된 일정이 없습니다."
-          }
-        />
+        <div className="rounded-lg border border-dashed border-border p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            {isMember
+              ? "아직 신청한 일정이 없습니다."
+              : "예정된 일정이 없습니다."}
+          </p>
+          {isMember && (
+            <Link
+              href="/calendar/grid"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+            >
+              <LayoutGrid className="size-3.5" aria-hidden />
+              전체 일정 보러가기
+            </Link>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           {events.map((ev) => (
-            <EventCard key={ev.id} event={ev} maskNames />
+            // 본인 신청 일정은 마스킹 안 함 (본인 정보 본인이 보는 거라 OK).
+            // 게스트일 때만 마스킹.
+            <EventCard key={ev.id} event={ev} maskNames={!isMember} />
           ))}
         </div>
       )}
