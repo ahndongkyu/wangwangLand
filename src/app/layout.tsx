@@ -79,7 +79,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "Ith_3s8bDH8YT_Lje30zM8tw_x6N4bnuvG8lubFJoX8",
+    google: "e4DouaDcAYJ3vuWbIwowjwbTVjMDF_G1y06646YksNQ",
     // 네이버 서치어드바이저 — searchadvisor.naver.com 에서 발급받은 토큰 입력.
     // <meta name="naver-site-verification" content="..."> 으로 렌더링됨.
     other: {
