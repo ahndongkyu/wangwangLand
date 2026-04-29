@@ -144,7 +144,6 @@ export default async function AdminDashboardPage() {
             icon="calendar"
             label="새 일정"
             desc="봉사·행사·휴무"
-            highlight
           />
           <QuickLink
             href="/admin/notices/new"
