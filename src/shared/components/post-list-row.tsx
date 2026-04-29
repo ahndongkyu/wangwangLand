@@ -85,14 +85,14 @@ export function PostListRow({
             {pinned && thumbnail && (
               <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단 고정" />
             )}
-            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
-              {title}
-            </h3>
             {fresh && (
               <span className="animate-new-shine shrink-0 rounded-[3px] bg-primary px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-primary-foreground">
                 NEW
               </span>
             )}
+            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
+              {title}
+            </h3>
             {statusBadge && (
               <span className="shrink-0">{statusBadge}</span>
             )}
