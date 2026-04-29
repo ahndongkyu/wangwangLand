@@ -6,6 +6,27 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
+/** profiles.role 기반 운영진 체크. 통과 시 user.id 반환, 실패 시 에러 메시지. */
+async function requireAdmin(): Promise<
+  { ok: true; userId: string } | { ok: false; error: string }
+> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "로그인이 필요합니다." }
+
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle()
+  if (!me || !["staff", "admin"].includes(me.role)) {
+    return { ok: false, error: "운영진 권한이 없습니다." }
+  }
+  return { ok: true, userId: user.id }
+}
+
 export interface NoticeMutationResult {
   error?: string
   id?: string
@@ -51,23 +72,10 @@ export async function createNotice(
   if (!input.title) return { error: "제목은 필수입니다." }
   if (!input.content.trim()) return { error: "내용은 필수입니다." }
 
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: "로그인이 필요합니다." }
-
-  // 운영진 체크: profiles.role IN ('staff', 'admin')
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
-    return { error: "운영진 권한이 없습니다." }
-  }
-
   const { error } = await supabase
     .from("notices")
     .insert({
@@ -76,7 +84,7 @@ export async function createNotice(
       is_pinned: input.is_pinned,
       images: input.images,
       published_at: input.publish ? new Date().toISOString() : null,
-      // notices는 admin 전용이므로 created_by는 null (profiles FK 제약 때문)
+      created_by: auth.userId,
     })
     .select("id")
     .single()
@@ -98,6 +106,9 @@ export async function updateNotice(
 
   if (!input.title) return { error: "제목은 필수입니다." }
   if (!input.content.trim()) return { error: "내용은 필수입니다." }
+
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
 
   const supabase = await createClient()
 
@@ -138,6 +149,9 @@ export async function updateNotice(
 export async function deleteNotice(
   id: string
 ): Promise<NoticeMutationResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
   const supabase = await createClient()
   const { error } = await supabase.from("notices").delete().eq("id", id)
 
