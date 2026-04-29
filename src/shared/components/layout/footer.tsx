@@ -23,7 +23,7 @@ export function Footer() {
         <div
           className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-10
             bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)]
-            dark:bg-[linear-gradient(135deg,#3D2815_0%,#2D1F12_100%)]"
+            dark:bg-[linear-gradient(135deg,#523619_0%,#2D1D11_100%)]"
         >
           {/* 배경 데코 원 2개 */}
           <span className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-[rgba(232,155,94,0.12)] dark:bg-[rgba(232,155,94,0.18)]" />

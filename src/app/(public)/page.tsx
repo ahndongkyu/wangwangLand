@@ -68,7 +68,10 @@ export default async function HomePage() {
       <HeroCarousel slides={HERO_SLIDES} interval={5000} autoPlayInitial />
 
       {/* 1. 미션 블록 */}
-      <section className="border-t border-border/60 bg-card">
+      <section
+        className="border-t border-border/60 bg-card
+          dark:bg-[radial-gradient(ellipse_at_top,#3F2818_0%,#221710_70%)]"
+      >
         <div className="mx-auto w-full max-w-4xl px-4 py-16 md:px-6 md:py-20">
           {/* 헤더 */}
           <div className="mb-10 text-center">
