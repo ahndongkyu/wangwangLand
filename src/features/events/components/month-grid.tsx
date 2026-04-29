@@ -141,20 +141,24 @@ export function MonthGrid({
               </div>
 
               <div className="mt-1 space-y-0.5">
-                {dayEvents.slice(0, 3).map((ev) => (
-                  <EventChip
-                    key={ev.id}
-                    event={ev}
-                    maskNames={maskNames}
-                    readOnly={readOnly}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (readOnly) return
-                      // 항상 이벤트 상세 페이지로. 거기서 원본 신청으로 가는 링크 노출.
-                      router.push(`${hrefBase}/${ev.id}`)
-                    }}
-                  />
-                ))}
+                {dayEvents.slice(0, 3).map((ev) => {
+                  // 회원 그리드(readOnly=true)에서도 신청 받는 일정(signup_enabled=true)은 클릭 가능.
+                  // 봉사 자동 등록 (signup_enabled=false) 은 정보 노출만.
+                  const chipReadOnly = readOnly && !ev.signup_enabled
+                  return (
+                    <EventChip
+                      key={ev.id}
+                      event={ev}
+                      maskNames={maskNames}
+                      readOnly={chipReadOnly}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (chipReadOnly) return
+                        router.push(`${hrefBase}/${ev.id}`)
+                      }}
+                    />
+                  )
+                })}
                 {dayEvents.length > 3 && (
                   <p className="px-1 text-[10px] text-muted-foreground">
                     + {dayEvents.length - 3}개 더
