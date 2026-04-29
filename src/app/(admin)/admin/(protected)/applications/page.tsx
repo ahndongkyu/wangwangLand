@@ -16,8 +16,8 @@ export const dynamic = "force-dynamic"
 const PAGE_SIZE = 20
 
 const TYPE_TABS = [
-  { value: "adoption", label: "입양 신청" },
   { value: "volunteer", label: "봉사 신청" },
+  { value: "adoption", label: "입양 신청" },
 ] as const
 
 const STATUS_FILTERS: Array<{ label: string; value: ApplicationStatus | "전체" }> = [
@@ -31,7 +31,7 @@ const STATUS_FILTERS: Array<{ label: string; value: ApplicationStatus | "전체"
 type TypeValue = (typeof TYPE_TABS)[number]["value"]
 
 function parseType(value: string | undefined): TypeValue {
-  return value === "volunteer" ? "volunteer" : "adoption"
+  return value === "adoption" ? "adoption" : "volunteer"
 }
 
 function parseStatus(
@@ -65,7 +65,7 @@ interface BuildOpts {
 }
 
 function buildHref({
-  type = "adoption",
+  type = "volunteer",
   status = "전체",
   q = "",
   from,
@@ -97,17 +97,23 @@ export default async function AdminApplicationsPage({
 }) {
   const params = await searchParams
 
-  // KST 오늘 날짜 (YYYY-MM-DD)
-  const todayKST = new Date(Date.now() + 9 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10)
+  // KST 기준 이번 달 1일 ~ 말일 (YYYY-MM-DD)
+  const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+  const todayKST = nowKst.toISOString().slice(0, 10)
+  const monthStartKST = `${nowKst.toISOString().slice(0, 7)}-01`
+  // 다음 달 0일 = 이번 달 말일
+  const monthEndDate = new Date(
+    Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth() + 1, 0)
+  )
+  const monthEndKST = monthEndDate.toISOString().slice(0, 10)
 
   const activeType = parseType(params.type)
   const activeStatus = parseStatus(params.status)
   const activeQuery = (params.q ?? "").trim()
-  // from/to가 URL에 없으면 오늘을 기본값으로, 빈 문자열이면 전체 기간
-  const activeFrom = params.from !== undefined ? params.from.trim() : todayKST
-  const activeTo = params.to !== undefined ? params.to.trim() : todayKST
+  // from/to가 URL에 없으면 이번 달 전체 범위가 기본값. 빈 문자열이면 전체 기간.
+  const activeFrom =
+    params.from !== undefined ? params.from.trim() : monthStartKST
+  const activeTo = params.to !== undefined ? params.to.trim() : monthEndKST
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
@@ -210,13 +216,29 @@ export default async function AdminApplicationsPage({
             검색
           </button>
           <Link
-            href={buildHref({ type: activeType, status: activeStatus })}
+            href={buildHref({
+              type: activeType,
+              status: activeStatus,
+              from: todayKST,
+              to: todayKST,
+            })}
             className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
           >
             오늘
           </Link>
           <Link
-            href={buildHref({ type: activeType, status: activeStatus, from: "", to: "" })}
+            href={buildHref({ type: activeType, status: activeStatus })}
+            className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
+          >
+            이번 달
+          </Link>
+          <Link
+            href={buildHref({
+              type: activeType,
+              status: activeStatus,
+              from: "",
+              to: "",
+            })}
             className="flex h-9 items-center rounded-md border border-border bg-card px-3 text-xs font-medium text-muted-foreground hover:bg-secondary"
           >
             전체 기간
