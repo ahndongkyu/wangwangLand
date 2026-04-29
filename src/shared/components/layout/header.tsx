@@ -386,22 +386,13 @@ function MobileProfileSection({
         <p className="mb-2 text-[11px] text-[#6B5D4F] dark:text-[#B8A78F]">
           로그인하고 관심 아이를 저장해 보세요
         </p>
-        <div className="flex gap-1.5">
-          <Link
-            href="/login"
-            onClick={onClose}
-            className="flex-1 rounded-lg bg-[#E89B5E] py-2 text-center text-xs font-semibold text-white dark:text-[#2C2C2A]"
-          >
-            로그인
-          </Link>
-          <Link
-            href="/signup"
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-[#E89B5E] bg-[#FDF8F3] py-2 text-center text-xs font-medium text-[#C06B2A] dark:border-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#FFD4A1]"
-          >
-            회원가입
-          </Link>
-        </div>
+        <Link
+          href="/login"
+          onClick={onClose}
+          className="block w-full rounded-lg bg-[#FEE500] py-2.5 text-center text-xs font-semibold text-[#3C1E1E]"
+        >
+          카카오로 로그인 / 시작하기
+        </Link>
       </div>
     )
   }
