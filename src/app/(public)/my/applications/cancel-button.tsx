@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import {
   cancelOwnAdoptionApplication,
   cancelOwnVolunteerApplication,
-} from "@/features/applications"
+} from "@/features/applications/api/mutations"
 import { useToast } from "@/shared/components/toast"
 
 interface Props {
