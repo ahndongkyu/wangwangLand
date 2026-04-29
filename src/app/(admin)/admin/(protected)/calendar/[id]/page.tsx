@@ -91,6 +91,16 @@ export default async function AdminEventDetailPage({
               : "신청 없음"}
           </span>
         </Row>
+        {event.source_application_id && event.source_application_type && (
+          <Row icon={Users} label="원본">
+            <Link
+              href={`/admin/applications/${event.source_application_type}/${event.source_application_id}`}
+              className="text-primary hover:underline"
+            >
+              {event.source_application_type === "volunteer" ? "봉사" : "입양"} 신청 상세 보기 →
+            </Link>
+          </Row>
+        )}
       </section>
 
       {event.description && (

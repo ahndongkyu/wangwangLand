@@ -145,20 +145,8 @@ export function MonthGrid({
                     maskNames={maskNames}
                     onClick={(e) => {
                       e.stopPropagation()
-                      // 신청 자동 생성 이벤트:
-                      //  - 어드민(maskNames=false) 에서는 신청 상세로 직행
-                      //  - 공개 페이지(maskNames=true) 에서는 일반 이벤트 상세로
-                      if (
-                        !maskNames &&
-                        ev.source_application_id &&
-                        ev.source_application_type
-                      ) {
-                        router.push(
-                          `/admin/applications/${ev.source_application_type}/${ev.source_application_id}`
-                        )
-                      } else {
-                        router.push(`${hrefBase}/${ev.id}`)
-                      }
+                      // 항상 이벤트 상세 페이지로. 거기서 원본 신청으로 가는 링크 노출.
+                      router.push(`${hrefBase}/${ev.id}`)
                     }}
                   />
                 ))}
