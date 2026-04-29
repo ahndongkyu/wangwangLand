@@ -191,7 +191,7 @@ export default async function HomePage() {
 
           <DogGrid
             dogs={dogs}
-            tieredLimits={{ mobile: 4, md: 6, lg: 8, xl: 10 }}
+            tieredLimits={{ mobile: 4, md: 6, lg: 8 }}
             emptyMessage="아직 등록된 아이가 없어요. 곧 만나게 될 친구들을 준비 중입니다."
           />
 
