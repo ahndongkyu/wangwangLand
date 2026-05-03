@@ -22,10 +22,10 @@ export const SITE = {
       { label: "입양 담당", number: "" },
     ],
     email: "",
-    address: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
-    /** 지도 앱·내비게이션에 바로 검색 가능한 도로명까지 */
-    addressShort: "인천 중구 선녀바위로 193",
-    addressNote: "호성이네민박펜션과 주소 동일",
+    address: "인천 중구 을왕동 206-27 유기견보호소 왕왕랜드",
+    /** 지도 앱·내비게이션에 바로 검색 가능한 지번까지 */
+    addressShort: "인천 중구 을왕동 206-27",
+    addressNote: "",
     mapQuery: "인천 중구 을왕동 206-27",
     kakaoTalk: "",
   },
@@ -39,10 +39,11 @@ export const SITE = {
     accountNumber: "351-1336-8823-03",
     accountHolder: "왕왕랜드",
     regularMinimum: 10000,
-    parcelAddress: "인천 중구 선녀바위로 193 유기견보호소 왕왕랜드",
-    /** 택배사 주소 입력용 짧은 주소 (도로명 + 번지까지) */
-    parcelAddressShort: "인천 중구 선녀바위로 193",
-    parcelAddressNote: "호성이네민박펜션과 주소 동일",
+    parcelRecipient: "호성이네",
+    parcelAddress: "인천 중구 을왕동 206-27 유기견보호소 왕왕랜드",
+    /** 택배사 주소 입력용 짧은 주소 (지번까지) */
+    parcelAddressShort: "인천 중구 을왕동 206-27",
+    parcelAddressNote: "",
   },
   partners: {
     barunPuppyLab: {

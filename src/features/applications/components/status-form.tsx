@@ -63,12 +63,31 @@ export function ApplicationStatusForm({
   const showSchedule = kind === "volunteer" && status === "승인"
 
   const todayInput = todayKstDate()
-  const defaultStart = linkedEvent
+  const initialStart = linkedEvent
     ? isoToLocalKstInput(linkedEvent.starts_at)
     : `${todayInput}T10:00`
-  const defaultEnd = linkedEvent
+  const initialEnd = linkedEvent
     ? isoToLocalKstInput(linkedEvent.ends_at)
     : `${todayInput}T12:00`
+
+  const [startsAt, setStartsAt] = useState(initialStart)
+  const [endsAt, setEndsAt] = useState(initialEnd)
+
+  function handleStartChange(newStart: string) {
+    setStartsAt(newStart)
+    if (!newStart) return
+    const prevStartMs = new Date(startsAt).getTime()
+    const prevEndMs = new Date(endsAt).getTime()
+    const gapMs = isNaN(prevStartMs) || isNaN(prevEndMs) ? 2 * 60 * 60 * 1000 : prevEndMs - prevStartMs
+    const newStartMs = new Date(newStart).getTime()
+    if (!isNaN(newStartMs)) {
+      const newEndMs = newStartMs + Math.max(gapMs, 0)
+      const pad = (n: number) => String(n).padStart(2, "0")
+      const d = new Date(newEndMs)
+      const newEnd = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      setEndsAt(newEnd)
+    }
+  }
 
   async function handleSubmit(formData: FormData) {
     setError(null)
@@ -82,6 +101,7 @@ export function ApplicationStatusForm({
         toast.error(`저장 실패: ${result.error}`)
       } else {
         toast.success("저장되었습니다")
+        router.refresh()
         router.push("/admin/applications")
       }
     })
@@ -170,7 +190,8 @@ export function ApplicationStatusForm({
                 id="scheduled_starts_at"
                 name="scheduled_starts_at"
                 type="datetime-local"
-                defaultValue={defaultStart}
+                value={startsAt}
+                onChange={(e) => handleStartChange(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
@@ -181,7 +202,8 @@ export function ApplicationStatusForm({
                 id="scheduled_ends_at"
                 name="scheduled_ends_at"
                 type="datetime-local"
-                defaultValue={defaultEnd}
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
               />
             </div>
           </div>

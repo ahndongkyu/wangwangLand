@@ -92,6 +92,12 @@ export default async function DonatePage() {
           사료·간식·담요·장난감 등 후원물품은 아래 주소로 보내 주세요.
         </p>
         <div className="rounded-lg bg-background px-4 py-3 text-sm">
+          {d.parcelRecipient && (
+            <p className="mb-1 text-muted-foreground">
+              받는 사람:{" "}
+              <span className="font-semibold text-foreground">{d.parcelRecipient}</span>
+            </p>
+          )}
           <div className="flex flex-wrap items-start gap-2">
             <p className="flex-1 font-semibold text-foreground">
               {d.parcelAddress}

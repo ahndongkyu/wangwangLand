@@ -208,6 +208,7 @@ async function createMultiDateEvents(opts: {
     })
   }
 
+  revalidatePath("/admin", "layout")
   revalidatePath("/admin/applications")
   revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   revalidatePath("/admin/calendar")
@@ -300,6 +301,7 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
       })
     }
 
+    revalidatePath("/admin", "layout")
     revalidatePath("/admin/applications")
     revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   }

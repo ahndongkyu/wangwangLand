@@ -10,6 +10,7 @@ import {
   type EventCategory,
 } from "@/features/events"
 import { monthRange, yearMonthKst, todayKst } from "@/features/events/lib/date"
+import { createClient } from "@/shared/lib/supabase/server"
 
 export const metadata: Metadata = { title: "일정 (캘린더)" }
 export const dynamic = "force-dynamic"
@@ -34,6 +35,10 @@ export default async function CalendarGridPage({
   const yearMonth =
     params.ym && YM_RE.test(params.ym) ? params.ym : yearMonthKst(todayKst())
   const categories = parseCategories(params.cat)
+
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const isMember = !!session?.user
 
   const { from, to } = monthRange(yearMonth)
   const events = await listEventsInRange({
@@ -81,7 +86,7 @@ export default async function CalendarGridPage({
         yearMonth={yearMonth}
         events={events}
         hrefBase="/calendar"
-        maskNames
+        maskNames={!isMember}
         readOnly
       />
     </div>

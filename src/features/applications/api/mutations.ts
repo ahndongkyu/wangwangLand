@@ -160,8 +160,8 @@ export async function submitVolunteerApplication(
 // ============================================================================
 
 function revalidateAdminApplications() {
+  revalidatePath("/admin", "layout")
   revalidatePath("/admin/applications")
-  revalidatePath("/admin")
 }
 
 export async function updateAdoptionApplication(

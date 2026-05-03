@@ -18,13 +18,7 @@ import { listNotices } from "@/features/notices"
 import { listDailyPosts } from "@/features/daily"
 import { listAdoptionStories } from "@/features/stories"
 import { listUpcomingEvents } from "@/features/events"
-import { formatKoreanDayLabel } from "@/features/events/lib/date"
-import {
-  CATEGORY_COLOR,
-  CATEGORY_LABEL,
-  customColorStyle,
-  eventDisplayLabel,
-} from "@/features/events"
+import { UpcomingEvents } from "./_components/upcoming-events"
 import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
@@ -100,7 +94,7 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     // 다가오는 일정 — 운영진은 internal 까지 포함해야 하지만 앞단 admin 가드라 RLS 통과.
     // listUpcomingEvents 는 visibility=public 만 보지만, 자동 등록 이벤트도 public 이라 포함됨.
-    listUpcomingEvents(8),
+    listUpcomingEvents(30),
     countPendingApplications(),
     getApplicationStats({
       monthFrom: thisMonth.from,
@@ -195,45 +189,7 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
         ) : (
-          <ul className="overflow-hidden rounded-lg border border-border bg-card">
-            {upcomingEvents.map((ev) => {
-              const isCustom = ev.category === "custom"
-              const color = CATEGORY_COLOR[ev.category]
-              const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
-              return (
-                <li key={ev.id} className="border-b border-border last:border-0">
-                  <Link
-                    href={`/admin/calendar/${ev.id}`}
-                    className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/40"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        style={customStyle?.soft}
-                        className={cn(
-                          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                          !isCustom && color.soft,
-                          !isCustom && color.softText
-                        )}
-                      >
-                        {eventDisplayLabel(ev)}
-                      </span>
-                      <span className="truncate font-medium text-foreground">
-                        {ev.title}
-                      </span>
-                      {ev.signup_enabled && ev.signup_count > 0 && (
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          신청 {ev.signup_count}
-                        </span>
-                      )}
-                    </div>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatKoreanDayLabel(ev.starts_at, ev.all_day)}
-                    </span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+          <UpcomingEvents events={upcomingEvents} />
         )}
       </section>
 
