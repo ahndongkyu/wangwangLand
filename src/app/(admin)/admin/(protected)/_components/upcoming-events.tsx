@@ -15,8 +15,8 @@ import {
   CATEGORY_COLOR,
   eventDisplayLabel,
   customColorStyle,
-} from "@/features/events"
-import type { EventWithSignupCount } from "@/features/events"
+} from "@/features/events/types"
+import type { EventWithSignupCount } from "@/features/events/types"
 
 interface Props {
   events: EventWithSignupCount[]
