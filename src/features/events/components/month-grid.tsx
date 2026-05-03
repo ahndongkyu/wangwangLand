@@ -1,46 +1,39 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { X } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
   customColorStyle,
+  eventDisplayLabel,
   publicEventTitle,
   type CalendarEvent,
 } from "../types"
 import {
   dateKey,
   formatTimeKst,
+  formatKoreanDayLabel,
   isSameMonth,
   isToday,
   monthGridDays,
+  KST_OFFSET_MS,
 } from "../lib/date"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
   yearMonth: string
   events: CalendarEvent[]
-  /** 이벤트 칩 클릭 시 보낼 href base. 기본 admin. */
   hrefBase?: string
-  /**
-   * 빈 셀 클릭 시 보낼 href base. 어드민에서만 사용.
-   * 예: "/admin/calendar/new" 이면 "/admin/calendar/new?date=2026-04-30" 로 이동.
-   */
   addHrefBase?: string
-  /** true 면 봉사 자동 이벤트의 이름 마스킹 (공개 페이지). */
   maskNames?: boolean
-  /** true 면 칩 클릭 비활성화 (보기 전용). 회원/게스트 그리드에서 사용. */
   readOnly?: boolean
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
 
-/**
- * 월간 7×6 그리드. Kakaowork 톤다운 버전.
- * - 종일 이벤트 = 색 배경 막대
- * - 시간 이벤트 = 좌측 점 + 회색 텍스트
- * - addHrefBase 가 주어지면 빈 셀 클릭 → 일정 추가 (날짜 자동 채움)
- */
 export function MonthGrid({
   yearMonth,
   events,
@@ -51,6 +44,7 @@ export function MonthGrid({
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   const byDate = new Map<string, CalendarEvent[]>()
   for (const ev of events) {
@@ -60,8 +54,31 @@ export function MonthGrid({
     byDate.set(key, arr)
   }
 
+  const selectedEvents = selectedKey ? (byDate.get(selectedKey) ?? []) : []
+
+  // "5월 9일(금)" 형식
+  function fullDayLabel(key: string) {
+    const [y, m, d] = key.split("-").map(Number)
+    const date = new Date(Date.UTC(y, m - 1, d) + KST_OFFSET_MS)
+    const dow = ["일", "월", "화", "수", "목", "금", "토"][date.getUTCDay()]
+    return `${m}월 ${d}일(${dow})`
+  }
+
+  function handleCellClick(cellKey: string, hasEvents: boolean) {
+    // 모바일 도트 뷰: 날짜 탭으로 패널 토글
+    if (selectedKey === cellKey) {
+      setSelectedKey(null)
+    } else {
+      setSelectedKey(hasEvents ? cellKey : null)
+      if (!hasEvents && addHrefBase) {
+        router.push(`${addHrefBase}?date=${cellKey}`)
+      }
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {/* 요일 헤더 */}
       <div className="grid grid-cols-7 border-b border-border bg-secondary/40 text-center text-xs font-semibold text-muted-foreground">
         {WEEKDAYS.map((w, i) => (
           <div
@@ -77,6 +94,7 @@ export function MonthGrid({
         ))}
       </div>
 
+      {/* 날짜 그리드 */}
       <div className="grid grid-cols-7 grid-rows-6">
         {days.map((d, i) => {
           const inMonth = isSameMonth(d, yearMonth)
@@ -85,38 +103,44 @@ export function MonthGrid({
           const dayEvents = byDate.get(cellKey) ?? []
           const dayNum = new Date(d.getTime() + 9 * 60 * 60 * 1000).getUTCDate()
           const dow = i % 7
-
-          const cellClickable = !!addHrefBase
+          const isSelected = selectedKey === cellKey
 
           return (
             <div
               key={d.toISOString()}
-              role={cellClickable ? "button" : undefined}
-              tabIndex={cellClickable ? 0 : undefined}
-              onClick={
-                cellClickable
-                  ? () => router.push(`${addHrefBase}?date=${cellKey}`)
-                  : undefined
-              }
-              onKeyDown={
-                cellClickable
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault()
-                        router.push(`${addHrefBase}?date=${cellKey}`)
-                      }
-                    }
-                  : undefined
-              }
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                // 데스크톱: 빈 셀 클릭 → 일정 추가
+                // 모바일: 모든 셀 탭 → 패널 토글 (이벤트 있을 때)
+                if (window.innerWidth >= 640) {
+                  if (dayEvents.length === 0 && addHrefBase) {
+                    router.push(`${addHrefBase}?date=${cellKey}`)
+                  }
+                } else {
+                  handleCellClick(cellKey, dayEvents.length > 0)
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  handleCellClick(cellKey, dayEvents.length > 0)
+                }
+              }}
               className={cn(
-                "group min-h-[110px] border-r border-t border-border p-1.5 outline-none transition-colors",
+                "group border-r border-t border-border outline-none transition-colors",
+                // 데스크톱: 기존 높이 유지
+                "sm:min-h-[110px] sm:p-1.5",
+                // 모바일: 컴팩트
+                "min-h-[44px] p-1 cursor-pointer",
                 (i + 1) % 7 === 0 && "border-r-0",
                 i < 7 && "border-t-0",
                 !inMonth && "bg-muted/30",
-                cellClickable &&
-                  "cursor-pointer hover:bg-secondary/40 focus-visible:bg-secondary/60"
+                isSelected && "bg-primary/5",
+                addHrefBase && "sm:hover:bg-secondary/40 sm:focus-visible:bg-secondary/60"
               )}
             >
+              {/* 날짜 숫자 */}
               <div className="flex items-center justify-between">
                 <span
                   className={cn(
@@ -130,20 +154,44 @@ export function MonthGrid({
                 >
                   {dayNum}
                 </span>
-                {cellClickable && (
+                {addHrefBase && (
                   <span
                     aria-hidden
-                    className="text-[11px] text-muted-foreground/0 transition-opacity group-hover:text-muted-foreground"
+                    className="hidden text-[11px] text-muted-foreground/0 transition-opacity sm:block sm:group-hover:text-muted-foreground"
                   >
                     + 추가
                   </span>
                 )}
               </div>
 
-              <div className="mt-1 space-y-0.5">
+              {/* 모바일: 컬러 도트 */}
+              <div className="mt-0.5 flex flex-wrap gap-0.5 sm:hidden">
                 {dayEvents.slice(0, 3).map((ev) => {
-                  // 회원 그리드(readOnly=true)에서도 신청 받는 일정(signup_enabled=true)은 클릭 가능.
-                  // 봉사 자동 등록 (signup_enabled=false) 은 정보 노출만.
+                  const isCustom = ev.category === "custom"
+                  const color = CATEGORY_COLOR[ev.category]
+                  const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
+                  return (
+                    <span
+                      key={ev.id}
+                      aria-hidden
+                      style={customStyle?.dot}
+                      className={cn(
+                        "size-1.5 rounded-full",
+                        !isCustom && color.dot
+                      )}
+                    />
+                  )
+                })}
+                {dayEvents.length > 3 && (
+                  <span className="text-[9px] leading-none text-muted-foreground">
+                    +{dayEvents.length - 3}
+                  </span>
+                )}
+              </div>
+
+              {/* 데스크톱: 텍스트 칩 */}
+              <div className="mt-1 hidden space-y-0.5 sm:block">
+                {dayEvents.slice(0, 3).map((ev) => {
                   const chipReadOnly = readOnly && !ev.signup_enabled
                   return (
                     <EventChip
@@ -169,6 +217,89 @@ export function MonthGrid({
           )
         })}
       </div>
+
+      {/* 모바일 선택일 패널 */}
+      {selectedKey && selectedEvents.length > 0 && (
+        <div className="border-t border-border sm:hidden">
+          <div className="flex items-center justify-between bg-secondary/40 px-4 py-2.5">
+            <span className="text-sm font-semibold text-foreground">
+              {fullDayLabel(selectedKey)}
+              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                {selectedEvents.length}건
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedKey(null)}
+              className="flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
+              aria-label="닫기"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+          <ul className="divide-y divide-border">
+            {selectedEvents.map((ev) => {
+              const isCustom = ev.category === "custom"
+              const color = CATEGORY_COLOR[ev.category]
+              const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
+              const displayTitle = maskNames ? publicEventTitle(ev) : ev.title
+              const chipReadOnly = readOnly && !ev.signup_enabled
+
+              const content = (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <span
+                    style={customStyle?.soft}
+                    className={cn(
+                      "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                      !isCustom && color.soft,
+                      !isCustom && color.softText
+                    )}
+                  >
+                    {eventDisplayLabel(ev)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {displayTitle}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
+                      {ev.location && ` · ${ev.location}`}
+                    </p>
+                  </div>
+                  {!chipReadOnly && (
+                    <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">→</span>
+                  )}
+                </div>
+              )
+
+              return (
+                <li key={ev.id}>
+                  {chipReadOnly ? (
+                    <div>{content}</div>
+                  ) : (
+                    <Link
+                      href={`${hrefBase}/${ev.id}`}
+                      className="block transition-colors hover:bg-secondary/40 active:bg-secondary/60"
+                    >
+                      {content}
+                    </Link>
+                  )}
+                </li>
+              )
+            })}
+            {addHrefBase && (
+              <li>
+                <Link
+                  href={`${addHrefBase}?date=${selectedKey}`}
+                  className="flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
+                >
+                  + 이 날 일정 추가
+                </Link>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
@@ -189,7 +320,6 @@ function EventChip({
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
   const displayTitle = maskNames ? publicEventTitle(event) : event.title
 
-  // 보기 전용 칩 (회원·게스트 그리드)
   if (readOnly) {
     if (event.all_day) {
       return (
@@ -224,7 +354,6 @@ function EventChip({
     )
   }
 
-  // 클릭 가능한 칩 (어드민)
   if (event.all_day) {
     return (
       <button
