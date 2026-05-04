@@ -62,6 +62,13 @@ export function ApplicationStatusForm({
 
   const showSchedule = kind === "volunteer" && status === "승인"
 
+  const VOLUNTEER_DEFAULT_NOTE =
+    "착용 권장: 헌옷·헌신발(또는 장화)·목장갑 (먼지·오물 주의)\n※ 물품 현지 지원이 어려울 수 있습니다.\n봉사 문의: 엄재동 팀장 010-3540-3156"
+
+  // 봉사 승인 시 기존 메모가 없으면 기본 안내문 자동 채움
+  const defaultNote =
+    kind === "volunteer" && !currentNote ? VOLUNTEER_DEFAULT_NOTE : (currentNote ?? "")
+
   const todayInput = todayKstDate()
   const initialStart = linkedEvent
     ? isoToLocalKstInput(linkedEvent.starts_at)
@@ -142,7 +149,7 @@ export function ApplicationStatusForm({
           id="admin_note"
           name="admin_note"
           rows={4}
-          defaultValue={currentNote ?? ""}
+          defaultValue={defaultNote}
           placeholder="상담 진행 내용, 특이사항 등을 기록해 두세요."
           className="mt-2"
         />
