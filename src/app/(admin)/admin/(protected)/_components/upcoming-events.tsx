@@ -56,6 +56,153 @@ function buildShareText(dateStr: string, evs: EventWithSignupCount[]): string {
   return [header, ...lines].join("\n")
 }
 
+// 카테고리별 실제 색상값 (CSS 변수 없이 고정)
+const CATEGORY_HEX: Record<string, { bg: string; text: string }> = {
+  volunteer: { bg: "#E87C3E", text: "#FFFFFF" },
+  event:     { bg: "#059669", text: "#FFFFFF" },
+  closed:    { bg: "#9CA3AF", text: "#FFFFFF" },
+  custom:    { bg: "#7C7AC9", text: "#FFFFFF" },
+}
+
+function buildScheduleImage(
+  dateStr: string,
+  evs: EventWithSignupCount[]
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const SCALE = 2
+    const W = 680
+    const HEADER_H = 72
+    const ROW_H = 64
+    const FOOTER_H = 36
+    const PAD = 24
+    const totalH = HEADER_H + evs.length * ROW_H + FOOTER_H
+
+    const canvas = document.createElement("canvas")
+    canvas.width = W * SCALE
+    canvas.height = totalH * SCALE
+    const ctx = canvas.getContext("2d")!
+    ctx.scale(SCALE, SCALE)
+
+    // 배경
+    ctx.fillStyle = "#FAF6F0"
+    ctx.fillRect(0, 0, W, totalH)
+
+    // 헤더 영역
+    ctx.fillStyle = "#F0E8DC"
+    ctx.fillRect(0, 0, W, HEADER_H)
+
+    // 브랜드명
+    ctx.fillStyle = "#E87C3E"
+    ctx.font = "bold 13px sans-serif"
+    ctx.fillText("🐾 왕왕랜드", PAD, 22)
+
+    // 날짜
+    ctx.fillStyle = "#2C2C2A"
+    ctx.font = "bold 20px sans-serif"
+    ctx.fillText(fullDayLabel(dateStr), PAD, 52)
+
+    // 건수
+    ctx.fillStyle = "#9B8F80"
+    ctx.font = "13px sans-serif"
+    ctx.fillText(`${evs.length}건`, PAD + ctx.measureText(fullDayLabel(dateStr)).width + 8, 52)
+
+    // 구분선
+    ctx.strokeStyle = "#E5DDD0"
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, HEADER_H)
+    ctx.lineTo(W, HEADER_H)
+    ctx.stroke()
+
+    // 각 이벤트 행
+    evs.forEach((ev, i) => {
+      const y = HEADER_H + i * ROW_H
+
+      // 행 구분선 (첫 행 제외)
+      if (i > 0) {
+        ctx.strokeStyle = "#EDE5DC"
+        ctx.lineWidth = 0.5
+        ctx.beginPath()
+        ctx.moveTo(PAD, y)
+        ctx.lineTo(W - PAD, y)
+        ctx.stroke()
+      }
+
+      const isCustom = ev.category === "custom"
+      const hex = isCustom && ev.custom_color ? ev.custom_color : CATEGORY_HEX[ev.category]?.bg ?? "#9CA3AF"
+      const label = eventDisplayLabel(ev)
+
+      // 카테고리 배지
+      const badgeX = PAD
+      const badgeY = y + ROW_H / 2 - 9
+      const badgeW = ctx.measureText(label).width + 16
+      ctx.fillStyle = hex + "26" // ~15% opacity
+      roundRect(ctx, badgeX, badgeY, badgeW, 18, 9)
+      ctx.fillStyle = hex
+      ctx.font = "bold 11px sans-serif"
+      ctx.fillText(label, badgeX + 8, badgeY + 13)
+
+      // 제목
+      const titleX = badgeX + badgeW + 10
+      ctx.fillStyle = "#2C2C2A"
+      ctx.font = "500 14px sans-serif"
+      const maxTitleW = W - titleX - PAD - 80
+      ctx.fillText(truncateText(ctx, ev.title, maxTitleW), titleX, y + ROW_H / 2 - 2)
+
+      // 시간
+      ctx.fillStyle = "#9B8F80"
+      ctx.font = "12px sans-serif"
+      ctx.fillText(formatRange(ev), titleX, y + ROW_H / 2 + 14)
+
+      // 신청 수
+      if (ev.signup_enabled && ev.signup_count > 0) {
+        const signupText = `신청 ${ev.signup_count}`
+        const signupW = ctx.measureText(signupText).width + 12
+        const signupX = W - PAD - signupW
+        ctx.fillStyle = "#E87C3E26"
+        roundRect(ctx, signupX, y + ROW_H / 2 - 9, signupW, 18, 9)
+        ctx.fillStyle = "#E87C3E"
+        ctx.font = "bold 11px sans-serif"
+        ctx.fillText(signupText, signupX + 6, y + ROW_H / 2 + 4)
+      }
+    })
+
+    // 푸터
+    ctx.fillStyle = "#C4B8AC"
+    ctx.font = "11px sans-serif"
+    ctx.fillText("wangwangland.kr", PAD, totalH - 12)
+
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error("canvas toBlob 실패"))
+    }, "image/png")
+  })
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.lineTo(x + w, y + h - r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.lineTo(x + r, y + h)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.lineTo(x, y + r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+  ctx.fill()
+}
+
+function truncateText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  if (ctx.measureText(text).width <= maxW) return text
+  let t = text
+  while (t.length > 0 && ctx.measureText(t + "…").width > maxW) {
+    t = t.slice(0, -1)
+  }
+  return t + "…"
+}
+
 export function UpcomingEvents({ events }: Props) {
   const todayStr = dateKey(todayKst())
 
@@ -70,7 +217,6 @@ export function UpcomingEvents({ events }: Props) {
   const [copied, setCopied] = useState(false)
   const [capturing, setCapturing] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null)
-  const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const container = tabsRef.current
@@ -97,52 +243,36 @@ export function UpcomingEvents({ events }: Props) {
       try {
         await navigator.share({ title, text })
         return
-      } catch {
-        // 취소
-      }
+      } catch { /* 취소 */ }
     }
     await handleCopy()
   }
 
   async function handleScreenshot() {
-    if (!cardRef.current || capturing) return
+    if (capturing) return
     setCapturing(true)
     try {
-      const html2canvas = (await import("html2canvas")).default
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 2, // 고해상도
-        useCORS: true,
-        logging: false,
-      })
+      const blob = await buildScheduleImage(selected, selectedEvents)
+      const fileName = `왕왕랜드_${fullDayLabel(selected)}.png`
+      const file = new File([blob], fileName, { type: "image/png" })
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return
-        const file = new File([blob], `왕왕랜드_${fullDayLabel(selected)}.png`, {
-          type: "image/png",
-        })
+      // 모바일: 이미지 파일 네이티브 공유
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: fileName })
+          return
+        } catch { /* 취소 시 다운로드 */ }
+      }
 
-        // 모바일: 이미지 파일 공유
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          try {
-            await navigator.share({
-              title: `${fullDayLabel(selected)} 왕왕랜드 일정`,
-              files: [file],
-            })
-            return
-          } catch {
-            // 취소 시 다운로드로 fallback
-          }
-        }
-
-        // 데스크톱: 이미지 다운로드
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `왕왕랜드_${fullDayLabel(selected)}.png`
-        a.click()
-        URL.revokeObjectURL(url)
-      }, "image/png")
+      // 데스크톱 fallback: 다운로드
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error("screenshot error", e)
     } finally {
       setCapturing(false)
     }
@@ -180,9 +310,8 @@ export function UpcomingEvents({ events }: Props) {
         })}
       </div>
 
-      {/* 일정 카드 — 스크린샷 캡처 대상 */}
-      <div ref={cardRef} className="overflow-hidden rounded-lg border border-border bg-card">
-        {/* 헤더 */}
+      {/* 일정 카드 */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5">
           <span className="text-sm font-semibold text-foreground">
             {fullDayLabel(selected)}
@@ -195,20 +324,14 @@ export function UpcomingEvents({ events }: Props) {
               type="button"
               onClick={handleCopy}
               className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              title="텍스트 복사"
             >
-              {copied ? (
-                <Check className="size-3.5 text-emerald-600" />
-              ) : (
-                <Copy className="size-3.5" />
-              )}
+              {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
               {copied ? "복사됨" : "복사"}
             </button>
             <button
               type="button"
               onClick={handleShare}
               className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              title="텍스트 공유"
             >
               <Share2 className="size-3.5" />
               공유
@@ -218,19 +341,15 @@ export function UpcomingEvents({ events }: Props) {
               onClick={handleScreenshot}
               disabled={capturing}
               className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
-              title="이미지로 저장·공유"
             >
               <Camera className="size-3.5" />
-              {capturing ? "캡처 중..." : "사진"}
+              {capturing ? "생성 중..." : "사진"}
             </button>
           </div>
         </div>
 
-        {/* 일정 목록 */}
         {selectedEvents.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            일정이 없습니다.
-          </p>
+          <p className="py-8 text-center text-sm text-muted-foreground">일정이 없습니다.</p>
         ) : (
           <ul className="divide-y divide-border">
             {selectedEvents.map((ev) => {
@@ -254,9 +373,7 @@ export function UpcomingEvents({ events }: Props) {
                       {eventDisplayLabel(ev)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {ev.title}
-                      </p>
+                      <p className="truncate text-sm font-medium text-foreground">{ev.title}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {formatRange(ev)}
                         {ev.location && ` · ${ev.location}`}
