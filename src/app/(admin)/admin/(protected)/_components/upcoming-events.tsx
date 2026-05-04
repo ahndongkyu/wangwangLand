@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, Copy, Share2 } from "lucide-react"
+import { Camera, Check, Copy, Share2 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import {
   toKst,
@@ -22,12 +22,10 @@ interface Props {
   events: EventWithSignupCount[]
 }
 
-// ISO → KST 날짜키 (YYYY-MM-DD)
 function isoToDateKey(iso: string): string {
   return dateKey(toKst(iso))
 }
 
-// "5/10 (토)" 형식
 function shortDayLabel(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number)
   const date = new Date(Date.UTC(y, m - 1, d) + KST_OFFSET_MS)
@@ -35,7 +33,6 @@ function shortDayLabel(dateStr: string): string {
   return `${m}/${d} (${dow})`
 }
 
-// "5월 10일(토)" 형식 (복사·공유용)
 function fullDayLabel(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number)
   const date = new Date(Date.UTC(y, m - 1, d) + KST_OFFSET_MS)
@@ -45,9 +42,7 @@ function fullDayLabel(dateStr: string): string {
 
 function formatRange(ev: EventWithSignupCount): string {
   if (ev.all_day) return "종일"
-  const start = formatTimeKst(ev.starts_at)
-  const end = formatTimeKst(ev.ends_at)
-  return `${start} – ${end}`
+  return `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`
 }
 
 function buildShareText(dateStr: string, evs: EventWithSignupCount[]): string {
@@ -64,7 +59,6 @@ function buildShareText(dateStr: string, evs: EventWithSignupCount[]): string {
 export function UpcomingEvents({ events }: Props) {
   const todayStr = dateKey(todayKst())
 
-  // 날짜별 그룹핑
   const grouped = events.reduce<Record<string, EventWithSignupCount[]>>((acc, ev) => {
     const key = isoToDateKey(ev.starts_at)
     ;(acc[key] ??= []).push(ev)
@@ -74,9 +68,10 @@ export function UpcomingEvents({ events }: Props) {
 
   const [selected, setSelected] = useState<string>(dates[0] ?? todayStr)
   const [copied, setCopied] = useState(false)
+  const [capturing, setCapturing] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
-  // 선택 탭이 보이도록 스크롤
   useEffect(() => {
     const container = tabsRef.current
     if (!container) return
@@ -103,11 +98,54 @@ export function UpcomingEvents({ events }: Props) {
         await navigator.share({ title, text })
         return
       } catch {
-        // 취소 시 아무것도 안 함
+        // 취소
       }
     }
-    // 공유 미지원 환경 → 복사로 fallback
     await handleCopy()
+  }
+
+  async function handleScreenshot() {
+    if (!cardRef.current || capturing) return
+    setCapturing(true)
+    try {
+      const html2canvas = (await import("html2canvas")).default
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
+        scale: 2, // 고해상도
+        useCORS: true,
+        logging: false,
+      })
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return
+        const file = new File([blob], `왕왕랜드_${fullDayLabel(selected)}.png`, {
+          type: "image/png",
+        })
+
+        // 모바일: 이미지 파일 공유
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: `${fullDayLabel(selected)} 왕왕랜드 일정`,
+              files: [file],
+            })
+            return
+          } catch {
+            // 취소 시 다운로드로 fallback
+          }
+        }
+
+        // 데스크톱: 이미지 다운로드
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `왕왕랜드_${fullDayLabel(selected)}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+      }, "image/png")
+    } finally {
+      setCapturing(false)
+    }
   }
 
   if (dates.length === 0) return null
@@ -142,8 +180,8 @@ export function UpcomingEvents({ events }: Props) {
         })}
       </div>
 
-      {/* 일정 카드 */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {/* 일정 카드 — 스크린샷 캡처 대상 */}
+      <div ref={cardRef} className="overflow-hidden rounded-lg border border-border bg-card">
         {/* 헤더 */}
         <div className="flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5">
           <span className="text-sm font-semibold text-foreground">
@@ -152,12 +190,12 @@ export function UpcomingEvents({ events }: Props) {
               {selectedEvents.length}건
             </span>
           </span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleCopy}
               className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              title="일정 텍스트 복사"
+              title="텍스트 복사"
             >
               {copied ? (
                 <Check className="size-3.5 text-emerald-600" />
@@ -170,10 +208,20 @@ export function UpcomingEvents({ events }: Props) {
               type="button"
               onClick={handleShare}
               className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              title="일정 공유"
+              title="텍스트 공유"
             >
               <Share2 className="size-3.5" />
               공유
+            </button>
+            <button
+              type="button"
+              onClick={handleScreenshot}
+              disabled={capturing}
+              className="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+              title="이미지로 저장·공유"
+            >
+              <Camera className="size-3.5" />
+              {capturing ? "캡처 중..." : "사진"}
             </button>
           </div>
         </div>
@@ -195,7 +243,6 @@ export function UpcomingEvents({ events }: Props) {
                     href={`/admin/calendar/${ev.id}`}
                     className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-secondary/40"
                   >
-                    {/* 카테고리 배지 */}
                     <span
                       style={customStyle?.soft}
                       className={cn(
@@ -206,8 +253,6 @@ export function UpcomingEvents({ events }: Props) {
                     >
                       {eventDisplayLabel(ev)}
                     </span>
-
-                    {/* 제목 + 시간 */}
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">
                         {ev.title}
@@ -217,8 +262,6 @@ export function UpcomingEvents({ events }: Props) {
                         {ev.location && ` · ${ev.location}`}
                       </p>
                     </div>
-
-                    {/* 신청 수 */}
                     {ev.signup_enabled && ev.signup_count > 0 && (
                       <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                         신청 {ev.signup_count}
