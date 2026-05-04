@@ -63,7 +63,7 @@ export function ApplicationStatusForm({
   const showSchedule = kind === "volunteer" && status === "승인"
 
   const VOLUNTEER_DEFAULT_NOTE =
-    "착용 권장: 헌옷·헌신발(또는 장화)·목장갑 (먼지·오물 주의)\n※ 물품 현지 지원이 어려울 수 있습니다.\n봉사 문의: 엄재동 팀장 010-3540-3156"
+    "안녕하세요! 봉사 신청해주셔서 감사합니다~\n야외 견사라 아래 준비해주시면 좋을 것 같습니다!\n\n착용 권장: 헌옷·헌신발(또는 장화)·목장갑 (먼지·오물 주의)\n※ 물품 현지 지원이 어려울 수 있습니다.\n봉사 문의: 엄재동 팀장 010-3540-3156"
 
   // 봉사 승인 시 기존 메모가 없으면 기본 안내문 자동 채움
   const defaultNote =
