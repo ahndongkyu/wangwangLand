@@ -6,6 +6,13 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
+export async function markStoriesSeenInDB() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return
+  await supabase.from("profiles").update({ stories_last_seen_at: new Date().toISOString() }).eq("id", session.user.id)
+}
+
 export interface StoryMutationResult {
   error?: string
   id?: string

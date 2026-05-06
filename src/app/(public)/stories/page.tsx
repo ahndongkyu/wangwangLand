@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 
 import { listAdoptionStories } from "@/features/stories"
+import { markStoriesSeenInDB } from "@/features/stories/api/mutations"
+import { getCurrentProfile } from "@/features/members"
+import { MarkPageSeen } from "@/shared/components/mark-page-seen"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
@@ -34,16 +37,17 @@ export default async function StoriesPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { stories, total } = await listAdoptionStories({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [{ stories, total }, profile] = await Promise.all([
+    listAdoptionStories({ query: activeQuery || undefined, limit: PAGE_SIZE, offset }),
+    getCurrentProfile(),
+  ])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const lastSeenAt = profile?.stories_last_seen_at ?? null
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
+      <MarkPageSeen isLoggedIn={!!profile} action={markStoriesSeenInDB} />
       <ScrollRestorer />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -91,7 +95,8 @@ export default async function StoriesPage({
                   author={story.author}
                   date={story.published_at}
                   viewCount={story.view_count}
-                  newWithinDays={1}
+                  newAfter={lastSeenAt}
+                  newWithinDays={lastSeenAt ? 0 : 2}
                 />
               </li>
             )

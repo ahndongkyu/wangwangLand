@@ -38,8 +38,9 @@ function isNew(date: string | null | undefined, withinDays: number, after?: stri
   if (!date) return false
   if (after) return date > after
   if (withinDays <= 0) return false
+  // diff < 0 허용: posted_at이 UTC 기준 약간 미래여도 NEW 표시 (한국 시간 오늘 작성)
   const diff = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
-  return diff >= 0 && diff <= withinDays
+  return diff <= withinDays
 }
 
 /**

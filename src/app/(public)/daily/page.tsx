@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
 
 import { listDailyPosts } from "@/features/daily"
+import { markDailySeenInDB } from "@/features/daily/api/mutations"
+import { getCurrentProfile } from "@/features/members"
+import { MarkPageSeen } from "@/shared/components/mark-page-seen"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
@@ -34,16 +37,17 @@ export default async function DailyPage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { posts, total } = await listDailyPosts({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [{ posts, total }, profile] = await Promise.all([
+    listDailyPosts({ query: activeQuery || undefined, limit: PAGE_SIZE, offset }),
+    getCurrentProfile(),
+  ])
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const lastSeenAt = profile?.daily_last_seen_at ?? null
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
+      <MarkPageSeen isLoggedIn={!!profile} action={markDailySeenInDB} />
       <ScrollRestorer />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -84,7 +88,8 @@ export default async function DailyPage({
                 author={post.author}
                 date={post.posted_at}
                 viewCount={post.view_count}
-                newWithinDays={1}
+                newAfter={lastSeenAt}
+                newWithinDays={lastSeenAt ? 0 : 2}
               />
             </li>
           ))}
