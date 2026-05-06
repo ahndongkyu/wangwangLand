@@ -13,36 +13,35 @@ interface CtaItem {
 }
 
 const ITEMS: CtaItem[] = [
+  { label: "홈", icon: "nav-home", href: "/" },
   { label: "입양 문의", icon: "paw", href: "/adopt" },
   { label: "봉사 신청", icon: "volunteer", href: "/volunteer" },
   { label: "후원하기", icon: "heart", href: "/donate" },
 ]
 
 /**
- * 모바일에서만 노출되는 하단 고정 CTA.
- * 로그인 폼·신청 폼 등에서 자체 CTA 와 충돌하지 않도록 일부 경로에서 숨김.
+ * 모바일에서만 노출되는 하단 고정 4탭 내비게이션.
+ * 어드민 경로에서는 숨김.
  */
 export function MobileCtaBar() {
   const pathname = usePathname()
 
-  // 어드민 / 작성·수정 폼 / CTA 본문 페이지에서는 숨김
-  const hiddenPrefixes = ["/admin", "/adopt", "/volunteer", "/donate"]
-  if (hiddenPrefixes.some((p) => pathname.startsWith(p))) return null
+  if (pathname.startsWith("/admin")) return null
 
   return (
     <nav
-      aria-label="빠른 참여"
+      aria-label="하단 내비게이션"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-3 gap-1.5">
+      <ul className="grid grid-cols-4 gap-1">
         {ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
           return (
             <li key={item.href}>
               <Link
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-[11px] font-semibold transition-colors",
+                  "flex flex-col items-center justify-center gap-0.5 rounded-md px-1 py-2 text-[11px] font-semibold transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"

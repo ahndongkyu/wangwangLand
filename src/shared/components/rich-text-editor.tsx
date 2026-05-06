@@ -360,7 +360,9 @@ export function RichTextEditor({
                   editor.commands.setContent(draft)
                   if (hiddenRef.current) hiddenRef.current.value = draft
                   setEditorHtml(draft)
+                  onChange?.(draft)
                 }
+                clearDraft()
                 setDraftDismissed(true)
               }}
               className="font-semibold text-amber-700 hover:underline dark:text-amber-400"

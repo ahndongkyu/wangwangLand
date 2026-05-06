@@ -44,6 +44,7 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
     } else {
       formData.delete("posted_at")
     }
+    if (!isEdit) localStorage.removeItem("draft:admin:daily:new")
     startTransition(async () => {
       const result = isEdit && post
         ? await updateDailyPost(post.id, formData)

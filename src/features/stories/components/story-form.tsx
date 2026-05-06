@@ -36,6 +36,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
     const formData = new FormData(e.currentTarget)
     // hidden input 대신 ref로 추적한 최신 콘텐츠를 직접 삽입
     formData.set("content", contentRef.current)
+    if (!isEdit) localStorage.removeItem("draft:admin:stories:new")
     startTransition(async () => {
       const result =
         isEdit && story

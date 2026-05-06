@@ -60,6 +60,7 @@ export function NoticeForm({ notice }: Props) {
     setError(null)
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
+    if (!isEdit) localStorage.removeItem("draft:admin:notices:new")
     startTransition(async () => {
       const result = isEdit && notice
         ? await updateNotice(notice.id, formData)
