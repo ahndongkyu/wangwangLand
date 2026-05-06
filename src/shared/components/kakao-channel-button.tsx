@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
+
 function FloatBtn({
   href,
   label,
@@ -22,7 +24,6 @@ function FloatBtn({
       >
         {children}
       </a>
-      {/* 툴팁 — 오른쪽에 나타남 */}
       <span className="pointer-events-none absolute left-[52px] whitespace-nowrap rounded-md bg-[#2B2B2B]/90 px-2.5 py-1 text-[12px] font-medium text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100 dark:bg-white/90 dark:text-[#2B2B2B]">
         {label}
       </span>
@@ -31,9 +32,41 @@ function FloatBtn({
 }
 
 export function KakaoChannelButton() {
-  return (
-    <div className="fixed bottom-20 left-4 z-30 flex flex-col items-start gap-2.5 md:bottom-6 md:left-5">
+  const [visible, setVisible] = useState(true)
+  const lastScrollY = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => {
+    function onScroll() {
+      const current = window.scrollY
+      // 스크롤 내릴 때 숨김
+      if (current > lastScrollY.current + 8) {
+        setVisible(false)
+      }
+      // 스크롤 올릴 때 즉시 표시
+      if (current < lastScrollY.current - 4) {
+        setVisible(true)
+      }
+      lastScrollY.current = current
+
+      // 스크롤 멈추면 1초 후 다시 표시
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => setVisible(true), 1000)
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  return (
+    <div
+      className={`fixed bottom-20 left-4 z-30 flex flex-col items-start gap-2.5 transition-all duration-300 md:bottom-6 md:left-5 ${
+        visible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0 pointer-events-none"
+      }`}
+    >
       {/* 카카오 */}
       <FloatBtn
         href="http://pf.kakao.com/_iTmxbX/chat"
@@ -72,7 +105,6 @@ export function KakaoChannelButton() {
       >
         <span className="text-[17px] font-extrabold leading-none tracking-tight text-[#03C75A]">N</span>
       </FloatBtn>
-
     </div>
   )
 }
