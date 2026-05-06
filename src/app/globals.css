@@ -308,3 +308,13 @@
 .animate-pending-glow {
   animation: pending-glow 2.4s ease-in-out infinite;
 }
+
+/* 플로팅 버튼 강아지 흔들림 */
+@keyframes ww-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+.kakao-float-btn:hover .kakao-puppy {
+  animation: ww-wiggle 0.5s ease-in-out;
+}

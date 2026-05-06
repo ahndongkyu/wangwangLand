@@ -1,28 +1,78 @@
 "use client"
 
+function FloatBtn({
+  href,
+  label,
+  children,
+  className,
+}: {
+  href: string
+  label: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div className="group relative flex items-center">
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        className={className}
+      >
+        {children}
+      </a>
+      {/* 툴팁 — 오른쪽에 나타남 */}
+      <span className="pointer-events-none absolute left-[52px] whitespace-nowrap rounded-md bg-[#2B2B2B]/90 px-2.5 py-1 text-[12px] font-medium text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100 dark:bg-white/90 dark:text-[#2B2B2B]">
+        {label}
+      </span>
+    </div>
+  )
+}
+
 export function KakaoChannelButton() {
   return (
-    <a
-      href="http://pf.kakao.com/_iTmxbX/chat"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="카카오 채널 문의하기"
-      className="fixed bottom-20 left-4 z-30 flex items-center gap-1.5 rounded-full bg-[#FEE500] px-3.5 py-2.5 shadow-lg transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:left-6"
-    >
-      {/* 카카오 말풍선 아이콘 */}
-      <svg
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden="true"
+    <div className="fixed bottom-20 left-4 z-30 flex flex-col items-start gap-2.5 md:bottom-6 md:left-5">
+
+      {/* 카카오 */}
+      <FloatBtn
+        href="http://pf.kakao.com/_iTmxbX/chat"
+        label="카카오톡 문의하기"
+        className="kakao-float-btn flex size-11 items-center justify-center rounded-full bg-[#FEE500] shadow-[0_2px_8px_rgba(0,0,0,0.12)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.16)]"
       >
-        <path
-          d="M12 3C6.477 3 2 6.71 2 11.25c0 2.91 1.75 5.47 4.39 6.98l-.9 3.36a.4.4 0 0 0 .59.45l3.93-2.6A11.8 11.8 0 0 0 12 19.5c5.523 0 10-3.71 10-8.25S17.523 3 12 3Z"
-          fill="#1A1A1A"
-        />
-      </svg>
-      <span className="text-[13px] font-bold text-[#1A1A1A]">카카오 문의</span>
-    </a>
+        <svg className="kakao-puppy" width="26" height="26" viewBox="0 0 60 60" fill="none" aria-hidden="true">
+          <ellipse cx="18" cy="18" rx="6.5" ry="9.5" fill="#F5E0B8" stroke="#2B2B2B" strokeWidth="2.2" transform="rotate(-18 18 18)" />
+          <ellipse cx="42" cy="17" rx="6.5" ry="9.5" fill="#F5E0B8" stroke="#2B2B2B" strokeWidth="2.2" transform="rotate(22 42 17)" />
+          <ellipse cx="30" cy="32" rx="15" ry="14" fill="#F5E0B8" stroke="#2B2B2B" strokeWidth="2.2" />
+          <ellipse cx="25" cy="30" rx="1.5" ry="2" fill="#2B2B2B" />
+          <ellipse cx="35" cy="30" rx="1.5" ry="2" fill="#2B2B2B" />
+          <ellipse cx="30" cy="35.5" rx="1.7" ry="1.3" fill="#2B2B2B" />
+          <path d="M 30 37 Q 27 40 24 39 M 30 37 Q 33 40 36 39" stroke="#2B2B2B" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+        </svg>
+      </FloatBtn>
+
+      {/* 인스타그램 */}
+      <FloatBtn
+        href="https://www.instagram.com/wangwangland_?igsh=aWIycTZwcHZsMDhj"
+        label="인스타그램"
+        className="flex size-11 items-center justify-center rounded-full border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-0.5 hover:border-black/[0.15] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:border-white/10 dark:bg-[#2B2B2B]"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" stroke="#2B2B2B" strokeWidth="1.8" className="dark:stroke-[#FAFAFA]" />
+          <circle cx="12" cy="12" r="3.5" stroke="#2B2B2B" strokeWidth="1.8" className="dark:stroke-[#FAFAFA]" />
+          <circle cx="17.5" cy="6.5" r="1" fill="#2B2B2B" className="dark:fill-[#FAFAFA]" />
+        </svg>
+      </FloatBtn>
+
+      {/* 네이버 카페 */}
+      <FloatBtn
+        href="https://cafe.naver.com/wangwangland"
+        label="네이버 카페"
+        className="flex size-11 items-center justify-center rounded-full border border-black/[0.06] bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all hover:-translate-y-0.5 hover:border-black/[0.15] hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] dark:border-white/10 dark:bg-[#2B2B2B]"
+      >
+        <span className="text-[17px] font-extrabold leading-none tracking-tight text-[#03C75A]">N</span>
+      </FloatBtn>
+
+    </div>
   )
 }
