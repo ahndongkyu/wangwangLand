@@ -42,8 +42,7 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = pathname.startsWith("/admin")
   const isLoginPage = pathname === "/admin/login"
 
-  if (isAdminRoute && !isLoginPage && !user) {
-    // 갱신된 쿠키를 리다이렉트 응답에도 복사
+  function redirectToLogin() {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = "/admin/login"
     const redirectResponse = NextResponse.redirect(redirectUrl)
@@ -51,6 +50,22 @@ export async function updateSession(request: NextRequest) {
       redirectResponse.cookies.set(cookie)
     })
     return redirectResponse
+  }
+
+  if (isAdminRoute && !isLoginPage) {
+    // 미로그인 차단
+    if (!user) return redirectToLogin()
+
+    // 로그인했어도 staff/admin 아니면 차단
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()
+
+    if (!profile || !["staff", "admin"].includes(profile.role)) {
+      return redirectToLogin()
+    }
   }
 
   return supabaseResponse
