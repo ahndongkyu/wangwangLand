@@ -28,8 +28,7 @@ export function MaintenanceToggle({ initialValue }: { initialValue: boolean }) {
         <div>
           <h2 className="text-base font-semibold text-foreground">점검 모드</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            켜면 어드민을 제외한 모든 페이지 접근이 차단됩니다.<br />
-            이미지 서버 이전 등 유지보수 시 사용하세요.
+            켜면 어드민을 제외한 모든 페이지 접근이 차단됩니다.
           </p>
         </div>
 
