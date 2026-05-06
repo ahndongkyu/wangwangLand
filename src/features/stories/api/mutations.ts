@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
@@ -16,6 +15,7 @@ export async function markStoriesSeenInDB() {
 export interface StoryMutationResult {
   error?: string
   id?: string
+  redirectTo?: string
 }
 
 interface StoryInput {
@@ -102,7 +102,7 @@ export async function createAdoptionStory(
   }
 
   revalidateAll()
-  redirect(returnTo)
+  return { redirectTo: returnTo }
 }
 
 export async function updateAdoptionStory(
@@ -158,7 +158,7 @@ export async function updateAdoptionStory(
   }
 
   revalidateAll(id)
-  redirect(returnTo)
+  return { redirectTo: returnTo }
 }
 
 export async function deleteAdoptionStory(

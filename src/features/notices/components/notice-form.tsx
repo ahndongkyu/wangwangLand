@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
@@ -35,6 +36,7 @@ const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export function NoticeForm({ notice }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(notice)
@@ -65,7 +67,11 @@ export function NoticeForm({ notice }: Props) {
       const result = isEdit && notice
         ? await updateNotice(notice.id, formData)
         : await createNotice(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.redirectTo) {
+        router.push(result.redirectTo)
+      }
     })
   }
 

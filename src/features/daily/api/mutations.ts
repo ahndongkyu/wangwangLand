@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
@@ -16,6 +15,7 @@ export async function markDailySeenInDB() {
 export interface DailyMutationResult {
   error?: string
   id?: string
+  redirectTo?: string
 }
 
 interface DailyInput {
@@ -93,7 +93,7 @@ export async function createDailyPost(
   }
 
   revalidateAll()
-  redirect(returnTo)
+  return { redirectTo: returnTo }
 }
 
 export async function updateDailyPost(
@@ -141,7 +141,7 @@ export async function updateDailyPost(
   }
 
   revalidateAll(id)
-  redirect(returnTo)
+  return { redirectTo: returnTo }
 }
 
 export async function deleteDailyPost(

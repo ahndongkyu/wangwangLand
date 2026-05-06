@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -21,6 +20,7 @@ export async function markNoticesSeenInDB() {
 export interface NoticeMutationResult {
   error?: string
   id?: string
+  redirectTo?: string
 }
 
 interface NoticeInput {
@@ -86,7 +86,7 @@ export async function createNotice(
   }
 
   revalidateAll()
-  redirect("/admin/notices")
+  return { redirectTo: "/admin/notices" }
 }
 
 export async function updateNotice(
@@ -134,7 +134,7 @@ export async function updateNotice(
   }
 
   revalidateAll(id)
-  redirect("/admin/notices")
+  return { redirectTo: "/admin/notices" }
 }
 
 export async function deleteNotice(

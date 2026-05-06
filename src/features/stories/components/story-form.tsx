@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(story)
@@ -42,7 +44,11 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
         isEdit && story
           ? await updateAdoptionStory(story.id, formData)
           : await createAdoptionStory(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      } else if (result?.redirectTo) {
+        router.push(result.redirectTo)
+      }
     })
   }
 
