@@ -1,8 +1,10 @@
 import Link from "next/link"
 
 import { listNotices } from "@/features/notices"
+import { deleteNotice } from "@/features/notices/api/mutations"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
+import { AdminPostActions } from "@/shared/components/admin-post-actions"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -57,7 +59,7 @@ export default async function AdminNoticesPage({
         <>
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {notices.map((n) => (
-              <li key={n.id}>
+              <li key={n.id} className="relative">
                 <PostListRow
                   href={`/admin/notices/${n.id}/edit`}
                   title={n.title}
@@ -77,6 +79,13 @@ export default async function AdminNoticesPage({
                     )
                   }
                 />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                  <AdminPostActions
+                    editHref={`/admin/notices/${n.id}/edit`}
+                    deleteAction={deleteNotice.bind(null, n.id)}
+                    label="공지"
+                  />
+                </div>
               </li>
             ))}
           </ul>

@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent, type Editor } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import { ImageResize } from "tiptap-extension-resize-image"
 import TiptapLink from "@tiptap/extension-link"
@@ -29,10 +30,16 @@ import {
   Undo2,
   Redo2,
   Loader2,
+  Camera,
+  MoreHorizontal,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { compressImage } from "@/shared/lib/compress-image"
 import { createClient } from "@/shared/lib/supabase/client"
+import { useDraftSave } from "@/shared/hooks/use-draft-save"
 
 interface Props {
   name: string
@@ -45,6 +52,11 @@ interface Props {
   maxFileSizeMB?: number
   /** 콘텐츠가 변경될 때마다 호출되는 콜백 */
   onChange?: (html: string) => void
+  /**
+   * 임시저장 키. 지정하면 LocalStorage에 자동 저장 + 복원 배너를 표시.
+   * 형식: "draft:notices:new" 처럼 충돌 없는 고유 키 권장.
+   */
+  draftKey?: string
 }
 
 export function RichTextEditor({
@@ -55,9 +67,12 @@ export function RichTextEditor({
   maxImages = 10,
   maxFileSizeMB = 10,
   onChange,
+  draftKey,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [imageCount, setImageCount] = useState(
     () => (defaultValue.match(/<img/g) ?? []).length
   )
@@ -67,6 +82,14 @@ export function RichTextEditor({
   const [, forceUpdate] = useState(0)
   // 이미지 버튼 클릭 직전의 selection (mobile에서 file picker 거치며 selection 잃는 것 방지)
   const savedSelectionRef = useRef<{ from: number; to: number } | null>(null)
+  // 에디터 현재 HTML (draft 저장용)
+  const [editorHtml, setEditorHtml] = useState(defaultValue)
+  const { hasDraft, savedAt, getDraftValue, clearDraft } = useDraftSave(
+    draftKey ?? "",
+    editorHtml,
+    !!draftKey
+  )
+  const [draftDismissed, setDraftDismissed] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -89,9 +112,12 @@ export function RichTextEditor({
       if (hiddenRef.current) hiddenRef.current.value = html
       onChange?.(html)
       setImageCount((html.match(/<img/g) ?? []).length)
+      setEditorHtml(html)
     },
-    onSelectionUpdate() {
-      // 커서 이동 시 툴바 활성 상태 갱신
+    onSelectionUpdate({ editor }) {
+      // 커서 이동 시 툴바 활성 상태 갱신 + selection 지속 저장 (mobile file picker 후 복원용)
+      const { from, to } = editor.state.selection
+      savedSelectionRef.current = { from, to }
       forceUpdate((n) => n + 1)
     },
     onTransaction() {
@@ -175,25 +201,19 @@ export function RichTextEditor({
         const { data } = supabase.storage.from("public-images").getPublicUrl(path)
 
         // 모바일에서 file picker 거치며 lost된 selection 복원.
+        // savedSelectionRef 는 onSelectionUpdate 에서 항상 최신값 유지.
+        // focus(pos) 로 iOS selection 리셋 문제를 우회해 정확한 위치에 삽입.
         // scrollIntoView: false 로 mobile 화면이 위로 점프하는 현상 방지.
-        // setImage 후 createParagraphNear 로 이미지 다음에 빈 줄 자동 생성 (다음 글쓰기 편하게).
         const saved = savedSelectionRef.current
-        const chain = editor.chain()
-        if (saved) {
-          chain.setTextSelection(saved)
-          // 다음 이미지를 위해 selection 누적 업데이트는 setImage 이후 onUpdate에서 자연스럽게 진행.
-        }
+        const insertPos = saved
+          ? saved.from
+          : Math.max(0, editor.state.doc.content.size - 1)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(chain as any)
-          .focus(undefined, { scrollIntoView: false })
+        ;(editor.chain() as any)
+          .focus(insertPos, { scrollIntoView: false })
           .setImage({ src: data.publicUrl })
           .createParagraphNear()
           .run()
-        // 다음 이미지 삽입은 새 paragraph 위치에서 이어지도록 selection 갱신
-        savedSelectionRef.current = {
-          from: editor.state.selection.from,
-          to: editor.state.selection.to,
-        }
       } finally {
         setUploading(false)
       }
@@ -242,12 +262,72 @@ export function RichTextEditor({
     editor?.chain().focus().setLink({ href: url }).run()
   }, [editor])
 
+  // selection 저장 헬퍼
+  const saveSelection = useCallback(() => {
+    if (editor) {
+      const { from, to } = editor.state.selection
+      savedSelectionRef.current = { from, to }
+    }
+  }, [editor])
+
+  // ── 이미지 이동 헬퍼 ──────────────────────────────────────────
+  function moveImageUp() {
+    if (!editor) return
+    const { state } = editor
+    const { selection } = state
+    const pos = selection.$anchor.pos
+    const $pos = state.doc.resolve(pos)
+    const parent = $pos.parent
+    const index = $pos.index()
+    if (index === 0) return
+    const prevNode = parent.child(index - 1)
+    const curNode = parent.child(index)
+    const curNodeStart = $pos.before()
+    const prevNodeStart = curNodeStart - prevNode.nodeSize
+    const tr = state.tr
+    tr.delete(prevNodeStart, curNodeStart + curNode.nodeSize)
+    tr.insert(prevNodeStart, [curNode, prevNode])
+    editor.view.dispatch(tr)
+  }
+
+  function moveImageDown() {
+    if (!editor) return
+    const { state } = editor
+    const { selection } = state
+    const pos = selection.$anchor.pos
+    const $pos = state.doc.resolve(pos)
+    const parent = $pos.parent
+    const index = $pos.index()
+    if (index >= parent.childCount - 1) return
+    const nextNode = parent.child(index + 1)
+    const curNode = parent.child(index)
+    const curNodeStart = $pos.before()
+    const nextNodeEnd = curNodeStart + curNode.nodeSize + nextNode.nodeSize
+    const tr = state.tr
+    tr.delete(curNodeStart, nextNodeEnd)
+    tr.insert(curNodeStart, [nextNode, curNode])
+    editor.view.dispatch(tr)
+  }
+
+  function deleteImage() {
+    if (!editor) return
+    editor.chain().focus().deleteSelection().run()
+  }
+
   if (!editor) return null
 
   // ── 툴바 버튼 스타일 ──────────────────────────────────────────
   const btn = (active: boolean) =>
     cn(
       "flex size-7 items-center justify-center rounded transition-colors",
+      active
+        ? "bg-primary text-primary-foreground"
+        : "text-foreground/60 hover:bg-secondary hover:text-foreground"
+    )
+
+  const btnMobile = (active: boolean) =>
+    cn(
+      "flex size-10 items-center justify-center rounded-lg transition-colors",
       active
         ? "bg-primary text-primary-foreground"
         : "text-foreground/60 hover:bg-secondary hover:text-foreground"
@@ -263,8 +343,151 @@ export function RichTextEditor({
         defaultValue={defaultValue}
       />
 
-      {/* ── 툴바 ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-secondary/30 px-2 py-1.5">
+      {/* ── 임시저장 복원 배너 ──────────────────────────────────── */}
+      {hasDraft && !draftDismissed && (
+        <div className="flex items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs dark:border-amber-800/40 dark:bg-amber-900/20">
+          <span className="text-amber-800 dark:text-amber-300">
+            {savedAt
+              ? `임시저장된 내용이 있어요 (${savedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })})`
+              : "임시저장된 내용이 있어요"}
+          </span>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const draft = getDraftValue()
+                if (draft && editor) {
+                  editor.commands.setContent(draft)
+                  if (hiddenRef.current) hiddenRef.current.value = draft
+                  setEditorHtml(draft)
+                }
+                setDraftDismissed(true)
+              }}
+              className="font-semibold text-amber-700 hover:underline dark:text-amber-400"
+            >
+              불러오기
+            </button>
+            <button
+              type="button"
+              onClick={() => { clearDraft(); setDraftDismissed(true) }}
+              className="text-amber-600 hover:underline dark:text-amber-500"
+            >
+              무시
+            </button>
+          </div>
+        </div>
+      )}
+      {draftKey && savedAt && !hasDraft && (
+        <div className="flex items-center justify-between border-b border-border bg-secondary/20 px-3 py-1.5 text-[11px] text-muted-foreground">
+          <span>자동 저장됨 ({savedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })})</span>
+          <button type="button" onClick={clearDraft} className="hover:underline">초기화</button>
+        </div>
+      )}
+
+      {/* ── 모바일 툴바 (sm 미만) ────────────────────────────────── */}
+      <div className="sm:hidden border-b border-border bg-secondary/30">
+        {/* Primary row */}
+        <div className="flex items-center gap-0.5 px-2 py-1.5">
+          {/* 굵게 */}
+          <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={btnMobile(editor.isActive("bold"))} title="굵게" aria-label="굵게">
+            <Bold className="size-4" />
+          </button>
+          {/* 기울임 */}
+          <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btnMobile(editor.isActive("italic"))} title="기울임" aria-label="기울임">
+            <Italic className="size-4" />
+          </button>
+          {/* H1 */}
+          <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={btnMobile(editor.isActive("heading", { level: 1 }))} title="제목 1" aria-label="제목 1">
+            <Heading1 className="size-4" />
+          </button>
+          {/* 링크 */}
+          <button type="button" onClick={handleLink} className={btnMobile(editor.isActive("link"))} title="링크 삽입" aria-label="링크 삽입">
+            <Link2 className="size-4" />
+          </button>
+          {/* 갤러리 */}
+          <button
+            type="button"
+            onPointerDown={saveSelection}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || imageCount >= maxImages}
+            className={btnMobile(false)}
+            title={imageCount >= maxImages ? `이미지 최대 ${maxImages}장` : "이미지 삽입"}
+            aria-label="이미지 삽입"
+          >
+            {uploading
+              ? <Loader2 className="size-4 animate-spin" />
+              : <ImageIcon className="size-4" />
+            }
+          </button>
+          {/* 카메라 (모바일 전용) */}
+          <button
+            type="button"
+            onPointerDown={saveSelection}
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading || imageCount >= maxImages}
+            className={btnMobile(false)}
+            title="카메라로 촬영"
+            aria-label="카메라로 촬영"
+          >
+            <Camera className="size-4" />
+          </button>
+          {/* 이미지 카운터 */}
+          <span className={cn(
+            "ml-auto mr-1 text-[10px] tabular-nums",
+            imageCount >= maxImages ? "text-destructive font-semibold" : "text-muted-foreground"
+          )}>
+            {imageCount}/{maxImages}
+          </span>
+          {/* 더보기 */}
+          <button type="button" onClick={() => setMoreOpen(v => !v)} className={btnMobile(moreOpen)} aria-label="더보기">
+            <MoreHorizontal className="size-4" />
+          </button>
+        </div>
+        {/* Secondary row */}
+        {moreOpen && (
+          <div className="flex flex-wrap gap-0.5 border-t border-border px-2 py-1.5 bg-secondary/20">
+            <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btnMobile(editor.isActive("heading", { level: 2 }))} title="제목 2" aria-label="제목 2">
+              <Heading2 className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={btnMobile(editor.isActive("heading", { level: 3 }))} title="제목 3" aria-label="제목 3">
+              <Heading3 className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btnMobile(editor.isActive("underline"))} title="밑줄" aria-label="밑줄">
+              <UnderlineIcon className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()} className={btnMobile(editor.isActive({ textAlign: "left" }))} title="왼쪽 정렬" aria-label="왼쪽 정렬">
+              <AlignLeft className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()} className={btnMobile(editor.isActive({ textAlign: "center" }))} title="가운데 정렬" aria-label="가운데 정렬">
+              <AlignCenter className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()} className={btnMobile(editor.isActive({ textAlign: "right" }))} title="오른쪽 정렬" aria-label="오른쪽 정렬">
+              <AlignRight className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btnMobile(editor.isActive("bulletList"))} title="글머리 목록" aria-label="글머리 목록">
+              <List className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btnMobile(editor.isActive("orderedList"))} title="번호 목록" aria-label="번호 목록">
+              <ListOrdered className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={btnMobile(editor.isActive("blockquote"))} title="인용구" aria-label="인용구">
+              <Quote className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()} className={btnMobile(false)} title="구분선" aria-label="구분선">
+              <Minus className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().undo().run()} className={btnMobile(false)} title="되돌리기" aria-label="되돌리기">
+              <Undo2 className="size-4" />
+            </button>
+            <button type="button" onClick={() => editor.chain().focus().redo().run()} className={btnMobile(false)} title="다시 실행" aria-label="다시 실행">
+              <Redo2 className="size-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── 데스크탑 툴바 (sm 이상) ──────────────────────────────── */}
+      <div className="hidden sm:flex flex-wrap items-center gap-0.5 border-b border-border bg-secondary/30 px-2 py-1.5">
         {/* 되돌리기 */}
         <button type="button" onClick={() => editor.chain().focus().undo().run()} className={btn(false)} title="되돌리기" aria-label="되돌리기">
           <Undo2 className="size-3.5" />
@@ -359,7 +582,6 @@ export function RichTextEditor({
             : <ImageIcon className="size-3.5" />
           }
         </button>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFileChange} />
 
         {/* 이미지 카운터 */}
         <span className={cn(
@@ -369,6 +591,48 @@ export function RichTextEditor({
           {imageCount}/{maxImages}
         </span>
       </div>
+
+      {/* 파일 인풋 (갤러리) */}
+      <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFileChange} />
+      {/* 파일 인풋 (카메라, 모바일 전용) */}
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFileChange} />
+
+      {/* ── 이미지 선택 시 플로팅 툴바 ──────────────────────── */}
+      <BubbleMenu
+        editor={editor}
+        shouldShow={({ editor: ed }) => (ed as Editor | null)?.isActive("image") ?? false}
+      >
+        <div className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg">
+          <button
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); moveImageUp() }}
+            className="flex size-8 items-center justify-center rounded text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+            title="위로 이동"
+            aria-label="이미지 위로 이동"
+          >
+            <ChevronUp className="size-4" />
+          </button>
+          <button
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); moveImageDown() }}
+            className="flex size-8 items-center justify-center rounded text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+            title="아래로 이동"
+            aria-label="이미지 아래로 이동"
+          >
+            <ChevronDown className="size-4" />
+          </button>
+          <span className="mx-0.5 h-4 w-px bg-border" />
+          <button
+            type="button"
+            onPointerDown={(e) => { e.preventDefault(); deleteImage() }}
+            className="flex size-8 items-center justify-center rounded text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            title="이미지 삭제"
+            aria-label="이미지 삭제"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
+      </BubbleMenu>
 
       {/* ── 에디터 본문 ──────────────────────────────────────── */}
       <EditorContent editor={editor} />

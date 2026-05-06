@@ -87,6 +87,7 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
           folder="daily"
           onChange={(html) => { contentRef.current = html }}
+          draftKey={post ? undefined : "draft:admin:daily:new"}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.

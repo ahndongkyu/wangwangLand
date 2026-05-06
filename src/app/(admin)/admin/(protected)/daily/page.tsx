@@ -2,8 +2,10 @@ import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
 import { listDailyPosts } from "@/features/daily"
+import { deleteDailyPost } from "@/features/daily/api/mutations"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
+import { AdminPostActions } from "@/shared/components/admin-post-actions"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -67,7 +69,7 @@ export default async function AdminDailyPage({
         <>
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {posts.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className="relative">
                 <PostListRow
                   href={`/admin/daily/${p.id}/edit`}
                   title={p.title}
@@ -77,6 +79,13 @@ export default async function AdminDailyPage({
                   date={p.posted_at}
                   viewCount={p.view_count}
                 />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                  <AdminPostActions
+                    editHref={`/admin/daily/${p.id}/edit`}
+                    deleteAction={deleteDailyPost.bind(null, p.id)}
+                    label="일상"
+                  />
+                </div>
               </li>
             ))}
           </ul>

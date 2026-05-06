@@ -91,6 +91,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
           onChange={(html) => { contentRef.current = html }}
+          draftKey={story ? undefined : "draft:admin:stories:new"}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.

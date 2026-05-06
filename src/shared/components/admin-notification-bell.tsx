@@ -16,11 +16,15 @@ export function AdminNotificationBell({ counts }: Props) {
   const hasItems = counts.total > 0
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent | TouchEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener("mousedown", handler)
-    return () => document.removeEventListener("mousedown", handler)
+    document.addEventListener("touchstart", handler as EventListener, { passive: true })
+    return () => {
+      document.removeEventListener("mousedown", handler)
+      document.removeEventListener("touchstart", handler as EventListener)
+    }
   }, [])
 
   const items = [

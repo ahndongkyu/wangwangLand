@@ -3,6 +3,7 @@ import { getCurrentAdmin, logout } from "@/features/auth"
 import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { SITE } from "@/shared/constants/site"
 import { AdminHeader } from "./_components/admin-header"
+import { AdminBottomNav } from "./_components/admin-bottom-nav"
 
 export default async function AdminProtectedLayout({
   children,
@@ -26,7 +27,8 @@ export default async function AdminProtectedLayout({
         logoutAction={logout}
         pendingCounts={pendingCounts}
       />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <AdminBottomNav counts={pendingCounts} />
     </div>
   )
 }

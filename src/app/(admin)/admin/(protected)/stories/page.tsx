@@ -2,8 +2,10 @@ import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
 import { listAdoptionStories } from "@/features/stories"
+import { deleteAdoptionStory } from "@/features/stories/api/mutations"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
+import { AdminPostActions } from "@/shared/components/admin-post-actions"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -76,7 +78,7 @@ export default async function AdminStoriesPage({
               const thumbnail = s.images[0] ?? dogThumb ?? null
               const isPublished = s.published_at !== null
               return (
-                <li key={s.id}>
+                <li key={s.id} className="relative">
                   <PostListRow
                     href={`/admin/stories/${s.id}/edit`}
                     title={s.title}
@@ -98,6 +100,13 @@ export default async function AdminStoriesPage({
                       )
                     }
                   />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                    <AdminPostActions
+                      editHref={`/admin/stories/${s.id}/edit`}
+                      deleteAction={deleteAdoptionStory.bind(null, s.id)}
+                      label="후기"
+                    />
+                  </div>
                 </li>
               )
             })}
