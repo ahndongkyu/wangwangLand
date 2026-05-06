@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 
 import { listNotices, MarkNoticesSeen } from "@/features/notices"
+import { getCurrentProfile } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
@@ -24,16 +25,22 @@ export default async function NoticePage({
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
 
-  const { notices, total } = await listNotices({
-    query: activeQuery || undefined,
-    limit: PAGE_SIZE,
-    offset,
-  })
+  const [{ notices, total }, profile] = await Promise.all([
+    listNotices({
+      query: activeQuery || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+    getCurrentProfile(),
+  ])
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const isLoggedIn = !!profile
+  // 로그인 유저: DB 열람 시각 기준 / 비로그인: 2일 이내
+  const noticesLastSeenAt = profile?.notices_last_seen_at ?? null
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
-      <MarkNoticesSeen />
+      <MarkNoticesSeen isLoggedIn={isLoggedIn} />
       <ScrollRestorer />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -69,7 +76,8 @@ export default async function NoticePage({
                 date={n.published_at}
                 viewCount={n.view_count}
                 pinned={n.is_pinned}
-                newWithinDays={2}
+                newAfter={noticesLastSeenAt}
+                newWithinDays={noticesLastSeenAt ? 0 : 2}
               />
             </li>
           ))}

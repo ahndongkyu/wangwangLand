@@ -14,6 +14,7 @@ export interface Profile {
   privacy_agreed_at: string | null
   privacy_version: string | null
   marketing_agreed_at: string | null
+  notices_last_seen_at: string | null
 }
 
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -24,7 +25,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at")
+    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at, notices_last_seen_at")
     .eq("id", session.user.id)
     .maybeSingle()
 
@@ -47,7 +48,7 @@ export async function getProfileDetail(id: string): Promise<ProfileDetail | null
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at")
+    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at, notices_last_seen_at")
     .eq("id", id)
     .maybeSingle()
   if (!profile) return null

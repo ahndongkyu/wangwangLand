@@ -28,12 +28,16 @@ interface Props {
   pinned?: boolean
   /** 우측에 표시할 상태 배지 (예: 공개/임시저장). 어드민 리스트에서 사용. */
   statusBadge?: React.ReactNode
-  /** 발행일이 N일 이내면 NEW 뱃지(반짝거리는 효과). 0 이면 비활성. 기본 0. */
+  /** 발행일이 N일 이내면 NEW 뱃지. 0 이면 비활성. 기본 0. */
   newWithinDays?: number
+  /** 이 시각 이후 발행된 글이면 NEW 뱃지. newWithinDays보다 우선 적용. */
+  newAfter?: string | null
 }
 
-function isNew(date: string | null | undefined, withinDays: number): boolean {
-  if (!date || withinDays <= 0) return false
+function isNew(date: string | null | undefined, withinDays: number, after?: string | null): boolean {
+  if (!date) return false
+  if (after) return date > after
+  if (withinDays <= 0) return false
   const diff = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
   return diff >= 0 && diff <= withinDays
 }
@@ -54,8 +58,9 @@ export function PostListRow({
   pinned,
   statusBadge,
   newWithinDays = 0,
+  newAfter,
 }: Props) {
-  const fresh = isNew(date, newWithinDays)
+  const fresh = isNew(date, newWithinDays, newAfter)
   return (
     <Link
       href={href}

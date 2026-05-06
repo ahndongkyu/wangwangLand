@@ -7,31 +7,21 @@ import type { RecentNoticeMeta } from "../types"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
-  /** 서버에서 prefetch 한 최근 발행 공지 메타. */
   notices: RecentNoticeMeta[]
+  /** 로그인 유저의 DB 열람 시각. 있으면 localStorage 대신 이 값 사용. */
+  dbLastSeenAt?: string | null
   className?: string
 }
 
-/**
- * 공지사항 "NEW" 뱃지.
- *
- * 표시 규칙 (클라이언트만):
- * - 사용자의 마지막 공지 열람 이후 발행된 공지가 있으면 뱃지 표시
- * - 상단 고정(`is_pinned`) 공지는 열람 이후라도 여전히 핀으로 걸려 있으면
- *   '새로 올라온' 것이 아니므로 뱃지에 영향 없음 (시간 비교만 사용)
- * - 오리엔테이션: "N" 한 글자로 표기 (개수 X)
- */
-export function NoticeBadge({ notices, className }: Props) {
-  const lastSeen = useLastNoticeSeenAt()
+export function NoticeBadge({ notices, dbLastSeenAt, className }: Props) {
+  const localLastSeen = useLastNoticeSeenAt()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // SSR 단계에선 뱃지 안 보이게. hydration 후 localStorage 기준으로 판정.
+  useEffect(() => { setMounted(true) }, [])
   if (!mounted) return null
 
+  // 로그인 유저: DB 값 / 비로그인: localStorage 값
+  const lastSeen = dbLastSeenAt ?? localLastSeen
   const hasUnread = notices.some((n) => n.published_at > lastSeen)
   if (!hasUnread) return null
 

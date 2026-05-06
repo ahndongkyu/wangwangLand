@@ -7,6 +7,17 @@ import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
+/** 로그인 유저의 공지 마지막 열람 시각을 DB에 저장 */
+export async function markNoticesSeenInDB() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.user) return
+  await supabase
+    .from("profiles")
+    .update({ notices_last_seen_at: new Date().toISOString() })
+    .eq("id", session.user.id)
+}
+
 export interface NoticeMutationResult {
   error?: string
   id?: string

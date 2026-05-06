@@ -99,7 +99,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
                   >
                     {node.label}
                     {node.href === "/notice" && (
-                      <NoticeBadge notices={recentNotices} />
+                      <NoticeBadge notices={recentNotices} dbLastSeenAt={profile?.notices_last_seen_at} />
                     )}
                   </Link>
                 </li>
@@ -219,7 +219,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
 
                 <MobileNavGroup label="정보">
                   <MobileNavItem href="/about" icon="home-shelter" label="센터 소개" isActive={isActive("/about")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/notice" icon="notification" label="공지사항" isActive={isActive("/notice")} onClose={() => setMobileOpen(false)} noticeBadge={recentNotices} />
+                  <MobileNavItem href="/notice" icon="notification" label="공지사항" isActive={isActive("/notice")} onClose={() => setMobileOpen(false)} noticeBadge={recentNotices} noticeDbLastSeenAt={profile?.notices_last_seen_at} />
                   <MobileNavItem href="/contact" icon={null} label="오시는 길" isActive={isActive("/contact")} onClose={() => setMobileOpen(false)} isLocation />
                 </MobileNavGroup>
               </nav>
@@ -296,6 +296,7 @@ function MobileNavItem({
   highlighted,
   badge,
   noticeBadge,
+  noticeDbLastSeenAt,
   isLocation,
 }: {
   href: string
@@ -306,6 +307,7 @@ function MobileNavItem({
   highlighted?: boolean
   badge?: string
   noticeBadge?: RecentNoticeMeta[]
+  noticeDbLastSeenAt?: string | null
   isLocation?: boolean
 }) {
   return (
@@ -344,7 +346,7 @@ function MobileNavItem({
           {badge}
         </span>
       )}
-      {noticeBadge && <NoticeBadge notices={noticeBadge} />}
+      {noticeBadge && <NoticeBadge notices={noticeBadge} dbLastSeenAt={noticeDbLastSeenAt} />}
       <ChevronRight className="size-3.5 text-[#9B8F80]" />
     </Link>
   )
