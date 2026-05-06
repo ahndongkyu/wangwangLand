@@ -1,7 +1,7 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
 
-export type DogSort = "latest" | "name"
+export type DogSort = "latest" | "name" | "pinned"
 
 /** 카드 목록에 필요한 컬럼만 선택 (description 등 큰 텍스트 제외) */
 const DOG_CARD_COLS =
@@ -32,6 +32,11 @@ export async function listDogs({
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
+  } else if (sort === "pinned") {
+    query = query
+      .order("is_pinned", { ascending: false })
+      .order("pin_order", { ascending: true, nullsFirst: false })
+      .order("updated_at", { ascending: false })
   } else {
     // 최신순 = 최근 업데이트된 순. id를 2차 정렬키로 걸어 동률 안정화.
     query = query
@@ -82,6 +87,11 @@ export async function listDogsWithCount({
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })
+  } else if (sort === "pinned") {
+    query = query
+      .order("is_pinned", { ascending: false })
+      .order("pin_order", { ascending: true, nullsFirst: false })
+      .order("updated_at", { ascending: false })
   } else {
     query = query
       .order("updated_at", { ascending: false })

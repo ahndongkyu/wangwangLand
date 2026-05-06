@@ -52,6 +52,7 @@ const NEUTERED_FILTERS: Array<{ label: string; value: "전체" | "true" | "false
 const SORT_OPTIONS: Array<{ label: string; value: DogSort }> = [
   { label: "최신순", value: "latest" },
   { label: "이름순", value: "name" },
+  { label: "고정순", value: "pinned" },
 ]
 
 function parseStatus(value: string | undefined): DogStatus | "전체" {
@@ -79,7 +80,9 @@ function parseNeutered(value: string | undefined): "전체" | "true" | "false" {
 }
 
 function parseSort(value: string | undefined): DogSort {
-  return value === "name" ? "name" : "latest"
+  if (value === "name") return "name"
+  if (value === "pinned") return "pinned"
+  return "latest"
 }
 
 function parsePageSize(value: string | undefined): number {
@@ -101,7 +104,7 @@ function buildHref(params: {
   if (params.size !== "전체") qs.set("size", params.size)
   if (params.gender !== "전체") qs.set("gender", params.gender)
   if (params.neutered !== "전체") qs.set("neutered", params.neutered)
-  if (params.sort !== "latest") qs.set("sort", params.sort)
+  if (params.sort !== "latest") qs.set("sort", String(params.sort))
   if (params.q) qs.set("q", params.q)
   if (params.pageSize !== DEFAULT_PAGE_SIZE) qs.set("pageSize", String(params.pageSize))
   const s = qs.toString()
