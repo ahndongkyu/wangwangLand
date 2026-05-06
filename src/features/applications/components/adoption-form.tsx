@@ -1,7 +1,8 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import React, { useState, useTransition } from "react"
+import React, { useRef, useState, useTransition } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { submitAdoptionApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
@@ -19,10 +20,13 @@ import {
   validateKoreanPhone,
   validateName,
 } from "@/shared/lib/validation"
+import { cn } from "@/shared/lib/utils"
 import type { HousingType, OwnershipType } from "@/shared/types/database"
 
 const HOUSING: HousingType[] = ["아파트", "주택", "빌라", "오피스텔", "기타"]
 const OWNERSHIP: OwnershipType[] = ["자가", "전세", "월세"]
+
+const stepLabels = ["신청자 정보", "자격 확인", "신청 완료"]
 
 interface Props {
   dogId?: string
@@ -36,6 +40,8 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [step, setStep] = useState(1)
+  const formRef = useRef<HTMLFormElement>(null)
 
   // 자격 확인
   const [adult, setAdult] = useState(false)
@@ -48,6 +54,27 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
   // 동의
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
+
+  function handleNext() {
+    setError(null)
+    if (step === 1) {
+      const fd = new FormData(formRef.current!)
+      const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
+      if (!nameCheck.valid) { setError(nameCheck.error!); return }
+      const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
+      if (!phoneCheck.valid) { setError(phoneCheck.error!); return }
+      const address = String(fd.get("address") ?? "").trim()
+      if (!address) { setError("주소를 입력해 주세요."); return }
+    }
+    if (step === 2) {
+      if (!adult) { setError("만 19세 이상 동의가 필요합니다."); return }
+      if (!familyConsent) { setError("동거 가족 전원의 동의 확인이 필요합니다."); return }
+      if (!readiness) { setError("양육 여건 확인 동의가 필요합니다."); return }
+      if (needsLandlord && !landlordConsent) { setError("전세·월세인 경우 임대인 동의 확인이 필요합니다."); return }
+    }
+    setStep(s => s + 1)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -96,197 +123,257 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      {dogId && (
-        <>
-          <input type="hidden" name="dog_id" value={dogId} />
-          {dogName && (
-            <div className="rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-              <strong>{dogName}</strong> 아이를 입양 신청하고 있습니다.
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
+      {/* Mobile step indicator */}
+      <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          {stepLabels.map((label, i) => {
+            const n = i + 1
+            const done = n < step
+            const active = n === step
+            return (
+              <div key={n} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-border text-xs">›</span>}
+                <span className={cn("flex size-5 items-center justify-center rounded-full text-[10px] font-bold",
+                  done && "bg-primary/30 text-primary",
+                  active && "bg-primary text-primary-foreground",
+                  !done && !active && "bg-secondary text-muted-foreground"
+                )}>
+                  {done ? "✓" : n}
+                </span>
+                <span className={cn("text-[11px] font-medium", active ? "text-foreground" : "text-muted-foreground")}>
+                  {label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+        <span className="text-[10px] text-muted-foreground">{step}/3</span>
+      </div>
+
+      {/* Step 1: dogName info + 신청자 정보 */}
+      <div className={step === 1 ? "contents" : "hidden sm:contents"}>
+        {dogId && (
+          <>
+            <input type="hidden" name="dog_id" value={dogId} />
+            {dogName && (
+              <div className="rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+                <strong>{dogName}</strong> 아이를 입양 신청하고 있습니다.
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 1. 신청자 정보 */}
+        <Card title="신청자 정보" required>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field id="applicant_name" label="이름" required>
+              <Input
+                id="applicant_name"
+                name="applicant_name"
+                required
+                minLength={2}
+                maxLength={20}
+                pattern={NAME_PATTERN_RAW}
+                title={NAME_HINT}
+                placeholder="홍길동"
+              />
+              <p className="text-[11px] text-muted-foreground/80">{NAME_HINT}</p>
+            </Field>
+            <Field id="phone" label="연락처" required>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                pattern={KOREAN_PHONE_PATTERN_RAW}
+                title={PHONE_HINT}
+                placeholder="010-0000-0000"
+              />
+              <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
+            </Field>
+            <Field id="address" label="주소" required className="md:col-span-2">
+              <AddressSearchInput
+                id="address"
+                name="address"
+                required
+              />
+            </Field>
+          </div>
+        </Card>
+      </div>
+
+      {/* Step 2: 입양 자격 확인 + 가족·주거 정보 + 반려 경험 */}
+      <div className={step === 2 ? "contents" : "hidden sm:contents"}>
+        {/* 2. 입양 자격 확인 (약관 제9조 기반) */}
+        <Card title="입양 자격 확인" required>
+          <p className="mb-3 text-xs text-muted-foreground">
+            왕왕랜드 회칙·약관에 따라 다음 항목 모두 충족해야 입양이 가능합니다.
+          </p>
+          <CheckRow
+            checked={adult}
+            onChange={setAdult}
+            label="만 19세 이상의 성인입니다"
+          />
+          <CheckRow
+            checked={familyConsent}
+            onChange={setFamilyConsent}
+            label="동거 가족 전원의 입양 동의를 받았습니다"
+          />
+          <CheckRow
+            checked={readiness}
+            onChange={setReadiness}
+            label="평생 양육에 필요한 경제적·시간적 여건을 갖추었습니다"
+          />
+        </Card>
+
+        {/* 3. 가족·주거 정보 */}
+        <Card title="가족 · 주거 정보 (선택)">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field id="family_size" label="가족 구성원 수">
+              <Input
+                id="family_size"
+                name="family_size"
+                type="number"
+                min={1}
+                placeholder="본인 포함"
+              />
+            </Field>
+            <div className="flex items-center gap-2 pt-7">
+              <Checkbox id="has_children" name="has_children" />
+              <Label htmlFor="has_children" className="cursor-pointer">
+                어린이가 있어요
+              </Label>
+            </div>
+            <Field id="housing_type" label="주거 형태">
+              <select
+                id="housing_type"
+                name="housing_type"
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
+              >
+                <option value="">선택</option>
+                {HOUSING.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field id="ownership_type" label="소유 형태">
+              <select
+                id="ownership_type"
+                name="ownership_type"
+                value={ownershipType}
+                onChange={(e) => setOwnershipType(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
+              >
+                <option value="">선택</option>
+                {OWNERSHIP.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          {needsLandlord && (
+            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+              <CheckRow
+                checked={landlordConsent}
+                onChange={setLandlordConsent}
+                label="임대인의 반려동물 양육 동의를 받았습니다 (필수)"
+                required
+              />
             </div>
           )}
-        </>
-      )}
+        </Card>
 
-      {/* 1. 신청자 정보 */}
-      <Card title="신청자 정보" required>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field id="applicant_name" label="이름" required>
-            <Input
-              id="applicant_name"
-              name="applicant_name"
-              required
-              minLength={2}
-              maxLength={20}
-              pattern={NAME_PATTERN_RAW}
-              title={NAME_HINT}
-              placeholder="홍길동"
-            />
-            <p className="text-[11px] text-muted-foreground/80">{NAME_HINT}</p>
-          </Field>
-          <Field id="phone" label="연락처" required>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              required
-              pattern={KOREAN_PHONE_PATTERN_RAW}
-              title={PHONE_HINT}
-              placeholder="010-0000-0000"
-            />
-            <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
-          </Field>
-          <Field id="address" label="주소" required className="md:col-span-2">
-            <AddressSearchInput
-              id="address"
-              name="address"
-              required
+        {/* 4. 반려 경험 */}
+        <Card title="반려 경험 (선택)">
+          <Field id="current_pets" label="현재 다른 반려동물">
+            <Textarea
+              id="current_pets"
+              name="current_pets"
+              rows={2}
+              placeholder="종류·성별·나이 등"
             />
           </Field>
-        </div>
-      </Card>
+          <Field id="past_pet_experience" label="과거 사육 경험" className="mt-3">
+            <Textarea
+              id="past_pet_experience"
+              name="past_pet_experience"
+              rows={2}
+            />
+          </Field>
+        </Card>
+      </div>
 
-      {/* 2. 입양 자격 확인 (약관 제9조 기반) */}
-      <Card title="입양 자격 확인" required>
-        <p className="mb-3 text-xs text-muted-foreground">
-          왕왕랜드 회칙·약관에 따라 다음 항목 모두 충족해야 입양이 가능합니다.
-        </p>
-        <CheckRow
-          checked={adult}
-          onChange={setAdult}
-          label="만 19세 이상의 성인입니다"
+      {/* Step 3: 입양 결심 이유 + 동의 */}
+      <div className={step === 3 ? "contents" : "hidden sm:contents"}>
+        {/* 5. 입양 결심 이유 */}
+        <Card title="입양 결심 이유" required>
+          <Field id="reason" label="" hideLabel>
+            <Textarea
+              id="reason"
+              name="reason"
+              rows={5}
+              required
+              placeholder="이 아이를 가족으로 맞이하고 싶은 마음을 자유롭게 적어주세요."
+            />
+          </Field>
+        </Card>
+
+        {/* 6. 동의 */}
+        <ConsentSection
+          privacy={{
+            purpose: "입양 상담 및 사후 모니터링",
+            items: "이름, 연락처, 주소, 가족/주거 정보, 반려 경험, 입양 결심 이유",
+            retention: "입양 완료 또는 상담 종료 후 1년",
+          }}
+          privacyAgreed={privacyAgreed}
+          onPrivacyChange={setPrivacyAgreed}
+          termsAgreed={termsAgreed}
+          onTermsChange={setTermsAgreed}
+          termsAlreadyAgreed={termsAlreadyAgreed}
         />
-        <CheckRow
-          checked={familyConsent}
-          onChange={setFamilyConsent}
-          label="동거 가족 전원의 입양 동의를 받았습니다"
-        />
-        <CheckRow
-          checked={readiness}
-          onChange={setReadiness}
-          label="평생 양육에 필요한 경제적·시간적 여건을 갖추었습니다"
-        />
-      </Card>
+      </div>
 
-      {/* 3. 가족·주거 정보 */}
-      <Card title="가족 · 주거 정보 (선택)">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field id="family_size" label="가족 구성원 수">
-            <Input
-              id="family_size"
-              name="family_size"
-              type="number"
-              min={1}
-              placeholder="본인 포함"
-            />
-          </Field>
-          <div className="flex items-center gap-2 pt-7">
-            <Checkbox id="has_children" name="has_children" />
-            <Label htmlFor="has_children" className="cursor-pointer">
-              어린이가 있어요
-            </Label>
-          </div>
-          <Field id="housing_type" label="주거 형태">
-            <select
-              id="housing_type"
-              name="housing_type"
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
-            >
-              <option value="">선택</option>
-              {HOUSING.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field id="ownership_type" label="소유 형태">
-            <select
-              id="ownership_type"
-              name="ownership_type"
-              value={ownershipType}
-              onChange={(e) => setOwnershipType(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
-            >
-              <option value="">선택</option>
-              {OWNERSHIP.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        {needsLandlord && (
-          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20">
-            <CheckRow
-              checked={landlordConsent}
-              onChange={setLandlordConsent}
-              label="임대인의 반려동물 양육 동의를 받았습니다 (필수)"
-              required
-            />
-          </div>
-        )}
-      </Card>
-
-      {/* 4. 반려 경험 */}
-      <Card title="반려 경험 (선택)">
-        <Field id="current_pets" label="현재 다른 반려동물">
-          <Textarea
-            id="current_pets"
-            name="current_pets"
-            rows={2}
-            placeholder="종류·성별·나이 등"
-          />
-        </Field>
-        <Field id="past_pet_experience" label="과거 사육 경험" className="mt-3">
-          <Textarea
-            id="past_pet_experience"
-            name="past_pet_experience"
-            rows={2}
-          />
-        </Field>
-      </Card>
-
-      {/* 5. 입양 결심 이유 */}
-      <Card title="입양 결심 이유" required>
-        <Field id="reason" label="" hideLabel>
-          <Textarea
-            id="reason"
-            name="reason"
-            rows={5}
-            required
-            placeholder="이 아이를 가족으로 맞이하고 싶은 마음을 자유롭게 적어주세요."
-          />
-        </Field>
-      </Card>
-
-      {/* 6. 동의 */}
-      <ConsentSection
-        privacy={{
-          purpose: "입양 상담 및 사후 모니터링",
-          items: "이름, 연락처, 주소, 가족/주거 정보, 반려 경험, 입양 결심 이유",
-          retention: "입양 완료 또는 상담 종료 후 1년",
-        }}
-        privacyAgreed={privacyAgreed}
-        onPrivacyChange={setPrivacyAgreed}
-        termsAgreed={termsAgreed}
-        onTermsChange={setTermsAgreed}
-        termsAlreadyAgreed={termsAlreadyAgreed}
-      />
-
+      {/* Error: always visible on desktop; on mobile only shown on current step */}
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className={cn("text-sm text-destructive", step < 3 && "sm:block hidden")} role="alert">
           {error}
         </p>
       )}
 
-      <FormFooter
-        pending={pending}
-        submitLabel="입양 신청하기"
-        pendingLabel="접수 중..."
-        onCancel={() => router.back()}
-      />
+      {/* Mobile step navigation */}
+      <div className="sm:hidden flex items-center justify-between gap-2">
+        {step > 1 ? (
+          <button type="button" onClick={() => { setError(null); setStep(s => s - 1) }} className="flex items-center gap-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground">
+            <ChevronLeft className="size-4" /> 이전
+          </button>
+        ) : (
+          <button type="button" onClick={() => router.back()} className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground">취소</button>
+        )}
+        {step < 3 ? (
+          <button type="button" onClick={handleNext} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+            다음 <ChevronRight className="size-4" />
+          </button>
+        ) : (
+          <button type="submit" disabled={pending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            {pending ? "접수 중..." : "입양 신청하기"}
+          </button>
+        )}
+      </div>
+
+      {/* Desktop: keep existing FormFooter */}
+      <div className="hidden sm:block">
+        <FormFooter
+          pending={pending}
+          submitLabel="입양 신청하기"
+          pendingLabel="접수 중..."
+          onCancel={() => router.back()}
+        />
+      </div>
     </form>
   )
 }
