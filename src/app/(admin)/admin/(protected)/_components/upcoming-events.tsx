@@ -5,7 +5,6 @@ import Link from "next/link"
 import { Camera, Check, Copy, Share2 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import {
-  toKst,
   dateKey,
   todayKst,
   formatTimeKst,
@@ -23,7 +22,8 @@ interface Props {
 }
 
 function isoToDateKey(iso: string): string {
-  return dateKey(toKst(iso))
+  // dateKey() 내부에서 KST 변환을 직접 처리하므로, toKst()를 한 번 더 거치면 +18h 되어 날짜 오류 발생.
+  return dateKey(new Date(iso))
 }
 
 function shortDayLabel(dateStr: string): string {
