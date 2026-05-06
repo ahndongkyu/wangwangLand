@@ -80,6 +80,14 @@ export function AdminHeader({
         ...(isTopAdmin ? [{ label: "운영진 관리", href: "/admin/admins" }] : []),
       ],
     },
+    ...(isTopAdmin
+      ? [
+          {
+            label: "시스템",
+            items: [{ label: "사이트 설정", href: "/admin/settings" }],
+          },
+        ]
+      : []),
   ]
 
   const isActive = (href: string) => pathname.startsWith(href)
