@@ -11,6 +11,7 @@ import { MobileFooter } from "@/shared/components/layout/footer-mobile"
 import { Header } from "@/shared/components/layout/header"
 import { MobileCtaBar } from "@/shared/components/mobile-cta-bar"
 import { ScrollButtons } from "@/shared/components/scroll-buttons"
+import { KakaoChannelButton } from "@/shared/components/kakao-channel-button"
 
 // 헤더의 NEW 뱃지·알림 등은 1분 캐시 허용 — 첫 페이지 로드 빨라짐.
 export const revalidate = 60
@@ -88,6 +89,7 @@ export default async function PublicLayout({
       <div className="md:hidden"><MobileFooter /></div>
       <div className="hidden md:block"><Footer /></div>
       <ScrollButtons />
+      <KakaoChannelButton />
       <MobileCtaBar />
     </div>
   )
