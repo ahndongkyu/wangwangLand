@@ -7,6 +7,7 @@ import { createAdminClient } from "@/shared/lib/supabase/admin"
 export async function setMaintenanceMode(enabled: boolean) {
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
+  if (auth.role !== "admin") return { error: "최고 관리자만 점검 모드를 변경할 수 있습니다." }
 
   const supabase = createAdminClient()
   const { error } = await supabase

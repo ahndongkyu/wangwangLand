@@ -1,9 +1,14 @@
+import { notFound } from "next/navigation"
+import { getCurrentAdmin } from "@/features/auth"
 import { getMaintenanceMode } from "@/features/settings/api/queries"
 import { MaintenanceToggle } from "./maintenance-toggle"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminSettingsPage() {
+  const admin = await getCurrentAdmin()
+  if (!admin || admin.role !== "admin") notFound()
+
   const isOn = await getMaintenanceMode()
 
   return (
