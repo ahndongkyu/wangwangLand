@@ -32,7 +32,7 @@ export default function MaintenancePage() {
 
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
           <p className="font-semibold">예상 완료 시간</p>
-          <p className="mt-0.5 text-base font-bold">2025년 5월 7일 (수) 오후 5시</p>
+          <p className="mt-0.5 text-base font-bold">2026년 5월 7일 (목) 오후 5시</p>
         </div>
 
         <div className="mt-6 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
