@@ -4,6 +4,7 @@ import { listNotices, MarkNoticesSeen } from "@/features/notices"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
+import { ScrollRestorer } from "@/shared/components/scroll-restorer"
 
 export const metadata: Metadata = {
   title: "공지사항",
@@ -33,6 +34,7 @@ export default async function NoticePage({
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
       <MarkNoticesSeen />
+      <ScrollRestorer />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">

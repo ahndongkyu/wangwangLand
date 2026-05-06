@@ -64,11 +64,19 @@ export default async function AdminDonationsPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">후원 관리</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          전체 <span className="font-semibold text-foreground">{total}</span>건
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground md:text-3xl">후원 관리</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            전체 <span className="font-semibold text-foreground">{total}</span>건
+          </p>
+        </div>
+        <Link
+          href="/admin/donations/new"
+          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          + 직접 등록
+        </Link>
       </header>
 
       {/* 통계 */}

@@ -118,6 +118,12 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
           <br />
           소중한 관심 진심으로 감사합니다 💕
         </p>
+        <a
+          href="/my/applications"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+        >
+          신청 내역 확인하기 →
+        </a>
       </div>
     )
   }

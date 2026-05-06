@@ -8,6 +8,7 @@ export {
   listNotices,
   getNotice,
   listRecentPublishedNotices,
+  getAdjacentNotices,
 } from "./api/queries"
 export type { RecentNoticeMeta } from "./types"
 export { createNotice, updateNotice, deleteNotice } from "./api/mutations"

@@ -3,12 +3,13 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Pencil } from "lucide-react"
 
-import { getAdoptionStory, StoryDeleteButton } from "@/features/stories"
+import { getAdoptionStory, getAdjacentStories, StoryDeleteButton } from "@/features/stories"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { ViewCounter } from "@/shared/components/view-counter"
+import { PostNavigation } from "@/shared/components/post-navigation"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -55,6 +56,10 @@ export default async function StoryDetailPage({
   ])
 
   if (!story) notFound()
+
+  const adjacent = story.published_at
+    ? await getAdjacentStories(id, story.published_at)
+    : { prev: null, next: null }
 
   const isStaff = profile?.role === "staff" || profile?.role === "admin"
   const isAuthor = profile?.id === story.created_by
@@ -123,6 +128,8 @@ export default async function StoryDetailPage({
       </article>
 
       <CommentSection postType="story" postId={story.id} />
+
+      <PostNavigation basePath="/stories" prev={adjacent.prev} next={adjacent.next} />
 
       {story.dog && (
         <div className="mt-10 rounded-lg border border-border bg-secondary/30 p-6 text-center">

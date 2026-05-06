@@ -5,6 +5,7 @@ export { DailyRowActions } from "./components/daily-row-actions"
 export {
   listDailyPosts,
   getDailyPost,
+  getAdjacentDailyPosts,
   listDailyPostsByUser,
   countDailyPostsByUser,
 } from "./api/queries"

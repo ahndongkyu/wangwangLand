@@ -3,11 +3,12 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Pin } from "lucide-react"
 
-import { getNotice, MarkNoticesSeen } from "@/features/notices"
+import { getNotice, getAdjacentNotices, MarkNoticesSeen } from "@/features/notices"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { ViewCounter } from "@/shared/components/view-counter"
+import { PostNavigation } from "@/shared/components/post-navigation"
 
 export const revalidate = 60
 
@@ -44,6 +45,10 @@ export default async function NoticeDetailPage({
   ])
 
   if (!notice) notFound()
+
+  const adjacent = notice.published_at
+    ? await getAdjacentNotices(id, notice.published_at)
+    : { prev: null, next: null }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -86,6 +91,8 @@ export default async function NoticeDetailPage({
       </article>
 
       <CommentSection postType="notice" postId={notice.id} />
+
+      <PostNavigation basePath="/notice" prev={adjacent.prev} next={adjacent.next} />
     </div>
   )
 }

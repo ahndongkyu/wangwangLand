@@ -138,7 +138,7 @@ export function AddressSearchInput({
             </header>
             <div className="flex-1 overflow-hidden">
               <DaumPostcodeEmbed
-                style={{ width: "100%", height: "470px" }}
+                style={{ width: "100%", height: "min(470px, calc(100dvh - 130px))" }}
                 onComplete={(data) => {
                   // 도로명 우선, 없으면 지번
                   const fullAddress = data.roadAddress || data.jibunAddress

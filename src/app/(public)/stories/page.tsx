@@ -5,6 +5,7 @@ import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { WriteButton } from "@/shared/components/write-button"
+import { ScrollRestorer } from "@/shared/components/scroll-restorer"
 import { stripHtml } from "@/shared/lib/utils"
 
 function excerpt(content: string | null | undefined, max = 80): string | null {
@@ -43,6 +44,7 @@ export default async function StoriesPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
+      <ScrollRestorer />
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground md:text-4xl">

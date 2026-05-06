@@ -106,6 +106,40 @@ export async function countAdoptionStoriesByUser(userId: string): Promise<number
   return count ?? 0
 }
 
+export interface AdjacentStory {
+  id: string
+  title: string
+}
+
+export async function getAdjacentStories(
+  currentId: string,
+  publishedAt: string
+): Promise<{ prev: AdjacentStory | null; next: AdjacentStory | null }> {
+  const supabase = await createClient()
+  const [olderRes, newerRes] = await Promise.all([
+    supabase
+      .from("adoption_stories")
+      .select("id, title")
+      .not("published_at", "is", null)
+      .neq("id", currentId)
+      .lt("published_at", publishedAt)
+      .order("published_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("adoption_stories")
+      .select("id, title")
+      .not("published_at", "is", null)
+      .neq("id", currentId)
+      .gt("published_at", publishedAt)
+      .order("published_at", { ascending: true })
+      .limit(1),
+  ])
+  return {
+    prev: (olderRes.data?.[0] as AdjacentStory | undefined) ?? null,
+    next: (newerRes.data?.[0] as AdjacentStory | undefined) ?? null,
+  }
+}
+
 export async function getAdoptionStory(
   id: string,
   { includeDrafts = false }: { includeDrafts?: boolean } = {}

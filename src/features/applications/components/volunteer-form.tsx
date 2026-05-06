@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import React, { useRef, useState, useTransition } from "react"
-import { ChevronLeft, ChevronRight, User, Users } from "lucide-react"
+import { ChevronLeft, User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
@@ -48,6 +48,10 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
   const [step, setStep] = useState(1)
   const formRef = useRef<HTMLFormElement>(null)
 
+  const [visitHour, setVisitHour] = useState("")
+  const [visitMinute, setVisitMinute] = useState("00")
+  const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
+
   const [partyType, setPartyType] = useState<"individual" | "group">("individual")
   const [hasMinor, setHasMinor] = useState(false)
   const [minorGuardian, setMinorGuardian] = useState(false)
@@ -66,6 +70,9 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
       const partySizeCheck = validatePartySize(String(fd.get("party_size") ?? "1"))
       if (!partySizeCheck.valid) { setError(partySizeCheck.error!); return }
       if (hasMinor && !minorGuardian) { setError("미성년자 참여 시 보호자 동의가 필요합니다."); return }
+    }
+    if (step === 2) {
+      if (!visitTime) { setError("방문 예정 시간을 선택해주세요."); return }
     }
     setStep(s => s + 1)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -114,6 +121,12 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
           <br />
           귀한 마음 감사합니다 💕
         </p>
+        <a
+          href="/my/applications"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
+        >
+          신청 내역 확인하기 →
+        </a>
       </div>
     )
   }
@@ -261,12 +274,31 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
             </p>
           </div>
 
-          <Field id="available_time" label="가능한 시간대" className="mt-3">
-            <Input
-              id="available_time"
-              name="available_time"
-              placeholder="예: 오전 10시 ~ 오후 2시"
-            />
+          <Field id="available_time" label="방문 예정 시간" required className="mt-3">
+            <div className="flex items-center gap-1.5">
+              <select
+                value={visitHour}
+                onChange={(e) => setVisitHour(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">시</option>
+                {Array.from({ length: 10 }, (_, i) => {
+                  const h = String(i + 9).padStart(2, "0")
+                  return <option key={h} value={h}>{i + 9}시</option>
+                })}
+              </select>
+              <select
+                value={visitMinute}
+                onChange={(e) => setVisitMinute(e.target.value)}
+                disabled={!visitHour}
+                className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-40"
+              >
+                {["00", "10", "20", "30", "40", "50"].map((m) => (
+                  <option key={m} value={m}>{m}분</option>
+                ))}
+              </select>
+            </div>
+            <input type="hidden" name="available_time" value={visitTime} />
           </Field>
 
           <fieldset className="mt-3 space-y-2">
@@ -341,7 +373,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
 
       {/* Error: always visible on desktop; on mobile only shown on current step */}
       {error && (
-        <p className={cn("text-sm text-destructive", step < 3 && "sm:block hidden")} role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       )}
@@ -356,8 +388,8 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
           <button type="button" onClick={() => router.back()} className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground">취소</button>
         )}
         {step < 3 ? (
-          <button type="button" onClick={handleNext} className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
-            다음 <ChevronRight className="size-4" />
+          <button type="button" onClick={handleNext} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+            다음
           </button>
         ) : (
           <button type="submit" disabled={pending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">

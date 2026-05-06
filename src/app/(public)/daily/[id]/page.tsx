@@ -3,12 +3,13 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Pencil } from "lucide-react"
 
-import { getDailyPost, DailyDeleteButton } from "@/features/daily"
+import { getDailyPost, getAdjacentDailyPosts, DailyDeleteButton } from "@/features/daily"
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { RoleBadge } from "@/shared/components/role-badge"
 import { ViewCounter } from "@/shared/components/view-counter"
+import { PostNavigation } from "@/shared/components/post-navigation"
 
 export const revalidate = 60
 
@@ -53,6 +54,8 @@ export default async function DailyDetailPage({
   ])
 
   if (!post) notFound()
+
+  const adjacent = await getAdjacentDailyPosts(id, post.posted_at)
 
   const isStaff = profile?.role === "staff" || profile?.role === "admin"
   const isAuthor = profile?.id === post.created_by
@@ -117,6 +120,8 @@ export default async function DailyDetailPage({
       )}
 
       <CommentSection postType="daily" postId={post.id} />
+
+      <PostNavigation basePath="/daily" prev={adjacent.prev} next={adjacent.next} />
     </div>
   )
 }

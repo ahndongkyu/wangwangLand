@@ -102,6 +102,80 @@ export async function createDonation(
   redirect(`/donate/register/done?id=${data.id}`)
 }
 
+/** 어드민: 직접 후원 내역 등록 (현장 전달 등) — 즉시 approved 처리 */
+export async function adminRegisterDonation(
+  formData: FormData
+): Promise<DonationMutationResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
+  const type = String(formData.get("type") ?? "cash") as DonationType
+  const amountRaw = String(formData.get("amount") ?? "").replace(/[^0-9]/g, "")
+  const amount = amountRaw ? Number(amountRaw) : null
+
+  const donor_name = String(formData.get("donor_name") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim()
+  const display_name = String(formData.get("display_name") ?? "").trim() || null
+  const is_anonymous = formData.get("is_anonymous") === "on"
+  const message = String(formData.get("message") ?? "").trim() || null
+  const donated_at = String(formData.get("donated_at") ?? "").trim()
+  const item_description = type === "goods"
+    ? String(formData.get("item_description") ?? "").trim() || null
+    : null
+  const item_quantity = type === "goods"
+    ? String(formData.get("item_quantity") ?? "").trim() || null
+    : null
+
+  // 유효성 검사
+  const nameCheck = validateOrgOrPersonName(donor_name)
+  if (!nameCheck.valid) return { error: nameCheck.error ?? "이름을 확인해주세요." }
+  if (!donated_at) return { error: "후원 일자를 입력해주세요." }
+  if (type === "cash") {
+    if (!amount || amount <= 0) return { error: "후원 금액을 입력해주세요." }
+  } else {
+    if (!item_description) return { error: "물품명을 입력해주세요." }
+  }
+  // 연락처: 어드민 직접 등록은 선택 사항
+  if (phone) {
+    const phoneCheck = validateKoreanPhone(phone)
+    if (!phoneCheck.valid) return { error: phoneCheck.error ?? "연락처 형식을 확인해주세요." }
+  }
+
+  const supabase = await createClient()
+  const now = new Date().toISOString()
+
+  const { data, error } = await supabase
+    .from("donations")
+    .insert({
+      type,
+      donor_name,
+      phone: phone || null,
+      email: null,
+      user_id: null,
+      display_name,
+      is_anonymous,
+      message,
+      amount: type === "cash" ? amount : null,
+      item_description,
+      item_quantity,
+      donated_at,
+      status: "approved",
+      approved_at: now,
+      approved_by: auth.userId,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    console.error("[adminRegisterDonation]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/donations")
+  revalidatePath("/donate")
+  redirect(`/admin/donations/${data.id}`)
+}
+
 /** 어드민: 검토중 → 승인 */
 export async function approveDonation(id: string): Promise<DonationMutationResult> {
   const auth = await requireAdmin()

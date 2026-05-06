@@ -84,6 +84,40 @@ export async function listRecentPublishedNotices(
   return (data ?? []) as RecentNoticeMeta[]
 }
 
+export interface AdjacentNotice {
+  id: string
+  title: string
+}
+
+export async function getAdjacentNotices(
+  currentId: string,
+  publishedAt: string
+): Promise<{ prev: AdjacentNotice | null; next: AdjacentNotice | null }> {
+  const supabase = await createClient()
+  const [olderRes, newerRes] = await Promise.all([
+    supabase
+      .from("notices")
+      .select("id, title")
+      .not("published_at", "is", null)
+      .neq("id", currentId)
+      .lt("published_at", publishedAt)
+      .order("published_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("notices")
+      .select("id, title")
+      .not("published_at", "is", null)
+      .neq("id", currentId)
+      .gt("published_at", publishedAt)
+      .order("published_at", { ascending: true })
+      .limit(1),
+  ])
+  return {
+    prev: (olderRes.data?.[0] as AdjacentNotice | undefined) ?? null,
+    next: (newerRes.data?.[0] as AdjacentNotice | undefined) ?? null,
+  }
+}
+
 export async function getNotice(
   id: string,
   { includeDrafts = false }: { includeDrafts?: boolean } = {}

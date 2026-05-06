@@ -81,6 +81,38 @@ export async function countDailyPostsByUser(userId: string): Promise<number> {
   return count ?? 0
 }
 
+export interface AdjacentDailyPost {
+  id: string
+  title: string
+}
+
+export async function getAdjacentDailyPosts(
+  currentId: string,
+  postedAt: string
+): Promise<{ prev: AdjacentDailyPost | null; next: AdjacentDailyPost | null }> {
+  const supabase = await createClient()
+  const [olderRes, newerRes] = await Promise.all([
+    supabase
+      .from("daily_posts")
+      .select("id, title")
+      .neq("id", currentId)
+      .lt("posted_at", postedAt)
+      .order("posted_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("daily_posts")
+      .select("id, title")
+      .neq("id", currentId)
+      .gt("posted_at", postedAt)
+      .order("posted_at", { ascending: true })
+      .limit(1),
+  ])
+  return {
+    prev: (olderRes.data?.[0] as AdjacentDailyPost | undefined) ?? null,
+    next: (newerRes.data?.[0] as AdjacentDailyPost | undefined) ?? null,
+  }
+}
+
 export async function getDailyPost(id: string): Promise<DailyPostWithAuthor | null> {
   const supabase = await createClient()
 

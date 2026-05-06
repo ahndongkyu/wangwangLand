@@ -6,6 +6,7 @@ export { StoryRowActions } from "./components/story-row-actions"
 export {
   listAdoptionStories,
   getAdoptionStory,
+  getAdjacentStories,
   listAdoptionStoriesByUser,
   countAdoptionStoriesByUser,
 } from "./api/queries"
