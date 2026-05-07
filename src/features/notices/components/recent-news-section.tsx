@@ -77,9 +77,6 @@ export function RecentNewsSection({ notices }: Props) {
         {/* 헤더 */}
         <header className="mb-7 flex items-end justify-between gap-4">
           <div>
-            <span className="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              📢 우리의 소식
-            </span>
             <h2
               id="news-heading"
               className="text-2xl font-bold text-foreground md:text-3xl"
