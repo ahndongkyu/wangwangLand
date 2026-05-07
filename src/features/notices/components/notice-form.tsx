@@ -78,6 +78,16 @@ export function NoticeForm({ notice }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
 
+      {/* 상단 저장 버튼 */}
+      <div className="flex items-center justify-end gap-2 border-b border-border pb-4">
+        <Link href="/admin/notices" className="text-sm text-muted-foreground hover:text-foreground">
+          취소
+        </Link>
+        <Button type="submit" disabled={pending}>
+          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        </Button>
+      </div>
+
       {/* 공지 유형 */}
       <div className="space-y-1.5">
         <Label htmlFor="notice_type">공지 유형</Label>

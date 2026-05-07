@@ -66,6 +66,17 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {returnTo && <input type="hidden" name="_returnTo" value={returnTo} />}
+
+      {/* 상단 저장 버튼 */}
+      <div className="flex items-center justify-end gap-2 border-b border-border pb-4">
+        <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
+          취소
+        </Link>
+        <Button type="submit" disabled={pending}>
+          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        </Button>
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
         <Input
