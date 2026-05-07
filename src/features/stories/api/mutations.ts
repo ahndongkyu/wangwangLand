@@ -162,6 +162,20 @@ export async function updateAdoptionStory(
   return { redirectTo: returnTo }
 }
 
+export async function bulkDeleteAdoptionStories(ids: string[]): Promise<{ error?: string }> {
+  if (!ids.length) return {}
+  const admin = createAdminClient()
+  const { error } = await admin.from("adoption_stories").delete().in("id", ids)
+  if (error) {
+    console.error("[bulkDeleteAdoptionStories]", error)
+    return { error: error.message }
+  }
+  revalidatePath("/admin/stories")
+  revalidatePath("/stories")
+  revalidatePath("/")
+  return {}
+}
+
 export async function deleteAdoptionStory(
   id: string
 ): Promise<StoryMutationResult> {

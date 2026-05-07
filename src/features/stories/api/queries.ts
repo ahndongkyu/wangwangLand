@@ -20,11 +20,15 @@ export interface ListStoriesOptions {
   offset?: number
   /** true면 임시저장까지 전부 반환 (어드민 전용). public 페이지에서는 false 유지. */
   includeDrafts?: boolean
+  /** "published" | "draft" | undefined (undefined = all) */
+  status?: "published" | "draft"
 }
 
 export interface PaginatedStories {
   stories: StoryWithDog[]
   total: number
+  publishedCount: number
+  draftCount: number
 }
 
 export async function listAdoptionStories({
@@ -32,6 +36,7 @@ export async function listAdoptionStories({
   limit = 12,
   offset = 0,
   includeDrafts = false,
+  status,
 }: ListStoriesOptions = {}): Promise<PaginatedStories> {
   const supabase = await createClient()
 
@@ -42,6 +47,11 @@ export async function listAdoptionStories({
     })
 
   if (includeDrafts) {
+    if (status === "published") {
+      query = query.not("published_at", "is", null)
+    } else if (status === "draft") {
+      query = query.is("published_at", null)
+    }
     query = query
       .order("created_at", { ascending: false })
       .order("id", { ascending: true })
@@ -58,11 +68,37 @@ export async function listAdoptionStories({
     query = query.ilike("title", `%${searchQuery.trim()}%`)
   }
 
+  if (includeDrafts) {
+    const [mainResult, publishedCountRes, draftCountRes] = await Promise.all([
+      query,
+      supabase.from("adoption_stories").select("*", { count: "exact", head: true }).not("published_at", "is", null),
+      supabase.from("adoption_stories").select("*", { count: "exact", head: true }).is("published_at", null),
+    ])
+
+    if (mainResult.error) {
+      console.error("[listAdoptionStories] error:", mainResult.error)
+      return { stories: [], total: 0, publishedCount: 0, draftCount: 0 }
+    }
+
+    const authorMap = await fetchAuthorMap((mainResult.data ?? []).map((s) => s.created_by))
+    const stories: StoryWithDog[] = (mainResult.data ?? []).map((s) => ({
+      ...(s as unknown as AdoptionStory & { dog: StoryDogRef | null }),
+      author: s.created_by ? (authorMap[s.created_by] ?? null) : null,
+    }))
+
+    return {
+      stories,
+      total: mainResult.count ?? 0,
+      publishedCount: publishedCountRes.count ?? 0,
+      draftCount: draftCountRes.count ?? 0,
+    }
+  }
+
   const { data, count, error } = await query
 
   if (error) {
     console.error("[listAdoptionStories] error:", error)
-    return { stories: [], total: 0 }
+    return { stories: [], total: 0, publishedCount: 0, draftCount: 0 }
   }
 
   const authorMap = await fetchAuthorMap((data ?? []).map((s) => s.created_by))
@@ -72,7 +108,7 @@ export async function listAdoptionStories({
     author: s.created_by ? (authorMap[s.created_by] ?? null) : null,
   }))
 
-  return { stories, total: count ?? 0 }
+  return { stories, total: count ?? 0, publishedCount: count ?? 0, draftCount: 0 }
 }
 
 /** 어드민 회원 상세에서 사용: 특정 user 의 입양후기 목록 (최근순, 임시저장 포함) */

@@ -138,6 +138,20 @@ export async function updateNotice(
   return { redirectTo: "/admin/notices" }
 }
 
+export async function bulkDeleteNotices(ids: string[]): Promise<{ error?: string }> {
+  if (!ids.length) return {}
+  const admin = createAdminClient()
+  const { error } = await admin.from("notices").delete().in("id", ids)
+  if (error) {
+    console.error("[bulkDeleteNotices]", error)
+    return { error: error.message }
+  }
+  revalidatePath("/admin/notices")
+  revalidatePath("/notice")
+  revalidatePath("/")
+  return {}
+}
+
 export async function deleteNotice(
   id: string
 ): Promise<NoticeMutationResult> {

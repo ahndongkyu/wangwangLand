@@ -8,17 +8,20 @@ export interface ListDailyOptions {
   query?: string
   limit?: number
   offset?: number
+  category?: string
 }
 
 export interface PaginatedDaily {
   posts: DailyPostWithAuthor[]
   total: number
+  publishedCount: number
 }
 
 export async function listDailyPosts({
   query: searchQuery,
   limit = 12,
   offset = 0,
+  category,
 }: ListDailyOptions = {}): Promise<PaginatedDaily> {
   const supabase = await createClient()
 
@@ -32,12 +35,15 @@ export async function listDailyPosts({
   if (searchQuery && searchQuery.trim()) {
     query = query.ilike("title", `%${searchQuery.trim()}%`)
   }
+  if (category && category.trim()) {
+    query = query.eq("category", category.trim())
+  }
 
   const { data, count, error } = await query
 
   if (error) {
     console.error("[listDailyPosts] error:", error)
-    return { posts: [], total: 0 }
+    return { posts: [], total: 0, publishedCount: 0 }
   }
 
   const authorMap = await fetchAuthorMap((data ?? []).map((p) => p.created_by))
@@ -47,7 +53,7 @@ export async function listDailyPosts({
     author: p.created_by ? (authorMap[p.created_by] ?? null) : null,
   }))
 
-  return { posts, total: count ?? 0 }
+  return { posts, total: count ?? 0, publishedCount: count ?? 0 }
 }
 
 /** 어드민 회원 상세에서 사용: 특정 user 의 일상 글 목록 (최근순) */

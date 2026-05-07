@@ -150,6 +150,20 @@ export async function updateDailyPost(
   return { redirectTo: returnTo }
 }
 
+export async function bulkDeleteDailyPosts(ids: string[]): Promise<{ error?: string }> {
+  if (!ids.length) return {}
+  const admin = createAdminClient()
+  const { error } = await admin.from("daily_posts").delete().in("id", ids)
+  if (error) {
+    console.error("[bulkDeleteDailyPosts]", error)
+    return { error: error.message }
+  }
+  revalidatePath("/admin/daily")
+  revalidatePath("/daily")
+  revalidatePath("/")
+  return {}
+}
+
 export async function deleteDailyPost(
   id: string
 ): Promise<DailyMutationResult> {

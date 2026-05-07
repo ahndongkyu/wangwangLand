@@ -14,11 +14,17 @@ export interface ListNoticesOptions {
   query?: string
   limit?: number
   offset?: number
+  /** "published" | "draft" | undefined (undefined = all) */
+  status?: "published" | "draft"
+  /** 카테고리 prefix (예: "공지", "이벤트") */
+  category?: string
 }
 
 export interface PaginatedNotices {
   notices: NoticeWithAuthor[]
   total: number
+  publishedCount: number
+  draftCount: number
 }
 
 export async function listNotices({
@@ -26,6 +32,8 @@ export async function listNotices({
   query: searchQuery,
   limit = 20,
   offset = 0,
+  status,
+  category,
 }: ListNoticesOptions = {}): Promise<PaginatedNotices> {
   const supabase = await createClient()
 
@@ -38,18 +46,50 @@ export async function listNotices({
     .order("id", { ascending: true })
     .range(offset, offset + limit - 1)
 
-  if (!includeDrafts) {
+  if (!includeDrafts || status === "published") {
     query = query.not("published_at", "is", null)
+  } else if (status === "draft") {
+    query = query.is("published_at", null)
   }
+
   if (searchQuery && searchQuery.trim()) {
     query = query.ilike("title", `%${searchQuery.trim()}%`)
+  }
+  if (category && category.trim()) {
+    query = query.ilike("title", `[${category.trim()}]%`)
+  }
+
+  if (includeDrafts) {
+    const [mainResult, publishedCountRes, draftCountRes] = await Promise.all([
+      query,
+      supabase.from("notices").select("*", { count: "exact", head: true }).not("published_at", "is", null),
+      supabase.from("notices").select("*", { count: "exact", head: true }).is("published_at", null),
+    ])
+
+    if (mainResult.error) {
+      console.error("[listNotices] error:", mainResult.error)
+      return { notices: [], total: 0, publishedCount: 0, draftCount: 0 }
+    }
+
+    const authorMap = await fetchAuthorMap((mainResult.data ?? []).map((n) => n.created_by))
+    const notices: NoticeWithAuthor[] = (mainResult.data ?? []).map((n) => ({
+      ...(n as unknown as Notice),
+      author: n.created_by ? (authorMap[n.created_by] ?? null) : null,
+    }))
+
+    return {
+      notices,
+      total: mainResult.count ?? 0,
+      publishedCount: publishedCountRes.count ?? 0,
+      draftCount: draftCountRes.count ?? 0,
+    }
   }
 
   const { data, count, error } = await query
 
   if (error) {
     console.error("[listNotices] error:", error)
-    return { notices: [], total: 0 }
+    return { notices: [], total: 0, publishedCount: 0, draftCount: 0 }
   }
 
   const authorMap = await fetchAuthorMap((data ?? []).map((n) => n.created_by))
@@ -59,7 +99,7 @@ export async function listNotices({
     author: n.created_by ? (authorMap[n.created_by] ?? null) : null,
   }))
 
-  return { notices, total: count ?? 0 }
+  return { notices, total: count ?? 0, publishedCount: count ?? 0, draftCount: 0 }
 }
 
 /**
