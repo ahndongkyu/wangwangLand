@@ -35,6 +35,11 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
         )}
       </div>
       <div className="p-4">
+        {post.category && (
+          <p className="mb-1.5 text-xs font-semibold text-primary/80">
+            {post.category}
+          </p>
+        )}
         <h3 className="line-clamp-2 text-base font-semibold text-foreground">
           {post.title}
         </h3>

@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 
 import { listNotices, MarkNoticesSeen } from "@/features/notices"
+import { fetchCommentCounts } from "@/features/comments"
 import { getCurrentProfile } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { ScrollRestorer } from "@/shared/components/scroll-restorer"
+import { NoticeTypeBadge, stripNoticePrefix } from "@/features/notices/components/notice-type-badge"
 
 export const metadata: Metadata = {
   title: "공지사항",
@@ -35,8 +37,9 @@ export default async function NoticePage({
   ])
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const isLoggedIn = !!profile
-  // 로그인 유저: DB 열람 시각 기준 / 비로그인: 2일 이내
   const noticesLastSeenAt = profile?.notices_last_seen_at ?? null
+
+  const commentCounts = await fetchCommentCounts("notice", notices.map((n) => n.id))
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
@@ -72,9 +75,11 @@ export default async function NoticePage({
             <li key={n.id} className={n.is_pinned ? "bg-primary/5" : undefined}>
               <PostListRow
                 href={`/notice/${n.id}`}
-                title={n.title}
+                title={stripNoticePrefix(n.title)}
+                badge={<NoticeTypeBadge title={n.title} />}
                 date={n.published_at}
                 viewCount={n.view_count}
+                commentCount={commentCounts[n.id] ?? 0}
                 pinned={n.is_pinned}
                 newAfter={noticesLastSeenAt}
                 newWithinDays={noticesLastSeenAt ? 0 : 2}

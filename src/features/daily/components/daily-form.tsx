@@ -8,7 +8,13 @@ import { RichTextEditor } from "@/shared/components/rich-text-editor"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import type { DailyPost } from "@/shared/types/database"
+import { cn } from "@/shared/lib/utils"
+import type { DailyPost, DailyCategory } from "@/shared/types/database"
+
+const DAILY_CATEGORIES: DailyCategory[] = ["구조 소식", "봉사 현장", "시설 안내"]
+
+const selectClass =
+  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 interface Props {
   post?: DailyPost
@@ -69,6 +75,21 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
           defaultValue={post?.title ?? ""}
           placeholder="예: 4.21.화 왕왕랜드 일상"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="category">카테고리</Label>
+        <select
+          id="category"
+          name="category"
+          defaultValue={post?.category ?? ""}
+          className={cn(selectClass, "max-w-[200px]")}
+        >
+          <option value="">— 없음 —</option>
+          {DAILY_CATEGORIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-1.5">

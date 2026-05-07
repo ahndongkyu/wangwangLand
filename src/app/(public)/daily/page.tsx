@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 
 import { listDailyPosts } from "@/features/daily"
 import { markDailySeenInDB } from "@/features/daily/api/mutations"
+import { fetchCommentCounts } from "@/features/comments"
+import { DailyCategoryBadge } from "@/features/daily/components/daily-category-badge"
 import { getCurrentProfile } from "@/features/members"
 import { MarkPageSeen } from "@/shared/components/mark-page-seen"
 import { Pagination } from "@/shared/components/pagination"
@@ -45,6 +47,8 @@ export default async function DailyPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const lastSeenAt = profile?.daily_last_seen_at ?? null
 
+  const commentCounts = await fetchCommentCounts("daily", posts.map((p) => p.id))
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
       <MarkPageSeen isLoggedIn={!!profile} action={markDailySeenInDB} />
@@ -83,11 +87,13 @@ export default async function DailyPage({
               <PostListRow
                 href={`/daily/${post.id}`}
                 title={post.title}
+                badge={<DailyCategoryBadge category={post.category} />}
                 thumbnail={post.images[0] ?? null}
                 excerpt={excerpt(post.content)}
                 author={post.author}
                 date={post.posted_at}
                 viewCount={post.view_count}
+                commentCount={commentCounts[post.id] ?? 0}
                 newAfter={lastSeenAt}
                 newWithinDays={lastSeenAt ? 0 : 2}
               />

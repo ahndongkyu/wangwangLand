@@ -22,6 +22,34 @@ export interface Comment {
 
 export type PostType = "notice" | "story" | "daily"
 
+/**
+ * 여러 게시글의 댓글 수를 한 번에 조회.
+ * 삭제된 댓글(is_deleted=true)은 제외.
+ */
+export async function fetchCommentCounts(
+  postType: PostType,
+  postIds: string[]
+): Promise<Record<string, number>> {
+  if (postIds.length === 0) return {}
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("comments")
+    .select("post_id")
+    .eq("post_type", postType)
+    .in("post_id", postIds)
+    .eq("is_deleted", false)
+
+  if (error) {
+    console.error("[fetchCommentCounts]", error)
+    return {}
+  }
+  const counts: Record<string, number> = {}
+  for (const row of data ?? []) {
+    counts[row.post_id] = (counts[row.post_id] ?? 0) + 1
+  }
+  return counts
+}
+
 export async function listComments(
   postType: PostType,
   postId: string

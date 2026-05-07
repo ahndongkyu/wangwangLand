@@ -65,6 +65,8 @@ export interface Notice {
   view_count: number
 }
 
+export type DailyCategory = "구조 소식" | "봉사 현장" | "시설 안내"
+
 export interface DailyPost {
   id: string
   title: string
@@ -74,6 +76,7 @@ export interface DailyPost {
   created_at: string
   created_by: string | null
   view_count: number
+  category: DailyCategory | null
 }
 
 export interface AdoptionStory {

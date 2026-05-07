@@ -14,6 +14,8 @@ interface Author {
 interface Props {
   href: string
   title: string
+  /** 제목 앞에 붙는 카테고리/타입 뱃지 (예: [이벤트]) */
+  badge?: React.ReactNode
   /** 우측 상단/제목 옆에 붙는 작은 라벨 (예: 입양 후기의 강아지 이름) */
   subTitle?: string
   /** 썸네일 이미지 URL (없으면 thumbnail 영역 숨김) */
@@ -24,6 +26,8 @@ interface Props {
   /** ISO 날짜. */
   date?: string | null
   viewCount?: number
+  /** 댓글 수. 0이면 숨김. */
+  commentCount?: number
   /** 공지 등 상단 고정 표시 */
   pinned?: boolean
   /** 우측에 표시할 상태 배지 (예: 공개/임시저장). 어드민 리스트에서 사용. */
@@ -50,12 +54,14 @@ function isNew(date: string | null | undefined, withinDays: number, after?: stri
 export function PostListRow({
   href,
   title,
+  badge,
   subTitle,
   thumbnail,
   excerpt,
   author,
   date,
   viewCount,
+  commentCount,
   pinned,
   statusBadge,
   newWithinDays = 0,
@@ -91,6 +97,7 @@ export function PostListRow({
             {pinned && thumbnail && (
               <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단 고정" />
             )}
+            {badge && <span className="shrink-0">{badge}</span>}
             {fresh && (
               <span className="animate-new-shine shrink-0 rounded-[3px] bg-primary px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-primary-foreground">
                 NEW
@@ -99,6 +106,11 @@ export function PostListRow({
             <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
               {title}
             </h3>
+            {commentCount != null && commentCount > 0 && (
+              <span className="shrink-0 text-sm font-semibold text-primary">
+                [{commentCount}]
+              </span>
+            )}
             {statusBadge && (
               <span className="shrink-0">{statusBadge}</span>
             )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { listAdoptionStories } from "@/features/stories"
 import { markStoriesSeenInDB } from "@/features/stories/api/mutations"
+import { fetchCommentCounts } from "@/features/comments"
 import { getCurrentProfile } from "@/features/members"
 import { MarkPageSeen } from "@/shared/components/mark-page-seen"
 import { Pagination } from "@/shared/components/pagination"
@@ -44,6 +45,8 @@ export default async function StoriesPage({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const lastSeenAt = profile?.stories_last_seen_at ?? null
+
+  const commentCounts = await fetchCommentCounts("story", stories.map((s) => s.id))
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-16">
@@ -89,12 +92,13 @@ export default async function StoriesPage({
                 <PostListRow
                   href={`/stories/${story.id}`}
                   title={story.title}
-                  subTitle={story.dog ? `${story.dog.name} 입양 후기` : undefined}
+                  subTitle={story.dog ? story.dog.name : undefined}
                   thumbnail={thumbnail}
                   excerpt={excerpt(story.content)}
                   author={story.author}
                   date={story.published_at}
                   viewCount={story.view_count}
+                  commentCount={commentCounts[story.id] ?? 0}
                   newAfter={lastSeenAt}
                   newWithinDays={lastSeenAt ? 0 : 2}
                 />

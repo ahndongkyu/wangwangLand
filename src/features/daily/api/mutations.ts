@@ -24,18 +24,21 @@ interface DailyInput {
   content: string
   posted_at: string | null
   images: string[]
+  category: string | null
 }
 
 function parseFormData(formData: FormData): DailyInput {
   const content = String(formData.get("content") ?? "")
   const images = extractImagesFromHtml(content)
   const postedAt = String(formData.get("posted_at") ?? "").trim()
+  const category = String(formData.get("category") ?? "").trim() || null
 
   return {
     title: String(formData.get("title") ?? "").trim(),
     content,
     posted_at: postedAt || null,
     images,
+    category,
   }
 }
 
@@ -86,6 +89,7 @@ export async function createDailyPost(
       images: input.images,
       posted_at: input.posted_at ?? new Date().toISOString(),
       created_by: user.id,
+      category: input.category,
     })
 
   if (error) {
@@ -133,6 +137,7 @@ export async function updateDailyPost(
       content: input.content || null,
       images: input.images,
       posted_at: input.posted_at ?? new Date().toISOString(),
+      category: input.category,
     })
     .eq("id", id)
 
