@@ -1,14 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
 import { MoreVertical, Pencil, Trash2 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
   editHref: string
   /** 서버 액션. bound ID를 포함해서 넘겨야 함: deleteNotice.bind(null, id) */
-  deleteAction: () => Promise<{ error?: string } | void>
+  deleteAction: () => Promise<{ error?: string } | undefined>
   /** 삭제 확인 메시지에 쓸 단위 레이블 (예: "공지", "일상", "후기") */
   label?: string
 }
@@ -19,7 +18,6 @@ interface Props {
  * 서버 컴포넌트 부모에서 `deleteAction={deleteXxx.bind(null, id)}` 형태로 넘길 것.
  */
 export function AdminPostActions({ editHref, deleteAction, label = "항목" }: Props) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [deleting, startDelete] = useTransition()
@@ -53,9 +51,13 @@ export function AdminPostActions({ editHref, deleteAction, label = "항목" }: P
     e.preventDefault()
     e.stopPropagation()
     startDelete(async () => {
-      await deleteAction()
+      const result = await deleteAction()
+      if (result?.error) {
+        alert(result.error)
+        return
+      }
       setOpen(false)
-      router.refresh()
+      window.location.reload()
     })
   }
 

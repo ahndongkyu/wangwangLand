@@ -4,7 +4,6 @@ import Image from "next/image"
 import { useRef, useState, useTransition } from "react"
 import { Loader2, Upload, X } from "lucide-react"
 
-import { createClient } from "@/shared/lib/supabase/client"
 import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import { cn } from "@/shared/lib/utils"
 
@@ -41,17 +40,18 @@ export function AnimalImageUploader({
   const isFull = remaining === 0
 
   async function uploadFile(file: File) {
-    const supabase = createClient()
-    const path = `${folder}/${crypto.randomUUID()}.jpg`
-    const { error: uploadError } = await supabase.storage
-      .from("public-images")
-      .upload(path, file, { cacheControl: "3600", upsert: false })
-    if (uploadError) {
-      setError(`업로드 실패: ${uploadError.message}`)
+    const filename = `${folder}/${crypto.randomUUID()}.jpg`
+    const res = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+      method: "POST",
+      body: file,
+    })
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "업로드 실패" }))
+      setError(`업로드 실패: ${error}`)
       return
     }
-    const { data } = supabase.storage.from("public-images").getPublicUrl(path)
-    setImages((prev) => [...prev, data.publicUrl].slice(0, maxImages))
+    const { url } = await res.json()
+    setImages((prev) => [...prev, url].slice(0, maxImages))
   }
 
   function handleCropDone(file: File, _previewUrl: string) {

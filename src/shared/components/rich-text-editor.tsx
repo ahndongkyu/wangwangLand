@@ -38,7 +38,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { compressImage } from "@/shared/lib/compress-image"
-import { createClient } from "@/shared/lib/supabase/client"
 import { useDraftSave } from "@/shared/hooks/use-draft-save"
 
 interface Props {
@@ -188,17 +187,19 @@ export function RichTextEditor({
           return
         }
 
-        const supabase = createClient()
         const ext = prepared.name.split(".").pop() ?? "jpg"
-        const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
-        const { error } = await supabase.storage
-          .from("public-images")
-          .upload(path, prepared, { cacheControl: "3600", upsert: false })
-
-        if (error) { alert(`이미지 업로드 실패: ${error.message}`); return }
-
-        const { data } = supabase.storage.from("public-images").getPublicUrl(path)
+        const res = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+          method: "POST",
+          body: prepared,
+        })
+        if (!res.ok) {
+          const { error } = await res.json().catch(() => ({ error: "업로드 실패" }))
+          alert(`이미지 업로드 실패: ${error}`)
+          return
+        }
+        const data = await res.json()
 
         // 모바일에서 file picker 거치며 lost된 selection 복원.
         // savedSelectionRef 는 onSelectionUpdate 에서 항상 최신값 유지.
@@ -211,7 +212,7 @@ export function RichTextEditor({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(editor.chain() as any)
           .focus(insertPos, { scrollIntoView: false })
-          .setImage({ src: data.publicUrl })
+          .setImage({ src: data.url })
           .createParagraphNear()
           .run()
       } finally {
