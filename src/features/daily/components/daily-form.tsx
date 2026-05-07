@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 
 import { createDailyPost, updateDailyPost } from "../api/mutations"
@@ -27,7 +26,6 @@ function toDateValue(iso?: string) {
 }
 
 export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(post)
@@ -54,7 +52,7 @@ export function DailyForm({ post, cancelHref = "/admin/daily", returnTo }: Props
       if (result?.error) {
         setError(result.error)
       } else if (result?.redirectTo) {
-        router.push(result.redirectTo)
+        window.location.href = result.redirectTo
       }
     })
   }
