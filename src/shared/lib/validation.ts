@@ -33,6 +33,40 @@ export const PHONE_HINT = "예: 010-1234-5678"
 
 // ─── 함수 ────────────────────────────────────────────────────────────────────
 
+/**
+ * 한국 전화번호를 하이픈 포함 형식으로 포맷.
+ * - 02-XXXX-XXXX (서울 유선)
+ * - 010/011/016~019-XXXX-XXXX (휴대폰, 3-4-4)
+ * - 0XX-XXX-XXXX (기타 지역, 3-3-4)
+ */
+export function formatKoreanPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (!digits) return ""
+
+  // 서울 유선: 02-XXXX-XXXX
+  if (digits.startsWith("02")) {
+    if (digits.length <= 2) return digits
+    if (digits.length <= 6) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+    return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6, 10)}`
+  }
+
+  // 휴대폰 (010/011/016/017/018/019): 3-4-4
+  const mobilePrefixes = ["010", "011", "016", "017", "018", "019"]
+  const isMobile = mobilePrefixes.some((p) => digits.startsWith(p))
+
+  if (digits.length <= 3) return digits
+
+  if (isMobile) {
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`
+  }
+
+  // 지역 유선 (031, 032 등): 3-3-4
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+}
+
 /** 한국 휴대폰/유선 번호: 숫자만 10~11자리, 0으로 시작. */
 export function validateKoreanPhone(phone: string): FieldValidation {
   const digits = phone.replace(/\D/g, "")

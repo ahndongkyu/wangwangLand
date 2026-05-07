@@ -8,11 +8,10 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import {
-  KOREAN_PHONE_PATTERN_RAW,
   NICKNAME_HINT,
   NICKNAME_PATTERN_RAW,
-  PHONE_HINT,
 } from "@/shared/lib/validation"
+import { PhoneInput } from "@/shared/components/phone-input"
 import type { Profile } from "../api/queries"
 
 interface Props {
@@ -121,18 +120,13 @@ export function ProfileForm({ profile }: Props) {
         <label htmlFor="phone" className="text-sm font-medium text-foreground">
           핸드폰번호 <span className="text-xs text-muted-foreground">(선택)</span>
         </label>
-        <Input
+        <PhoneInput
           id="phone"
           name="phone"
-          type="tel"
           defaultValue={profile.phone ?? ""}
-          pattern={KOREAN_PHONE_PATTERN_RAW}
-          title={PHONE_HINT}
-          placeholder="010-0000-0000"
-          inputMode="tel"
         />
         <p className="text-xs text-muted-foreground">
-          {PHONE_HINT} · 운영진만 확인합니다
+          예: 010-1234-5678 · 운영진만 확인합니다
         </p>
       </div>
 
