@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
@@ -35,7 +35,7 @@ const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export function NoticeForm({ notice }: Props) {
-  const [pending, startTransition] = useTransition()
+  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(notice)
   const isPublished = Boolean(notice?.published_at)
@@ -58,10 +58,10 @@ export function NoticeForm({ notice }: Props) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    setPending(true)
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
-    if (!isEdit) localStorage.removeItem("draft:admin:notices:new")
-    startTransition(async () => {
+    try {
       const result = isEdit && notice
         ? await updateNotice(notice.id, formData)
         : await createNotice(formData)
@@ -70,7 +70,9 @@ export function NoticeForm({ notice }: Props) {
       } else if (result?.redirectTo) {
         window.location.href = result.redirectTo
       }
-    })
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -143,7 +145,6 @@ export function NoticeForm({ notice }: Props) {
           placeholder="공지 본문을 입력하세요."
           folder="notices"
           onChange={(html) => { contentRef.current = html }}
-          draftKey={notice ? undefined : "draft:admin:notices:new"}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.

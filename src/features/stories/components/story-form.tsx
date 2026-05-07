@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState } from "react"
 
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
 import type { StoryWithDog } from "../api/queries"
@@ -25,7 +25,7 @@ interface Props {
 }
 
 export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
-  const [pending, startTransition] = useTransition()
+  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(story)
   const contentRef = useRef<string>(story?.content ?? "")
@@ -33,11 +33,10 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    setPending(true)
     const formData = new FormData(e.currentTarget)
-    // hidden input 대신 ref로 추적한 최신 콘텐츠를 직접 삽입
     formData.set("content", contentRef.current)
-    if (!isEdit) localStorage.removeItem("draft:admin:stories:new")
-    startTransition(async () => {
+    try {
       const result =
         isEdit && story
           ? await updateAdoptionStory(story.id, formData)
@@ -47,7 +46,9 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
       } else if (result?.redirectTo) {
         window.location.href = result.redirectTo
       }
-    })
+    } finally {
+      setPending(false)
+    }
   }
 
   return (
@@ -96,7 +97,6 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
           onChange={(html) => { contentRef.current = html }}
-          draftKey={story ? undefined : "draft:admin:stories:new"}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
