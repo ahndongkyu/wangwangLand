@@ -42,7 +42,7 @@ export default async function NoticePage({
   const commentCounts = await fetchCommentCounts("notice", notices.map((n) => n.id))
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <MarkNoticesSeen isLoggedIn={isLoggedIn} />
       <ScrollRestorer />
 
@@ -65,8 +65,8 @@ export default async function NoticePage({
           {activeQuery ? `'${activeQuery}' 검색 결과가 없습니다.` : "아직 등록된 공지가 없어요."}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[520px] text-sm">
+        <div className="rounded-lg border border-border bg-card">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <th className="px-4 py-3 text-left">제목</th>
