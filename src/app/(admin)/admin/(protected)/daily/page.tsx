@@ -15,9 +15,13 @@ export const dynamic = "force-dynamic"
 const PAGE_SIZE = 20
 
 const CATEGORY_FILTERS = [
+  { label: "일상", value: "일상" },
   { label: "구조 소식", value: "구조 소식" },
+  { label: "입소", value: "입소" },
+  { label: "임시보호", value: "임시보호" },
   { label: "봉사 현장", value: "봉사 현장" },
   { label: "시설 안내", value: "시설 안내" },
+  { label: "후원 소식", value: "후원 소식" },
 ]
 
 export default async function AdminDailyPage({
