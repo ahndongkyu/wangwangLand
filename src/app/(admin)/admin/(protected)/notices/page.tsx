@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { listNotices } from "@/features/notices"
 import { deleteNotice } from "@/features/notices/api/mutations"
+import { NoticeTypeBadge, stripNoticePrefix } from "@/features/notices/components/notice-type-badge"
 import { Pagination } from "@/shared/components/pagination"
 import { PostListRow } from "@/shared/components/post-list-row"
 import { AdminPostActions } from "@/shared/components/admin-post-actions"
@@ -62,7 +63,8 @@ export default async function AdminNoticesPage({
               <li key={n.id} className="relative">
                 <PostListRow
                   href={`/admin/notices/${n.id}/edit`}
-                  title={n.title}
+                  title={stripNoticePrefix(n.title)}
+                  badge={<NoticeTypeBadge title={n.title} />}
                   author={n.author}
                   date={n.created_at}
                   viewCount={n.view_count}
