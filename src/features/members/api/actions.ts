@@ -154,20 +154,22 @@ export async function updateProfile(
   // 아바타 업로드
   let avatarUrl: string | undefined
   if (avatarFile && avatarFile.size > 0) {
-    if (avatarFile.size > 3 * 1024 * 1024) {
-      return { error: "이미지는 3MB 이하만 가능합니다." }
+    if (avatarFile.size > 5 * 1024 * 1024) {
+      return { error: "이미지는 5MB 이하만 가능합니다." }
     }
-    const ext = avatarFile.name.split(".").pop() ?? "jpg"
-    const filename = `avatars/${user.id}/avatar.${ext}`
+    // 크롭 후 항상 image/jpeg로 변환되므로 확장자 jpg 고정
+    const filename = `avatars/${user.id}/avatar.jpg`
+    const contentType = avatarFile.type || "image/jpeg"
     try {
       const blob = await put(filename, avatarFile, {
         access: "public",
         allowOverwrite: true,
-        contentType: avatarFile.type,
+        contentType,
       })
       avatarUrl = blob.url
     } catch (e) {
-      return { error: `이미지 업로드에 실패했습니다: ${e instanceof Error ? e.message : String(e)}` }
+      console.error("[updateProfile] avatar upload failed:", e)
+      return { error: "이미지 업로드에 실패했습니다. 다시 시도해 주세요." }
     }
   }
 

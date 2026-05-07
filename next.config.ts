@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
+      // Vercel Blob (프로필 사진 등)
+      {
+        protocol: "https" as const,
+        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
 }
