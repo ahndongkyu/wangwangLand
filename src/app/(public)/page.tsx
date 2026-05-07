@@ -53,7 +53,7 @@ export default async function HomePage() {
       listDogsForHome(10),
       listCats({ status: "보호중", limit: 4 }),
       listDailyPosts({ limit: 3 }),
-      listAdoptionStories({ limit: 3 }),
+      listAdoptionStories({ limit: 4 }),
       getSiteStats(),
       listNotices({ limit: 4 }),
     ])
@@ -226,7 +226,7 @@ export default async function HomePage() {
                 전체 후기 →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
               {recentStories.map((story) => (
                 <StoryCard key={story.id} story={story} />
               ))}
