@@ -119,9 +119,9 @@ export async function updateNickname(
 
 /** 프로필 업데이트 — 닉네임 + 아바타 + 핸드폰번호 */
 export async function updateProfile(
-  _prev: { error: string | null; success?: boolean },
+  _prev: { error: string | null; success?: boolean; avatarUrl?: string | null },
   formData: FormData
-): Promise<{ error: string | null; success?: boolean }> {
+): Promise<{ error: string | null; success?: boolean; avatarUrl?: string | null }> {
   const nickname = (formData.get("nickname") as string | null)?.trim() ?? ""
   const phoneRaw = (formData.get("phone") as string | null)?.trim() ?? ""
   const avatarFile = formData.get("avatar") as File | null
@@ -157,13 +157,12 @@ export async function updateProfile(
     if (avatarFile.size > 5 * 1024 * 1024) {
       return { error: "이미지는 5MB 이하만 가능합니다." }
     }
-    // 크롭 후 항상 image/jpeg로 변환되므로 확장자 jpg 고정
-    const filename = `avatars/${user.id}/avatar.jpg`
+    // 타임스탬프로 매번 다른 URL 생성 → 캐시 무효화
+    const filename = `avatars/${user.id}/avatar-${Date.now()}.jpg`
     const contentType = avatarFile.type || "image/jpeg"
     try {
       const blob = await put(filename, avatarFile, {
         access: "public",
-        allowOverwrite: true,
         contentType,
       })
       avatarUrl = blob.url
@@ -184,8 +183,8 @@ export async function updateProfile(
   if (error) return { error: "저장에 실패했습니다." }
 
   revalidatePath("/profile")
-  revalidatePath("/")
-  return { error: null, success: true }
+  revalidatePath("/", "layout")
+  return { error: null, success: true, avatarUrl: avatarUrl ?? null }
 }
 
 /** 약관 재동의 — 기존 회원이 약관 미동의 또는 버전 불일치 시 동의 시각/버전 갱신 */

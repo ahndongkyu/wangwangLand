@@ -18,7 +18,7 @@ interface Props {
   profile: Profile
 }
 
-const initialState = { error: null as string | null, success: false }
+const initialState = { error: null as string | null, success: false, avatarUrl: null as string | null }
 
 export function ProfileForm({ profile }: Props) {
   const [state, action, pending] = useActionState(updateProfile, initialState)
@@ -50,7 +50,8 @@ export function ProfileForm({ profile }: Props) {
     return action(formData)
   }
 
-  const avatarSrc = preview ?? profile.avatar_url
+  // 저장 성공 시 서버에서 받은 새 URL로 즉시 교체
+  const avatarSrc = (state.success && state.avatarUrl) ? state.avatarUrl : (preview ?? profile.avatar_url)
 
   return (
     <>
