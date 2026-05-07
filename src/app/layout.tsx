@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Geist_Mono } from "next/font/google"
 
 import { ConfirmProvider } from "@/shared/components/confirm-dialog"
+import { OrganizationJsonLd, WebSiteJsonLd } from "@/shared/components/structured-data"
 import { ThemeProvider } from "@/shared/components/theme-provider"
 import { ToastProvider } from "@/shared/components/toast"
 import { SITE } from "@/shared/constants/site"
@@ -98,6 +99,9 @@ export default function RootLayout({
       <head>
         {/* 테마 깜빡임 방지 — React hydration 전에 실행 */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* 검색엔진 구조화 데이터 — 모든 페이지에서 단체 정보 인식 */}
+        <OrganizationJsonLd />
+        <WebSiteJsonLd />
       </head>
       <body className="min-h-full">
         <ThemeProvider>

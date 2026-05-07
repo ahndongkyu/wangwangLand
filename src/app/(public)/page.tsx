@@ -15,7 +15,6 @@ import {
   HeroCarousel,
   type HeroSlide,
 } from "@/shared/components/hero-carousel"
-import { OrganizationJsonLd, WebSiteJsonLd } from "@/shared/components/structured-data"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 import { getSiteStats } from "@/shared/lib/stats"
@@ -63,8 +62,6 @@ export default async function HomePage() {
 
   return (
     <>
-      <OrganizationJsonLd />
-      <WebSiteJsonLd />
       <HeroCarousel slides={HERO_SLIDES} interval={5000} autoPlayInitial />
 
       {/* 1. 미션 블록 */}
