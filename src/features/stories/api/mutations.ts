@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
@@ -184,7 +185,8 @@ export async function deleteAdoptionStory(
   const isStaff = profile.role === "staff" || profile.role === "admin"
   if (!isAuthor && !isStaff) return { error: "삭제 권한이 없습니다." }
 
-  const { error } = await supabase.from("adoption_stories").delete().eq("id", id)
+  const admin = createAdminClient()
+  const { error } = await admin.from("adoption_stories").delete().eq("id", id)
 
   if (error) {
     console.error("[deleteAdoptionStory]", error)

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 
 import { requireAdmin } from "@/shared/lib/auth"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { createClient } from "@/shared/lib/supabase/server"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
@@ -143,8 +144,8 @@ export async function deleteNotice(
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
 
-  const supabase = await createClient()
-  const { error } = await supabase.from("notices").delete().eq("id", id)
+  const admin = createAdminClient()
+  const { error } = await admin.from("notices").delete().eq("id", id)
 
   if (error) {
     console.error("[deleteNotice]", error)
