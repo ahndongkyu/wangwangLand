@@ -1,5 +1,6 @@
 "use server"
 
+import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -155,13 +156,17 @@ export async function updateProfile(
       return { error: "이미지는 3MB 이하만 가능합니다." }
     }
     const ext = avatarFile.name.split(".").pop() ?? "jpg"
-    const path = `${user.id}/avatar.${ext}`
-    const { error: uploadErr } = await supabase.storage
-      .from("avatars")
-      .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type })
-    if (uploadErr) return { error: `이미지 업로드에 실패했습니다: ${uploadErr.message}` }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path)
-    avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
+    const filename = `avatars/${user.id}/avatar.${ext}`
+    try {
+      const blob = await put(filename, avatarFile, {
+        access: "public",
+        allowOverwrite: true,
+        contentType: avatarFile.type,
+      })
+      avatarUrl = blob.url
+    } catch (e) {
+      return { error: `이미지 업로드에 실패했습니다: ${e instanceof Error ? e.message : String(e)}` }
+    }
   }
 
   const updates: Record<string, unknown> = {
