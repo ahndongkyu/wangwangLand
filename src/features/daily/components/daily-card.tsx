@@ -48,14 +48,14 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
             {stripHtml(post.content)}
           </p>
         )}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex flex-col gap-1">
           {post.author && (
-            <>
+            <div className="flex items-center gap-1.5">
               <RoleBadge role={post.author.role} />
-              <span className="text-xs text-muted-foreground">{post.author.nickname}</span>
-            </>
+              <span className="truncate text-xs text-muted-foreground">{post.author.nickname}</span>
+            </div>
           )}
-          <span className="ml-auto text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {new Date(post.posted_at).toLocaleDateString("ko-KR")}
           </span>
         </div>
