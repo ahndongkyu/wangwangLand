@@ -70,9 +70,9 @@ export default async function NoticePage({
             <thead>
               <tr className="border-b border-border bg-secondary/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <th className="px-4 py-3 text-left">제목</th>
-                <th className="hidden sm:table-cell px-4 py-3 text-left whitespace-nowrap">작성자</th>
-                <th className="px-4 py-3 text-left whitespace-nowrap">날짜</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">조회</th>
+                <th className="hidden sm:table-cell w-24 px-4 py-3 text-center whitespace-nowrap">작성자</th>
+                <th className="w-20 px-4 py-3 text-center whitespace-nowrap">날짜</th>
+                <th className="w-14 px-4 py-3 text-right whitespace-nowrap">조회</th>
               </tr>
             </thead>
             <tbody>
@@ -115,12 +115,12 @@ export default async function NoticePage({
                     </td>
 
                     {/* 작성자 */}
-                    <td className="hidden sm:table-cell px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-4 py-3 text-xs text-muted-foreground whitespace-nowrap text-center">
                       {n.author?.nickname ?? "—"}
                     </td>
 
                     {/* 날짜 */}
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap text-center">
                       {new Date(n.published_at ?? n.created_at).toLocaleDateString("ko-KR", {
                         month: "2-digit",
                         day: "2-digit",
