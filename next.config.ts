@@ -28,6 +28,23 @@ const nextConfig: NextConfig = {
         hostname: "*.public.blob.vercel-storage.com",
         pathname: "/**",
       },
+      // 카카오 CDN (카카오 로그인 프로필 사진)
+      {
+        protocol: "https" as const,
+        hostname: "*.kakaocdn.net",
+        pathname: "/**",
+      },
+      {
+        protocol: "http" as const,
+        hostname: "*.kakaocdn.net",
+        pathname: "/**",
+      },
+      // 구글 CDN (구글 로그인 프로필 사진)
+      {
+        protocol: "https" as const,
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 }
