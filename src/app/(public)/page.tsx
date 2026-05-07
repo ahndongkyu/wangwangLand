@@ -226,7 +226,7 @@ export default async function HomePage() {
                 전체 후기 →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
               {recentStories.map((story) => (
                 <StoryCard key={story.id} story={story} />
               ))}
