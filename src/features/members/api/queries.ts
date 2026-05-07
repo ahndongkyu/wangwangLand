@@ -37,6 +37,9 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 export interface PaginatedProfiles {
   profiles: Profile[]
   total: number
+  pendingCount: number
+  approvedCount: number
+  rejectedCount: number
 }
 
 /** 어드민 상세 페이지용: 특정 회원의 프로필 + 이메일(auth.users 에서 조회) */
@@ -116,11 +119,23 @@ export async function listProfiles({
 
   query = query.range(offset, offset + limit - 1)
 
-  const { data, count, error } = await query
+  const [{ data, count, error }, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+    query,
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+  ])
+
   if (error) {
     console.error("[listProfiles]", error)
-    return { profiles: [], total: 0 }
+    return { profiles: [], total: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0 }
   }
 
-  return { profiles: (data ?? []) as Profile[], total: count ?? 0 }
+  return {
+    profiles: (data ?? []) as Profile[],
+    total: count ?? 0,
+    pendingCount: pendingRes.count ?? 0,
+    approvedCount: approvedRes.count ?? 0,
+    rejectedCount: rejectedRes.count ?? 0,
+  }
 }

@@ -46,6 +46,8 @@ export function MemberRowActions({
   const toast = useToast()
   const moreRef = useRef<HTMLDivElement>(null)
 
+  const isPending = status === "pending"
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setOpen(false)
@@ -71,6 +73,17 @@ export function MemberRowActions({
       } else {
         if (status !== "approved") setStatus("approved")
         toast.success(`${ROLE_LABEL[nextRole]}으로 변경했습니다.`)
+      }
+    })
+  }
+
+  function handleApprove() {
+    startTransition(async () => {
+      const result = await approveMember(profile.id, role)
+      if (result.error) toast.error(`실패: ${result.error}`)
+      else {
+        setStatus("approved")
+        toast.success("승인했습니다.")
       }
     })
   }
@@ -114,13 +127,22 @@ export function MemberRowActions({
   }
 
   return (
-    <tr className={cn("border-b border-border last:border-0", isBanned && "opacity-60")}>
+    <tr
+      className={cn(
+        "border-b border-border last:border-0 transition-colors",
+        isBanned && "opacity-60",
+        isPending
+          ? "bg-amber-50/60 dark:bg-amber-950/15 hover:bg-amber-50 dark:hover:bg-amber-950/25"
+          : "hover:bg-secondary/20"
+      )}
+    >
       {/* 번호 */}
       {num !== undefined && (
         <td className="px-4 py-3 text-center text-xs text-muted-foreground">
           {num}
         </td>
       )}
+
       {/* 닉네임 */}
       <td className="px-4 py-3">
         <Link
@@ -145,10 +167,23 @@ export function MemberRowActions({
         </Link>
       </td>
 
+      {/* 전화번호 */}
+      <td className="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell whitespace-nowrap">
+        {profile.phone ?? "—"}
+      </td>
+
       {/* 상태 */}
-      <td className="px-4 py-3">
-        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", STATUS_COLOR[status])}>
-          {STATUS_LABEL[status]}
+      <td className="px-4 py-3 whitespace-nowrap">
+        <span className="inline-flex items-center gap-1.5">
+          {isPending && (
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+            </span>
+          )}
+          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold", STATUS_COLOR[status])}>
+            {STATUS_LABEL[status]}
+          </span>
         </span>
       </td>
 
@@ -172,14 +207,36 @@ export function MemberRowActions({
       </td>
 
       {/* 가입일 */}
-      <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+      <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell whitespace-nowrap">
         {new Date(profile.created_at).toLocaleDateString("ko-KR")}
       </td>
 
       {/* 작업 */}
       <td className="px-4 py-3 text-right">
         <div className="flex items-center justify-end gap-1">
-          {/* 차단 / 해제 버튼 */}
+          {/* 대기 중: 인라인 승인/거절 */}
+          {isPending && (
+            <>
+              <button
+                type="button"
+                onClick={handleApprove}
+                disabled={pending}
+                className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                승인
+              </button>
+              <button
+                type="button"
+                onClick={handleReject}
+                disabled={pending}
+                className="rounded-md bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
+              >
+                거절
+              </button>
+            </>
+          )}
+
+          {/* 승인됨: 차단/해제 버튼 */}
           {status === "approved" && (
             <button
               type="button"
@@ -196,65 +253,46 @@ export function MemberRowActions({
             </button>
           )}
 
-          {/* 더보기 */}
-          <div ref={moreRef} className="relative inline-block">
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              disabled={pending}
-              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
-              aria-label="더보기"
-            >
-              <MoreHorizontal className="size-4" />
-            </button>
+          {/* 더보기 (대기가 아닌 경우) */}
+          {!isPending && (
+            <div ref={moreRef} className="relative inline-block">
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                disabled={pending}
+                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+                aria-label="더보기"
+              >
+                <MoreHorizontal className="size-4" />
+              </button>
 
-            {open && (
-              <div className="absolute right-0 top-9 z-[100] min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-                {/* 대기 중 */}
-                {status === "pending" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => { setOpen(false); handleRoleChange(role) }}
-                      className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary"
-                    >
-                      승인
-                    </button>
-                    <div className="mx-2 my-1 border-t border-border" />
+              {open && (
+                <div className="absolute right-0 top-9 z-[100] min-w-[160px] overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+                  {/* 승인됨 */}
+                  {status === "approved" && (
                     <button
                       type="button"
                       onClick={handleReject}
                       className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
                     >
-                      거절
+                      거절로 변경
                     </button>
-                  </>
-                )}
+                  )}
 
-                {/* 승인됨 */}
-                {status === "approved" && (
-                  <button
-                    type="button"
-                    onClick={handleReject}
-                    className="flex w-full items-center px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
-                  >
-                    거절로 변경
-                  </button>
-                )}
-
-                {/* 거절됨 */}
-                {status === "rejected" && (
-                  <button
-                    type="button"
-                    onClick={handleReApprove}
-                    className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary"
-                  >
-                    재승인
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+                  {/* 거절됨 */}
+                  {status === "rejected" && (
+                    <button
+                      type="button"
+                      onClick={handleReApprove}
+                      className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary"
+                    >
+                      재승인
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </td>
     </tr>

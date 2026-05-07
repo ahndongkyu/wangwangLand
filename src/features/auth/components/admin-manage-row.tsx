@@ -69,7 +69,7 @@ export function AdminManageRow({ profile, currentProfileId }: Props) {
   }
 
   return (
-    <tr className="border-b border-border last:border-0">
+    <tr className={cn("border-b border-border last:border-0 transition-colors", isSelf ? "bg-primary/5" : "hover:bg-secondary/20")}>
       {/* 아바타 + 닉네임 */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">

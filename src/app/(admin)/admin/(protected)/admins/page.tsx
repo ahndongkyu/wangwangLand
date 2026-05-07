@@ -20,53 +20,50 @@ export default async function AdminAdminsPage() {
     .order("created_at", { ascending: true })
 
   const list = (staffList ?? []) as Profile[]
-  const topAdminCount = list.filter((p) => p.role === "admin").length
+  const adminCount = list.filter((p) => p.role === "admin").length
+  const staffCount = list.filter((p) => p.role === "staff").length
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 md:px-6">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">운영진 관리</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          역할 변경과 제거가 가능합니다. 관리자는 최소 1명 이상 유지되어야 합니다.
-        </p>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">운영진 관리</h1>
+          <div className="mt-1.5 flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">전체 {list.length}명</span>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              관리자 {adminCount}
+            </span>
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+              운영진 {staffCount}
+            </span>
+          </div>
+        </div>
       </header>
 
-      <section className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
-        <p className="font-semibold text-foreground">권한 요약</p>
-        <ul className="mt-2 space-y-1 text-muted-foreground">
-          <li>
-            <span className="font-semibold text-foreground">관리자</span> —
-            컨텐츠 작성·수정·삭제, 신청 관리, 운영진 관리 전부 가능
-          </li>
-          <li>
-            <span className="font-semibold text-foreground">운영진</span> —
-            컨텐츠 작성·수정, 신청 상태 변경 가능. 삭제·운영진 관리는 불가
-          </li>
-        </ul>
-      </section>
-
-      <section className="mb-6 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
-        <p className="font-semibold text-foreground">신규 운영진 추가</p>
-        <p className="mt-1 leading-relaxed">
-          카카오로 가입한 회원을 운영진으로 추가하려면:
-          <br />
-          1) 회원 관리 페이지에서 해당 회원 찾기
-          <br />
-          2) 역할을 <span className="font-semibold text-foreground">운영진</span> 또는{" "}
-          <span className="font-semibold text-foreground">관리자</span>로 변경
-          <br />
-          → 변경 즉시 이 페이지에 표시되며 관리자 페이지 접근이 가능해집니다.
-        </p>
-      </section>
+      {/* 안내 박스 (압축) */}
+      <div className="mb-6 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground space-y-3">
+        <div>
+          <span className="font-semibold text-foreground">권한 요약 — </span>
+          <span className="font-semibold text-foreground">관리자</span>
+          {": "}컨텐츠·신청·운영진 관리 전부 가능 ·{" "}
+          <span className="font-semibold text-foreground">운영진</span>
+          {": "}컨텐츠 작성·수정, 신청 상태 변경 가능 (삭제·운영진 관리 불가)
+        </div>
+        <div>
+          <span className="font-semibold text-foreground">신규 추가 — </span>
+          회원 관리에서 해당 회원의 역할을 <span className="font-semibold text-foreground">운영진</span> 또는{" "}
+          <span className="font-semibold text-foreground">관리자</span>로 변경하면 즉시 이 페이지에 표시됩니다.
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full min-w-[480px]">
-          <thead className="border-b border-border bg-secondary/40 text-left text-sm">
+          <thead className="border-b border-border bg-secondary/30 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-3 font-semibold">닉네임</th>
-              <th className="px-4 py-3 font-semibold">역할</th>
-              <th className="hidden px-4 py-3 font-semibold md:table-cell">가입일</th>
-              <th className="px-4 py-3 text-right font-semibold">작업</th>
+              <th className="px-4 py-3">닉네임</th>
+              <th className="px-4 py-3">역할</th>
+              <th className="hidden px-4 py-3 md:table-cell">가입일</th>
+              <th className="px-4 py-3 text-right">작업</th>
             </tr>
           </thead>
           <tbody>
@@ -83,10 +80,6 @@ export default async function AdminAdminsPage() {
           </tbody>
         </table>
       </div>
-
-      <p className="mt-4 text-xs text-muted-foreground">
-        관리자 {topAdminCount}명 · 전체 {list.length}명
-      </p>
     </div>
   )
 }
