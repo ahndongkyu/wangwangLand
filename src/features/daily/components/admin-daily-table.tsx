@@ -95,6 +95,7 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
               <th className="px-3 py-3 text-left">카테고리</th>
               <th className="px-3 py-3 text-left">제목</th>
               <th className="px-3 py-3 text-left">상태</th>
+              <th className="hidden sm:table-cell px-3 py-3 text-left">작성자</th>
               <th className="px-3 py-3 text-left">작성일</th>
               <th className="w-10 px-3 py-3" />
             </tr>
@@ -156,6 +157,9 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
                       <span className="inline-block size-2 rounded-full bg-green-500" />
                       <span className="text-xs text-green-700 dark:text-green-400">공개</span>
                     </span>
+                  </td>
+                  <td className="hidden sm:table-cell px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                    {p.author?.nickname ?? "—"}
                   </td>
                   <td className="px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
                     {new Date(p.posted_at).toLocaleDateString("ko-KR")}

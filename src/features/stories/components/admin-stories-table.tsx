@@ -94,6 +94,7 @@ export function AdminStoriesTable({ stories, deleteAction, bulkDeleteAction }: P
               <th className="px-3 py-3 text-left">강아지</th>
               <th className="px-3 py-3 text-left">제목</th>
               <th className="px-3 py-3 text-left">상태</th>
+              <th className="hidden sm:table-cell px-3 py-3 text-left">작성자</th>
               <th className="px-3 py-3 text-left">작성일</th>
               <th className="w-10 px-3 py-3" />
             </tr>
@@ -172,6 +173,9 @@ export function AdminStoriesTable({ stories, deleteAction, bulkDeleteAction }: P
                         임시저장
                       </span>
                     )}
+                  </td>
+                  <td className="hidden sm:table-cell px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                    {s.author?.nickname ?? "—"}
                   </td>
                   <td className="px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
                     {new Date(s.created_at).toLocaleDateString("ko-KR")}
