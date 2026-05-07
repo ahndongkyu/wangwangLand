@@ -52,7 +52,7 @@ export default async function HomePage() {
     await Promise.all([
       listDogsForHome(10),
       listCats({ status: "보호중", limit: 4 }),
-      listDailyPosts({ limit: 3 }),
+      listDailyPosts({ limit: 4 }),
       listAdoptionStories({ limit: 4 }),
       getSiteStats(),
       listNotices({ limit: 4 }),
@@ -257,7 +257,7 @@ export default async function HomePage() {
                 전체 보기 →
               </Link>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
               {recentDaily.map((post) => (
                 <DailyCard key={post.id} post={post} />
               ))}
