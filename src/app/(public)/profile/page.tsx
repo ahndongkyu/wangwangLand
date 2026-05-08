@@ -2,7 +2,6 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import { getCurrentProfile } from "@/features/members"
 import { ProfileForm } from "@/features/members/components/profile-form"
-import { PushSubscribeButton } from "@/features/push"
 
 export const metadata: Metadata = { title: "프로필 설정" }
 
@@ -42,16 +41,6 @@ export default async function ProfilePage() {
         <ProfileForm profile={profile} />
       </div>
 
-      {/* 푸시 알림 설정 */}
-      <div className="mt-4 w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <h2 className="text-base font-semibold text-foreground">푸시 알림</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          새 공지·일상이 올라오면 알려드려요. iOS는 홈 화면에 추가한 후 사용 가능합니다.
-        </p>
-        <div className="mt-4">
-          <PushSubscribeButton />
-        </div>
-      </div>
     </div>
   )
 }

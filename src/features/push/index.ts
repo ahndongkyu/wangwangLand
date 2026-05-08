@@ -2,3 +2,4 @@ export { subscribePush, unsubscribePush, sendPushToAll, sendPushSystem } from ".
 export type { PushPayload } from "./api/actions"
 export { PushSubscribeButton } from "./components/push-subscribe-button"
 export { ServiceWorkerRegister } from "./components/sw-register"
+export { AutoPushPrompt } from "./components/auto-push-prompt"

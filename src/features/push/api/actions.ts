@@ -126,14 +126,28 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
   return { sent, failed }
 }
 
-/** 시스템 자동 발송 (서버 액션 내부에서 호출. 운영진 권한 체크 없음) */
+/** 시스템 자동 발송 (서버 액션 내부에서 호출. 운영진 권한 체크 없음).
+ *  마케팅 수신 동의(profiles.marketing_agreed_at IS NOT NULL)한 회원에게만 발송.
+ */
 export async function sendPushSystem(payload: PushPayload): Promise<void> {
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return
 
   const admin = createAdminClient()
+
+  // 마케팅 동의한 사용자 ID 조회
+  const { data: optedIn } = await admin
+    .from("profiles")
+    .select("id")
+    .not("marketing_agreed_at", "is", null)
+  const allowedUserIds = new Set((optedIn ?? []).map((r) => r.id))
+
+  if (allowedUserIds.size === 0) return
+
+  // 동의자의 구독만 가져오기
   const { data: subs } = await admin
     .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth")
+    .select("id, endpoint, p256dh, auth, user_id")
+    .in("user_id", Array.from(allowedUserIds))
   if (!subs || subs.length === 0) return
 
   const expiredIds: string[] = []
