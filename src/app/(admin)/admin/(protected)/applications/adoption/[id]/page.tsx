@@ -86,17 +86,12 @@ export default async function AdoptionApplicationDetailPage({
               })}{" "}
               제출
             </span>
-            <span>·</span>
-            {isMember ? (
-              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                회원
-              </span>
-            ) : (
-              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                비회원
-              </span>
-            )}
           </p>
+          {app.status !== "접수" && (
+            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-300">
+              ℹ️ 이 신청은 이미 <span className="font-semibold">{app.status}</span> 처리되었어요.
+            </div>
+          )}
         </div>
 
         {/* 빠른 연락 버튼 */}

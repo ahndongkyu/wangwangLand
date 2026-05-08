@@ -90,6 +90,19 @@ export async function submitAdoptionApplication(
     return { error: `신청 실패: ${error.message}` }
   }
 
+  // 운영진에게 푸시 알림
+  try {
+    const { sendPushToStaff } = await import("@/features/push")
+    await sendPushToStaff({
+      title: "🐶 새 입양 신청",
+      body: `${applicant_name}님이 입양을 신청했어요`,
+      url: `/admin/applications/adoption/${data.id}`,
+      tag: `adoption-app-${data.id}`,
+    })
+  } catch (e) {
+    console.error("[push adoption-app]", e)
+  }
+
   return { id: data.id }
 }
 
@@ -152,6 +165,19 @@ export async function submitVolunteerApplication(
     return { error: `신청 실패: ${error.message}` }
   }
 
+  // 운영진에게 푸시 알림
+  try {
+    const { sendPushToStaff } = await import("@/features/push")
+    await sendPushToStaff({
+      title: "🙋 새 봉사 신청",
+      body: `${applicant_name}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
+      url: `/admin/applications/volunteer/${data.id}`,
+      tag: `volunteer-app-${data.id}`,
+    })
+  } catch (e) {
+    console.error("[push volunteer-app]", e)
+  }
+
   return { id: data.id }
 }
 
@@ -200,11 +226,53 @@ export async function updateAdoptionApplication(
       post_id: id,
       actor_id: null,
     })
+
+    // 푸시 알림
+    try {
+      const { sendPushToUser } = await import("@/features/push")
+      await sendPushToUser(
+        {
+          title: pushTitleForStatus(status, "입양"),
+          body: pushBodyForStatus(status),
+          url: "/my/applications",
+          tag: `adoption-status-${id}`,
+        },
+        prev.created_by
+      )
+    } catch (e) {
+      console.error("[push adoption-status]", e)
+    }
   }
 
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/adoption/${id}`)
   return { id }
+}
+
+function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"): string {
+  switch (status) {
+    case "승인":
+      return `✅ ${kind} 신청 승인`
+    case "반려":
+      return `❌ ${kind} 신청 반려`
+    case "검토중":
+      return `🔍 ${kind} 신청 검토중`
+    default:
+      return `📩 ${kind} 신청 상태 변경`
+  }
+}
+
+function pushBodyForStatus(status: ApplicationStatus): string {
+  switch (status) {
+    case "승인":
+      return "신청이 승인되었어요. 자세한 내용은 신청 내역에서 확인해주세요."
+    case "반려":
+      return "신청이 반려되었어요. 사유는 신청 내역에서 확인해주세요."
+    case "검토중":
+      return "신청이 검토 중입니다."
+    default:
+      return "신청 상태가 변경되었어요."
+  }
 }
 
 function notificationTypeForStatus(status: ApplicationStatus): string {
@@ -262,6 +330,22 @@ export async function updateVolunteerApplication(
       post_id: id,
       actor_id: null,
     })
+
+    // 푸시 알림
+    try {
+      const { sendPushToUser } = await import("@/features/push")
+      await sendPushToUser(
+        {
+          title: pushTitleForStatus(status, "봉사"),
+          body: pushBodyForStatus(status),
+          url: "/my/applications",
+          tag: `volunteer-status-${id}`,
+        },
+        prev.created_by
+      )
+    } catch (e) {
+      console.error("[push volunteer-status]", e)
+    }
   }
 
   // 승인 시 캘린더 자동 등록 (또는 기존 이벤트 시간 수정)

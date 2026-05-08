@@ -126,28 +126,54 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
   return { sent, failed }
 }
 
-/** 시스템 자동 발송 (서버 액션 내부에서 호출. 운영진 권한 체크 없음).
- *  마케팅 수신 동의(profiles.marketing_agreed_at IS NOT NULL)한 회원에게만 발송.
- */
-export async function sendPushSystem(payload: PushPayload): Promise<void> {
+interface SendOptions {
+  /** 제외할 사용자 ID 목록 (작성자 제외 등) */
+  excludeUserIds?: string[]
+  /** 특정 사용자에게만 발송 (지정 시 다른 조건은 모두 무시) */
+  onlyUserIds?: string[]
+  /** 마케팅 동의 필터를 건너뛸지 (기본 false). 신청 상태 변경처럼 본인에게 보내는 알림은 true. */
+  ignoreMarketingConsent?: boolean
+}
+
+/** 내부 공통 발송기 — 조건에 맞는 endpoint들에 푸시 발송 + 만료된 endpoint 정리 */
+async function sendPushInternal(
+  payload: PushPayload,
+  options: SendOptions = {}
+): Promise<void> {
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return
 
   const admin = createAdminClient()
 
-  // 마케팅 동의한 사용자 ID 조회
-  const { data: optedIn } = await admin
-    .from("profiles")
-    .select("id")
-    .not("marketing_agreed_at", "is", null)
-  const allowedUserIds = new Set((optedIn ?? []).map((r) => r.id))
+  // 발송 대상 user_id 결정
+  let targetUserIds: string[] | null = null
 
-  if (allowedUserIds.size === 0) return
+  if (options.onlyUserIds && options.onlyUserIds.length > 0) {
+    targetUserIds = options.onlyUserIds
+  } else if (!options.ignoreMarketingConsent) {
+    // 마케팅 동의자만
+    const { data: optedIn } = await admin
+      .from("profiles")
+      .select("id")
+      .not("marketing_agreed_at", "is", null)
+    targetUserIds = (optedIn ?? []).map((r) => r.id)
+  }
 
-  // 동의자의 구독만 가져오기
-  const { data: subs } = await admin
+  // 제외 사용자 필터
+  if (targetUserIds && options.excludeUserIds && options.excludeUserIds.length > 0) {
+    const excludeSet = new Set(options.excludeUserIds)
+    targetUserIds = targetUserIds.filter((id) => !excludeSet.has(id))
+  }
+
+  if (targetUserIds && targetUserIds.length === 0) return
+
+  // 구독 조회
+  let query = admin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth, user_id")
-    .in("user_id", Array.from(allowedUserIds))
+  if (targetUserIds) {
+    query = query.in("user_id", targetUserIds)
+  }
+  const { data: subs } = await query
   if (!subs || subs.length === 0) return
 
   const expiredIds: string[] = []
@@ -174,4 +200,49 @@ export async function sendPushSystem(payload: PushPayload): Promise<void> {
   if (expiredIds.length > 0) {
     await admin.from("push_subscriptions").delete().in("id", expiredIds)
   }
+}
+
+/** 시스템 자동 발송 (마케팅 동의자 전체, 작성자 제외 가능) */
+export async function sendPushSystem(
+  payload: PushPayload,
+  excludeUserId?: string | null
+): Promise<void> {
+  await sendPushInternal(payload, {
+    excludeUserIds: excludeUserId ? [excludeUserId] : undefined,
+  })
+}
+
+/** 운영진(admin/staff) 전체에게 발송 — 새 신청 알림 등에 사용 (마케팅 동의 무관) */
+export async function sendPushToStaff(
+  payload: PushPayload,
+  excludeUserId?: string | null
+): Promise<void> {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return
+
+  const admin = createAdminClient()
+  const { data: staff } = await admin
+    .from("profiles")
+    .select("id")
+    .in("role", ["admin", "staff"])
+
+  const ids = (staff ?? [])
+    .map((r) => r.id)
+    .filter((id) => id !== excludeUserId)
+  if (ids.length === 0) return
+
+  await sendPushInternal(payload, {
+    onlyUserIds: ids,
+    ignoreMarketingConsent: true,
+  })
+}
+
+/** 특정 회원 한 명에게 발송 — 신청 상태 변경 알림 등 (마케팅 동의 무관) */
+export async function sendPushToUser(
+  payload: PushPayload,
+  userId: string
+): Promise<void> {
+  await sendPushInternal(payload, {
+    onlyUserIds: [userId],
+    ignoreMarketingConsent: true,
+  })
 }

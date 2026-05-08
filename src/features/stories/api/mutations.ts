@@ -86,7 +86,7 @@ export async function createAdoptionStory(
   const profile = await getApprovedProfile(supabase, user.id)
   if (!profile) return { error: "권한이 없습니다." }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("adoption_stories")
     .insert({
       title: input.title,
@@ -96,10 +96,32 @@ export async function createAdoptionStory(
       published_at: input.published ? new Date().toISOString() : null,
       created_by: user.id,
     })
+    .select("id")
+    .single()
 
   if (error) {
     console.error("[createAdoptionStory]", error)
     return { error: error.message }
+  }
+
+  // 푸시 알림 (공개 시에만, 작성자 제외)
+  if (input.published && data?.id) {
+    try {
+      const { data: author } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle()
+      const authorName = author?.nickname ?? "회원"
+      const { sendPushSystem } = await import("@/features/push")
+      await sendPushSystem(
+        {
+          title: "💕 새 입양 후기",
+          body: `${authorName}님이 입양 후기를 올렸어요: ${input.title}`,
+          url: `/stories/${data.id}`,
+          tag: `story-${data.id}`,
+        },
+        user.id
+      )
+    } catch (e) {
+      console.error("[push story]", e)
+    }
   }
 
   revalidateAll()

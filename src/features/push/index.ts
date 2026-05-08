@@ -1,4 +1,4 @@
-export { subscribePush, unsubscribePush, sendPushToAll, sendPushSystem } from "./api/actions"
+export { subscribePush, unsubscribePush, sendPushToAll, sendPushSystem, sendPushToStaff, sendPushToUser } from "./api/actions"
 export type { PushPayload } from "./api/actions"
 export { PushSubscribeButton } from "./components/push-subscribe-button"
 export { ServiceWorkerRegister } from "./components/sw-register"

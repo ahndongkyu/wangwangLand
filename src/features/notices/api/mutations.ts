@@ -86,16 +86,19 @@ export async function createNotice(
     return { error: error.message }
   }
 
-  // 공개 게시 시 푸시 알림 발송 (실패해도 게시는 성공)
+  // 공개 게시 시 푸시 알림 발송 (실패해도 게시는 성공) — 작성자 제외
   if (input.publish && data?.id) {
     try {
       const { sendPushSystem } = await import("@/features/push")
-      await sendPushSystem({
-        title: "📢 새 공지사항",
-        body: input.title,
-        url: `/notice/${data.id}`,
-        tag: `notice-${data.id}`,
-      })
+      await sendPushSystem(
+        {
+          title: "📢 새 공지사항",
+          body: input.title,
+          url: `/notice/${data.id}`,
+          tag: `notice-${data.id}`,
+        },
+        auth.userId
+      )
     } catch (e) {
       console.error("[push notice]", e)
     }

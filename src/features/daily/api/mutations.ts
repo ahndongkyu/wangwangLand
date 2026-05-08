@@ -99,16 +99,21 @@ export async function createDailyPost(
     return { error: error.message }
   }
 
-  // 푸시 알림
+  // 푸시 알림 (작성자 제외)
   if (data?.id) {
     try {
+      const { data: author } = await supabase.from("profiles").select("nickname").eq("id", user.id).maybeSingle()
+      const authorName = author?.nickname ?? "운영진"
       const { sendPushSystem } = await import("@/features/push")
-      await sendPushSystem({
-        title: input.category ? `🐾 ${input.category}` : "🐾 새 일상",
-        body: input.title,
-        url: `/daily/${data.id}`,
-        tag: `daily-${data.id}`,
-      })
+      await sendPushSystem(
+        {
+          title: input.category ? `🐾 ${input.category}` : "🐾 새 일상",
+          body: `${authorName}님이 새 글을 올렸어요: ${input.title}`,
+          url: `/daily/${data.id}`,
+          tag: `daily-${data.id}`,
+        },
+        user.id
+      )
     } catch (e) {
       console.error("[push daily]", e)
     }
