@@ -187,6 +187,29 @@ export async function updateProfile(
   return { error: null, success: true, avatarUrl: avatarUrl ?? null }
 }
 
+/** 마케팅 수신 동의 토글 — 동의 시 현재 시각, 미동의 시 null */
+export async function updateMarketingConsent(agree: boolean): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      marketing_agreed_at: agree ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id)
+
+  if (error) {
+    console.error("[updateMarketingConsent]", error)
+    return { error: "저장에 실패했습니다." }
+  }
+
+  revalidatePath("/", "layout")
+  return {}
+}
+
 /** 약관 재동의 — 기존 회원이 약관 미동의 또는 버전 불일치 시 동의 시각/버전 갱신 */
 export async function acceptAgreements(
   _prev: { error: string | null },

@@ -4,7 +4,6 @@ import { useEffect } from "react"
 import { subscribePush } from "../api/actions"
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-const STORAGE_KEY = "wwl_push_prompted_v1"
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
@@ -21,9 +20,11 @@ interface Props {
 }
 
 /**
- * 마케팅 수신 동의한 사용자에게 한 번 자동으로 푸시 권한 요청.
- * 거부 시 다시 묻지 않음 (localStorage에 시도 기록).
- * UI 없음 — 페이지 로드 후 백그라운드에서 동작.
+ * 마케팅 수신 동의한 사용자에게 자동으로 푸시 권한 처리.
+ * - 권한 default: 팝업 띄움 (브라우저가 자체적으로 너무 잦은 요청은 차단)
+ * - 권한 granted: 등록된 endpoint 없으면 등록
+ * - 권한 denied: 아무것도 안 함
+ * 미동의자는 effect 자체가 실행 안 됨.
  */
 export function AutoPushPrompt({ marketingAgreed }: Props) {
   useEffect(() => {
@@ -31,16 +32,7 @@ export function AutoPushPrompt({ marketingAgreed }: Props) {
     if (typeof window === "undefined") return
     if (!VAPID_PUBLIC_KEY) return
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return
-
-    // 이미 시도했으면 패스
-    if (localStorage.getItem(STORAGE_KEY)) return
-
-    // 권한 상태 확인
-    if (Notification.permission === "denied") {
-      // 차단된 상태 → 시도 기록만 하고 끝 (사용자가 브라우저 설정에서 풀어야 함)
-      localStorage.setItem(STORAGE_KEY, "denied")
-      return
-    }
+    if (Notification.permission === "denied") return
 
     // iOS는 standalone 모드(홈 화면 추가)에서만 푸시 가능
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -50,28 +42,31 @@ export function AutoPushPrompt({ marketingAgreed }: Props) {
       window.navigator.standalone === true
     if (isIOS && !isStandalone) return
 
-    // 약간의 딜레이 후 권한 팝업 (페이지 로드 직후 떠서 놀라지 않게)
+    // 약간의 딜레이 (페이지 로드 직후 바로 떠서 놀라지 않게)
     const timer = setTimeout(async () => {
       try {
-        // 이미 권한 있고 endpoint도 있으면 패스
         const reg = await navigator.serviceWorker.ready
         const existing = await reg.pushManager.getSubscription()
-        if (Notification.permission === "granted" && existing) {
-          localStorage.setItem(STORAGE_KEY, "granted")
-          return
-        }
 
-        // 권한 요청
-        const permission = await Notification.requestPermission()
-        localStorage.setItem(STORAGE_KEY, permission)
+        // 이미 권한 + endpoint 있으면 끝
+        if (Notification.permission === "granted" && existing) return
+
+        // 권한 요청 (이미 granted면 즉시 통과)
+        const permission =
+          Notification.permission === "granted"
+            ? "granted"
+            : await Notification.requestPermission()
         if (permission !== "granted") return
 
-        // endpoint 등록
-        const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
-        })
+        // endpoint 등록 (이미 있으면 그대로 사용)
+        let sub = existing
+        if (!sub) {
+          const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
+          })
+        }
         const json = sub.toJSON()
         await subscribePush({
           endpoint: sub.endpoint,

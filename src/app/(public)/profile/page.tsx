@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
-import { getCurrentProfile } from "@/features/members"
+import { getCurrentProfile, MarketingConsentToggle } from "@/features/members"
 import { ProfileForm } from "@/features/members/components/profile-form"
 
 export const metadata: Metadata = { title: "프로필 설정" }
@@ -41,6 +41,9 @@ export default async function ProfilePage() {
         <ProfileForm profile={profile} />
       </div>
 
+      <div className="mt-4 w-full">
+        <MarketingConsentToggle agreedAt={profile.marketing_agreed_at} />
+      </div>
     </div>
   )
 }
