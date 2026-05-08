@@ -46,10 +46,6 @@ export function AutoPushPrompt({ marketingAgreed }: Props) {
     const timer = setTimeout(async () => {
       try {
         const reg = await navigator.serviceWorker.ready
-        const existing = await reg.pushManager.getSubscription()
-
-        // 이미 권한 + endpoint 있으면 끝
-        if (Notification.permission === "granted" && existing) return
 
         // 권한 요청 (이미 granted면 즉시 통과)
         const permission =
@@ -58,8 +54,8 @@ export function AutoPushPrompt({ marketingAgreed }: Props) {
             : await Notification.requestPermission()
         if (permission !== "granted") return
 
-        // endpoint 등록 (이미 있으면 그대로 사용)
-        let sub = existing
+        // 기존 구독 확인 후 없으면 새로 생성
+        let sub = await reg.pushManager.getSubscription()
         if (!sub) {
           const key = urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           sub = await reg.pushManager.subscribe({
@@ -67,6 +63,8 @@ export function AutoPushPrompt({ marketingAgreed }: Props) {
             applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
           })
         }
+
+        // 항상 DB에 upsert — 브라우저 구독이 있어도 DB에 없을 수 있음
         const json = sub.toJSON()
         await subscribePush({
           endpoint: sub.endpoint,
