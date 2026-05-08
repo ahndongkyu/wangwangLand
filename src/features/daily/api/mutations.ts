@@ -81,7 +81,7 @@ export async function createDailyPost(
   const profile = await getApprovedProfile(supabase, user.id)
   if (!profile) return { error: "권한이 없습니다." }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("daily_posts")
     .insert({
       title: input.title,
@@ -91,10 +91,27 @@ export async function createDailyPost(
       created_by: user.id,
       category: input.category,
     })
+    .select("id")
+    .single()
 
   if (error) {
     console.error("[createDailyPost]", error)
     return { error: error.message }
+  }
+
+  // 푸시 알림
+  if (data?.id) {
+    try {
+      const { sendPushSystem } = await import("@/features/push")
+      await sendPushSystem({
+        title: input.category ? `🐾 ${input.category}` : "🐾 새 일상",
+        body: input.title,
+        url: `/daily/${data.id}`,
+        tag: `daily-${data.id}`,
+      })
+    } catch (e) {
+      console.error("[push daily]", e)
+    }
   }
 
   revalidateAll()

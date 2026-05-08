@@ -68,7 +68,7 @@ export async function createNotice(
   if (!auth.ok) return { error: auth.error }
 
   const supabase = await createClient()
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("notices")
     .insert({
       title: input.title,
@@ -84,6 +84,21 @@ export async function createNotice(
   if (error) {
     console.error("[createNotice]", error)
     return { error: error.message }
+  }
+
+  // 공개 게시 시 푸시 알림 발송 (실패해도 게시는 성공)
+  if (input.publish && data?.id) {
+    try {
+      const { sendPushSystem } = await import("@/features/push")
+      await sendPushSystem({
+        title: "📢 새 공지사항",
+        body: input.title,
+        url: `/notice/${data.id}`,
+        tag: `notice-${data.id}`,
+      })
+    } catch (e) {
+      console.error("[push notice]", e)
+    }
   }
 
   revalidateAll()
