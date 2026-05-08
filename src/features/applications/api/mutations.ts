@@ -94,7 +94,7 @@ export async function submitAdoptionApplication(
   try {
     const { sendPushToStaff } = await import("@/features/push")
     await sendPushToStaff({
-      title: "새 입양 신청",
+      title: "💕 새 입양 신청",
       body: `${applicant_name}님이 입양을 신청했어요`,
       url: `/admin/applications/adoption/${data.id}`,
       tag: `adoption-app-${data.id}`,
@@ -169,7 +169,7 @@ export async function submitVolunteerApplication(
   try {
     const { sendPushToStaff } = await import("@/features/push")
     await sendPushToStaff({
-      title: "새 봉사 신청",
+      title: "🐾 새 봉사 신청",
       body: `${applicant_name}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
       url: `/admin/applications/volunteer/${data.id}`,
       tag: `volunteer-app-${data.id}`,
@@ -250,9 +250,10 @@ export async function updateAdoptionApplication(
 }
 
 function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"): string {
+  const icon = kind === "입양" ? "💕" : "🐾"
   switch (status) {
     case "승인":
-      return `${kind} 신청 승인`
+      return `${icon} ${kind} 신청 승인`
     case "반려":
       return `${kind} 신청 반려`
     case "검토중":

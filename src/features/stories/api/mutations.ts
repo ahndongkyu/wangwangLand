@@ -112,7 +112,7 @@ export async function createAdoptionStory(
       const { sendPushSystem } = await import("@/features/push")
       await sendPushSystem(
         {
-          title: "새 입양 후기",
+          title: "💕 새 입양 후기",
           body: `${authorName}님이 입양 후기를 올렸어요: ${input.title}`,
           url: `/stories/${data.id}`,
           tag: `story-${data.id}`,

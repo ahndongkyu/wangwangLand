@@ -107,7 +107,7 @@ export async function createDailyPost(
       const { sendPushSystem } = await import("@/features/push")
       await sendPushSystem(
         {
-          title: input.category ? `[${input.category}] 새 글` : "새 일상",
+          title: input.category ? `🐾 ${input.category}` : "🐾 새 일상",
           body: `${authorName}님이 새 글을 올렸어요: ${input.title}`,
           url: `/daily/${data.id}`,
           tag: `daily-${data.id}`,
