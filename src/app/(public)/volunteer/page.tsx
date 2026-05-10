@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { VolunteerForm } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 import { TERMS_VERSION } from "@/features/legal"
+import { listStaffAvailability } from "@/features/staff-schedule"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -16,6 +17,23 @@ export default async function VolunteerPage() {
   const profile = await getCurrentProfile()
   const termsAlreadyAgreed =
     !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
+
+  // 향후 90일 운영진 출근 일정 사전 fetch (날짜별로 그룹화)
+  const today = new Date()
+  const startStr = today.toISOString().slice(0, 10)
+  const ninetyDaysLater = new Date(today.getTime() + 90 * 86400_000)
+  const endStr = ninetyDaysLater.toISOString().slice(0, 10)
+  const staffItems = await listStaffAvailability(startStr, endStr)
+  const staffByDate: Record<string, { user_nickname: string; start_time: string | null; end_time: string | null; note: string | null }[]> = {}
+  for (const it of staffItems) {
+    if (!staffByDate[it.date]) staffByDate[it.date] = []
+    staffByDate[it.date].push({
+      user_nickname: it.user?.nickname ?? "운영진",
+      start_time: it.start_time,
+      end_time: it.end_time,
+      note: it.note,
+    })
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
@@ -49,7 +67,7 @@ export default async function VolunteerPage() {
         />
       </section>
 
-      <VolunteerForm termsAlreadyAgreed={termsAlreadyAgreed} />
+      <VolunteerForm termsAlreadyAgreed={termsAlreadyAgreed} staffByDate={staffByDate} />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import {
   ApplicationStatusForm,
   getVolunteerApplication,
 } from "@/features/applications"
+import { listStaffOnDates, StaffAvailabilityDisplay } from "@/features/staff-schedule"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,11 @@ export default async function VolunteerApplicationDetailPage({
   const app = await getVolunteerApplication(id)
 
   if (!app) notFound()
+
+  // 봉사 신청 날짜에 출근 예정 운영진 조회
+  const staffByDate = app.available_dates.length > 0
+    ? await listStaffOnDates(app.available_dates)
+    : {}
 
   // 자동 등록된 캘린더 이벤트들 (다중 날짜 신청 지원으로 여러 개 가능).
   // status form 의 단일 날짜 입력에는 첫 번째만 prefill, 나머지는 별도 카드로 표시.
@@ -180,6 +186,29 @@ export default async function VolunteerApplicationDetailPage({
             }
           />
           <Row label="시간대" value={app.available_time ?? "—"} />
+
+          {app.available_dates.length > 0 && (
+            <div className="mt-3 rounded-md border border-border bg-secondary/30 p-3">
+              <p className="mb-2 text-xs font-semibold text-foreground">날짜별 출근 예정 운영진</p>
+              <div className="space-y-2">
+                {app.available_dates.map((date) => {
+                  const list = staffByDate[date] ?? []
+                  const dt = new Date(date)
+                  const wd = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
+                  return (
+                    <div key={date}>
+                      <p className="text-xs font-medium text-foreground">
+                        {date} ({wd})
+                      </p>
+                      <div className="mt-0.5 pl-2">
+                        <StaffAvailabilityDisplay items={list} showNote />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card title="희망 활동" className="md:col-span-2">

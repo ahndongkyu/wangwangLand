@@ -36,11 +36,25 @@ const ACTIVITIES: VolunteerActivity[] = [
 
 const stepLabels = ["신청자 정보", "활동 일정", "동의 및 제출"]
 
-interface Props {
-  termsAlreadyAgreed?: boolean
+interface StaffEntry {
+  user_nickname: string
+  start_time: string | null
+  end_time: string | null
+  note: string | null
 }
 
-export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
+interface Props {
+  termsAlreadyAgreed?: boolean
+  /** 날짜별 출근 예정 운영진 데이터 (서버에서 사전 fetch) */
+  staffByDate?: Record<string, StaffEntry[]>
+}
+
+function formatTime(t: string | null): string | null {
+  if (!t) return null
+  return t.slice(0, 5)
+}
+
+export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +72,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
+  const [selectedDates, setSelectedDates] = useState<string[]>([])
 
   function handleNext() {
     setError(null)
@@ -110,6 +125,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
   }
 
   if (success) {
+    const datesWithStaff = selectedDates.filter((d) => (staffByDate[d] ?? []).length > 0)
     return (
       <div className="rounded-lg border border-primary bg-primary/5 p-8 text-center">
         <div className="mb-2 text-4xl">🙌</div>
@@ -121,6 +137,44 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
           <br />
           귀한 마음 감사합니다 💕
         </p>
+
+        {datesWithStaff.length > 0 && (
+          <div className="mt-5 rounded-lg border border-border bg-card p-4 text-left">
+            <p className="text-sm font-semibold text-foreground">📌 방문 안내</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              도착하시면 아래 운영진을 찾아주세요.
+            </p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {datesWithStaff.map((date) => {
+                const list = staffByDate[date]
+                const dt = new Date(date)
+                const weekday = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
+                return (
+                  <li key={date}>
+                    <p className="font-medium text-foreground">
+                      {date.slice(5).replace("-", "/")} ({weekday})
+                    </p>
+                    <ul className="mt-0.5 space-y-0.5 pl-2">
+                      {list.map((s, i) => {
+                        const start = formatTime(s.start_time)
+                        const end = formatTime(s.end_time)
+                        const time = start && end ? `${start} ~ ${end}` : start ? `${start} ~` : "종일"
+                        return (
+                          <li key={i} className="text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">{s.user_nickname}</span>
+                            <span className="ml-1.5">{time}</span>
+                            {s.note && <span className="ml-1.5">— {s.note}</span>}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
+
         <a
           href="/my/applications"
           className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
@@ -268,10 +322,49 @@ export function VolunteerForm({ termsAlreadyAgreed = false }: Props) {
             <Label className="text-xs font-medium text-muted-foreground">
               가능한 날짜
             </Label>
-            <DateMultiPicker name="available_dates" />
+            <DateMultiPicker name="available_dates" onChange={setSelectedDates} />
             <p className="text-[11px] text-muted-foreground/80">
               여러 날짜 선택 가능. 운영진이 확인 후 가능한 날짜로 일정을 조율합니다.
             </p>
+
+            {/* 선택된 날짜에 출근 예정인 운영진 안내 */}
+            {selectedDates.length > 0 && (
+              <div className="mt-3 space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs">
+                <p className="font-semibold text-foreground">선택한 날짜의 운영진 출근 예정</p>
+                <ul className="space-y-2">
+                  {selectedDates.map((date) => {
+                    const list = staffByDate[date] ?? []
+                    const dt = new Date(date)
+                    const weekday = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
+                    return (
+                      <li key={date}>
+                        <p className="font-medium text-foreground">
+                          {date.slice(5).replace("-", "/")} ({weekday})
+                        </p>
+                        {list.length === 0 ? (
+                          <p className="mt-0.5 pl-2 text-muted-foreground">아직 출근 예정 운영진이 등록되지 않았어요</p>
+                        ) : (
+                          <ul className="mt-0.5 space-y-0.5 pl-2">
+                            {list.map((s, i) => {
+                              const start = formatTime(s.start_time)
+                              const end = formatTime(s.end_time)
+                              const time = start && end ? `${start} ~ ${end}` : start ? `${start} ~` : "종일"
+                              return (
+                                <li key={i} className="text-muted-foreground">
+                                  <span className="font-medium text-foreground">{s.user_nickname}</span>
+                                  <span className="ml-1.5">{time}</span>
+                                  {s.note && <span className="ml-1.5">— {s.note}</span>}
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
           </div>
 
           <Field id="available_time" label="방문 예정 시간" required className="mt-3">

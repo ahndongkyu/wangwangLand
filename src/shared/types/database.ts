@@ -161,3 +161,17 @@ export interface VolunteerApplication {
   updated_at: string
   created_by: string | null
 }
+
+/** 운영진 상주 일정 — 봉사자에게 그 날 누가 출근하는지 알리기 위한 데이터 */
+export interface StaffAvailability {
+  id: string
+  user_id: string
+  /** 대리 등록자 — 본인 등록 시 user_id 와 동일, 다른 운영진이 등록한 경우 그 사람의 id */
+  registered_by_id: string | null
+  date: string // YYYY-MM-DD
+  start_time: string | null // HH:MM:SS, null 이면 종일
+  end_time: string | null
+  note: string | null
+  created_at: string
+  updated_at: string
+}

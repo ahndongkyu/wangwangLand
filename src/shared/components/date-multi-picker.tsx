@@ -16,6 +16,8 @@ interface Props {
   monthsAhead?: number
   /** 최대 선택 개수. 기본 무제한. */
   max?: number
+  /** 선택 변경 콜백 — 선택된 날짜 배열(YYYY-MM-DD) 전달 */
+  onChange?: (dates: string[]) => void
 }
 
 const KST_OFFSET = 9 * 60 * 60 * 1000
@@ -70,6 +72,7 @@ export function DateMultiPicker({
   allowPast = false,
   monthsAhead = 2,
   max,
+  onChange,
 }: Props) {
   const today = todayKey()
   const initialYm = today.slice(0, 7)
@@ -104,6 +107,7 @@ export function DateMultiPicker({
       next.add(key)
     }
     setSelected(next)
+    onChange?.(Array.from(next).sort())
   }
 
   return (

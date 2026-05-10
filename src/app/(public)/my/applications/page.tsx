@@ -5,6 +5,8 @@ import { CancelMyApplicationButton } from "./cancel-button"
 import { createClient } from "@/shared/lib/supabase/server"
 import { Badge } from "@/shared/components/ui/badge"
 import { cn } from "@/shared/lib/utils"
+import { listStaffOnDates } from "@/features/staff-schedule"
+import { StaffAvailabilityDisplay } from "@/features/staff-schedule"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 export const dynamic = "force-dynamic"
@@ -77,6 +79,12 @@ export default async function MyApplicationsPage() {
   }>
 
   const hasAny = adoptions.length > 0 || volunteers.length > 0
+
+  // 봉사 신청에 포함된 날짜들 모아서 운영진 정보 한 번에 조회
+  const allDates = Array.from(
+    new Set(volunteers.flatMap((v) => v.available_dates ?? []))
+  )
+  const staffByDate = allDates.length > 0 ? await listStaffOnDates(allDates) : {}
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6">
@@ -153,6 +161,33 @@ export default async function MyApplicationsPage() {
                         {v.admin_note}
                       </div>
                     )}
+
+                    {/* 그 날 출근 예정 운영진 */}
+                    {v.available_dates.length > 0 && (
+                      <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5">
+                        <p className="text-xs font-semibold text-foreground">
+                          📌 봉사일 운영진 출근 예정
+                        </p>
+                        <div className="mt-2 space-y-2">
+                          {v.available_dates.map((date) => {
+                            const list = staffByDate[date] ?? []
+                            const dt = new Date(date)
+                            const wd = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
+                            return (
+                              <div key={date}>
+                                <p className="text-xs font-medium text-foreground">
+                                  {date.slice(5).replace("-", "/")} ({wd})
+                                </p>
+                                <div className="mt-0.5 pl-2">
+                                  <StaffAvailabilityDisplay items={list} showNote />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-3 flex justify-end">
                       <CancelMyApplicationButton id={v.id} kind="volunteer" />
                     </div>
