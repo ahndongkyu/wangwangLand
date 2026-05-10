@@ -20,13 +20,13 @@ export default function MaintenancePage() {
         <div className="mb-6 text-6xl">🐾</div>
 
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-          잠시 점검 중입니다<span className="dots" />
+          긴급 점검 중입니다<span className="dots" />
         </h1>
 
         <p className="mt-3 max-w-sm text-sm text-muted-foreground leading-relaxed">
-          왕왕랜드 홈페이지를 더 나은 서비스로 개선하기 위해
-          일시적으로 점검 중입니다.
+          현재 서버 긴급 점검으로 일시 접속이 어렵습니다.
           <br />
+          <span className="font-semibold text-foreground">오늘 안으로 정상화</span> 예정이니
           잠시 후 다시 방문해 주세요 🙏
         </p>
 
@@ -37,9 +37,9 @@ export default function MaintenancePage() {
           </p>
         </div>
 
-        <div className="mt-6 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
-          <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-          서버 점검 중
+        <div className="mt-6 flex items-center gap-2 rounded-full bg-red-100 px-4 py-2 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-300">
+          <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          긴급 점검 중
         </div>
       </div>
     </>
