@@ -31,10 +31,8 @@ export default function MaintenancePage() {
         </p>
 
         <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
-          <p className="font-semibold">최신 소식은 SNS에서 확인해 주세요</p>
-          <p className="mt-1.5 text-xs">
-            인스타그램 <span className="font-semibold">@wangwangland_</span>
-          </p>
+          <p className="font-semibold">예상 완료 시간</p>
+          <p className="mt-0.5 text-base font-bold">2026년 5월 7일 (목) 오후 5시</p>
         </div>
 
         <div className="mt-6 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
