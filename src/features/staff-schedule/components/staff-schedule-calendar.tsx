@@ -129,19 +129,19 @@ export function StaffScheduleCalendar({ monthStart, items, staff, currentUserId 
                 type="button"
                 onClick={() => setSelectedDate(day)}
                 className={cn(
-                  "min-h-[110px] border-b border-r border-border bg-card p-1.5 text-left transition-colors hover:bg-secondary/30",
+                  "flex min-h-[110px] flex-col items-start border-b border-r border-border bg-card p-1.5 text-left transition-colors hover:bg-secondary/30",
                   isToday && "bg-primary/5"
                 )}
               >
                 <div
                   className={cn(
-                    "mb-1 inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold",
+                    "mb-1 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                     isToday ? "bg-primary text-primary-foreground" : dow === 0 ? "text-red-500" : dow === 6 ? "text-blue-500" : "text-foreground"
                   )}
                 >
                   {dayNum}
                 </div>
-                <ul className="space-y-0.5">
+                <ul className="w-full space-y-0.5">
                   {dayItems.slice(0, 3).map((it) => (
                     <li
                       key={it.id}
@@ -195,61 +195,64 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
   const toast = useToast()
   const [pending, startTransition] = useTransition()
 
-  // 폼 입력 상태
-  const [userId, setUserId] = useState(currentUserId)
+  // 이미 등록된 운영진 ID 집합
+  const existingUserIds = useMemo(() => new Set(items.map((it) => it.user_id)), [items])
+
+  // 다중 선택 (새로 추가할 운영진들)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [allDay, setAllDay] = useState(true)
   const [startTime, setStartTime] = useState("09:00")
   const [endTime, setEndTime] = useState("12:00")
   const [note, setNote] = useState("")
 
-  // 선택된 user의 기존 등록이 있으면 초기값 자동 채움
-  const existingForUser = items.find((it) => it.user_id === userId)
-  const isEditing = !!existingForUser
-
-  function handleUserChange(nextUserId: string) {
-    setUserId(nextUserId)
-    const existing = items.find((it) => it.user_id === nextUserId)
-    if (existing) {
-      if (existing.start_time && existing.end_time) {
-        setAllDay(false)
-        setStartTime(existing.start_time.slice(0, 5))
-        setEndTime(existing.end_time.slice(0, 5))
-      } else {
-        setAllDay(true)
-      }
-      setNote(existing.note ?? "")
-    } else {
-      setAllDay(true)
-      setStartTime("09:00")
-      setEndTime("12:00")
-      setNote("")
-    }
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
-  function handleSubmit() {
+  function handleBulkSubmit() {
+    if (selectedIds.size === 0) {
+      toast.error("등록할 운영진을 선택해주세요.")
+      return
+    }
+    if (!allDay && startTime >= endTime) {
+      toast.error("종료 시간은 시작 시간보다 뒤여야 합니다.")
+      return
+    }
+
     startTransition(async () => {
-      const result = await upsertStaffAvailability({
-        user_id: userId,
-        date,
-        start_time: allDay ? null : startTime,
-        end_time: allDay ? null : endTime,
-        note: note.trim() || null,
-      })
-      if (result.error) {
-        toast.error(result.error)
-        return
+      const ids = Array.from(selectedIds)
+      let okCount = 0
+      let failCount = 0
+      for (const userId of ids) {
+        const result = await upsertStaffAvailability({
+          user_id: userId,
+          date,
+          start_time: allDay ? null : startTime,
+          end_time: allDay ? null : endTime,
+          note: note.trim() || null,
+        })
+        if (result.error) failCount++
+        else okCount++
       }
-      toast.success(isEditing ? "수정했습니다." : "등록했습니다.")
+      if (failCount > 0) {
+        toast.error(`${failCount}명 실패`)
+      } else {
+        toast.success(`${okCount}명 등록 완료`)
+      }
       onClose()
       window.location.reload()
     })
   }
 
-  function handleDelete() {
-    if (!existingForUser) return
+  function handleDeleteEntry(itemId: string) {
     if (!window.confirm("이 출근 등록을 삭제할까요?")) return
     startTransition(async () => {
-      const result = await deleteStaffAvailability(existingForUser.id)
+      const result = await deleteStaffAvailability(itemId)
       if (result.error) {
         toast.error(result.error)
         return
@@ -262,14 +265,15 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
 
   const dateObj = new Date(date)
   const weekday = WEEKDAY_LABELS[dateObj.getDay()]
+  const availableStaff = staff.filter((s) => !existingUserIds.has(s.id))
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-2">
@@ -288,113 +292,149 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
           </button>
         </div>
 
-        {/* 이미 등록된 다른 운영진들 (참고용) */}
+        {/* 이미 등록된 운영진 — 개별 삭제 가능 */}
         {items.length > 0 && (
-          <div className="mb-4 rounded-lg border border-border bg-secondary/30 p-3 text-xs">
-            <p className="mb-2 font-semibold text-foreground">이미 등록된 출근</p>
-            <ul className="space-y-1">
+          <div className="mb-4 rounded-lg border border-border bg-secondary/30 p-3">
+            <p className="mb-2 text-xs font-semibold text-foreground">이미 등록된 출근 ({items.length}명)</p>
+            <ul className="space-y-1.5">
               {items.map((it) => (
-                <li key={it.id} className="flex items-center justify-between gap-2 text-muted-foreground">
-                  <span>
+                <li key={it.id} className="flex items-center justify-between gap-2 text-xs">
+                  <div className="min-w-0 flex-1">
                     <span className="font-medium text-foreground">{it.user?.nickname}</span>
-                    {" — "}
-                    {it.start_time && it.end_time
-                      ? `${formatTime(it.start_time)} ~ ${formatTime(it.end_time)}`
-                      : "종일"}
+                    <span className="ml-2 text-muted-foreground">
+                      {it.start_time && it.end_time
+                        ? `${formatTime(it.start_time)} ~ ${formatTime(it.end_time)}`
+                        : "종일"}
+                    </span>
                     {it.registered_by_id && it.registered_by_id !== it.user_id && (
-                      <span className="ml-1 text-[10px]">
+                      <span className="ml-1 text-[10px] text-muted-foreground">
                         ({it.registered_by?.nickname} 등록)
                       </span>
                     )}
-                  </span>
+                    {it.note && (
+                      <p className="mt-0.5 truncate text-muted-foreground">"{it.note}"</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEntry(it.id)}
+                    disabled={pending}
+                    className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                    aria-label="삭제"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="staff-select">운영진</Label>
-            <select
-              id="staff-select"
-              value={userId}
-              onChange={(e) => handleUserChange(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-            >
-              {staff.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nickname}{s.id === currentUserId ? " (나)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={allDay}
-                onChange={(e) => setAllDay(e.target.checked)}
-                className="size-4 accent-primary"
-              />
-              종일
-            </label>
-            {!allDay && (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="flex-1"
-                />
-                <span className="text-muted-foreground">~</span>
-                <Input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="flex-1"
-                />
+        {/* 추가 등록 폼 */}
+        {availableStaff.length === 0 ? (
+          <p className="rounded-lg border border-border bg-secondary/20 p-4 text-center text-xs text-muted-foreground">
+            모든 운영진이 이미 등록되어 있어요.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>추가할 운영진 (다중 선택)</Label>
+              <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-input bg-background/50 p-2">
+                {availableStaff.map((s) => {
+                  const checked = selectedIds.has(s.id)
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleSelect(s.id)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                        checked
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-card text-foreground hover:border-primary/40"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex size-3.5 shrink-0 items-center justify-center rounded border",
+                          checked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
+                        )}
+                      >
+                        {checked && <span className="text-[8px] leading-none">✓</span>}
+                      </span>
+                      <span className="truncate">
+                        {s.nickname}
+                        {s.id === currentUserId ? " (나)" : ""}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-            )}
-          </div>
+              {selectedIds.size > 0 && (
+                <p className="text-[11px] text-primary">{selectedIds.size}명 선택됨</p>
+              )}
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="note">메모 (봉사자에게 보임)</Label>
-            <Input
-              id="note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="예: 산책 위주 봉사 가능"
-              maxLength={100}
-            />
-          </div>
-        </div>
+            <div className="space-y-1.5">
+              <Label>시간 (선택한 운영진 모두에게 적용)</Label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={allDay}
+                  onChange={(e) => setAllDay(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                종일
+              </label>
+              {!allDay && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="text-muted-foreground">~</span>
+                  <Input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              )}
+            </div>
 
-        <div className="mt-5 flex items-center justify-between gap-2">
-          {isEditing ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="note">메모 (봉사자에게 보임)</Label>
+              <Input
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="예: 산책 위주 봉사 가능"
+                maxLength={100}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+            {availableStaff.length === 0 ? "닫기" : "취소"}
+          </Button>
+          {availableStaff.length > 0 && (
             <Button
               type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDelete}
-              disabled={pending}
-              className="text-destructive hover:bg-destructive/10"
+              onClick={handleBulkSubmit}
+              disabled={pending || selectedIds.size === 0}
             >
-              <Trash2 className="size-3.5" />
-              삭제
+              {pending
+                ? "처리 중..."
+                : selectedIds.size > 0
+                  ? `등록 (${selectedIds.size}명)`
+                  : "등록"}
             </Button>
-          ) : (
-            <span />
           )}
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
-              취소
-            </Button>
-            <Button type="button" onClick={handleSubmit} disabled={pending}>
-              {pending ? "처리 중..." : isEditing ? "수정" : "등록"}
-            </Button>
-          </div>
         </div>
       </div>
     </div>
