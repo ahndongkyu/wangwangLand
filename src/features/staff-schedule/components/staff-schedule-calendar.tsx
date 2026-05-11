@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { ChevronLeft, ChevronRight, Trash2, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react"
 
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -198,12 +198,61 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
   // 이미 등록된 운영진 ID 집합
   const existingUserIds = useMemo(() => new Set(items.map((it) => it.user_id)), [items])
 
+  // 수정 모드 — 어떤 항목을 수정 중인지 (없으면 다중 추가 모드)
+  const [editingItem, setEditingItem] = useState<StaffAvailabilityWithUser | null>(null)
+
   // 다중 선택 (새로 추가할 운영진들)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [allDay, setAllDay] = useState(true)
   const [startTime, setStartTime] = useState("09:00")
   const [endTime, setEndTime] = useState("12:00")
   const [note, setNote] = useState("")
+
+  // 수정 모드 진입 — 폼 값을 기존 데이터로 prefill
+  function enterEditMode(item: StaffAvailabilityWithUser) {
+    setEditingItem(item)
+    if (item.start_time && item.end_time) {
+      setAllDay(false)
+      setStartTime(item.start_time.slice(0, 5))
+      setEndTime(item.end_time.slice(0, 5))
+    } else {
+      setAllDay(true)
+    }
+    setNote(item.note ?? "")
+    setSelectedIds(new Set()) // 수정 중에는 다중 선택 초기화
+  }
+
+  function exitEditMode() {
+    setEditingItem(null)
+    setAllDay(true)
+    setStartTime("09:00")
+    setEndTime("12:00")
+    setNote("")
+  }
+
+  function handleEditSave() {
+    if (!editingItem) return
+    if (!allDay && startTime >= endTime) {
+      toast.error("종료 시간은 시작 시간보다 뒤여야 합니다.")
+      return
+    }
+    startTransition(async () => {
+      const result = await upsertStaffAvailability({
+        user_id: editingItem.user_id,
+        date,
+        start_time: allDay ? null : startTime,
+        end_time: allDay ? null : endTime,
+        note: note.trim() || null,
+      })
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success("수정했습니다.")
+      onClose()
+      window.location.reload()
+    })
+  }
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -292,8 +341,8 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
           </button>
         </div>
 
-        {/* 이미 등록된 운영진 — 개별 삭제 가능 */}
-        {items.length > 0 && (
+        {/* 이미 등록된 운영진 — 수정/삭제 가능 (수정 모드 진입 시 숨김) */}
+        {items.length > 0 && !editingItem && (
           <div className="mb-4 rounded-lg border border-border bg-secondary/30 p-3">
             <p className="mb-2 text-xs font-semibold text-foreground">이미 등록된 출근 ({items.length}명)</p>
             <ul className="space-y-1.5">
@@ -315,27 +364,99 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
                       <p className="mt-0.5 truncate text-muted-foreground">"{it.note}"</p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteEntry(it.id)}
-                    disabled={pending}
-                    className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                    aria-label="삭제"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => enterEditMode(it)}
+                      disabled={pending}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50"
+                      aria-label="수정"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEntry(it.id)}
+                      disabled={pending}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                      aria-label="삭제"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        {/* 추가 등록 폼 */}
-        {availableStaff.length === 0 ? (
+        {/* 수정 모드 — 단일 항목 수정 폼 */}
+        {editingItem && (
+          <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">
+                {editingItem.user?.nickname} 수정 중
+              </p>
+              <button
+                type="button"
+                onClick={exitEditMode}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                취소
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>시간</Label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={allDay}
+                  onChange={(e) => setAllDay(e.target.checked)}
+                  className="size-4 accent-primary"
+                />
+                종일
+              </label>
+              {!allDay && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="text-muted-foreground">~</span>
+                  <Input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-note">메모 (봉사자에게 보임)</Label>
+              <Input
+                id="edit-note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="예: 산책 위주 봉사 가능"
+                maxLength={100}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 다중 추가 폼 (수정 모드 아닐 때) */}
+        {!editingItem && availableStaff.length === 0 && (
           <p className="rounded-lg border border-border bg-secondary/20 p-4 text-center text-xs text-muted-foreground">
             모든 운영진이 이미 등록되어 있어요.
           </p>
-        ) : (
+        )}
+
+        {!editingItem && availableStaff.length > 0 && (
           <div className="space-y-3">
             <div className="space-y-2">
               <Label>추가할 운영진 (다중 선택)</Label>
@@ -406,9 +527,9 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="note">메모 (봉사자에게 보임)</Label>
+              <Label htmlFor="add-note">메모 (봉사자에게 보임)</Label>
               <Input
-                id="note"
+                id="add-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="예: 산책 위주 봉사 가능"
@@ -418,22 +539,36 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
           </div>
         )}
 
+        {/* 하단 버튼 */}
         <div className="mt-5 flex items-center justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
-            {availableStaff.length === 0 ? "닫기" : "취소"}
-          </Button>
-          {availableStaff.length > 0 && (
-            <Button
-              type="button"
-              onClick={handleBulkSubmit}
-              disabled={pending || selectedIds.size === 0}
-            >
-              {pending
-                ? "처리 중..."
-                : selectedIds.size > 0
-                  ? `등록 (${selectedIds.size}명)`
-                  : "등록"}
-            </Button>
+          {editingItem ? (
+            <>
+              <Button type="button" variant="outline" onClick={exitEditMode} disabled={pending}>
+                취소
+              </Button>
+              <Button type="button" onClick={handleEditSave} disabled={pending}>
+                {pending ? "처리 중..." : "저장"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+                {availableStaff.length === 0 ? "닫기" : "취소"}
+              </Button>
+              {availableStaff.length > 0 && (
+                <Button
+                  type="button"
+                  onClick={handleBulkSubmit}
+                  disabled={pending || selectedIds.size === 0}
+                >
+                  {pending
+                    ? "처리 중..."
+                    : selectedIds.size > 0
+                      ? `등록 (${selectedIds.size}명)`
+                      : "등록"}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
