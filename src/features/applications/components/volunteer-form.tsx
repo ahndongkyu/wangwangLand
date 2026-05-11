@@ -186,7 +186,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-8">
       {/* Mobile step indicator */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
         <div className="flex items-center gap-2">
