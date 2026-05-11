@@ -186,7 +186,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-7">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-4">
       {/* Mobile step indicator */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -219,9 +219,11 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
         <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
         <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
           현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
           곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
-          <br className="hidden sm:block" />
-          {" "}
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
           신청 후 <span className="font-semibold">1시간 이내</span>에 승인 처리하려 노력하고 있으니,
           번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
         </p>
