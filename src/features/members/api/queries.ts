@@ -1,4 +1,26 @@
+import { unstable_cache } from "next/cache"
+
 import { createClient } from "@/shared/lib/supabase/server"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
+
+/** status별 회원 수 — 60초 캐싱. 변경 빈도 낮으니 페이지 로딩 부담 ↓ */
+const getCachedStatusCounts = unstable_cache(
+  async () => {
+    const admin = createAdminClient()
+    const [p, a, r] = await Promise.all([
+      admin.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      admin.from("profiles").select("id", { count: "exact", head: true }).eq("status", "approved"),
+      admin.from("profiles").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+    ])
+    return {
+      pendingCount: p.count ?? 0,
+      approvedCount: a.count ?? 0,
+      rejectedCount: r.count ?? 0,
+    }
+  },
+  ["profile-status-counts"],
+  { revalidate: 60, tags: ["profile-status-counts"] }
+)
 
 export interface Profile {
   id: string
@@ -92,9 +114,16 @@ export async function listProfiles({
 } = {}): Promise<PaginatedProfiles> {
   const supabase = await createClient()
 
+  const isFiltered = !!status || !!searchQuery?.trim()
+
+  // 필터 적용 시에만 메인 쿼리에 exact count (필터된 결과의 페이지 매김용).
+  // 필터 없을 땐 캐시된 status counts 합으로 total 계산 → 메인 쿼리 부담 ↓
   let query = supabase
     .from("profiles")
-    .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at", { count: "exact" })
+    .select(
+      "id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at",
+      isFiltered ? { count: "exact" } : undefined
+    )
 
   if (sort === "name") {
     query = query.order("nickname", { ascending: true })
@@ -119,23 +148,26 @@ export async function listProfiles({
 
   query = query.range(offset, offset + limit - 1)
 
-  const [{ data, count, error }, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+  const [mainRes, cachedCounts] = await Promise.all([
     query,
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "approved"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "rejected"),
+    getCachedStatusCounts(),
   ])
 
+  const { data, count, error } = mainRes
   if (error) {
     console.error("[listProfiles]", error)
     return { profiles: [], total: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0 }
   }
 
+  const total = isFiltered
+    ? count ?? 0
+    : cachedCounts.pendingCount + cachedCounts.approvedCount + cachedCounts.rejectedCount
+
   return {
     profiles: (data ?? []) as Profile[],
-    total: count ?? 0,
-    pendingCount: pendingRes.count ?? 0,
-    approvedCount: approvedRes.count ?? 0,
-    rejectedCount: rejectedRes.count ?? 0,
+    total,
+    pendingCount: cachedCounts.pendingCount,
+    approvedCount: cachedCounts.approvedCount,
+    rejectedCount: cachedCounts.rejectedCount,
   }
 }
