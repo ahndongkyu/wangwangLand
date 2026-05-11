@@ -102,10 +102,10 @@ export default async function MyPage() {
     getVolunteerCount(userId),
   ])
 
-  const currentTier = getTier(volunteerCount)
-  const nextTier = getNextTier(volunteerCount)
-  const tierProgress = progressToNextTier(volunteerCount)
-  const tierRemaining = remainingToNextTier(volunteerCount)
+  const currentTier = getTier(volunteerCount, profile.role)
+  const nextTier = getNextTier(volunteerCount, profile.role)
+  const tierProgress = progressToNextTier(volunteerCount, profile.role)
+  const tierRemaining = remainingToNextTier(volunteerCount, profile.role)
 
   const adoptions = (adoptionRes.data ?? []) as Array<{
     id: string

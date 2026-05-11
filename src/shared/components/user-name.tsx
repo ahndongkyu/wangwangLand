@@ -37,7 +37,12 @@ export function UserName({
 }: Props) {
   const key = (role && role in ROLE_BORDER ? role : "member") as UserRole
   const border = ROLE_BORDER[key]
-  const tier = typeof volunteerCount === "number" ? getTier(volunteerCount) : null
+  // 운영진(admin/staff)은 카운트 무관하게 최고 등급 표시
+  const isStaff = key === "admin" || key === "staff"
+  const tier =
+    isStaff || typeof volunteerCount === "number"
+      ? getTier(volunteerCount ?? 0, role)
+      : null
 
   const padding = size === "md" ? "px-2.5 py-0.5 text-sm" : "px-2 py-[1px] text-xs"
 

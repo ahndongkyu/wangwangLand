@@ -26,8 +26,16 @@ export const VOLUNTEER_TIERS: VolunteerTier[] = [
   { level: 6, name: "명예 지킴이",      icon: "👑", threshold: 100 },
 ]
 
-/** 봉사 횟수에 해당하는 현재 등급 */
-export function getTier(count: number): VolunteerTier {
+/** 운영진(admin/staff) 여부 체크 — 운영진은 카운트 무관하게 최고 등급 */
+function isStaffRole(role?: string | null): boolean {
+  return role === "admin" || role === "staff"
+}
+
+/** 봉사 횟수에 해당하는 현재 등급. role이 admin/staff면 무조건 최고 등급. */
+export function getTier(count: number, role?: string | null): VolunteerTier {
+  if (isStaffRole(role)) {
+    return VOLUNTEER_TIERS[VOLUNTEER_TIERS.length - 1]
+  }
   // 가장 높은 threshold부터 검사
   for (let i = VOLUNTEER_TIERS.length - 1; i >= 0; i--) {
     if (count >= VOLUNTEER_TIERS[i].threshold) return VOLUNTEER_TIERS[i]
@@ -35,24 +43,26 @@ export function getTier(count: number): VolunteerTier {
   return VOLUNTEER_TIERS[0]
 }
 
-/** 다음 등급 (최고 등급이면 null) */
-export function getNextTier(count: number): VolunteerTier | null {
-  const current = getTier(count)
+/** 다음 등급 (최고 등급이면 null). 운영진은 이미 최고라 항상 null. */
+export function getNextTier(count: number, role?: string | null): VolunteerTier | null {
+  if (isStaffRole(role)) return null
+  const current = getTier(count, role)
   const next = VOLUNTEER_TIERS[current.level + 1]
   return next ?? null
 }
 
 /** 다음 등급까지 남은 횟수 (없으면 0) */
-export function remainingToNextTier(count: number): number {
-  const next = getNextTier(count)
+export function remainingToNextTier(count: number, role?: string | null): number {
+  const next = getNextTier(count, role)
   if (!next) return 0
   return Math.max(0, next.threshold - count)
 }
 
-/** 진행률 0~100 (다음 등급까지) */
-export function progressToNextTier(count: number): number {
-  const current = getTier(count)
-  const next = getNextTier(count)
+/** 진행률 0~100 (다음 등급까지). 운영진은 항상 100. */
+export function progressToNextTier(count: number, role?: string | null): number {
+  if (isStaffRole(role)) return 100
+  const current = getTier(count, role)
+  const next = getNextTier(count, role)
   if (!next) return 100
   const span = next.threshold - current.threshold
   if (span <= 0) return 100
@@ -61,13 +71,13 @@ export function progressToNextTier(count: number): number {
 }
 
 /** "🐶 어엿한 친구" 형식의 라벨 */
-export function tierLabel(count: number): string {
-  const tier = getTier(count)
+export function tierLabel(count: number, role?: string | null): string {
+  const tier = getTier(count, role)
   return `${tier.icon} ${tier.name}`
 }
 
 /** 정회원 자격 도달 여부 */
-export function hasFullMemberQualification(count: number): boolean {
-  const tier = getTier(count)
+export function hasFullMemberQualification(count: number, role?: string | null): boolean {
+  const tier = getTier(count, role)
   return tier.level >= 4
 }
