@@ -65,7 +65,7 @@ export interface Notice {
   view_count: number
 }
 
-export type DailyCategory = "구조 소식" | "봉사 현장" | "시설 안내" | "일상" | "입소" | "임시보호" | "후원 소식"
+export type DailyCategory = "구조 소식" | "봉사 현장" | "시설 안내" | "일상" | "입소" | "임시보호" | "후원 소식" | "봉사 후기"
 
 export interface DailyPost {
   id: string
@@ -77,6 +77,8 @@ export interface DailyPost {
   created_by: string | null
   view_count: number
   category: DailyCategory | null
+  /** 봉사 인증 글일 경우 어떤 봉사 신청의 후기인지 */
+  related_volunteer_application_id?: string | null
 }
 
 export interface AdoptionStory {

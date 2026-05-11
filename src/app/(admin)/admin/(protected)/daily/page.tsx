@@ -22,6 +22,7 @@ const CATEGORY_FILTERS = [
   { label: "봉사 현장", value: "봉사 현장" },
   { label: "시설 안내", value: "시설 안내" },
   { label: "후원 소식", value: "후원 소식" },
+  { label: "봉사 후기", value: "봉사 후기" },
 ]
 
 export default async function AdminDailyPage({

@@ -9,6 +9,7 @@ const BADGE_STYLES: Record<DailyCategory, string> = {
   "입소":       "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
   "임시보호":   "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
   "후원 소식":  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+  "봉사 후기":  "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
 }
 
 interface Props {

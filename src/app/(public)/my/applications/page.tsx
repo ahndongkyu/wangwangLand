@@ -86,6 +86,29 @@ export default async function MyApplicationsPage() {
   )
   const staffByDate = allDates.length > 0 ? await listStaffOnDates(allDates) : {}
 
+  // 이미 인증글 작성한 신청 ID → daily_post id 매핑
+  const approvedVolunteerIds = volunteers
+    .filter((v) => v.status === "승인")
+    .map((v) => v.id)
+  const certificationByAppId: Record<string, string> = {}
+  if (approvedVolunteerIds.length > 0) {
+    const { data: certs } = await admin
+      .from("daily_posts")
+      .select("id, related_volunteer_application_id")
+      .eq("created_by", session.user.id)
+      .eq("category", "봉사 후기")
+      .in("related_volunteer_application_id", approvedVolunteerIds)
+    for (const c of (certs ?? []) as { id: string; related_volunteer_application_id: string }[]) {
+      certificationByAppId[c.related_volunteer_application_id] = c.id
+    }
+  }
+
+  // 봉사일이 지났는지 (오늘 또는 과거)
+  const today = new Date().toISOString().slice(0, 10)
+  function hasPastVolunteerDate(dates: string[]): boolean {
+    return dates.some((d) => d <= today)
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6">
       <header className="mb-8">
@@ -185,6 +208,27 @@ export default async function MyApplicationsPage() {
                             )
                           })}
                         </div>
+                      </div>
+                    )}
+
+                    {/* 봉사 인증글 작성 또는 보기 */}
+                    {v.status === "승인" && hasPastVolunteerDate(v.available_dates) && (
+                      <div className="mt-3">
+                        {certificationByAppId[v.id] ? (
+                          <Link
+                            href={`/daily/${certificationByAppId[v.id]}`}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-pink-200 bg-pink-50 px-3 py-2 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/40 dark:bg-pink-900/20 dark:text-pink-300"
+                          >
+                            ✓ 봉사 후기 보기
+                          </Link>
+                        ) : (
+                          <Link
+                            href={`/daily/new?application=${v.id}`}
+                            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                          >
+                            ✍️ 봉사 인증글 작성하기
+                          </Link>
+                        )}
                       </div>
                     )}
 

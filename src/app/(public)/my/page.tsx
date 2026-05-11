@@ -23,7 +23,14 @@ import {
   listMyUpcomingEvents,
 } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
-import { RoleBadge } from "@/shared/components/role-badge"
+import {
+  getVolunteerCount,
+  getTier,
+  getNextTier,
+  remainingToNextTier,
+  progressToNextTier,
+} from "@/features/volunteer-tier"
+import { UserName } from "@/shared/components/user-name"
 import { Badge } from "@/shared/components/ui/badge"
 import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
@@ -76,6 +83,7 @@ export default async function MyPage() {
     adoptionRes,
     volunteerRes,
     donations,
+    volunteerCount,
   ] = await Promise.all([
     listMyUpcomingEvents(),
     admin
@@ -91,7 +99,13 @@ export default async function MyPage() {
       .order("submitted_at", { ascending: false })
       .limit(2),
     listMyDonations(),
+    getVolunteerCount(userId),
   ])
+
+  const currentTier = getTier(volunteerCount)
+  const nextTier = getNextTier(volunteerCount)
+  const tierProgress = progressToNextTier(volunteerCount)
+  const tierRemaining = remainingToNextTier(volunteerCount)
 
   const adoptions = (adoptionRes.data ?? []) as Array<{
     id: string
@@ -129,11 +143,15 @@ export default async function MyPage() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <RoleBadge role={profile.role} />
-            <p className="mt-1 truncate text-lg font-bold text-foreground">
-              {profile.nickname}
+            <UserName
+              nickname={profile.nickname}
+              role={profile.role}
+              size="md"
+              showTier={false}
+            />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {currentTier.icon} {currentTier.name}
             </p>
-            <p className="text-xs text-muted-foreground">왕왕랜드 회원</p>
           </div>
           <Link
             href="/profile"
@@ -142,6 +160,43 @@ export default async function MyPage() {
             프로필 수정
           </Link>
         </div>
+      </div>
+
+      {/* 봉사 등급 카드 */}
+      <div className="mb-6 rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-card p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">현재 등급</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              <span className="mr-1.5">{currentTier.icon}</span>
+              {currentTier.name}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              봉사 인증 <span className="font-bold text-foreground">{volunteerCount}</span>회
+            </p>
+          </div>
+          <Link
+            href="/my/applications"
+            className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+          >
+            내 봉사
+          </Link>
+        </div>
+
+        {nextTier && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+              <span>다음 등급: <span className="font-semibold text-foreground">{nextTier.icon} {nextTier.name}</span></span>
+              <span><span className="font-bold text-primary">{tierRemaining}</span>회 남음</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${tierProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 다가오는 봉사 일정 */}
