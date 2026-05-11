@@ -187,16 +187,21 @@ export function MonthGrid({
                 )}
               </div>
 
-              {/* 데스크톱: 텍스트 칩 (클릭은 셀로 전파되어 패널 토글) */}
+              {/* 데스크톱: 텍스트 칩 — readOnly면 셀로 위임, 아니면 상세 페이지 */}
               <div className="mt-1 hidden space-y-0.5 sm:block">
                 {dayEvents.slice(0, 3).map((ev) => (
                   <EventChip
                     key={ev.id}
                     event={ev}
                     maskNames={maskNames}
-                    readOnly
-                    onClick={() => {
-                      /* 셀 onClick 으로 위임 */
+                    readOnly={readOnly}
+                    onClick={(e) => {
+                      if (readOnly) {
+                        // 공개 캘린더 — 셀 클릭으로 위임 (전파 막지 않음)
+                        return
+                      }
+                      e.stopPropagation()
+                      router.push(`${hrefBase}/${ev.id}`)
                     }}
                   />
                 ))}
@@ -237,29 +242,45 @@ export function MonthGrid({
               const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
               const displayTitle = maskNames ? publicEventTitle(ev) : ev.title
 
+              const content = (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <span
+                    style={customStyle?.soft}
+                    className={cn(
+                      "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                      !isCustom && color.soft,
+                      !isCustom && color.softText
+                    )}
+                  >
+                    {eventDisplayLabel(ev)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {displayTitle}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
+                      {ev.location && ` · ${ev.location}`}
+                    </p>
+                  </div>
+                  {!readOnly && (
+                    <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">→</span>
+                  )}
+                </div>
+              )
+
               return (
                 <li key={ev.id}>
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <span
-                      style={customStyle?.soft}
-                      className={cn(
-                        "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                        !isCustom && color.soft,
-                        !isCustom && color.softText
-                      )}
+                  {readOnly ? (
+                    <div>{content}</div>
+                  ) : (
+                    <Link
+                      href={`${hrefBase}/${ev.id}`}
+                      className="block transition-colors hover:bg-secondary/40 active:bg-secondary/60"
                     >
-                      {eventDisplayLabel(ev)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {displayTitle}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
-                        {ev.location && ` · ${ev.location}`}
-                      </p>
-                    </div>
-                  </div>
+                      {content}
+                    </Link>
+                  )}
                 </li>
               )
             })}
