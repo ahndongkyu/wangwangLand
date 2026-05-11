@@ -10,6 +10,7 @@ import { useToast } from "@/shared/components/toast"
 import { cn } from "@/shared/lib/utils"
 import { upsertStaffAvailability, deleteStaffAvailability } from "../api/mutations"
 import type { StaffAvailabilityWithUser, StaffOption } from "../api/queries"
+import { isPermanentStaffId } from "../permanent-staff"
 
 interface Props {
   /** 현재 표시 중인 월 시작일 (서버에서 결정, 페이지 새로고침으로 월 이동) */
@@ -346,46 +347,54 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
           <div className="mb-4 rounded-lg border border-border bg-secondary/30 p-3">
             <p className="mb-2 text-xs font-semibold text-foreground">이미 등록된 출근 ({items.length}명)</p>
             <ul className="space-y-1.5">
-              {items.map((it) => (
-                <li key={it.id} className="flex items-center justify-between gap-2 text-xs">
-                  <div className="min-w-0 flex-1">
-                    <span className="font-medium text-foreground">{it.user?.nickname}</span>
-                    <span className="ml-2 text-muted-foreground">
-                      {it.start_time && it.end_time
-                        ? `${formatTime(it.start_time)} ~ ${formatTime(it.end_time)}`
-                        : "종일"}
-                    </span>
-                    {it.registered_by_id && it.registered_by_id !== it.user_id && (
-                      <span className="ml-1 text-[10px] text-muted-foreground">
-                        ({it.registered_by?.nickname} 등록)
+              {items.map((it) => {
+                const isPermanent = isPermanentStaffId(it.user_id)
+                return (
+                  <li key={it.id} className="flex items-center justify-between gap-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-medium text-foreground">{it.user?.nickname}</span>
+                      {isPermanent && (
+                        <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-px text-[9px] font-semibold text-primary">상시</span>
+                      )}
+                      <span className="ml-2 text-muted-foreground">
+                        {it.start_time && it.end_time
+                          ? `${formatTime(it.start_time)} ~ ${formatTime(it.end_time)}`
+                          : "종일"}
                       </span>
+                      {it.registered_by_id && it.registered_by_id !== it.user_id && (
+                        <span className="ml-1 text-[10px] text-muted-foreground">
+                          ({it.registered_by?.nickname} 등록)
+                        </span>
+                      )}
+                      {it.note && (
+                        <p className="mt-0.5 truncate text-muted-foreground">"{it.note}"</p>
+                      )}
+                    </div>
+                    {!isPermanent && (
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <button
+                          type="button"
+                          onClick={() => enterEditMode(it)}
+                          disabled={pending}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50"
+                          aria-label="수정"
+                        >
+                          <Pencil className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEntry(it.id)}
+                          disabled={pending}
+                          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                          aria-label="삭제"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
                     )}
-                    {it.note && (
-                      <p className="mt-0.5 truncate text-muted-foreground">"{it.note}"</p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    <button
-                      type="button"
-                      onClick={() => enterEditMode(it)}
-                      disabled={pending}
-                      className="rounded-md p-1 text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-50"
-                      aria-label="수정"
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEntry(it.id)}
-                      disabled={pending}
-                      className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                      aria-label="삭제"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}
