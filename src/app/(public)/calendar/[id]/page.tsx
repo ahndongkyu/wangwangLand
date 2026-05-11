@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Calendar, MapPin, Users } from "lucide-react"
+import { Calendar, MapPin } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
@@ -9,9 +9,7 @@ import {
   getEventWithMySignup,
   publicEventTitle,
 } from "@/features/events"
-import { SignupForm } from "@/features/events/components/signup-form"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
-import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -25,15 +23,9 @@ export default async function EventDetailPage({
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
 
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
-  const pastEvent = new Date(event.ends_at) < new Date()
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
@@ -86,19 +78,6 @@ export default async function EventDetailPage({
         </section>
       )}
 
-      <section>
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Users className="size-4 text-muted-foreground" aria-hidden />
-          신청
-        </h2>
-        <SignupForm
-          eventId={event.id}
-          signupEnabled={event.signup_enabled}
-          pastEvent={pastEvent}
-          isLoggedIn={!!session?.user}
-          mySignup={event.my_signup}
-        />
-      </section>
     </div>
   )
 }
