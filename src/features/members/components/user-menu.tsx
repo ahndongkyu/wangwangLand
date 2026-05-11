@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ChevronRight, LogOut, Moon, Settings, Sun, User } from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import type { Profile } from "../api/queries"
 
 export function UserMenu({ profile }: { profile: Profile }) {
@@ -49,10 +49,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
           )}
         </div>
         <div className="hidden flex-col items-center gap-0.5 sm:flex">
-          <RoleBadge role={profile.role} />
-          <span className="max-w-[80px] truncate text-sm font-medium leading-snug text-foreground">
-            {profile.nickname}
-          </span>
+          <UserName nickname={profile.nickname} role={profile.role} showTier={false} />
         </div>
       </button>
 
@@ -73,10 +70,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
               )}
             </div>
             <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-              <RoleBadge role={profile.role} />
-              <p className="max-w-full truncate text-sm font-semibold text-foreground">
-                {profile.nickname}
-              </p>
+              <UserName nickname={profile.nickname} role={profile.role} showTier={false} />
             </div>
             <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
           </Link>

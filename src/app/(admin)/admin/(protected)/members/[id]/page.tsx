@@ -25,7 +25,8 @@ import {
   DonationStatusBadge,
 } from "@/features/donations"
 import { Badge } from "@/shared/components/ui/badge"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
+import { getVolunteerCount } from "@/features/volunteer-tier"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 import type { Profile } from "@/features/members"
 
@@ -81,6 +82,8 @@ export default async function AdminMemberDetailPage({
   const profile = await getProfileDetail(id)
   if (!profile) notFound()
 
+  const volunteerCount = await getVolunteerCount(profile.id)
+
   const [
     dailyPosts,
     storiesPosts,
@@ -131,10 +134,12 @@ export default async function AdminMemberDetailPage({
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground md:text-2xl">
-                {profile.nickname}
-              </h1>
-              <RoleBadge role={profile.role} />
+              <UserName
+                nickname={profile.nickname}
+                role={profile.role}
+                volunteerCount={volunteerCount}
+                size="md"
+              />
               <span
                 className={cn(
                   "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold",

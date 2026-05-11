@@ -4,6 +4,7 @@ export interface CommentAuthor {
   nickname: string
   role: string
   avatar_url: string | null
+  volunteer_count?: number
 }
 
 export interface Comment {
@@ -70,16 +71,34 @@ export async function listComments(
 
   const rows = data ?? []
 
-  // 작성자 일괄 조회
+  // 작성자 일괄 조회 + 봉사 카운트
   const authorIds = [...new Set(rows.map((c) => c.user_id).filter(Boolean))] as string[]
   const authorMap: Record<string, CommentAuthor> = {}
   if (authorIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, nickname, role, avatar_url")
-      .in("id", authorIds)
-    for (const p of profiles ?? []) {
-      authorMap[p.id] = { nickname: p.nickname, role: p.role, avatar_url: p.avatar_url }
+    const [profilesRes, certsRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, nickname, role, avatar_url")
+        .in("id", authorIds),
+      supabase
+        .from("daily_posts")
+        .select("created_by")
+        .eq("category", "봉사 후기")
+        .not("related_volunteer_application_id", "is", null)
+        .in("created_by", authorIds),
+    ])
+    const countMap: Record<string, number> = {}
+    for (const id of authorIds) countMap[id] = 0
+    for (const c of (certsRes.data ?? []) as { created_by: string }[]) {
+      if (c.created_by) countMap[c.created_by] = (countMap[c.created_by] ?? 0) + 1
+    }
+    for (const p of profilesRes.data ?? []) {
+      authorMap[p.id] = {
+        nickname: p.nickname,
+        role: p.role,
+        avatar_url: p.avatar_url,
+        volunteer_count: countMap[p.id] ?? 0,
+      }
     }
   }
 

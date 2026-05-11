@@ -7,7 +7,7 @@ import { getDailyPost, getAdjacentDailyPosts, DailyDeleteButton } from "@/featur
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
 
@@ -95,10 +95,11 @@ export default async function DailyDetailPage({
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
           {post.author && (
-            <span className="flex items-center gap-1.5">
-              <RoleBadge role={post.author.role} />
-              <span>{post.author.nickname}</span>
-            </span>
+            <UserName
+              nickname={post.author.nickname}
+              role={post.author.role}
+              volunteerCount={post.author.volunteer_count}
+            />
           )}
           <span>
             {new Date(post.posted_at).toLocaleDateString("ko-KR", {

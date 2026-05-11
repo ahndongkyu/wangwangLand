@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { extractImagesFromHtml, stripHtml } from "@/shared/lib/utils"
 import type { DailyPostWithAuthor } from "../api/queries"
 
@@ -50,10 +50,11 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
         )}
         <div className="mt-3 flex flex-col gap-1">
           {post.author && (
-            <div className="flex items-center gap-1.5">
-              <RoleBadge role={post.author.role} />
-              <span className="truncate text-xs text-muted-foreground">{post.author.nickname}</span>
-            </div>
+            <UserName
+              nickname={post.author.nickname}
+              role={post.author.role}
+              volunteerCount={post.author.volunteer_count}
+            />
           )}
           <span className="text-xs text-muted-foreground">
             {new Date(post.posted_at).toLocaleDateString("ko-KR")}

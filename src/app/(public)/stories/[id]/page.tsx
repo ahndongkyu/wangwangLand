@@ -7,7 +7,7 @@ import { getAdoptionStory, getAdjacentStories, StoryDeleteButton } from "@/featu
 import { getCurrentProfile } from "@/features/members"
 import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
 import { buttonVariants } from "@/shared/components/ui/button"
@@ -104,10 +104,11 @@ export default async function StoryDetailPage({
         </h1>
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
           {story.author && (
-            <span className="flex items-center gap-1.5">
-              <RoleBadge role={story.author.role} />
-              <span>{story.author.nickname}</span>
-            </span>
+            <UserName
+              nickname={story.author.nickname}
+              role={story.author.role}
+              volunteerCount={story.author.volunteer_count}
+            />
           )}
           {story.published_at && (
             <span>

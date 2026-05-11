@@ -1,7 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { extractImagesFromHtml, stripHtml } from "@/shared/lib/utils"
 import type { StoryWithDog } from "../api/queries"
 
@@ -48,10 +48,11 @@ export function StoryCard({ story }: { story: StoryWithDog }) {
         </p>
         <div className="mt-3 flex flex-col gap-1">
           {story.author && (
-            <div className="flex items-center gap-1.5">
-              <RoleBadge role={story.author.role} />
-              <span className="truncate text-xs text-muted-foreground">{story.author.nickname}</span>
-            </div>
+            <UserName
+              nickname={story.author.nickname}
+              role={story.author.role}
+              volunteerCount={story.author.volunteer_count}
+            />
           )}
           {story.published_at && (
             <span className="text-xs text-muted-foreground">

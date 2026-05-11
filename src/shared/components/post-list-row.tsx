@@ -2,13 +2,13 @@ import Image from "next/image"
 import Link from "next/link"
 import { Eye, Pin } from "lucide-react"
 
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { formatShortDate } from "@/shared/lib/utils"
 
 interface Author {
   nickname: string
-  /** RoleBadge 가 받을 수 있는 형태. fetch-authors 의 AuthorInfo 와 호환되도록 string. */
   role: string
+  volunteer_count?: number
 }
 
 interface Props {
@@ -130,12 +130,11 @@ export function PostListRow({
         {/* 메타 */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
           {author && (
-            <span className="flex items-center gap-1">
-              <RoleBadge role={author.role} />
-              <span className="font-medium text-foreground/80">
-                {author.nickname}
-              </span>
-            </span>
+            <UserName
+              nickname={author.nickname}
+              role={author.role}
+              volunteerCount={author.volunteer_count}
+            />
           )}
           {date && (
             <>

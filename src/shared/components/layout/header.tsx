@@ -13,7 +13,7 @@ import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
 import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { UserNotificationBell } from "@/shared/components/user-notification-bell"
@@ -418,10 +418,7 @@ function MobileProfileSection({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <RoleBadge role={profile.role} />
-          <p className="truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
-            {profile.nickname}
-          </p>
+          <UserName nickname={profile.nickname} role={profile.role} showTier={false} size="md" />
         </div>
         <span className="text-[11px] font-medium text-[#C06B2A] dark:text-[#FFD4A1]">
           마이페이지 →

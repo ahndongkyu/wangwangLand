@@ -5,7 +5,7 @@ import Image from "next/image"
 import { User, Trash2, CornerDownRight, Pencil, Check, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
-import { RoleBadge } from "@/shared/components/role-badge"
+import { UserName } from "@/shared/components/user-name"
 import { deleteComment, updateComment } from "../api/actions"
 import { CommentForm } from "./comment-form"
 import type { Comment, PostType, CommentAuthor } from "../api/queries"
@@ -102,10 +102,12 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
           {/* 헤더 */}
           <div className="flex flex-wrap items-center gap-1.5">
             {comment.author ? (
-              <>
-                <RoleBadge role={comment.author.role} />
-                <span className="text-sm font-medium text-foreground">{comment.author.nickname}</span>
-              </>
+              <UserName
+                nickname={comment.author.nickname}
+                role={comment.author.role}
+                volunteerCount={comment.author.volunteer_count}
+                size="sm"
+              />
             ) : (
               <span className="text-sm text-muted-foreground">(탈퇴한 회원)</span>
             )}
