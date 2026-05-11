@@ -10,6 +10,7 @@ import { RichTextContent } from "@/shared/components/rich-text-content"
 import { UserName } from "@/shared/components/user-name"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
+import { ShareButton } from "@/shared/components/share-button"
 
 export const revalidate = 60
 
@@ -119,6 +120,15 @@ export default async function DailyDetailPage({
           <RichTextContent html={post.content} />
         </article>
       )}
+
+      <div className="mt-8 flex justify-center">
+        <ShareButton
+          title={post.title}
+          text={`${post.title} - 왕왕랜드 일상`}
+          path={`/daily/${post.id}`}
+          label="공유하기"
+        />
+      </div>
 
       <CommentSection postType="daily" postId={post.id} />
 

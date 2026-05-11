@@ -10,6 +10,7 @@ import { RichTextContent } from "@/shared/components/rich-text-content"
 import { UserName } from "@/shared/components/user-name"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
+import { ShareButton } from "@/shared/components/share-button"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 
@@ -127,6 +128,15 @@ export default async function StoryDetailPage({
       <article>
         <RichTextContent html={story.content} />
       </article>
+
+      <div className="mt-8 flex justify-center">
+        <ShareButton
+          title={story.title}
+          text={`${story.title} - 왕왕랜드 입양 후기`}
+          path={`/stories/${story.id}`}
+          label="공유하기"
+        />
+      </div>
 
       <CommentSection postType="story" postId={story.id} />
 

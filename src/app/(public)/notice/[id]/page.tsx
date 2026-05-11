@@ -9,6 +9,7 @@ import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
+import { ShareButton } from "@/shared/components/share-button"
 
 export const revalidate = 60
 
@@ -89,6 +90,15 @@ export default async function NoticeDetailPage({
       <article>
         <RichTextContent html={notice.content} />
       </article>
+
+      <div className="mt-8 flex justify-center">
+        <ShareButton
+          title={notice.title}
+          text={`${notice.title} - 왕왕랜드 공지사항`}
+          path={`/notice/${notice.id}`}
+          label="공유하기"
+        />
+      </div>
 
       <CommentSection postType="notice" postId={notice.id} />
 
