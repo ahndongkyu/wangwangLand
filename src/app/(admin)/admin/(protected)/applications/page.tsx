@@ -277,8 +277,8 @@ export default async function AdminApplicationsPage({
       {current.rows.length === 0 ? (
         <EmptyState title="해당 조건의 신청이 없습니다" />
       ) : activeType === "adoption" ? (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[520px]">
+        <div className="rounded-lg border border-border bg-card md:overflow-x-auto">
+          <table className="w-full md:min-w-[520px]">
             <thead className="border-b border-border bg-secondary/40 text-left text-sm">
               <tr>
                 <th className="px-4 py-3 font-semibold">신청자</th>
@@ -292,16 +292,23 @@ export default async function AdminApplicationsPage({
                 <th className="hidden px-4 py-3 font-semibold md:table-cell">
                   신청일시
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">작업</th>
+                <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
               </tr>
             </thead>
             <tbody>
               {adoption.rows.map((a) => (
                 <tr
                   key={a.id}
-                  className="border-b border-border last:border-0"
+                  className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
                 >
-                  <td className="px-4 py-3 font-medium">{a.applicant_name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/applications/adoption/${a.id}`}
+                      className="block hover:text-primary"
+                    >
+                      {a.applicant_name}
+                    </Link>
+                  </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
                     {a.phone}
                   </td>
@@ -309,19 +316,24 @@ export default async function AdminApplicationsPage({
                     {a.dog?.name ?? a.cat?.name ?? "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge
-                      className={cn(
-                        "border-0 font-semibold",
-                        statusBadgeColor(a.status)
-                      )}
+                    <Link
+                      href={`/admin/applications/adoption/${a.id}`}
+                      className="inline-block"
                     >
-                      {a.status}
-                    </Badge>
+                      <Badge
+                        className={cn(
+                          "border-0 font-semibold",
+                          statusBadgeColor(a.status)
+                        )}
+                      >
+                        {a.status}
+                      </Badge>
+                    </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
                     {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="hidden px-4 py-3 text-right md:table-cell">
                     <Link
                       href={`/admin/applications/adoption/${a.id}`}
                       className="text-sm font-medium text-primary hover:underline"
@@ -335,8 +347,8 @@ export default async function AdminApplicationsPage({
           </table>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[520px]">
+        <div className="rounded-lg border border-border bg-card md:overflow-x-auto">
+          <table className="w-full md:min-w-[520px]">
             <thead className="border-b border-border bg-secondary/40 text-left text-sm">
               <tr>
                 <th className="px-4 py-3 font-semibold">신청자</th>
@@ -353,16 +365,23 @@ export default async function AdminApplicationsPage({
                 <th className="hidden px-4 py-3 font-semibold md:table-cell">
                   신청일시
                 </th>
-                <th className="px-4 py-3 text-right font-semibold">작업</th>
+                <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
               </tr>
             </thead>
             <tbody>
               {volunteer.rows.map((v) => (
                 <tr
                   key={v.id}
-                  className="border-b border-border last:border-0"
+                  className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
                 >
-                  <td className="px-4 py-3 font-medium">{v.applicant_name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/applications/volunteer/${v.id}`}
+                      className="block hover:text-primary"
+                    >
+                      {v.applicant_name}
+                    </Link>
+                  </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
                     {v.party_size}명
                   </td>
@@ -373,19 +392,24 @@ export default async function AdminApplicationsPage({
                     {v.activities.join(", ") || "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge
-                      className={cn(
-                        "border-0 font-semibold",
-                        statusBadgeColor(v.status)
-                      )}
+                    <Link
+                      href={`/admin/applications/volunteer/${v.id}`}
+                      className="inline-block"
                     >
-                      {v.status}
-                    </Badge>
+                      <Badge
+                        className={cn(
+                          "border-0 font-semibold",
+                          statusBadgeColor(v.status)
+                        )}
+                      >
+                        {v.status}
+                      </Badge>
+                    </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
                     {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="hidden px-4 py-3 text-right md:table-cell">
                     <Link
                       href={`/admin/applications/volunteer/${v.id}`}
                       className="text-sm font-medium text-primary hover:underline"
