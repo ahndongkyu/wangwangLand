@@ -111,15 +111,13 @@ export function MonthGrid({
               role="button"
               tabIndex={0}
               onClick={() => {
-                // 데스크톱: 빈 셀 클릭 → 일정 추가
-                // 모바일: 모든 셀 탭 → 패널 토글 (이벤트 있을 때)
-                if (window.innerWidth >= 640) {
-                  if (dayEvents.length === 0 && addHrefBase) {
-                    router.push(`${addHrefBase}?date=${cellKey}`)
-                  }
-                } else {
-                  handleCellClick(cellKey, dayEvents.length > 0)
+                // 통일된 동작: 셀 탭 → 그 날 이벤트 패널 토글
+                // 단, 빈 셀이고 운영진 모드(addHrefBase 있음)면 일정 추가 페이지로
+                if (dayEvents.length === 0 && addHrefBase) {
+                  router.push(`${addHrefBase}?date=${cellKey}`)
+                  return
                 }
+                handleCellClick(cellKey, dayEvents.length > 0)
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -189,24 +187,19 @@ export function MonthGrid({
                 )}
               </div>
 
-              {/* 데스크톱: 텍스트 칩 */}
+              {/* 데스크톱: 텍스트 칩 (클릭은 셀로 전파되어 패널 토글) */}
               <div className="mt-1 hidden space-y-0.5 sm:block">
-                {dayEvents.slice(0, 3).map((ev) => {
-                  const chipReadOnly = readOnly && !ev.signup_enabled
-                  return (
-                    <EventChip
-                      key={ev.id}
-                      event={ev}
-                      maskNames={maskNames}
-                      readOnly={chipReadOnly}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (chipReadOnly) return
-                        router.push(`${hrefBase}/${ev.id}`)
-                      }}
-                    />
-                  )
-                })}
+                {dayEvents.slice(0, 3).map((ev) => (
+                  <EventChip
+                    key={ev.id}
+                    event={ev}
+                    maskNames={maskNames}
+                    readOnly
+                    onClick={() => {
+                      /* 셀 onClick 으로 위임 */
+                    }}
+                  />
+                ))}
                 {dayEvents.length > 3 && (
                   <p className="px-1 text-[10px] text-muted-foreground">
                     + {dayEvents.length - 3}개 더
@@ -218,9 +211,9 @@ export function MonthGrid({
         })}
       </div>
 
-      {/* 모바일 선택일 패널 */}
+      {/* 선택일 패널 — 모든 화면에서 표시 */}
       {selectedKey && selectedEvents.length > 0 && (
-        <div className="border-t border-border sm:hidden">
+        <div className="border-t border-border">
           <div className="flex items-center justify-between bg-secondary/40 px-4 py-2.5">
             <span className="text-sm font-semibold text-foreground">
               {fullDayLabel(selectedKey)}
@@ -243,47 +236,30 @@ export function MonthGrid({
               const color = CATEGORY_COLOR[ev.category]
               const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
               const displayTitle = maskNames ? publicEventTitle(ev) : ev.title
-              const chipReadOnly = readOnly && !ev.signup_enabled
-
-              const content = (
-                <div className="flex items-start gap-3 px-4 py-3">
-                  <span
-                    style={customStyle?.soft}
-                    className={cn(
-                      "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                      !isCustom && color.soft,
-                      !isCustom && color.softText
-                    )}
-                  >
-                    {eventDisplayLabel(ev)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {displayTitle}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
-                      {ev.location && ` · ${ev.location}`}
-                    </p>
-                  </div>
-                  {!chipReadOnly && (
-                    <span className="mt-0.5 shrink-0 text-xs text-muted-foreground">→</span>
-                  )}
-                </div>
-              )
 
               return (
                 <li key={ev.id}>
-                  {chipReadOnly ? (
-                    <div>{content}</div>
-                  ) : (
-                    <Link
-                      href={`${hrefBase}/${ev.id}`}
-                      className="block transition-colors hover:bg-secondary/40 active:bg-secondary/60"
+                  <div className="flex items-start gap-3 px-4 py-3">
+                    <span
+                      style={customStyle?.soft}
+                      className={cn(
+                        "mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                        !isCustom && color.soft,
+                        !isCustom && color.softText
+                      )}
                     >
-                      {content}
-                    </Link>
-                  )}
+                      {eventDisplayLabel(ev)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {displayTitle}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
+                        {ev.location && ` · ${ev.location}`}
+                      </p>
+                    </div>
+                  </div>
                 </li>
               )
             })}
