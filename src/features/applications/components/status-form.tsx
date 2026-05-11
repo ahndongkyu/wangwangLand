@@ -75,12 +75,29 @@ export function ApplicationStatusForm({
     kind === "volunteer" && !currentNote ? VOLUNTEER_DEFAULT_NOTE : (currentNote ?? "")
 
   const todayInput = todayKstDate()
+
+  // 신청자가 적은 첫 번째 날짜 + 시간을 일정 기본값으로 사용 (없으면 오늘 10시)
+  const requestedDate = hint?.availableDates?.[0] || todayInput
+  const requestedTimeRaw = (hint?.availableTime ?? "").trim()
+  const timeMatch = requestedTimeRaw.match(/^(\d{1,2}):(\d{2})$/)
+  const requestedTime = timeMatch
+    ? `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`
+    : "10:00"
+
+  function addHoursToTime(time: string, hours: number): string {
+    const [h, m] = time.split(":").map(Number)
+    const totalMin = h * 60 + m + hours * 60
+    const nh = Math.min(23, Math.floor(totalMin / 60))
+    const nm = totalMin % 60
+    return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`
+  }
+
   const initialStart = linkedEvent
     ? isoToLocalKstInput(linkedEvent.starts_at)
-    : `${todayInput}T10:00`
+    : `${requestedDate}T${requestedTime}`
   const initialEnd = linkedEvent
     ? isoToLocalKstInput(linkedEvent.ends_at)
-    : `${todayInput}T12:00`
+    : `${requestedDate}T${addHoursToTime(requestedTime, 2)}`
 
   const [startsAt, setStartsAt] = useState(initialStart)
   const [endsAt, setEndsAt] = useState(initialEnd)
