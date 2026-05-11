@@ -1,5 +1,5 @@
 import { cn } from "@/shared/lib/utils"
-import { getTier } from "@/features/volunteer-tier"
+import { getTier } from "@/features/volunteer-tier/tier"
 
 export type UserRole = "member" | "full_member" | "staff" | "admin"
 
