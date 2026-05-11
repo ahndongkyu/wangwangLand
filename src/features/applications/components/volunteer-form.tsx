@@ -214,21 +214,6 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
         <span className="text-[10px] text-muted-foreground">{step}/3</span>
       </div>
 
-      {/* 안내 — 모든 스텝에서 노출 */}
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
-        <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
-        <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          신청 후 <span className="font-semibold">1시간 이내</span>에 승인 처리하려 노력하고 있으니,
-          번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
-        </p>
-      </div>
-
       {/* Step 1: 신청 종류 + 신청자 정보 */}
       <div className={step === 1 ? "contents" : "hidden sm:contents"}>
         {/* 1. 신청 종류 */}
@@ -447,6 +432,21 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
 
       {/* Step 3: 안전인지 + 동의 */}
       <div className={step === 3 ? "contents" : "hidden sm:contents"}>
+        {/* 신청 전 안내 — 안전사항 카드 바로 위 */}
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
+          <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
+          <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+            현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+            곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+            신청 후 <span className="font-semibold">1시간 이내</span>에 승인 처리하려 노력하고 있으니,
+            번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
+          </p>
+        </div>
+
         {/* 5. 안전 사항 인지 */}
         <Card title="안전 사항 인지" required>
           <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
