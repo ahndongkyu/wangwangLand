@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Bell, Users, Heart, HandHeart } from "lucide-react"
+import { Bell, Heart, HandHeart } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 
@@ -28,13 +28,7 @@ export function AdminNotificationBell({ counts }: Props) {
   }, [])
 
   const items = [
-    counts.members > 0 && {
-      icon: <Users className="size-4 shrink-0 text-amber-600" />,
-      label: "회원 승인 대기",
-      count: counts.members,
-      href: "/admin/members?status=pending",
-      color: "text-amber-600",
-    },
+    // 회원 승인 대기 항목은 자동 승인 시스템이라 표시 안 함
     counts.adoptions > 0 && {
       icon: <Heart className="size-4 shrink-0 text-rose-500" />,
       label: "입양 신청 접수",
