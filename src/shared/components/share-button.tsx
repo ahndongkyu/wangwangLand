@@ -38,9 +38,12 @@ export function ShareButton({
   const toast = useToast()
 
   function handleClick() {
-    const url = path.startsWith("http")
-      ? path
-      : `${window.location.origin}${path}`
+    // 현재 사용자가 보고 있는 도메인을 우선 사용 (vercel.app 같은 보조 도메인 회피)
+    const baseOrigin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || ""
+    const url = path.startsWith("http") ? path : `${baseOrigin}${path}`
 
     startTransition(async () => {
       // 1) 네이티브 share API (모바일 대부분 지원)
