@@ -21,8 +21,8 @@ export function AdminBottomNav({ counts }: Props) {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur pb-[max(env(safe-area-inset-bottom),4px)] md:hidden">
-      <ul className="grid grid-cols-4">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] md:hidden">
+      <ul className="grid grid-cols-4 gap-1">
         {TABS.map((tab) => {
           const isActive = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href)
           const Icon = tab.icon
@@ -32,12 +32,14 @@ export function AdminBottomNav({ counts }: Props) {
               <Link
                 href={tab.href}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "flex flex-col items-center justify-center gap-1 rounded-md px-1 py-2.5 text-[11px] font-semibold transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
                 <span className="relative">
-                  <Icon className="size-5" />
+                  <Icon className="size-6" />
                   {badge > 0 && (
                     <span className="absolute -right-1.5 -top-1 flex min-w-[14px] items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-bold leading-none text-destructive-foreground">
                       {badge > 9 ? "9+" : badge}

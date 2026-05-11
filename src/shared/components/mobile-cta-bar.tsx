@@ -31,7 +31,7 @@ export function MobileCtaBar() {
   return (
     <nav
       aria-label="하단 내비게이션"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:hidden"
     >
       <ul className="grid grid-cols-4 gap-1">
         {ITEMS.map((item) => {
@@ -41,13 +41,13 @@ export function MobileCtaBar() {
               <Link
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 rounded-md px-1 py-2 text-[11px] font-semibold transition-colors",
+                  "flex flex-col items-center justify-center gap-1 rounded-md px-1 py-2.5 text-[11px] font-semibold transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
-                <BrandIcon name={item.icon} size={22} decorative />
+                <BrandIcon name={item.icon} size={24} decorative />
                 <span>{item.label}</span>
               </Link>
             </li>

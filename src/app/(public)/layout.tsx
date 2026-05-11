@@ -85,7 +85,7 @@ export default async function PublicLayout({
         unreadNotificationCount={unreadNotificationCount}
       />
       {/* 모바일 하단 CTA 바와 겹치지 않도록 main 하단에 padding */}
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      <main className="flex-1 pb-24 md:pb-0">{children}</main>
       <div className="md:hidden"><MobileFooter /></div>
       <div className="hidden md:block"><Footer /></div>
       <KakaoChannelButton />
