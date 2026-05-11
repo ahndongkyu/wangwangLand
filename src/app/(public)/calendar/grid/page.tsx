@@ -40,11 +40,25 @@ export default async function CalendarGridPage({
   const { data: { session } } = await supabase.auth.getSession()
   const isMember = !!session?.user
 
+  // 관리자/운영진 여부 — 캘린더에서 바로 일정 관리 진입 가능하게
+  let isStaff = false
+  if (session?.user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle()
+    if (profile && (profile.role === "admin" || profile.role === "staff")) {
+      isStaff = true
+    }
+  }
+
   const { from, to } = monthRange(yearMonth)
   const events = await listEventsInRange({
     from,
     to,
     categories: categories.length > 0 ? categories : undefined,
+    includeInternal: isStaff, // 관리자에게는 내부 일정도 노출
   })
 
   return (
@@ -85,9 +99,9 @@ export default async function CalendarGridPage({
       <MonthGrid
         yearMonth={yearMonth}
         events={events}
-        hrefBase="/calendar"
+        hrefBase={isStaff ? "/admin/calendar" : "/calendar"}
         maskNames={!isMember}
-        readOnly
+        readOnly={!isStaff}
       />
     </div>
   )
