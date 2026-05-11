@@ -14,7 +14,7 @@ import type { Profile } from "@/features/members"
 export const metadata: Metadata = { title: "회원 관리" }
 export const dynamic = "force-dynamic"
 
-const PAGE_SIZE = 30
+const PAGE_SIZE = 10
 
 const STATUS_FILTERS = [
   { label: "대기", value: "pending" },
