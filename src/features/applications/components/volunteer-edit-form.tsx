@@ -164,7 +164,7 @@ export function VolunteerEditForm({ application }: Props) {
           취소
         </Link>
         <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : "수정 저장"}
+          {pending ? "저장 중..." : "변경 저장"}
         </Button>
       </div>
     </form>

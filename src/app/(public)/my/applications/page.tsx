@@ -238,7 +238,7 @@ export default async function MyApplicationsPage() {
                           href={`/my/applications/volunteer/${v.id}/edit`}
                           className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
                         >
-                          수정
+                          일정 변경
                         </Link>
                       )}
                       <CancelMyApplicationButton id={v.id} kind="volunteer" />

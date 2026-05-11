@@ -17,22 +17,23 @@ export const dynamic = "force-dynamic"
 export default async function VolunteerPage() {
   const profile = await getCurrentProfile()
 
-  // 비로그인이면 로그인 안내
+  // 비로그인이면 가입 안내
   if (!profile) {
     return (
       <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
+        <div className="mb-3 text-4xl">🐾</div>
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          봉사 신청은 회원만 가능합니다.
+          회원가입 후 이용 가능합니다.
           <br />
-          로그인 후 신청해 주세요.
+          왕왕랜드 가족이 되어 아이들과 함께해 주세요.
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <Link
             href="/login?next=/volunteer"
             className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            로그인하기
+            회원가입 / 로그인
           </Link>
           <Link
             href="/"

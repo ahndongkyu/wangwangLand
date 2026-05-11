@@ -5,7 +5,7 @@ import { notFound, redirect } from "next/navigation"
 import { VolunteerEditForm, getMyEditableVolunteerApplication } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 
-export const metadata: Metadata = { title: "봉사 신청 수정" }
+export const metadata: Metadata = { title: "봉사 일정 변경" }
 export const dynamic = "force-dynamic"
 
 export default async function VolunteerApplicationEditPage({
@@ -28,9 +28,9 @@ export default async function VolunteerApplicationEditPage({
         </Link>
       </nav>
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청 수정</h1>
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 일정 변경</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          처리 중인 신청만 수정할 수 있어요. 운영진이 승인/반려한 신청은 수정 불가합니다.
+          처리 중인 신청만 변경할 수 있어요. 운영진이 승인/반려한 신청은 변경 불가합니다.
         </p>
       </header>
       <VolunteerEditForm application={application} />
