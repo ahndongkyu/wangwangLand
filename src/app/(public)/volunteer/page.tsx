@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import { VolunteerForm } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
@@ -15,6 +16,57 @@ export const dynamic = "force-dynamic"
 
 export default async function VolunteerPage() {
   const profile = await getCurrentProfile()
+
+  // 비로그인이면 로그인 안내
+  if (!profile) {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          봉사 신청은 회원만 가능합니다.
+          <br />
+          로그인 후 신청해 주세요.
+        </p>
+        <div className="mt-6 flex flex-col gap-2">
+          <Link
+            href="/login?next=/volunteer"
+            className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            로그인하기
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center text-xs text-muted-foreground hover:text-foreground"
+          >
+            홈으로
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // 가입 진행 중인 회원은 안내
+  if (profile.status === "pending") {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          가입 승인을 기다리고 있어요. 승인이 완료되면 신청 가능합니다.
+        </p>
+      </div>
+    )
+  }
+  if (profile.status === "rejected" || profile.is_banned) {
+    return (
+      <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          현재 봉사 신청이 제한된 계정입니다.
+        </p>
+      </div>
+    )
+  }
+
   const termsAlreadyAgreed =
     !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
 

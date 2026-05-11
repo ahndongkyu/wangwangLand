@@ -183,6 +183,27 @@ export async function getVolunteerApplication(
   return { ...(data as VolunteerApplication), signup_provider }
 }
 
+/** 회원이 본인 봉사 신청 1건을 가져옴 (수정 페이지용). 본인 소유 + 미처리 상태만 반환. */
+export async function getMyEditableVolunteerApplication(
+  id: string,
+  userId: string
+): Promise<VolunteerApplication | null> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from("volunteer_applications")
+    .select("*")
+    .eq("id", id)
+    .eq("created_by", userId)
+    .maybeSingle()
+
+  if (!data) return null
+  const app = data as VolunteerApplication
+  if (app.status !== "접수" && app.status !== "검토중") return null
+  return app
+}
+
 /** 어드민 회원 상세에서 사용: 이메일 매칭으로 회원의 신청 내역 조회 */
 export async function listApplicationsByEmail(email: string): Promise<{
   adoption: AdoptionRow[]

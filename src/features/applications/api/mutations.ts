@@ -137,7 +137,20 @@ export async function submitVolunteerApplication(
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
 
-  // 비회원도 INSERT 가능하지만 SELECT 는 운영진만. .select() returning 위해 admin client.
+  // 봉사 신청은 회원만 가능
+  if (!user) return { error: "로그인 후 신청해주세요." }
+
+  // 회원 상태 확인 (승인된 회원만)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("status, is_banned")
+    .eq("id", user.id)
+    .maybeSingle()
+  if (!profile || profile.status !== "approved" || profile.is_banned) {
+    return { error: "봉사 신청 가능한 회원 상태가 아닙니다." }
+  }
+
+  // SELECT 는 운영진만 RLS 허용이므로 admin client 로 우회
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
 
@@ -146,8 +159,7 @@ export async function submitVolunteerApplication(
     .insert({
       applicant_name,
       phone,
-      // 회원이면 카카오 이메일 자동 저장. 비회원은 null.
-      email: user?.email ?? null,
+      email: user.email ?? null,
       party_size: partyCheck.partySize!,
       available_days: availableDays,
       available_dates: availableDates,
@@ -155,7 +167,7 @@ export async function submitVolunteerApplication(
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
       privacy_agreed: true,
-      created_by: user?.id ?? null,
+      created_by: user.id,
     })
     .select("id")
     .single()
@@ -179,6 +191,69 @@ export async function submitVolunteerApplication(
   }
 
   return { id: data.id }
+}
+
+/**
+ * 회원이 본인 봉사 신청을 수정 (상태가 "접수" 또는 "검토중"일 때만 가능).
+ * 승인/반려 후엔 운영진 처리가 끝났으니 수정 불가.
+ */
+export async function updateMyVolunteerApplication(
+  id: string,
+  formData: FormData
+): Promise<SubmitResult> {
+  const applicant_name = String(formData.get("applicant_name") ?? "").trim()
+  const phone = String(formData.get("phone") ?? "").trim()
+
+  const nameCheck = validateName(applicant_name)
+  if (!nameCheck.valid) return { error: nameCheck.error }
+  const phoneCheck = validateKoreanPhone(phone)
+  if (!phoneCheck.valid) return { error: phoneCheck.error }
+  const partyCheck = validatePartySize(String(formData.get("party_size") ?? "1"))
+  if (!partyCheck.valid) return { error: partyCheck.error }
+
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  // 본인 신청 + 수정 가능 상태 검증
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+  const { data: prev } = await admin
+    .from("volunteer_applications")
+    .select("id, created_by, status")
+    .eq("id", id)
+    .maybeSingle()
+  if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
+  if (prev.created_by !== user.id) return { error: "본인 신청만 수정할 수 있습니다." }
+  if (prev.status !== "접수" && prev.status !== "검토중") {
+    return { error: "처리가 완료된 신청은 수정할 수 없습니다." }
+  }
+
+  const availableDates = formData.getAll("available_dates").map(String)
+  const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
+
+  const { error } = await admin
+    .from("volunteer_applications")
+    .update({
+      applicant_name,
+      phone,
+      party_size: partyCheck.partySize!,
+      available_dates: availableDates,
+      available_time: String(formData.get("available_time") ?? "").trim() || null,
+      activities,
+      message: String(formData.get("message") ?? "").trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[updateMyVolunteerApplication]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/my/applications")
+  return { id }
 }
 
 // ============================================================================

@@ -232,7 +232,15 @@ export default async function MyApplicationsPage() {
                       </div>
                     )}
 
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                      {(v.status === "접수" || v.status === "검토중") && (
+                        <Link
+                          href={`/my/applications/volunteer/${v.id}/edit`}
+                          className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                        >
+                          수정
+                        </Link>
+                      )}
                       <CancelMyApplicationButton id={v.id} kind="volunteer" />
                     </div>
                   </div>
