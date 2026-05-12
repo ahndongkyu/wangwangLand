@@ -57,6 +57,40 @@ export async function sendCommentNotifications(opts: {
       actor_id: actorId,
     }))
   )
+
+  // 댓글 작성자 닉네임 조회 (Push 메시지용)
+  const { data: actor } = await admin
+    .from("profiles")
+    .select("nickname")
+    .eq("id", actorId)
+    .maybeSingle()
+  const actorName = (actor as { nickname?: string } | null)?.nickname ?? "누군가"
+
+  // Push 알림 (IN-APP과 별도 — 실패해도 무시)
+  try {
+    const { sendPushToUser } = await import("@/features/push")
+    await Promise.all(
+      targets.map((t) =>
+        sendPushToUser(
+          {
+            title: t.type === "reply_to_comment" ? "💬 새 대댓글" : "💬 새 댓글",
+            body: t.type === "reply_to_comment"
+              ? `${actorName}님이 내 댓글에 답글을 달았어요.`
+              : `${actorName}님이 댓글을 달았어요.`,
+            url: postType === "notice"
+              ? `/notice/${postId}`
+              : postType === "story"
+                ? `/stories/${postId}`
+                : `/daily/${postId}`,
+            tag: `comment-${commentId}`,
+          },
+          t.userId
+        )
+      )
+    )
+  } catch (e) {
+    console.error("[sendCommentNotifications push]", e)
+  }
 }
 
 /** 알림 읽음 처리 */

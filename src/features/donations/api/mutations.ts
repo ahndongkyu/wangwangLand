@@ -99,6 +99,26 @@ export async function createDonation(
   revalidatePath("/admin/donations")
   if (user?.id) revalidatePath("/my/donations")
 
+  // 운영진에게 Push 알림 (실패해도 무시)
+  const typeLabel = input.type === "cash" ? "현금" : "물품"
+  const amountLabel =
+    input.type === "cash" && input.amount
+      ? ` ${input.amount.toLocaleString()}원`
+      : input.item_description
+        ? ` (${input.item_description})`
+        : ""
+  try {
+    const { sendPushToStaff } = await import("@/features/push")
+    await sendPushToStaff({
+      title: `💝 새 후원 접수`,
+      body: `${input.donor_name}님이 ${typeLabel}${amountLabel} 후원을 신청했습니다.`,
+      url: `/admin/donations`,
+      tag: `donation-${data.id}`,
+    })
+  } catch (e) {
+    console.error("[createDonation push]", e)
+  }
+
   redirect(`/donate/register/done?id=${data.id}`)
 }
 
