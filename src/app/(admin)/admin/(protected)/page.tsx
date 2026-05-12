@@ -114,6 +114,8 @@ export default async function AdminDashboardPage() {
 
   const monthLabel = now.toLocaleDateString("ko-KR", { month: "long" })
   const totalPending = pendingCounts.adoption + pendingCounts.volunteer
+  const newMembersThis = monthlyMemberStats.at(-1)?.rescued ?? 0
+  const newMembersPrev = monthlyMemberStats.at(-2)?.rescued ?? 0
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -320,11 +322,11 @@ export default async function AdminDashboardPage() {
             href="/admin/notices"
           />
           <MonthCard
-            label="대기 중인 신청"
-            value={totalPending}
-            href="/admin/applications?status=접수"
-            highlight
-            suffix="건"
+            label="신규 가입 회원"
+            value={newMembersThis}
+            prev={newMembersPrev}
+            href="/admin/members"
+            suffix="명"
           />
         </div>
       </section>
