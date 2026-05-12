@@ -33,6 +33,7 @@ const STATUS_COLOR: Record<string, string> = {
   검토중: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
   승인: "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
   반려: "bg-muted text-muted-foreground",
+  취소: "bg-muted text-muted-foreground/60",
 }
 
 export default async function VolunteerApplicationDetailPage({
@@ -125,11 +126,21 @@ export default async function VolunteerApplicationDetailPage({
               </span>
             )}
           </p>
-          {app.status !== "접수" && (
+          {app.status === "취소" ? (
+            <div className="mt-3 space-y-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <p>신청자가 직접 취소한 신청입니다.</p>
+              {(app as typeof app & { cancel_reason?: string }).cancel_reason && (
+                <p>
+                  <span className="font-semibold">취소 사유 · </span>
+                  {(app as typeof app & { cancel_reason?: string }).cancel_reason}
+                </p>
+              )}
+            </div>
+          ) : app.status !== "접수" ? (
             <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-300">
               이 신청은 이미 <span className="font-semibold">{app.status}</span> 처리되었어요.
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* 빠른 연락 */}

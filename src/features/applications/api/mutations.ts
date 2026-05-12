@@ -608,32 +608,33 @@ export async function deleteVolunteerApplication(
 }
 
 /**
- * 회원이 본인 봉사 신청을 직접 삭제 (취소 + 행 제거).
- * 연결된 캘린더 일정도 함께 cascade 삭제.
+ * 회원이 본인 봉사 신청을 취소.
+ * - 상태를 '취소'로 변경하고 취소 사유 저장 (행 보존)
+ * - 연결된 캘린더 일정만 삭제
  */
 export async function cancelOwnVolunteerApplication(
-  id: string
+  id: string,
+  cancelReason: string
 ): Promise<SubmitResult> {
   const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return { error: "로그인이 필요합니다." }
 
   const admin = createAdminClient()
 
-  // 본인 소유 확인 (RLS 우회 admin client 라 명시적 체크 필수)
   const { data: app } = await admin
     .from("volunteer_applications")
-    .select("created_by")
+    .select("created_by, status")
     .eq("id", id)
     .maybeSingle()
   if (!app) return { error: "신청을 찾을 수 없습니다." }
-  if (app.created_by !== session.user.id) {
-    return { error: "본인 신청만 삭제할 수 있습니다." }
-  }
+  if (app.created_by !== session.user.id) return { error: "본인 신청만 취소할 수 있습니다." }
+  if (app.status === "취소") return { error: "이미 취소된 신청입니다." }
 
-  // 연결 캘린더 일정 cascade 삭제
+  const reason = cancelReason.trim()
+  if (!reason) return { error: "취소 사유를 입력해주세요." }
+
+  // 캘린더 일정만 삭제 (신청 행은 보존)
   await admin
     .from("events")
     .delete()
@@ -642,7 +643,7 @@ export async function cancelOwnVolunteerApplication(
 
   const { error } = await admin
     .from("volunteer_applications")
-    .delete()
+    .update({ status: "취소", cancel_reason: reason })
     .eq("id", id)
 
   if (error) {
@@ -658,28 +659,30 @@ export async function cancelOwnVolunteerApplication(
 }
 
 /**
- * 회원이 본인 입양 신청을 직접 삭제.
+ * 회원이 본인 입양 신청을 취소.
+ * - 상태를 '취소'로 변경하고 취소 사유 저장 (행 보존)
  */
 export async function cancelOwnAdoptionApplication(
-  id: string
+  id: string,
+  cancelReason: string
 ): Promise<SubmitResult> {
   const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return { error: "로그인이 필요합니다." }
 
   const admin = createAdminClient()
 
   const { data: app } = await admin
     .from("adoption_applications")
-    .select("created_by")
+    .select("created_by, status")
     .eq("id", id)
     .maybeSingle()
   if (!app) return { error: "신청을 찾을 수 없습니다." }
-  if (app.created_by !== session.user.id) {
-    return { error: "본인 신청만 삭제할 수 있습니다." }
-  }
+  if (app.created_by !== session.user.id) return { error: "본인 신청만 취소할 수 있습니다." }
+  if (app.status === "취소") return { error: "이미 취소된 신청입니다." }
+
+  const reason = cancelReason.trim()
+  if (!reason) return { error: "취소 사유를 입력해주세요." }
 
   await admin
     .from("events")
@@ -689,7 +692,7 @@ export async function cancelOwnAdoptionApplication(
 
   const { error } = await admin
     .from("adoption_applications")
-    .delete()
+    .update({ status: "취소", cancel_reason: reason })
     .eq("id", id)
 
   if (error) {

@@ -27,6 +27,7 @@ const STATUS_FILTERS: Array<{ label: string; value: ApplicationStatus | "전체"
   { label: "검토중", value: "검토중" },
   { label: "승인", value: "승인" },
   { label: "반려", value: "반려" },
+  { label: "취소", value: "취소" },
 ]
 
 type TypeValue = (typeof TYPE_TABS)[number]["value"]
@@ -53,6 +54,8 @@ function statusBadgeColor(status: ApplicationStatus) {
       return "bg-emerald-600/20 text-emerald-700"
     case "반려":
       return "bg-muted text-muted-foreground"
+    case "취소":
+      return "bg-muted text-muted-foreground/60"
   }
 }
 

@@ -21,6 +21,8 @@ function statusBadgeClass(status: ApplicationStatus) {
       return "bg-emerald-600/20 text-emerald-700"
     case "반려":
       return "bg-muted text-muted-foreground"
+    case "취소":
+      return "bg-muted text-muted-foreground/60"
   }
 }
 
@@ -49,12 +51,12 @@ export default async function MyApplicationsPage() {
   const [adoptionRes, volunteerRes] = await Promise.all([
     admin
       .from("adoption_applications")
-      .select("id, status, submitted_at, admin_note, dog:dogs(name), cat:cats(name)")
+      .select("id, status, submitted_at, admin_note, cancel_reason, dog:dogs(name), cat:cats(name)")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, admin_note, available_days, available_dates, activities")
+      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, activities")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
   ])
@@ -64,6 +66,7 @@ export default async function MyApplicationsPage() {
     status: ApplicationStatus
     submitted_at: string
     admin_note: string | null
+    cancel_reason: string | null
     dog: { name: string }[] | null
     cat: { name: string }[] | null
   }>
@@ -73,12 +76,18 @@ export default async function MyApplicationsPage() {
     status: ApplicationStatus
     submitted_at: string
     admin_note: string | null
+    cancel_reason: string | null
     available_days: string[]
     available_dates: string[]
     activities: string[]
   }>
 
-  const hasAny = adoptions.length > 0 || volunteers.length > 0
+  const activeVolunteers = volunteers.filter((v) => v.status !== "취소")
+  const cancelledVolunteers = volunteers.filter((v) => v.status === "취소")
+  const activeAdoptions = adoptions.filter((a) => a.status !== "취소")
+  const cancelledAdoptions = adoptions.filter((a) => a.status === "취소")
+
+  const hasAny = volunteers.length > 0 || adoptions.length > 0
 
   // 봉사 신청에 포함된 날짜들 모아서 운영진 정보 한 번에 조회
   const allDates = Array.from(
@@ -139,16 +148,16 @@ export default async function MyApplicationsPage() {
       ) : (
         <div className="space-y-8">
           {/* 봉사 신청 */}
-          {volunteers.length > 0 && (
+          {activeVolunteers.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">봉사 신청</h2>
               <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {volunteers.map((v, i) => (
+                {activeVolunteers.map((v, i) => (
                   <div
                     key={v.id}
                     className={cn(
                       "px-5 py-4",
-                      i !== volunteers.length - 1 && "border-b border-border"
+                      i !== activeVolunteers.length - 1 && "border-b border-border"
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -233,7 +242,7 @@ export default async function MyApplicationsPage() {
                     )}
 
                     <div className="mt-3 flex items-center justify-end gap-2">
-                      {(v.status === "접수" || v.status === "검토중") && (
+                      {v.status !== "반려" && (
                         <Link
                           href={`/my/applications/volunteer/${v.id}/edit`}
                           className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
@@ -250,16 +259,16 @@ export default async function MyApplicationsPage() {
           )}
 
           {/* 입양 신청 */}
-          {adoptions.length > 0 && (
+          {activeAdoptions.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">입양 신청</h2>
               <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {adoptions.map((a, i) => (
+                {activeAdoptions.map((a, i) => (
                   <div
                     key={a.id}
                     className={cn(
                       "px-5 py-4",
-                      i !== adoptions.length - 1 && "border-b border-border"
+                      i !== activeAdoptions.length - 1 && "border-b border-border"
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -296,6 +305,60 @@ export default async function MyApplicationsPage() {
               </div>
             </section>
           )}
+        </div>
+      )}
+
+      {/* 취소된 신청 내역 */}
+      {(cancelledVolunteers.length > 0 || cancelledAdoptions.length > 0) && (
+        <div className="mt-10 space-y-4">
+          <h2 className="text-sm font-semibold text-muted-foreground">취소된 신청</h2>
+          <div className="overflow-hidden rounded-lg border border-border bg-card opacity-70">
+            {[
+              ...cancelledVolunteers.map((v) => ({ ...v, kind: "volunteer" as const })),
+              ...cancelledAdoptions.map((a) => ({ ...a, kind: "adoption" as const })),
+            ]
+              .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at))
+              .map((item, i, arr) => (
+                <div
+                  key={item.id}
+                  className={cn("px-5 py-4", i !== arr.length - 1 && "border-b border-border")}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {item.kind === "volunteer"
+                          ? (() => {
+                              const v = item as typeof cancelledVolunteers[0]
+                              return v.available_dates.length > 0
+                                ? `${v.available_dates.join(", ")} 봉사`
+                                : v.available_days.length > 0
+                                  ? `${v.available_days.join(", ")} 봉사`
+                                  : "봉사 신청"
+                            })()
+                          : (() => {
+                              const a = item as typeof cancelledAdoptions[0]
+                              return a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                                ? `${a.dog?.[0]?.name ?? a.cat?.[0]?.name} 입양 신청`
+                                : "입양 신청"
+                            })()}
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">
+                        {formatDate(item.submitted_at)} 신청
+                      </p>
+                    </div>
+                    <Badge className="shrink-0 border-0 bg-muted text-[11px] font-semibold text-muted-foreground/60">
+                      취소
+                    </Badge>
+                  </div>
+                  {item.cancel_reason && (
+                    <div className="mt-2 rounded-md bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+                      <span className="font-semibold">취소 사유 · </span>
+                      {item.cancel_reason}
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
         </div>
       )}
     </div>

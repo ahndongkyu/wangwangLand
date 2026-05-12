@@ -200,7 +200,8 @@ export async function getMyEditableVolunteerApplication(
 
   if (!data) return null
   const app = data as VolunteerApplication
-  if (app.status !== "접수" && app.status !== "검토중") return null
+  // 취소된 신청은 수정 불가
+  if (app.status === "취소" || app.status === "반려") return null
   return app
 }
 
@@ -260,11 +261,12 @@ export interface ApplicationStatusCounts {
   검토중: number
   승인: number
   반려: number
+  취소: number
   total: number
 }
 
 function emptyStatusCounts(): ApplicationStatusCounts {
-  return { 접수: 0, 검토중: 0, 승인: 0, 반려: 0, total: 0 }
+  return { 접수: 0, 검토중: 0, 승인: 0, 반려: 0, 취소: 0, total: 0 }
 }
 
 /** 특정 테이블의 status 별 집계 + 기간 필터. */
