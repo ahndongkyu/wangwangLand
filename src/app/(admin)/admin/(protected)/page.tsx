@@ -14,6 +14,7 @@ import {
   listRecentApplications,
   getMonthlyVolunteerStats,
 } from "@/features/applications"
+import { getMonthlyMemberStats } from "@/features/members"
 import { listNotices } from "@/features/notices"
 import { listDailyPosts } from "@/features/daily"
 import { listAdoptionStories } from "@/features/stories"
@@ -88,6 +89,7 @@ export default async function AdminDashboardPage() {
     appStats,
     recentApps,
     monthlyVolunteerStats,
+    monthlyMemberStats,
     noticesCount,
     dailyCount,
     storiesCount,
@@ -103,7 +105,8 @@ export default async function AdminDashboardPage() {
       prevMonthTo: prevMonth.to,
     }),
     listRecentApplications(5),
-    getMonthlyVolunteerStats(6),
+    getMonthlyVolunteerStats(3),
+    getMonthlyMemberStats(3),
     listNotices({ includeDrafts: true, limit: 1 }).then((r) => r.total),
     listDailyPosts({ limit: 1 }).then((r) => r.total),
     listAdoptionStories({ includeDrafts: true, limit: 1 }).then((r) => r.total),
@@ -326,23 +329,40 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 5. 봉사 신청 추이 차트 (선택) */}
-      <section className="mb-8">
+      {/* 5. 추이 차트 — 봉사 신청 / 신규 회원 (각 최근 3개월) */}
+      <section className="mb-8 grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
-              월별 봉사 신청 추이 (최근 6개월)
+              월별 봉사 신청 추이
               <Link
                 href="/admin/applications?type=volunteer"
                 className="ml-auto text-xs font-normal text-primary hover:underline"
               >
-                봉사 신청 목록 →
+                목록 →
               </Link>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <AdminTrendChart data={monthlyVolunteerStats} valueLabel="건" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
+              월별 신규 회원 추이
+              <Link
+                href="/admin/members"
+                className="ml-auto text-xs font-normal text-primary hover:underline"
+              >
+                목록 →
+              </Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AdminTrendChart data={monthlyMemberStats} valueLabel="명" />
           </CardContent>
         </Card>
       </section>

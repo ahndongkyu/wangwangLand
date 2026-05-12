@@ -1,5 +1,5 @@
-export { getCurrentProfile, getProfileDetail } from "./api/queries"
-export type { Profile, ProfileDetail } from "./api/queries"
+export { getCurrentProfile, getProfileDetail, getMonthlyMemberStats } from "./api/queries"
+export type { Profile, ProfileDetail, MonthlyMemberStat } from "./api/queries"
 export { listProfiles } from "./api/queries"
 export { signOut, getKakaoLoginUrl, updateNickname, updateProfile, updateMemberStatus, updateMemberRole, acceptAgreements, updateMarketingConsent } from "./api/actions"
 export { KakaoLoginButton } from "./components/kakao-login-button"

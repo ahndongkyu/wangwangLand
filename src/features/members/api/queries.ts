@@ -171,3 +171,45 @@ export async function listProfiles({
     rejectedCount: cachedCounts.rejectedCount,
   }
 }
+
+export interface MonthlyMemberStat {
+  month: string  // "YYYY-MM"
+  label: string  // "1월"
+  rescued: number  // 신규 가입 수 (차트 컴포넌트와 동일 키 재사용)
+}
+
+/** 최근 N개월 신규 회원 가입 추이 */
+export async function getMonthlyMemberStats(months = 3): Promise<MonthlyMemberStat[]> {
+  const admin = createAdminClient()
+
+  const since = new Date()
+  since.setMonth(since.getMonth() - months + 1)
+  since.setDate(1)
+  const sinceStr = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-01T00:00:00+09:00`
+
+  const { data, error } = await admin
+    .from("profiles")
+    .select("created_at")
+    .gte("created_at", sinceStr)
+
+  if (error || !data) return []
+
+  const map = new Map<string, number>()
+  for (const { created_at } of data as { created_at: string }[]) {
+    const d = new Date(created_at)
+    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+    const key = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}`
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
+
+  const result: MonthlyMemberStat[] = []
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    d.setDate(1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+    result.push({ month: key, label: `${d.getMonth() + 1}월`, rescued: map.get(key) ?? 0 })
+  }
+
+  return result
+}
