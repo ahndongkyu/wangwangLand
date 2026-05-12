@@ -7,7 +7,7 @@ export const SITE = {
    */
   url:
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://wangwang-land.vercel.app",
+    "https://wangwangland.kr",
   tagline: "버려진 아이들의 두 번째 가족",
   subtitle: "영종도 유기견 보호소",
   description: "안락사 없는 따뜻한 유기견 보호소, 왕왕랜드입니다.",

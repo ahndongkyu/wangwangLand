@@ -45,6 +45,7 @@ export const metadata: Metadata = {
     apple: SITE.logo,
   },
   alternates: {
+    canonical: SITE.url,
     types: {
       "application/rss+xml": [{ url: "/feed.xml", title: SITE.name }],
     },
