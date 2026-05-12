@@ -23,6 +23,7 @@ function formatDateTime(iso: string) {
     timeZone: "Asia/Seoul",
     dateStyle: "medium",
     timeStyle: "short",
+    hour12: false,
   })
 }
 

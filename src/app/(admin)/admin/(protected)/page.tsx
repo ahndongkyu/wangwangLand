@@ -279,10 +279,12 @@ export default async function AdminDashboardPage() {
                   </div>
                   <span className="shrink-0 text-[11px] text-muted-foreground">
                     {new Date(app.submitted_at).toLocaleString("ko-KR", {
+                      timeZone: "Asia/Seoul",
                       month: "numeric",
                       day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
+                      hour12: false,
                     })}
                   </span>
                 </Link>

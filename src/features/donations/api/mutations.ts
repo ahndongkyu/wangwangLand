@@ -111,7 +111,7 @@ export async function createDonation(
     const { sendPushToStaff } = await import("@/features/push")
     await sendPushToStaff({
       title: `💝 새 후원 접수`,
-      body: `${input.donor_name}님이 ${typeLabel}${amountLabel} 후원을 신청했습니다.`,
+      body: `${input.donor_name}님이 ${typeLabel}${amountLabel} 후원을 신청했어요.`,
       url: `/admin/donations`,
       tag: `donation-${data.id}`,
     })

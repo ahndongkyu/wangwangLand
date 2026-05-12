@@ -102,6 +102,7 @@ export default async function VolunteerApplicationDetailPage({
                 timeZone: "Asia/Seoul",
                 dateStyle: "medium",
                 timeStyle: "short",
+                hour12: false,
               })}{" "}
               제출
             </span>

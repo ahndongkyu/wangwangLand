@@ -92,7 +92,7 @@ export async function createNotice(
       const { sendPushSystem } = await import("@/features/push")
       await sendPushSystem(
         {
-          title: "새 공지사항",
+          title: "📢 새 공지사항",
           body: input.title,
           url: `/notice/${data.id}`,
           tag: `notice-${data.id}`,

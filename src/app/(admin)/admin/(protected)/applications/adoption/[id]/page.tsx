@@ -85,6 +85,7 @@ export default async function AdoptionApplicationDetailPage({
                 timeZone: "Asia/Seoul",
                 dateStyle: "medium",
                 timeStyle: "short",
+                hour12: false,
               })}{" "}
               제출
             </span>

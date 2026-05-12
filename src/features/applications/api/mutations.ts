@@ -320,7 +320,9 @@ export async function updateAdoptionApplication(
       await sendPushToUser(
         {
           title: pushTitleForStatus(status, "입양"),
-          body: pushBodyForStatus(status),
+          body: status === "취소" && cancelReason
+            ? `취소 사유: ${cancelReason}`
+            : pushBodyForStatus(status),
           url: "/my/applications",
           tag: `adoption-status-${id}`,
         },
@@ -342,28 +344,28 @@ function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"
     case "승인":
       return `${icon} ${kind} 신청 승인`
     case "반려":
-      return `${kind} 신청 반려`
+      return `${icon} ${kind} 신청 반려`
     case "검토중":
-      return `${kind} 신청 검토중`
+      return `${icon} ${kind} 신청 검토 중`
     case "취소":
-      return `${kind} 신청 취소 처리`
+      return `${icon} ${kind} 신청 취소`
     default:
-      return `${kind} 신청 상태 변경`
+      return `${icon} ${kind} 신청 상태 변경`
   }
 }
 
 function pushBodyForStatus(status: ApplicationStatus): string {
   switch (status) {
     case "승인":
-      return "신청이 승인되었어요. 자세한 내용은 신청 내역에서 확인해주세요."
+      return "신청이 승인됐어요. 자세한 내용은 신청 내역에서 확인해주세요."
     case "반려":
-      return "신청이 반려되었어요. 사유는 신청 내역에서 확인해주세요."
+      return "신청이 반려됐어요. 사유는 신청 내역에서 확인해주세요."
     case "검토중":
-      return "신청이 검토 중입니다."
+      return "신청이 검토 중이에요. 잠시만 기다려주세요."
     case "취소":
-      return "신청이 취소 처리되었어요. 신청 내역에서 사유를 확인해주세요."
+      return "신청이 취소됐어요. 신청 내역에서 사유를 확인해주세요."
     default:
-      return "신청 상태가 변경되었어요."
+      return "신청 상태가 변경됐어요."
   }
 }
 
@@ -465,7 +467,15 @@ export async function updateVolunteerApplication(
   }
 
   // 승인이거나 기존 이벤트 수정인 경우 캘린더 upsert
-  if ((status === "승인" || linkedEventId) && status !== "취소" && status !== "반려" && prev) {
+  const didUpsertSchedule =
+    (status === "승인" || !!linkedEventId) &&
+    status !== "취소" &&
+    status !== "반려" &&
+    !!scheduledStart &&
+    !!scheduledEnd &&
+    !!prev
+
+  if (didUpsertSchedule && prev) {
     await upsertVolunteerEventForApplication({
       applicationId: id,
       applicantName: prev.applicant_name,
@@ -477,6 +487,41 @@ export async function updateVolunteerApplication(
       scheduledEnd,
       linkedEventId,
     })
+  }
+
+  // 일정 변경 시 봉사자에게 알림
+  // 상태 변경 없이 일정만 수정된 경우에만 (상태 변경 시엔 위에서 이미 알림 발송)
+  const statusActuallyChanged = prev?.created_by && prev.status !== status
+  if (didUpsertSchedule && !statusActuallyChanged && prev?.created_by) {
+    await admin.from("notifications").insert({
+      user_id: prev.created_by,
+      type: "schedule_changed",
+      post_type: "volunteer",
+      post_id: id,
+      actor_id: null,
+    })
+    try {
+      const { sendPushToUser } = await import("@/features/push")
+      const startsIso = localKstToIso(scheduledStart)
+      const dateLabel = startsIso
+        ? new Date(startsIso).toLocaleDateString("ko-KR", {
+            month: "long",
+            day: "numeric",
+            weekday: "short",
+          })
+        : "새 일정"
+      await sendPushToUser(
+        {
+          title: "📅 봉사 일정 변경 안내",
+          body: `봉사 일정이 ${dateLabel}로 변경됐어요. 신청 내역에서 확인해주세요.`,
+          url: "/my/applications",
+          tag: `volunteer-schedule-${id}`,
+        },
+        prev.created_by
+      )
+    } catch (e) {
+      console.error("[push volunteer-schedule]", e)
+    }
   }
 
   revalidateAdminApplications()

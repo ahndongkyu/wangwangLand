@@ -335,7 +335,7 @@ export default async function AdminApplicationsPage({
                     </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
+                    {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
                   </td>
                   <td className="hidden px-4 py-3 text-right md:table-cell">
                     <Link
@@ -411,7 +411,7 @@ export default async function AdminApplicationsPage({
                     </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
+                    {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
                   </td>
                   <td className="hidden px-4 py-3 text-right md:table-cell">
                     <Link

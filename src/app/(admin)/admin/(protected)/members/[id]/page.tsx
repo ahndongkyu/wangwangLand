@@ -476,6 +476,7 @@ function AgreementItem({
             timeZone: "Asia/Seoul",
             dateStyle: "medium",
             timeStyle: "short",
+            hour12: false,
           })}
           {version && <> · v{version}</>}
         </p>
