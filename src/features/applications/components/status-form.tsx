@@ -11,14 +11,9 @@ import {
   updateVolunteerApplication,
 } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { useToast } from "@/shared/components/toast"
-import {
-  isoToLocalKstInput,
-  todayKstDate,
-} from "@/features/events/lib/date"
 import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
 
@@ -36,14 +31,6 @@ interface Props {
   currentStatus: ApplicationStatus
   currentNote: string | null
   applicantName: string
-  /** 봉사일 때 캘린더 자동 등록용 — 신청자가 적은 가능 시간대 표시 */
-  hint?: {
-    availableDays?: string[]
-    availableDates?: string[]
-    availableTime?: string | null
-  }
-  /** 이미 등록된 캘린더 이벤트 (재편집용 — 시간 미리 채움) */
-  linkedEvent?: { id: string; starts_at: string; ends_at: string } | null
 }
 
 export function ApplicationStatusForm({
@@ -52,8 +39,6 @@ export function ApplicationStatusForm({
   currentStatus,
   currentNote,
   applicantName,
-  hint,
-  linkedEvent,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -64,10 +49,8 @@ export function ApplicationStatusForm({
   const [status, setStatus] = useState<ApplicationStatus>(currentStatus)
 
   // 모바일 스텝 상태
-  // 봉사 승인 시 또는 이미 캘린더 이벤트가 있을 때 일정 편집 표시
-  const showSchedule = kind === "volunteer" && (status === "승인" || !!linkedEvent)
   const showCancelReason = status === "취소"
-  const totalSteps = showSchedule ? 3 : 2
+  const totalSteps = 2
   const [step, setStep] = useState(1)
   const [cancelReason, setCancelReason] = useState("")
 
@@ -77,50 +60,6 @@ export function ApplicationStatusForm({
   // 봉사 승인 시 기존 메모가 없으면 기본 안내문 자동 채움
   const defaultNote =
     kind === "volunteer" && !currentNote ? VOLUNTEER_DEFAULT_NOTE : (currentNote ?? "")
-
-  const todayInput = todayKstDate()
-
-  // 신청자가 적은 첫 번째 날짜 + 시간을 일정 기본값으로 사용 (없으면 오늘 10시)
-  const requestedDate = hint?.availableDates?.[0] || todayInput
-  const requestedTimeRaw = (hint?.availableTime ?? "").trim()
-  const timeMatch = requestedTimeRaw.match(/^(\d{1,2}):(\d{2})$/)
-  const requestedTime = timeMatch
-    ? `${timeMatch[1].padStart(2, "0")}:${timeMatch[2]}`
-    : "10:00"
-
-  function addHoursToTime(time: string, hours: number): string {
-    const [h, m] = time.split(":").map(Number)
-    const totalMin = h * 60 + m + hours * 60
-    const nh = Math.min(23, Math.floor(totalMin / 60))
-    const nm = totalMin % 60
-    return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`
-  }
-
-  const initialStart = linkedEvent
-    ? isoToLocalKstInput(linkedEvent.starts_at)
-    : `${requestedDate}T${requestedTime}`
-  const initialEnd = linkedEvent
-    ? isoToLocalKstInput(linkedEvent.ends_at)
-    : `${requestedDate}T${addHoursToTime(requestedTime, 2)}`
-
-  const [startsAt, setStartsAt] = useState(initialStart)
-  const [endsAt, setEndsAt] = useState(initialEnd)
-
-  function handleStartChange(newStart: string) {
-    setStartsAt(newStart)
-    if (!newStart) return
-    const prevStartMs = new Date(startsAt).getTime()
-    const prevEndMs = new Date(endsAt).getTime()
-    const gapMs = isNaN(prevStartMs) || isNaN(prevEndMs) ? 2 * 60 * 60 * 1000 : prevEndMs - prevStartMs
-    const newStartMs = new Date(newStart).getTime()
-    if (!isNaN(newStartMs)) {
-      const newEndMs = newStartMs + Math.max(gapMs, 0)
-      const pad = (n: number) => String(n).padStart(2, "0")
-      const d = new Date(newEndMs)
-      const newEnd = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-      setEndsAt(newEnd)
-    }
-  }
 
   async function handleSubmit(formData: FormData) {
     setError(null)
@@ -141,18 +80,14 @@ export function ApplicationStatusForm({
   }
 
   // 스텝 레이블
-  const stepLabels = showSchedule
-    ? ["상태 선택", "일정 등록", "메모 작성"]
-    : ["상태 선택", "메모 작성"]
+  const stepLabels = ["상태 선택", "메모 작성"]
 
   // 모바일에서 각 섹션의 가시성
   function sectionVisible(sectionStep: number) {
     return step === sectionStep ? "block" : "hidden sm:block"
   }
 
-  // 메모 스텝 번호 (schedule 포함 여부에 따라 다름)
-  const memoStep = showSchedule ? 3 : 2
-  const scheduleStep = 2
+  const memoStep = 2
 
   return (
     <form
@@ -209,13 +144,7 @@ export function ApplicationStatusForm({
                   name="status"
                   value={s}
                   checked={s === status}
-                  onChange={() => {
-                    setStatus(s)
-                    // 캘린더 스텝이 사라지는 케이스 → 스텝 재조정
-                    if (step > 1 && kind === "volunteer" && s !== "승인" && !linkedEvent) {
-                      setStep(Math.min(step, 2))
-                    }
-                  }}
+                  onChange={() => setStatus(s)}
                   className="sr-only"
                 />
                 {s}
@@ -224,84 +153,7 @@ export function ApplicationStatusForm({
           </div>
         </div>
 
-        {/* ── Step 2: 캘린더 일정 (봉사 승인 시만) ──────────── */}
-        {showSchedule && (
-          <div className={sectionVisible(scheduleStep)}>
-            <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
-              {linkedEvent && (
-                <input type="hidden" name="linked_event_id" value={linkedEvent.id} />
-              )}
-              <div>
-                <Label className="text-sm font-semibold text-foreground">
-                  {status === "취소" || status === "반려"
-                    ? "캘린더 일정 자동 삭제"
-                    : linkedEvent
-                      ? "캘린더 일정 수정"
-                      : "캘린더 자동 등록"}
-                </Label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {status === "취소" || status === "반려"
-                    ? "저장 시 연결된 캘린더 일정이 자동으로 삭제됩니다."
-                    : linkedEvent
-                      ? "이미 캘린더에 등록된 일정입니다. 시간을 바꾸려면 수정 후 저장해주세요."
-                      : "승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요."}
-                </p>
-                {(hint?.availableDates?.length ||
-                  hint?.availableDays?.length ||
-                  hint?.availableTime) && (
-                  <p className="mt-1 text-[11px] text-muted-foreground/80">
-                    <span className="font-medium text-foreground/80">신청자 요청:</span>{" "}
-                    {[
-                      hint.availableDates?.length
-                        ? hint.availableDates.join(", ")
-                        : hint.availableDays?.length
-                          ? `${hint.availableDays.join(", ")}요일`
-                          : null,
-                      hint.availableTime,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                )}
-              </div>
-              {status !== "취소" && status !== "반려" && (
-                <>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="scheduled_starts_at" className="text-xs">
-                        시작 일시
-                      </Label>
-                      <Input
-                        id="scheduled_starts_at"
-                        name="scheduled_starts_at"
-                        type="datetime-local"
-                        value={startsAt}
-                        onChange={(e) => handleStartChange(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="scheduled_ends_at" className="text-xs">
-                        종료 일시
-                      </Label>
-                      <Input
-                        id="scheduled_ends_at"
-                        name="scheduled_ends_at"
-                        type="datetime-local"
-                        value={endsAt}
-                        onChange={(e) => setEndsAt(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground/80">
-                    비워두면 캘린더 등록은 건너뛰고 상태만 저장됩니다.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 3 (or 2): 운영진 메모 ──────────────────── */}
+        {/* ── Step 2: 운영진 메모 ──────────────────── */}
         <div className={sectionVisible(memoStep)}>
           <Label htmlFor="admin_note" className="text-sm font-semibold">
             운영진 메모

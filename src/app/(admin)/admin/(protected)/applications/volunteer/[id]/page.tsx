@@ -70,8 +70,6 @@ export default async function VolunteerApplicationDetailPage({
       .order("starts_at", { ascending: true })
     linkedEvents = data ?? []
   }
-  const linkedEvent = linkedEvents[0] ?? null
-
   const isMember = !!app.created_by
   const isGroup = app.party_size > 1
 
@@ -326,12 +324,6 @@ export default async function VolunteerApplicationDetailPage({
         currentStatus={app.status}
         currentNote={app.admin_note}
         applicantName={app.applicant_name}
-        hint={{
-          availableDays: app.available_days,
-          availableDates: app.available_dates,
-          availableTime: app.available_time,
-        }}
-        linkedEvent={linkedEvent}
       />
     </div>
   )

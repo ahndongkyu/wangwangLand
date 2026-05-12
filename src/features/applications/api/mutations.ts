@@ -5,7 +5,6 @@ import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
-import { localKstToIso } from "@/features/events/lib/date"
 import {
   formatKoreanPhone,
   validateKoreanPhone,
@@ -381,23 +380,10 @@ function pushBodyForStatus(status: ApplicationStatus): string {
   }
 }
 
-/** datetime-local 문자열(KST) → "5월 20일(화) 10:00" */
-function formatScheduleLabel(scheduledStart: string): string {
-  if (!scheduledStart) return ""
-  const [datePart, timePart] = scheduledStart.split("T")
-  if (!datePart || !timePart) return ""
-  const [, m, d] = datePart.split("-").map(Number)
-  const [h, min] = timePart.split(":").map(Number)
-  const dow = ["일", "월", "화", "수", "목", "금", "토"][
-    new Date(`${datePart}T${timePart}:00+09:00`).getDay()
-  ]
-  return `${m}월 ${d}일(${dow}) ${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`
-}
-
 function buildVolunteerSmsText(
   status: ApplicationStatus,
   applicantName: string,
-  scheduledStart: string,
+  availableDates: string[],
   cancelReason: string
 ): string {
   const name = `${applicantName}님`
@@ -406,8 +392,15 @@ function buildVolunteerSmsText(
     case "검토중":
       return `[왕왕랜드] ${name}, 봉사 신청이 검토 중이에요.\n결과가 나오면 다시 안내드릴게요.${url}`
     case "승인": {
-      const dateLabel = formatScheduleLabel(scheduledStart)
-      const dateLine = dateLabel ? `\n일정: ${dateLabel}` : ""
+      const dateStr = availableDates[0] ?? ""
+      let dateLine = ""
+      if (dateStr) {
+        const [, m, d] = dateStr.split("-").map(Number)
+        const dow = ["일", "월", "화", "수", "목", "금", "토"][
+          new Date(`${dateStr}T00:00:00+09:00`).getDay()
+        ]
+        dateLine = `\n일정: ${m}월 ${d}일(${dow})`
+      }
       return `[왕왕랜드] ${name}, 봉사 신청이 승인됐어요.${dateLine}\n준비물 등 자세한 내용은 신청 내역에서 확인해주세요.${url}`
     }
     case "반려":
@@ -462,11 +455,6 @@ export async function updateVolunteerApplication(
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
-
-  // 캘린더 등록/수정용 일시 (승인 또는 기존 이벤트 수정 시)
-  const scheduledStart = String(formData.get("scheduled_starts_at") ?? "")
-  const scheduledEnd = String(formData.get("scheduled_ends_at") ?? "")
-  const linkedEventId = String(formData.get("linked_event_id") ?? "").trim() || null
 
   if (status === "취소" && !cancelReason) {
     return { error: "취소 사유를 입력해주세요." }
@@ -542,7 +530,7 @@ export async function updateVolunteerApplication(
         const { sendSms } = await import("@/features/sms")
         await sendSms(
           prev.phone,
-          buildVolunteerSmsText(status, prev.applicant_name ?? "", scheduledStart, cancelReason)
+          buildVolunteerSmsText(status, prev.applicant_name ?? "", prev.available_dates ?? [], cancelReason)
         )
       } catch (e) {
         console.error("[sms volunteer-status]", e)
@@ -550,170 +538,10 @@ export async function updateVolunteerApplication(
     }
   }
 
-  // 승인이거나 기존 이벤트 수정인 경우 캘린더 upsert
-  const didUpsertSchedule =
-    (status === "승인" || !!linkedEventId) &&
-    status !== "취소" &&
-    status !== "반려" &&
-    !!scheduledStart &&
-    !!scheduledEnd &&
-    !!prev
-
-  if (didUpsertSchedule && prev) {
-    await upsertVolunteerEventForApplication({
-      applicationId: id,
-      applicantName: prev.applicant_name,
-      partySize: prev.party_size ?? 1,
-      activities: (prev.activities ?? []) as string[],
-      availableTime: prev.available_time ?? null,
-      message: prev.message ?? null,
-      scheduledStart,
-      scheduledEnd,
-      linkedEventId,
-    })
-  }
-
-  // 일정 변경 시 봉사자에게 알림
-  // 상태 변경 없이 일정만 수정된 경우에만 (상태 변경 시엔 위에서 이미 알림 발송)
-  const statusActuallyChanged = prev?.created_by && prev.status !== status
-  if (didUpsertSchedule && !statusActuallyChanged && prev?.created_by) {
-    await admin.from("notifications").insert({
-      user_id: prev.created_by,
-      type: "schedule_changed",
-      post_type: "volunteer",
-      post_id: id,
-      actor_id: null,
-    })
-    try {
-      const { sendPushToUser } = await import("@/features/push")
-      const startsIso = localKstToIso(scheduledStart)
-      const dateLabel = startsIso
-        ? new Date(startsIso).toLocaleDateString("ko-KR", {
-            month: "long",
-            day: "numeric",
-            weekday: "short",
-          })
-        : "새 일정"
-      await sendPushToUser(
-        {
-          title: "📅 봉사 일정 변경 안내",
-          body: `봉사 일정이 ${dateLabel}로 변경됐어요. 신청 내역에서 확인해주세요.`,
-          url: "/my/applications",
-          tag: `volunteer-schedule-${id}`,
-        },
-        prev.created_by
-      )
-    } catch (e) {
-      console.error("[push volunteer-schedule]", e)
-    }
-  }
-
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/volunteer/${id}`)
   revalidatePath("/admin/calendar")
   return { id }
-}
-
-/**
- * 봉사 신청 → 캘린더 internal 이벤트 upsert.
- * 같은 신청 id 의 이벤트가 이미 있으면 update, 없으면 insert.
- */
-async function upsertVolunteerEventForApplication(opts: {
-  applicationId: string
-  applicantName: string
-  partySize: number
-  activities: string[]
-  availableTime: string | null
-  message: string | null
-  scheduledStart: string  // datetime-local 또는 빈 값
-  scheduledEnd: string
-  /** status form 으로 들어왔을 때, 수정 대상 이벤트의 id. 없으면 새로 insert. */
-  linkedEventId?: string | null
-}) {
-  const {
-    applicationId,
-    applicantName,
-    partySize,
-    activities,
-    availableTime,
-    message,
-    scheduledStart,
-    scheduledEnd,
-    linkedEventId,
-  } = opts
-
-  // 일시가 비었으면 등록 스킵 (운영진이 수기 입력 안 한 경우).
-  if (!scheduledStart || !scheduledEnd) return
-
-  // datetime-local 은 timezone 이 없으니 KST(+09:00) 로 강제 해석.
-  const startsIso = localKstToIso(scheduledStart)
-  const endsIso = localKstToIso(scheduledEnd)
-  if (!startsIso || !endsIso) return
-  const starts = new Date(startsIso)
-  const ends = new Date(endsIso)
-  if (ends < starts) return
-
-  const title =
-    partySize > 1
-      ? `${applicantName} 외 ${partySize - 1}명`
-      : applicantName
-
-  const description = [
-    activities.length > 0 ? `희망 활동: ${activities.join(", ")}` : null,
-    availableTime ? `요청 시간대: ${availableTime}` : null,
-    message ? `메모: ${message}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n")
-
-  const admin = createAdminClient()
-
-  // 다중 날짜 등록을 지원하므로 같은 신청에 여러 이벤트가 있을 수 있음.
-  // status form 에서 명시된 linkedEventId 가 있으면 그 행을 update, 없으면 새로 insert.
-  let existing: { id: string } | null = null
-  if (linkedEventId) {
-    const { data } = await admin
-      .from("events")
-      .select("id")
-      .eq("id", linkedEventId)
-      .maybeSingle()
-    existing = data ?? null
-  }
-
-  const payload = {
-    category: "volunteer" as const,
-    title,
-    description: description || null,
-    starts_at: starts.toISOString(),
-    ends_at: ends.toISOString(),
-    all_day: false,
-    signup_enabled: false,
-    // 공개 캘린더에도 노출 (이름은 표시 시 자동 마스킹)
-    visibility: "public" as const,
-    source_application_type: "volunteer" as const,
-    source_application_id: applicationId,
-  }
-
-  if (existing) {
-    await admin.from("events").update(payload).eq("id", existing.id)
-  } else {
-    const { error: insertErr } = await admin.from("events").insert(payload)
-    // race: 다른 어드민이 동시에 등록한 경우 unique 제약(23505)에 걸리면 그 행을 update.
-    if (
-      insertErr &&
-      (insertErr.code === "23505" || /duplicate key/i.test(insertErr.message))
-    ) {
-      const { data: dup } = await admin
-        .from("events")
-        .select("id")
-        .eq("source_application_type", "volunteer")
-        .eq("source_application_id", applicationId)
-        .maybeSingle()
-      if (dup) await admin.from("events").update(payload).eq("id", dup.id)
-    } else if (insertErr) {
-      console.error("[upsertVolunteerEventForApplication] insert", insertErr)
-    }
-  }
 }
 
 export async function deleteAdoptionApplication(
