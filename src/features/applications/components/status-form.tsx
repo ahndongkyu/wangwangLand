@@ -27,6 +27,7 @@ const STATUS_OPTIONS: ApplicationStatus[] = [
   "검토중",
   "승인",
   "반려",
+  "취소",
 ]
 
 interface Props {
@@ -63,9 +64,12 @@ export function ApplicationStatusForm({
   const [status, setStatus] = useState<ApplicationStatus>(currentStatus)
 
   // 모바일 스텝 상태
-  const showSchedule = kind === "volunteer" && status === "승인"
+  // 봉사 승인 시 또는 이미 캘린더 이벤트가 있을 때 일정 편집 표시
+  const showSchedule = kind === "volunteer" && (status === "승인" || !!linkedEvent)
+  const showCancelReason = status === "취소"
   const totalSteps = showSchedule ? 3 : 2
   const [step, setStep] = useState(1)
+  const [cancelReason, setCancelReason] = useState("")
 
   const VOLUNTEER_DEFAULT_NOTE =
     "안녕하세요! 봉사 신청해주셔서 정말 감사해요 🐾\n야외 견사라 아래 내용 참고해서 편하게 오세요!\n\n• 헌옷 + 헌 신발(장화도 좋아요) + 목장갑 챙겨오시면 좋아요\n• 먼지나 오물이 묻을 수 있으니 아끼는 옷은 피해주세요 😅\n• 현장 물품 지원이 어려울 수 있는 점 양해 부탁드려요 🙏\n\n궁금한 점은 편하게 연락 주세요!\n봉사 담당: 엄재동 팀장 010-3540-3156"
@@ -207,8 +211,8 @@ export function ApplicationStatusForm({
                   checked={s === status}
                   onChange={() => {
                     setStatus(s)
-                    // 승인→비승인으로 바꾸면 스텝 재조정
-                    if (step > 1 && kind === "volunteer" && s !== "승인") {
+                    // 캘린더 스텝이 사라지는 케이스 → 스텝 재조정
+                    if (step > 1 && kind === "volunteer" && s !== "승인" && !linkedEvent) {
                       setStep(Math.min(step, 2))
                     }
                   }}
@@ -229,12 +233,18 @@ export function ApplicationStatusForm({
               )}
               <div>
                 <Label className="text-sm font-semibold text-foreground">
-                  {linkedEvent ? "캘린더 일정 수정" : "캘린더 자동 등록"}
+                  {status === "취소" || status === "반려"
+                    ? "캘린더 일정 자동 삭제"
+                    : linkedEvent
+                      ? "캘린더 일정 수정"
+                      : "캘린더 자동 등록"}
                 </Label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {linkedEvent
-                    ? "이미 캘린더에 등록된 일정입니다. 시간을 바꾸려면 수정 후 저장해주세요."
-                    : "승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요."}
+                  {status === "취소" || status === "반려"
+                    ? "저장 시 연결된 캘린더 일정이 자동으로 삭제됩니다."
+                    : linkedEvent
+                      ? "이미 캘린더에 등록된 일정입니다. 시간을 바꾸려면 수정 후 저장해주세요."
+                      : "승인 시 운영진 캘린더에 일정이 자동 등록됩니다. 확정 일시를 입력해주세요."}
                 </p>
                 {(hint?.availableDates?.length ||
                   hint?.availableDays?.length ||
@@ -254,35 +264,39 @@ export function ApplicationStatusForm({
                   </p>
                 )}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="scheduled_starts_at" className="text-xs">
-                    시작 일시
-                  </Label>
-                  <Input
-                    id="scheduled_starts_at"
-                    name="scheduled_starts_at"
-                    type="datetime-local"
-                    value={startsAt}
-                    onChange={(e) => handleStartChange(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="scheduled_ends_at" className="text-xs">
-                    종료 일시
-                  </Label>
-                  <Input
-                    id="scheduled_ends_at"
-                    name="scheduled_ends_at"
-                    type="datetime-local"
-                    value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                  />
-                </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground/80">
-                비워두면 캘린더 등록은 건너뛰고 상태만 승인됩니다.
-              </p>
+              {status !== "취소" && status !== "반려" && (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="scheduled_starts_at" className="text-xs">
+                        시작 일시
+                      </Label>
+                      <Input
+                        id="scheduled_starts_at"
+                        name="scheduled_starts_at"
+                        type="datetime-local"
+                        value={startsAt}
+                        onChange={(e) => handleStartChange(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="scheduled_ends_at" className="text-xs">
+                        종료 일시
+                      </Label>
+                      <Input
+                        id="scheduled_ends_at"
+                        name="scheduled_ends_at"
+                        type="datetime-local"
+                        value={endsAt}
+                        onChange={(e) => setEndsAt(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/80">
+                    비워두면 캘린더 등록은 건너뛰고 상태만 저장됩니다.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -301,6 +315,24 @@ export function ApplicationStatusForm({
             className="mt-2"
           />
         </div>
+
+        {/* 취소 사유 — 상태가 '취소'일 때만 표시 */}
+        {showCancelReason && (
+          <div>
+            <Label htmlFor="cancel_reason" className="text-sm font-semibold text-destructive">
+              취소 사유 <span className="text-xs font-normal text-muted-foreground">(필수)</span>
+            </Label>
+            <Textarea
+              id="cancel_reason"
+              name="cancel_reason"
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="취소 사유를 입력해주세요. 신청자에게 표시됩니다."
+              className="mt-2"
+            />
+          </div>
+        )}
 
         {error && (
           <p className="text-sm text-destructive" role="alert">

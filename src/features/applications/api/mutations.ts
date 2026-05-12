@@ -272,6 +272,11 @@ export async function updateAdoptionApplication(
 ): Promise<SubmitResult> {
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
+  const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
+
+  if (status === "취소" && !cancelReason) {
+    return { error: "취소 사유를 입력해주세요." }
+  }
 
   const supabase = await createClient()
 
@@ -282,9 +287,15 @@ export async function updateAdoptionApplication(
     .eq("id", id)
     .maybeSingle()
 
+  const updatePayload: Record<string, unknown> = {
+    status,
+    admin_note: adminNote || null,
+  }
+  if (status === "취소") updatePayload.cancel_reason = cancelReason
+
   const { error } = await supabase
     .from("adoption_applications")
-    .update({ status, admin_note: adminNote || null })
+    .update(updatePayload)
     .eq("id", id)
 
   if (error) {
@@ -334,6 +345,8 @@ function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"
       return `${kind} 신청 반려`
     case "검토중":
       return `${kind} 신청 검토중`
+    case "취소":
+      return `${kind} 신청 취소 처리`
     default:
       return `${kind} 신청 상태 변경`
   }
@@ -347,6 +360,8 @@ function pushBodyForStatus(status: ApplicationStatus): string {
       return "신청이 반려되었어요. 사유는 신청 내역에서 확인해주세요."
     case "검토중":
       return "신청이 검토 중입니다."
+    case "취소":
+      return "신청이 취소 처리되었어요. 신청 내역에서 사유를 확인해주세요."
     default:
       return "신청 상태가 변경되었어요."
   }
@@ -360,6 +375,8 @@ function notificationTypeForStatus(status: ApplicationStatus): string {
       return "application_rejected"
     case "검토중":
       return "application_under_review"
+    case "취소":
+      return "application_cancelled"
     default:
       return "application_status_changed"
   }
@@ -371,14 +388,21 @@ export async function updateVolunteerApplication(
 ): Promise<SubmitResult> {
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
+  const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
 
-  // 승인일 때만 캘린더 등록용 일시
+  // 캘린더 등록/수정용 일시 (승인 또는 기존 이벤트 수정 시)
   const scheduledStart = String(formData.get("scheduled_starts_at") ?? "")
   const scheduledEnd = String(formData.get("scheduled_ends_at") ?? "")
+  const linkedEventId = String(formData.get("linked_event_id") ?? "").trim() || null
+
+  if (status === "취소" && !cancelReason) {
+    return { error: "취소 사유를 입력해주세요." }
+  }
 
   const supabase = await createClient()
+  const admin = createAdminClient()
 
-  // 상태 변경 전 신청 정보 조회 (캘린더 칩 제목용 + created_by)
+  // 상태 변경 전 신청 정보 조회
   const { data: prev } = await supabase
     .from("volunteer_applications")
     .select(
@@ -387,9 +411,15 @@ export async function updateVolunteerApplication(
     .eq("id", id)
     .maybeSingle()
 
+  const updatePayload: Record<string, unknown> = {
+    status,
+    admin_note: adminNote || null,
+  }
+  if (status === "취소") updatePayload.cancel_reason = cancelReason
+
   const { error } = await supabase
     .from("volunteer_applications")
-    .update({ status, admin_note: adminNote || null })
+    .update(updatePayload)
     .eq("id", id)
 
   if (error) {
@@ -397,9 +427,17 @@ export async function updateVolunteerApplication(
     return { error: error.message }
   }
 
+  // 취소·반려 → 연결 캘린더 이벤트 삭제
+  if (status === "취소" || status === "반려") {
+    await admin
+      .from("events")
+      .delete()
+      .eq("source_application_type", "volunteer")
+      .eq("source_application_id", id)
+  }
+
   // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
   if (prev?.created_by && prev.status !== status) {
-    const admin = createAdminClient()
     await admin.from("notifications").insert({
       user_id: prev.created_by,
       type: notificationTypeForStatus(status),
@@ -408,13 +446,14 @@ export async function updateVolunteerApplication(
       actor_id: null,
     })
 
-    // 푸시 알림
     try {
       const { sendPushToUser } = await import("@/features/push")
       await sendPushToUser(
         {
           title: pushTitleForStatus(status, "봉사"),
-          body: pushBodyForStatus(status),
+          body: status === "취소" && cancelReason
+            ? `취소 사유: ${cancelReason}`
+            : pushBodyForStatus(status),
           url: "/my/applications",
           tag: `volunteer-status-${id}`,
         },
@@ -425,10 +464,8 @@ export async function updateVolunteerApplication(
     }
   }
 
-  // 승인 시 캘린더 자동 등록 (또는 기존 이벤트 시간 수정)
-  if (status === "승인" && prev) {
-    const linkedEventId =
-      String(formData.get("linked_event_id") ?? "").trim() || null
+  // 승인이거나 기존 이벤트 수정인 경우 캘린더 upsert
+  if ((status === "승인" || linkedEventId) && status !== "취소" && status !== "반려" && prev) {
     await upsertVolunteerEventForApplication({
       applicationId: id,
       applicantName: prev.applicant_name,
