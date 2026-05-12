@@ -143,27 +143,29 @@ export function MonthGrid({
             >
               {/* 날짜 숫자 */}
               <div className="flex items-center justify-between gap-1">
-                <span
-                  className={cn(
-                    "inline-flex size-5 items-center justify-center rounded-full text-[11px] font-medium",
-                    today && "bg-primary text-primary-foreground",
-                    !today && inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
-                    !today && inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
-                    !today && inMonth && dow !== 0 && dow !== 6 && !isHolidayCell && "text-foreground",
-                    !inMonth && "text-muted-foreground/40"
-                  )}
-                >
-                  {dayNum}
-                </span>
-                {/* 공휴일 라벨 (셀 우측) */}
-                {isHolidayCell && inMonth && (
+                <div className="flex min-w-0 items-center gap-1">
                   <span
-                    className="truncate text-[9px] font-semibold text-destructive/80 sm:text-[10px]"
-                    title={holidayName ?? undefined}
+                    className={cn(
+                      "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
+                      today && "bg-primary text-primary-foreground",
+                      !today && inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
+                      !today && inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
+                      !today && inMonth && dow !== 0 && dow !== 6 && !isHolidayCell && "text-foreground",
+                      !inMonth && "text-muted-foreground/40"
+                    )}
                   >
-                    {holidayName}
+                    {dayNum}
                   </span>
-                )}
+                  {/* 공휴일 라벨 (날짜 바로 옆) */}
+                  {isHolidayCell && inMonth && (
+                    <span
+                      className="truncate text-[9px] font-semibold text-destructive/80 sm:text-[10px]"
+                      title={holidayName ?? undefined}
+                    >
+                      {holidayName}
+                    </span>
+                  )}
+                </div>
                 {!isHolidayCell && addHrefBase && (
                   <span
                     aria-hidden
