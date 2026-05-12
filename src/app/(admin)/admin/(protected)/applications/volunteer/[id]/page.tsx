@@ -7,6 +7,7 @@ import {
   getVolunteerApplication,
 } from "@/features/applications"
 import { listStaffOnDates, StaffAvailabilityDisplay } from "@/features/staff-schedule"
+import { formatKoreanPhone } from "@/shared/lib/validation"
 
 export const dynamic = "force-dynamic"
 
@@ -156,7 +157,7 @@ export default async function VolunteerApplicationDetailPage({
                 href={`tel:${app.phone}`}
                 className="text-primary hover:underline"
               >
-                {app.phone}
+                {formatKoreanPhone(app.phone)}
               </a>
             }
           />

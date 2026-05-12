@@ -8,6 +8,7 @@ import { EmptyState } from "@/shared/components/empty-state"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
+import { formatKoreanPhone } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
 
@@ -310,7 +311,7 @@ export default async function AdminApplicationsPage({
                     </Link>
                   </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                    {a.phone}
+                    {formatKoreanPhone(a.phone)}
                   </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
                     {a.dog?.name ?? a.cat?.name ?? "-"}
@@ -386,7 +387,7 @@ export default async function AdminApplicationsPage({
                     {v.party_size}명
                   </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                    {v.phone}
+                    {formatKoreanPhone(v.phone)}
                   </td>
                   <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
                     {v.activities.join(", ") || "-"}
