@@ -30,7 +30,7 @@ export default async function VolunteerApplicationEditPage({
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 일정 변경</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          처리 중인 신청만 변경할 수 있어요. 운영진이 승인/반려한 신청은 변경 불가합니다.
+          취소된 신청은 변경할 수 없어요.
         </p>
       </header>
       <VolunteerEditForm application={application} />

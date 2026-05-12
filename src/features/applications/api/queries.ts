@@ -201,7 +201,7 @@ export async function getMyEditableVolunteerApplication(
   if (!data) return null
   const app = data as VolunteerApplication
   // 취소된 신청은 수정 불가
-  if (app.status === "취소" || app.status === "반려") return null
+  if (app.status === "취소") return null
   return app
 }
 

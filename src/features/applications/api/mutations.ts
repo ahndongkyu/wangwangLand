@@ -227,9 +227,7 @@ export async function updateMyVolunteerApplication(
     .maybeSingle()
   if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
   if (prev.created_by !== user.id) return { error: "본인 신청만 수정할 수 있습니다." }
-  if (prev.status !== "접수" && prev.status !== "검토중") {
-    return { error: "처리가 완료된 신청은 수정할 수 없습니다." }
-  }
+  if (prev.status === "취소") return { error: "취소된 신청은 수정할 수 없습니다." }
 
   const availableDates = formData.getAll("available_dates").map(String)
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
