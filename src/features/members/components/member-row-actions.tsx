@@ -7,6 +7,7 @@ import { MoreHorizontal, User } from "lucide-react"
 
 import { approveMember, rejectMember, updateMemberRole, toggleMemberBan } from "../api/actions"
 import { useToast } from "@/shared/components/toast"
+import { formatKoreanPhone } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
 import type { Profile } from "../api/queries"
 
@@ -169,7 +170,7 @@ export function MemberRowActions({
 
       {/* 전화번호 */}
       <td className="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell whitespace-nowrap">
-        {profile.phone ?? "—"}
+        {profile.phone ? formatKoreanPhone(profile.phone) : "—"}
       </td>
 
       {/* 상태 */}
