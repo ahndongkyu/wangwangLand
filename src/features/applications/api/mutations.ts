@@ -278,8 +278,9 @@ export async function updateAdoptionApplication(
 
   const supabase = await createClient()
 
-  // 상태 변경 전 created_by, phone, applicant_name 조회
-  const { data: prev } = await supabase
+  // 상태 변경 전 created_by, phone, applicant_name 조회 (RLS 우회 위해 admin client 사용)
+  const admin = createAdminClient()
+  const { data: prev } = await admin
     .from("adoption_applications")
     .select("created_by, status, phone, applicant_name")
     .eq("id", id)
@@ -474,8 +475,8 @@ export async function updateVolunteerApplication(
   const supabase = await createClient()
   const admin = createAdminClient()
 
-  // 상태 변경 전 신청 정보 조회
-  const { data: prev } = await supabase
+  // 상태 변경 전 신청 정보 조회 (RLS 우회 위해 admin client 사용)
+  const { data: prev } = await admin
     .from("volunteer_applications")
     .select(
       "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status, phone"
