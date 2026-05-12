@@ -189,8 +189,8 @@ export default async function MyApplicationsPage() {
                     </div>
                     {v.admin_note && (
                       <div className="mt-3 rounded-md bg-secondary/50 px-3 py-2 text-xs text-foreground">
-                        <span className="font-semibold text-muted-foreground">운영진 메모 · </span>
-                        {v.admin_note}
+                        <span className="font-semibold text-muted-foreground">운영진 메모</span>
+                        <p className="mt-1.5 whitespace-pre-line leading-relaxed">{v.admin_note}</p>
                       </div>
                     )}
 
