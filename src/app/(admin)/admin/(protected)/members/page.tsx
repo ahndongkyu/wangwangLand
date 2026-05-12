@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { AlertTriangle } from "lucide-react"
 
 import { listProfiles } from "@/features/members"
 import { AdminMembersTable } from "@/features/members"
@@ -17,8 +16,8 @@ export const dynamic = "force-dynamic"
 const PAGE_SIZE = 10
 
 const STATUS_FILTERS = [
-  { label: "대기", value: "pending" },
-  { label: "승인", value: "approved" },
+  { label: "가입 미완료", value: "pending" },
+  { label: "정상 회원", value: "approved" },
   { label: "거절", value: "rejected" },
 ]
 
@@ -66,11 +65,11 @@ export default async function AdminMembersPage({
             <span className="text-muted-foreground">전체 {total}명</span>
             {pendingCount > 0 && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                대기 {pendingCount}
+                가입 미완료 {pendingCount}
               </span>
             )}
             <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
-              승인 {approvedCount}
+              정상 {approvedCount}
             </span>
             {rejectedCount > 0 && (
               <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs font-semibold text-destructive">
@@ -80,22 +79,6 @@ export default async function AdminMembersPage({
           </div>
         </div>
       </header>
-
-      {/* 대기 경고 배너 */}
-      {pendingCount > 0 && !filterStatus && (
-        <div className="mb-4 flex items-center gap-2.5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-700/50 dark:bg-amber-950/20">
-          <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-            대기 중인 회원 <span className="font-bold">{pendingCount}명</span> 처리 필요
-          </p>
-          <a
-            href="/admin/members?status=pending"
-            className="ml-auto text-xs font-semibold text-amber-700 underline hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200"
-          >
-            모두 보기
-          </a>
-        </div>
-      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchBox placeholder="닉네임 또는 전화번호 검색" className="max-w-64" />

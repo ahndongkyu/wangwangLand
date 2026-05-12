@@ -11,7 +11,7 @@ import { cn } from "@/shared/lib/utils"
 import type { Profile } from "../api/queries"
 
 const STATUS_LABEL: Record<Profile["status"], string> = {
-  pending: "대기",
+  pending: "가입 미완료",
   approved: "승인",
   rejected: "거절",
 }

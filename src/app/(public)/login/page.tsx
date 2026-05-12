@@ -46,7 +46,7 @@ export default async function LoginPage({
         <KakaoLoginButton />
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          가입 후 운영진 승인을 거쳐 활동할 수 있습니다.
+          카카오 로그인 후 닉네임만 등록하시면 바로 이용 가능합니다.
         </p>
       </div>
     </div>

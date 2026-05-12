@@ -52,8 +52,16 @@ export default async function VolunteerPage() {
       <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          가입 승인을 기다리고 있어요. 승인이 완료되면 신청 가능합니다.
+          가입을 마무리해야 봉사 신청이 가능해요.
+          <br />
+          닉네임·약관 동의를 완료해 주세요.
         </p>
+        <Link
+          href="/onboarding"
+          className="mt-5 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          가입 마무리하기
+        </Link>
       </div>
     )
   }

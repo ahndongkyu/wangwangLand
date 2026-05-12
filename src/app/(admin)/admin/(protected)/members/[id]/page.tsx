@@ -33,7 +33,7 @@ import type { Profile } from "@/features/members"
 export const dynamic = "force-dynamic"
 
 const STATUS_LABEL: Record<Profile["status"], string> = {
-  pending: "승인 대기",
+  pending: "가입 미완료",
   approved: "승인됨",
   rejected: "거절됨",
 }
