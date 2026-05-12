@@ -34,6 +34,11 @@ export function VolunteerEditForm({ application }: Props) {
   const [selectedDates, setSelectedDates] = useState<string[]>(application.available_dates ?? [])
   const [activities, setActivities] = useState<string[]>(application.activities ?? [])
 
+  const defaultTime = application.available_time ?? ""
+  const [visitHour, setVisitHour] = useState(defaultTime ? defaultTime.split(":")[0] : "")
+  const [visitMinute, setVisitMinute] = useState(defaultTime ? (defaultTime.split(":")[1] ?? "00") : "00")
+  const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
+
   function toggleActivity(name: string) {
     setActivities((prev) =>
       prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
@@ -107,13 +112,31 @@ export function VolunteerEditForm({ application }: Props) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="available_time">방문 예정 시간</Label>
-        <Input
-          id="available_time"
-          name="available_time"
-          defaultValue={application.available_time ?? ""}
-          placeholder="예: 10:00"
-        />
+        <Label>방문 예정 시간</Label>
+        <div className="flex items-center gap-1.5">
+          <select
+            value={visitHour}
+            onChange={(e) => setVisitHour(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">시</option>
+            {Array.from({ length: 10 }, (_, i) => {
+              const h = String(i + 9).padStart(2, "0")
+              return <option key={h} value={h}>{i + 9}시</option>
+            })}
+          </select>
+          <select
+            value={visitMinute}
+            onChange={(e) => setVisitMinute(e.target.value)}
+            disabled={!visitHour}
+            className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-40"
+          >
+            {["00", "10", "20", "30", "40", "50"].map((m) => (
+              <option key={m} value={m}>{m}분</option>
+            ))}
+          </select>
+        </div>
+        <input type="hidden" name="available_time" value={visitTime} />
       </div>
 
       <div className="space-y-2">
