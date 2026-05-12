@@ -280,10 +280,10 @@ export async function updateAdoptionApplication(
 
   const supabase = await createClient()
 
-  // 상태 변경 전 created_by 조회
+  // 상태 변경 전 created_by, phone 조회
   const { data: prev } = await supabase
     .from("adoption_applications")
-    .select("created_by, status")
+    .select("created_by, status, phone")
     .eq("id", id)
     .maybeSingle()
 
@@ -330,6 +330,19 @@ export async function updateAdoptionApplication(
       )
     } catch (e) {
       console.error("[push adoption-status]", e)
+    }
+
+    // 승인 시 SMS 발송
+    if (status === "승인" && prev.phone) {
+      try {
+        const { sendSms } = await import("@/features/sms")
+        await sendSms(
+          prev.phone,
+          `[왕왕랜드] 입양 신청이 승인됐어요.\n자세한 내용은 신청 내역에서 확인해주세요.\nwangwangland.kr/my/applications`
+        )
+      } catch (e) {
+        console.error("[sms adoption-approved]", e)
+      }
     }
   }
 
@@ -408,7 +421,7 @@ export async function updateVolunteerApplication(
   const { data: prev } = await supabase
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status"
+      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status, phone"
     )
     .eq("id", id)
     .maybeSingle()
@@ -463,6 +476,19 @@ export async function updateVolunteerApplication(
       )
     } catch (e) {
       console.error("[push volunteer-status]", e)
+    }
+
+    // 승인 시 SMS 발송
+    if (status === "승인" && prev.phone) {
+      try {
+        const { sendSms } = await import("@/features/sms")
+        await sendSms(
+          prev.phone,
+          `[왕왕랜드] 봉사 신청이 승인됐어요.\n일정은 신청 내역에서 확인해주세요.\nwangwangland.kr/my/applications`
+        )
+      } catch (e) {
+        console.error("[sms volunteer-approved]", e)
+      }
     }
   }
 
