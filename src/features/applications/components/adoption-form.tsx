@@ -8,6 +8,7 @@ import { submitAdoptionApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
 import { AddressSearchInput } from "@/shared/components/address-search-input"
 import { FormFooter } from "@/shared/components/form-footer"
+import { PhoneInput } from "@/shared/components/phone-input"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -187,15 +188,7 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
               <p className="text-[11px] text-muted-foreground/80">{NAME_HINT}</p>
             </Field>
             <Field id="phone" label="연락처" required>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                pattern={KOREAN_PHONE_PATTERN_RAW}
-                title={PHONE_HINT}
-                placeholder="010-0000-0000"
-              />
+              <PhoneInput id="phone" name="phone" required />
               <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
             </Field>
             <Field id="address" label="주소" required className="md:col-span-2">

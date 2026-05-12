@@ -8,6 +8,7 @@ import { submitVolunteerApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { FormFooter } from "@/shared/components/form-footer"
+import { PhoneInput } from "@/shared/components/phone-input"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -267,15 +268,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
               </p>
             </Field>
             <Field id="phone" label={partyType === "group" ? "인솔자 연락처" : "연락처"} required>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                pattern={KOREAN_PHONE_PATTERN_RAW}
-                title={PHONE_HINT}
-                placeholder="010-0000-0000"
-              />
+              <PhoneInput id="phone" name="phone" required />
               <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
             </Field>
             <Field id="party_size" label="인원수" required>

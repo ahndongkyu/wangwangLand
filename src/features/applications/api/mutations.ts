@@ -7,6 +7,7 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { localKstToIso } from "@/features/events/lib/date"
 import {
+  formatKoreanPhone,
   validateKoreanPhone,
   validateName,
   validatePartySize,
@@ -28,7 +29,7 @@ export async function submitAdoptionApplication(
 ): Promise<SubmitResult> {
   const dogId = String(formData.get("dog_id") ?? "").trim()
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
-  const phone = String(formData.get("phone") ?? "").trim()
+  const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const address = String(formData.get("address") ?? "").trim()
   const reason = String(formData.get("reason") ?? "").trim()
   const privacy_agreed = formData.get("privacy_agreed") === "on"
@@ -110,7 +111,7 @@ export async function submitVolunteerApplication(
   formData: FormData
 ): Promise<SubmitResult> {
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
-  const phone = String(formData.get("phone") ?? "").trim()
+  const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const privacy_agreed = formData.get("privacy_agreed") === "on"
 
   const nameCheck = validateName(applicant_name)
@@ -202,7 +203,7 @@ export async function updateMyVolunteerApplication(
   formData: FormData
 ): Promise<SubmitResult> {
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
-  const phone = String(formData.get("phone") ?? "").trim()
+  const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
 
   const nameCheck = validateName(applicant_name)
   if (!nameCheck.valid) return { error: nameCheck.error }
