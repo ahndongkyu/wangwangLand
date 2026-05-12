@@ -280,10 +280,10 @@ export async function updateAdoptionApplication(
 
   const supabase = await createClient()
 
-  // 상태 변경 전 created_by, phone 조회
+  // 상태 변경 전 created_by, phone, applicant_name 조회
   const { data: prev } = await supabase
     .from("adoption_applications")
-    .select("created_by, status, phone")
+    .select("created_by, status, phone, applicant_name")
     .eq("id", id)
     .maybeSingle()
 
@@ -332,16 +332,16 @@ export async function updateAdoptionApplication(
       console.error("[push adoption-status]", e)
     }
 
-    // 승인 시 SMS 발송
-    if (status === "승인" && prev.phone) {
+    // SMS 발송
+    if (prev.phone) {
       try {
         const { sendSms } = await import("@/features/sms")
         await sendSms(
           prev.phone,
-          `[왕왕랜드] 입양 신청이 승인됐어요.\n자세한 내용은 신청 내역에서 확인해주세요.\nwangwangland.kr/my/applications`
+          buildAdoptionSmsText(status, prev.applicant_name ?? "", cancelReason)
         )
       } catch (e) {
-        console.error("[sms adoption-approved]", e)
+        console.error("[sms adoption-status]", e)
       }
     }
   }
@@ -379,6 +379,65 @@ function pushBodyForStatus(status: ApplicationStatus): string {
       return "신청이 취소됐어요. 신청 내역에서 사유를 확인해주세요."
     default:
       return "신청 상태가 변경됐어요."
+  }
+}
+
+/** datetime-local 문자열(KST) → "5월 20일(화) 10:00" */
+function formatScheduleLabel(scheduledStart: string): string {
+  if (!scheduledStart) return ""
+  const [datePart, timePart] = scheduledStart.split("T")
+  if (!datePart || !timePart) return ""
+  const [, m, d] = datePart.split("-").map(Number)
+  const [h, min] = timePart.split(":").map(Number)
+  const dow = ["일", "월", "화", "수", "목", "금", "토"][
+    new Date(`${datePart}T${timePart}:00+09:00`).getDay()
+  ]
+  return `${m}월 ${d}일(${dow}) ${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`
+}
+
+function buildVolunteerSmsText(
+  status: ApplicationStatus,
+  applicantName: string,
+  scheduledStart: string,
+  cancelReason: string
+): string {
+  const name = `${applicantName}님`
+  const url = `\n\nwangwangland.kr/my/applications`
+  switch (status) {
+    case "검토중":
+      return `[왕왕랜드] ${name}, 봉사 신청이 검토 중이에요.\n결과가 나오면 다시 안내드릴게요.${url}`
+    case "승인": {
+      const dateLabel = formatScheduleLabel(scheduledStart)
+      const dateLine = dateLabel ? `\n일정: ${dateLabel}` : ""
+      return `[왕왕랜드] ${name}, 봉사 신청이 승인됐어요.${dateLine}\n준비물 등 자세한 내용은 신청 내역에서 확인해주세요.${url}`
+    }
+    case "반려":
+      return `[왕왕랜드] ${name}, 봉사 신청이 반려됐어요.\n사유는 신청 내역에서 확인해주세요.${url}`
+    case "취소":
+      return `[왕왕랜드] ${name}, 봉사 신청이 취소됐어요.\n사유: ${cancelReason}${url}`
+    default:
+      return `[왕왕랜드] ${name}, 봉사 신청 상태가 변경됐어요.${url}`
+  }
+}
+
+function buildAdoptionSmsText(
+  status: ApplicationStatus,
+  applicantName: string,
+  cancelReason: string
+): string {
+  const name = `${applicantName}님`
+  const url = `\n\nwangwangland.kr/my/applications`
+  switch (status) {
+    case "검토중":
+      return `[왕왕랜드] ${name}, 입양 신청이 검토 중이에요.\n결과가 나오면 다시 안내드릴게요.${url}`
+    case "승인":
+      return `[왕왕랜드] ${name}, 입양 신청이 승인됐어요.\n자세한 내용은 신청 내역에서 확인해주세요.${url}`
+    case "반려":
+      return `[왕왕랜드] ${name}, 입양 신청이 반려됐어요.\n사유는 신청 내역에서 확인해주세요.${url}`
+    case "취소":
+      return `[왕왕랜드] ${name}, 입양 신청이 취소됐어요.\n사유: ${cancelReason}${url}`
+    default:
+      return `[왕왕랜드] ${name}, 입양 신청 상태가 변경됐어요.${url}`
   }
 }
 
@@ -478,16 +537,16 @@ export async function updateVolunteerApplication(
       console.error("[push volunteer-status]", e)
     }
 
-    // 승인 시 SMS 발송
-    if (status === "승인" && prev.phone) {
+    // SMS 발송
+    if (prev.phone) {
       try {
         const { sendSms } = await import("@/features/sms")
         await sendSms(
           prev.phone,
-          `[왕왕랜드] 봉사 신청이 승인됐어요.\n일정은 신청 내역에서 확인해주세요.\nwangwangland.kr/my/applications`
+          buildVolunteerSmsText(status, prev.applicant_name ?? "", scheduledStart, cancelReason)
         )
       } catch (e) {
-        console.error("[sms volunteer-approved]", e)
+        console.error("[sms volunteer-status]", e)
       }
     }
   }
