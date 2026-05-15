@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { Download, FileText } from "lucide-react"
 
 import { getDog } from "@/features/dogs"
@@ -22,6 +23,9 @@ export default async function AdoptPage({
     dogId ? getDog(dogId) : Promise.resolve(null),
     getCurrentProfile(),
   ])
+
+  if (!profile) redirect("/login")
+
   const termsAlreadyAgreed =
     !!profile?.terms_agreed_at && profile.terms_version === TERMS_VERSION
 

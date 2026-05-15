@@ -117,7 +117,7 @@ export function VolunteerEditForm({ application }: Props) {
           <select
             value={visitHour}
             onChange={(e) => setVisitHour(e.target.value)}
-            className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           >
             <option value="">시</option>
             {Array.from({ length: 10 }, (_, i) => {
@@ -129,7 +129,7 @@ export function VolunteerEditForm({ application }: Props) {
             value={visitMinute}
             onChange={(e) => setVisitMinute(e.target.value)}
             disabled={!visitHour}
-            className="h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-40"
+            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 dark:bg-input/30"
           >
             {["00", "10", "20", "30", "40", "50"].map((m) => (
               <option key={m} value={m}>{m}분</option>
