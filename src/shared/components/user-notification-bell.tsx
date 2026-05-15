@@ -50,7 +50,6 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const hasItems = notifications.length > 0
 
   useEffect(() => {
     function handler(e: MouseEvent | TouchEvent) {
@@ -83,14 +82,9 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => hasItems && setOpen((v) => !v)}
-        className={cn(
-          "relative flex size-9 items-center justify-center rounded-full transition-colors",
-          hasItems
-            ? "text-foreground/70 hover:bg-secondary hover:text-foreground"
-            : "text-foreground/40 cursor-default"
-        )}
-        aria-label={hasItems ? `알림 ${unreadCount}개` : "알림 없음"}
+        onClick={() => setOpen((v) => !v)}
+        className="relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+        aria-label={unreadCount > 0 ? `알림 ${unreadCount}개` : "알림"}
       >
         <Bell
           className={cn("size-5", unreadCount > 0 && "animate-bell-ring")}
@@ -102,7 +96,7 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
         )}
       </button>
 
-      {open && hasItems && (
+      {open && (
         <div className="absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
             <p className="text-xs font-semibold text-muted-foreground">알림</p>
@@ -118,30 +112,36 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
             )}
           </div>
 
-          <ul className="max-h-80 overflow-y-auto">
-            {notifications.map((n) => (
-              <li key={n.id}>
-                <button
-                  type="button"
-                  onClick={() => handleClickNotif(n)}
-                  className={cn(
-                    "w-full px-4 py-3 text-left transition-colors hover:bg-secondary",
-                    !n.is_read && "bg-primary/5"
-                  )}
-                >
-                  <p className="text-sm text-foreground leading-snug">
-                    {!n.is_read && (
-                      <span className="mr-1.5 inline-block size-1.5 rounded-full bg-primary align-middle" />
+          {notifications.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              알림이 없습니다.
+            </p>
+          ) : (
+            <ul className="max-h-80 overflow-y-auto">
+              {notifications.map((n) => (
+                <li key={n.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleClickNotif(n)}
+                    className={cn(
+                      "w-full px-4 py-3 text-left transition-colors hover:bg-secondary",
+                      !n.is_read && "bg-primary/5"
                     )}
-                    {notifLabel(n)}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ko })}
-                  </p>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  >
+                    <p className="text-sm text-foreground leading-snug">
+                      {!n.is_read && (
+                        <span className="mr-1.5 inline-block size-1.5 rounded-full bg-primary align-middle" />
+                      )}
+                      {notifLabel(n)}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: ko })}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
