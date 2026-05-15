@@ -26,7 +26,7 @@ export function CatCard({ cat }: { cat: Cat }) {
 
   return (
     <Link href={`/cats/${cat.id}`} className="group block">
-      <Card className="overflow-hidden transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
+      <Card className="overflow-hidden pt-0 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
         <div className="relative aspect-square w-full overflow-hidden bg-muted">
           {thumbnailSrc ? (
             <Image
