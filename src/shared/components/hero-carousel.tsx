@@ -141,7 +141,7 @@ export function HeroCarousel({
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden py-4"
+      className="relative overflow-hidden pb-4"
       aria-roledescription="carousel"
       aria-label="메인 배너"
       onMouseEnter={() => setPlaying(false)}
