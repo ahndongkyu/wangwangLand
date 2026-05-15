@@ -8,10 +8,11 @@ interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"
   defaultValue?: string
 }
 
-export function PhoneInput({ defaultValue = "", className, ...props }: Props) {
+export function PhoneInput({ defaultValue = "", className, readOnly, ...props }: Props & { readOnly?: boolean }) {
   const [value, setValue] = useState(() => formatKoreanPhone(defaultValue))
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (readOnly) return
     setValue(formatKoreanPhone(e.target.value))
   }
 
@@ -21,6 +22,7 @@ export function PhoneInput({ defaultValue = "", className, ...props }: Props) {
       inputMode="tel"
       value={value}
       onChange={handleChange}
+      readOnly={readOnly}
       placeholder="010-0000-0000"
       className={cn(
         "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base outline-none transition-colors",
