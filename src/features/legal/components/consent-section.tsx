@@ -102,12 +102,11 @@ export function ConsentSection({
       </label>
 
       {/* 이용약관 동의 — 개인정보 row 와 동일 패딩으로 좌측 정렬 통일 */}
-      <label className="flex cursor-pointer items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
+      <label className={`flex items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm ${termsAlreadyAgreed ? "cursor-default" : "cursor-pointer"}`}>
         <input
           type="checkbox"
           checked={termsAgreed}
-          onChange={(e) => onTermsChange(e.target.checked)}
-          disabled={termsAlreadyAgreed}
+          onChange={(e) => { if (!termsAlreadyAgreed) onTermsChange(e.target.checked) }}
           className="size-4 shrink-0 accent-primary"
         />
         {/* hidden 으로 form data 보장 (controlled + disabled 케이스 모두 처리) */}
