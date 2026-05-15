@@ -119,12 +119,13 @@ export function ProfileForm({ profile }: Props) {
       {/* 핸드폰번호 */}
       <div className="space-y-1.5">
         <label htmlFor="phone" className="text-sm font-medium text-foreground">
-          핸드폰번호 <span className="text-xs text-muted-foreground">(선택)</span>
+          핸드폰번호 <span className="text-destructive">*</span>
         </label>
         <PhoneInput
           id="phone"
           name="phone"
           defaultValue={profile.phone ?? ""}
+          required
         />
         <p className="text-xs text-muted-foreground">
           예: 010-1234-5678 · 운영진만 확인합니다

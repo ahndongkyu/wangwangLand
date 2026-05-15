@@ -129,13 +129,11 @@ export async function updateProfile(
   const nicknameCheck = validateNickname(nickname)
   if (!nicknameCheck.valid) return { error: nicknameCheck.error! }
 
-  // 핸드폰번호: 빈 값이면 null, 그 외엔 한국 형식 검증
-  let phone: string | null = null
-  if (phoneRaw) {
-    const phoneCheck = validateKoreanPhone(phoneRaw)
-    if (!phoneCheck.valid) return { error: phoneCheck.error! }
-    phone = formatKoreanPhone(phoneRaw)
-  }
+  // 핸드폰번호: 필수
+  if (!phoneRaw) return { error: "핸드폰번호를 입력해 주세요." }
+  const phoneCheck = validateKoreanPhone(phoneRaw)
+  if (!phoneCheck.valid) return { error: phoneCheck.error! }
+  const phone = formatKoreanPhone(phoneRaw)
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
