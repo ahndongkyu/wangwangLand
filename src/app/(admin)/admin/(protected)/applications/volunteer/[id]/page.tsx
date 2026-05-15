@@ -186,22 +186,33 @@ export default async function VolunteerApplicationDetailPage({
         </Card>
 
         <Card title="가능 일정">
-          <Row
-            label="가능 날짜"
-            value={
-              app.available_dates.length > 0
-                ? app.available_dates.join(", ")
-                : app.available_days.length > 0
-                  ? `${app.available_days.join(", ")}요일`
-                  : "—"
-            }
-          />
+          <div className="flex items-baseline gap-3">
+            <span className="w-24 shrink-0 text-xs text-muted-foreground">가능 날짜</span>
+            {app.available_dates.length > 0 ? (
+              <div className="flex flex-wrap gap-1">
+                {app.available_dates.map((date) => {
+                  const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
+                  return (
+                    <span key={date} className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
+                      {date.slice(5).replace("-", "/")} ({wd})
+                    </span>
+                  )
+                })}
+              </div>
+            ) : app.available_days.length > 0 ? (
+              <span className="font-medium text-foreground">{app.available_days.join(", ")}요일</span>
+            ) : (
+              <span className="font-medium text-foreground">—</span>
+            )}
+          </div>
           <Row label="시간대" value={app.available_time ?? "—"} />
 
           {app.available_dates.length > 0 && (
-            <div className="mt-3 rounded-md border border-border bg-secondary/30 p-3">
-              <p className="mb-2 text-xs font-semibold text-foreground">날짜별 출근 예정 운영진</p>
-              <div className="space-y-2">
+            <details className="mt-3 rounded-md border border-border bg-secondary/30">
+              <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary/50 rounded-md">
+                날짜별 출근 예정 운영진 ({app.available_dates.length}일)
+              </summary>
+              <div className="space-y-2 px-3 pb-3 pt-1">
                 {app.available_dates.map((date) => {
                   const list = staffByDate[date] ?? []
                   const dt = new Date(date)
@@ -218,7 +229,7 @@ export default async function VolunteerApplicationDetailPage({
                   )
                 })}
               </div>
-            </div>
+            </details>
           )}
         </Card>
 
