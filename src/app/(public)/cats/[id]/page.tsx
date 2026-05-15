@@ -19,6 +19,7 @@ import { ViewTracker } from "@/shared/components/view-tracker"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { formatAge } from "@/shared/lib/age"
+import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 
 export const revalidate = 60
@@ -62,7 +63,16 @@ export default async function CatDetailPage({
 
   if (!cat) notFound()
 
-  const similar = await listSimilarCats({ id: cat.id, gender: cat.gender }, 4)
+  const [similar, likedByUser] = await Promise.all([
+    listSimilarCats({ id: cat.id, gender: cat.gender }, 4),
+    (async () => {
+      const supabase = await createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return undefined
+      const { data } = await supabase.rpc("check_cat_liked", { p_cat_id: cat.id })
+      return data === true ? true : false
+    })(),
+  ])
   const isAdoptable = cat.status === "보호중" || cat.status === "임시보호중"
   const ageLabel = formatAge(cat)
 
@@ -103,7 +113,7 @@ export default async function CatDetailPage({
               왕왕랜드에서 새 가족을 기다리고 있어요
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <LikeButton kind="cat" id={cat.id} initialCount={cat.like_count ?? 0} />
+              <LikeButton kind="cat" id={cat.id} initialCount={cat.like_count ?? 0} initialLiked={likedByUser} />
               <ShareButton
                 title={`${cat.name} · 왕왕랜드`}
                 text={`왕왕랜드에서 새 가족을 기다리는 ${cat.name} 을(를) 소개합니다.`}

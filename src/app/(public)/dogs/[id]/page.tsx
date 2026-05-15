@@ -20,6 +20,7 @@ import { ViewTracker } from "@/shared/components/view-tracker"
 import { Badge } from "@/shared/components/ui/badge"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { formatAge } from "@/shared/lib/age"
+import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 
 export const revalidate = 60
@@ -63,10 +64,16 @@ export default async function DogDetailPage({
 
   if (!dog) notFound()
 
-  const similar = await listSimilarDogs(
-    { id: dog.id, size: dog.size, gender: dog.gender },
-    4
-  )
+  const [similar, likedByUser] = await Promise.all([
+    listSimilarDogs({ id: dog.id, size: dog.size, gender: dog.gender }, 4),
+    (async () => {
+      const supabase = await createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return undefined
+      const { data } = await supabase.rpc("check_dog_liked", { p_dog_id: dog.id })
+      return data === true ? true : false
+    })(),
+  ])
 
   const isAdoptable = dog.status === "보호중" || dog.status === "임시보호중"
   const ageLabel = formatAge(dog)
@@ -109,7 +116,7 @@ export default async function DogDetailPage({
               왕왕랜드에서 새 가족을 기다리고 있어요
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <LikeButton kind="dog" id={dog.id} initialCount={dog.like_count ?? 0} />
+              <LikeButton kind="dog" id={dog.id} initialCount={dog.like_count ?? 0} initialLiked={likedByUser} />
               <ShareButton
                 title={`${dog.name} · 왕왕랜드`}
                 text={`왕왕랜드에서 새 가족을 기다리는 ${dog.name} 을(를) 소개합니다.`}

@@ -6,6 +6,7 @@ import {
   ChevronRight,
   ClipboardList,
   HandCoins,
+  Heart,
   LogOut,
   CalendarDays,
   Settings,
@@ -84,6 +85,8 @@ export default async function MyPage() {
     volunteerRes,
     donations,
     volunteerCount,
+    dogLikesRes,
+    catLikesRes,
   ] = await Promise.all([
     listMyUpcomingEvents(),
     admin
@@ -100,6 +103,18 @@ export default async function MyPage() {
       .limit(2),
     listMyDonations(),
     getVolunteerCount(userId),
+    admin
+      .from("dog_likes")
+      .select("dog:dogs(id, name, status, images, thumbnail_index)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(2),
+    admin
+      .from("cat_likes")
+      .select("cat:cats(id, name, status, images, thumbnail_index)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(2),
   ])
 
   const currentTier = getTier(volunteerCount, profile.role)
@@ -124,6 +139,21 @@ export default async function MyPage() {
 
   const totalApps = adoptions.length + volunteers.length
   const totalDonations = donations.length
+
+  type LikeAnimalPreview = {
+    id: string
+    name: string
+    status: string
+    images: string[]
+    thumbnail_index: number
+  }
+  const likedDogPreviews = (dogLikesRes.data ?? [])
+    .map((r) => (Array.isArray(r.dog) ? r.dog[0] : r.dog))
+    .filter(Boolean) as LikeAnimalPreview[]
+  const likedCatPreviews = (catLikesRes.data ?? [])
+    .map((r) => (Array.isArray(r.cat) ? r.cat[0] : r.cat))
+    .filter(Boolean) as LikeAnimalPreview[]
+  const totalLikes = likedDogPreviews.length + likedCatPreviews.length
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
@@ -236,6 +266,54 @@ export default async function MyPage() {
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatKoreanDayLabel(ev.starts_at, ev.all_day)}
               </span>
+            </Link>
+          )
+        })}
+      </Section>
+
+      {/* 찜한 아이들 */}
+      <Section
+        icon={Heart}
+        title="찜한 아이들"
+        count={totalLikes}
+        href="/my/likes"
+        hrefLabel="전체 →"
+        emptyText="찜한 아이가 없습니다."
+      >
+        {[
+          ...likedDogPreviews.map((d) => ({ ...d, kind: "dog" as const })),
+          ...likedCatPreviews.map((c) => ({ ...c, kind: "cat" as const })),
+        ].map((animal) => {
+          const thumbnailSrc =
+            animal.images[animal.thumbnail_index] ?? animal.images[0] ?? null
+          return (
+            <Link
+              key={`${animal.kind}:${animal.id}`}
+              href={`/${animal.kind === "dog" ? "dogs" : "cats"}/${animal.id}`}
+              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                  {thumbnailSrc ? (
+                    <Image
+                      src={thumbnailSrc}
+                      alt={animal.name}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-lg">
+                      {animal.kind === "dog" ? "🐾" : "🐱"}
+                    </span>
+                  )}
+                </div>
+                <span className="truncate text-sm font-medium text-foreground">
+                  {animal.name}
+                </span>
+              </div>
+              <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
+                {animal.status}
+              </Badge>
             </Link>
           )
         })}

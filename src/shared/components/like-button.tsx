@@ -11,25 +11,34 @@ interface Props {
   kind: "dog" | "cat"
   id: string
   initialCount: number
+  /**
+   * 로그인 상태에서 서버가 내려주는 liked 여부.
+   * boolean이면 DB 기반 토글(toggle_dog_like / toggle_cat_like) 사용.
+   * undefined이면 기존 localStorage 방식 유지.
+   */
+  initialLiked?: boolean
   /** 버튼 크기: "sm" (카드용), "md" (상세용) */
   size?: "sm" | "md"
   className?: string
 }
 
 /**
- * 관심 하트 버튼 — localStorage 에 사용자별 토글 상태 저장.
- * 같은 기기·브라우저에서만 1인 1회 효과 (쿠키 초기화 시 리셋).
- * 서버는 RPC 로 count 만 조정.
+ * 관심 하트 버튼.
+ * - 로그인(initialLiked가 boolean): DB 기반 토글 RPC 사용. localStorage 미사용.
+ * - 비로그인(initialLiked가 undefined): localStorage 방식 유지 (increment_dog_like RPC).
  */
 export function LikeButton({
   kind,
   id,
   initialCount,
+  initialLiked,
   size = "md",
   className,
 }: Props) {
+  const isLoggedIn = initialLiked !== undefined
+
   const [count, setCount] = useState(initialCount)
-  const [liked, setLiked] = useState(false)
+  const [liked, setLiked] = useState(isLoggedIn ? initialLiked : false)
   const [mounted, setMounted] = useState(false)
   const [pending, startTransition] = useTransition()
   const toast = useToast()
@@ -38,48 +47,78 @@ export function LikeButton({
 
   useEffect(() => {
     setMounted(true)
-    try {
-      setLiked(localStorage.getItem(storageKey) === "1")
-    } catch {
-      // 무시
+    // 비로그인 시에만 localStorage에서 초기 상태 읽기
+    if (!isLoggedIn) {
+      try {
+        setLiked(localStorage.getItem(storageKey) === "1")
+      } catch {
+        // 무시
+      }
     }
-  }, [storageKey])
+  }, [storageKey, isLoggedIn])
 
   function handleClick() {
-    const nextLiked = !liked
-    const delta = nextLiked ? 1 : -1
+    if (isLoggedIn) {
+      // DB 기반 토글
+      const optimisticLiked = !liked
+      const optimisticCount = Math.max(0, count + (optimisticLiked ? 1 : -1))
+      setLiked(optimisticLiked)
+      setCount(optimisticCount)
 
-    // 옵티미스틱 업데이트
-    setLiked(nextLiked)
-    setCount((c) => Math.max(0, c + delta))
-    try {
-      if (nextLiked) localStorage.setItem(storageKey, "1")
-      else localStorage.removeItem(storageKey)
-    } catch {
-      // 무시
-    }
-
-    startTransition(async () => {
-      const supabase = createClient()
-      const rpc = kind === "dog" ? "increment_dog_like" : "increment_cat_like"
-      const paramKey = kind === "dog" ? "p_dog_id" : "p_cat_id"
-      const { data, error } = await supabase.rpc(rpc, {
-        [paramKey]: id,
-        p_delta: delta,
+      startTransition(async () => {
+        const supabase = createClient()
+        const rpc = kind === "dog" ? "toggle_dog_like" : "toggle_cat_like"
+        const paramKey = kind === "dog" ? "p_dog_id" : "p_cat_id"
+        const { data, error } = await supabase.rpc(rpc, { [paramKey]: id })
+        if (error) {
+          // rollback
+          setLiked(!optimisticLiked)
+          setCount(count)
+          toast.error("하트 반영에 실패했어요. 잠시 후 다시 시도해주세요.")
+          return
+        }
+        if (data && typeof data === "object") {
+          const result = data as { liked: boolean; count: number }
+          setLiked(result.liked)
+          setCount(result.count)
+        }
       })
-      if (error) {
-        // rollback
-        setLiked(!nextLiked)
-        setCount((c) => Math.max(0, c - delta))
-        try {
-          if (nextLiked) localStorage.removeItem(storageKey)
-          else localStorage.setItem(storageKey, "1")
-        } catch {}
-        toast.error("하트 반영에 실패했어요. 잠시 후 다시 시도해주세요.")
-        return
+    } else {
+      // localStorage 기반 토글 (비로그인)
+      const nextLiked = !liked
+      const delta = nextLiked ? 1 : -1
+
+      setLiked(nextLiked)
+      setCount((c) => Math.max(0, c + delta))
+      try {
+        if (nextLiked) localStorage.setItem(storageKey, "1")
+        else localStorage.removeItem(storageKey)
+      } catch {
+        // 무시
       }
-      if (typeof data === "number") setCount(data)
-    })
+
+      startTransition(async () => {
+        const supabase = createClient()
+        const rpc = kind === "dog" ? "increment_dog_like" : "increment_cat_like"
+        const paramKey = kind === "dog" ? "p_dog_id" : "p_cat_id"
+        const { data, error } = await supabase.rpc(rpc, {
+          [paramKey]: id,
+          p_delta: delta,
+        })
+        if (error) {
+          // rollback
+          setLiked(!nextLiked)
+          setCount((c) => Math.max(0, c - delta))
+          try {
+            if (nextLiked) localStorage.removeItem(storageKey)
+            else localStorage.setItem(storageKey, "1")
+          } catch {}
+          toast.error("하트 반영에 실패했어요. 잠시 후 다시 시도해주세요.")
+          return
+        }
+        if (typeof data === "number") setCount(data)
+      })
+    }
   }
 
   const iconSize = size === "sm" ? "size-3.5" : "size-4"
