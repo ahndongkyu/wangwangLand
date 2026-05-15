@@ -145,7 +145,7 @@ export default async function HomePage() {
               label="현재 보호 중"
               value={stats.sheltered}
               suffix="마리"
-              href="/dogs"
+              href="/dogs?status=보호중"
             />
             <CounterCard
               icon="adopted"
