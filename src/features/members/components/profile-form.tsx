@@ -1,8 +1,8 @@
 "use client"
 
-import { useActionState, useRef, useState } from "react"
+import { useActionState, useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Camera, User } from "lucide-react"
+import { Camera, Pencil, User, X } from "lucide-react"
 import { updateProfile } from "../api/actions"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -26,6 +26,14 @@ export function ProfileForm({ profile }: Props) {
   const croppedFileRef = useRef<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
+
+  // 핸드폰이 없는 회원은 바로 수정 모드로 시작
+  const [isEditing, setIsEditing] = useState(!profile.phone)
+
+  // 저장 성공 시 수정 모드 자동 종료
+  useEffect(() => {
+    if (state.success) setIsEditing(false)
+  }, [state.success])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -98,54 +106,105 @@ export function ProfileForm({ profile }: Props) {
           />
         </div>
 
-      {/* 닉네임 */}
-      <div className="space-y-1.5">
-        <label htmlFor="nickname" className="text-sm font-medium text-foreground">
-          닉네임
-        </label>
-        <Input
-          id="nickname"
-          name="nickname"
-          defaultValue={profile.nickname}
-          minLength={2}
-          maxLength={20}
-          pattern={NICKNAME_PATTERN_RAW}
-          title={NICKNAME_HINT}
-          placeholder="닉네임 입력"
-        />
-        <p className="text-xs text-muted-foreground">{NICKNAME_HINT}</p>
-      </div>
+        {/* 닉네임 + 핸드폰 — 수정 모드 토글 */}
+        <div className="space-y-4">
+          {/* 수정 버튼 (수정 모드가 아닐 때만) */}
+          {!isEditing && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Pencil className="size-3.5" />
+                수정
+              </button>
+            </div>
+          )}
 
-      {/* 핸드폰번호 */}
-      <div className="space-y-1.5">
-        <label htmlFor="phone" className="text-sm font-medium text-foreground">
-          핸드폰번호
-        </label>
-        <PhoneInput
-          id="phone"
-          name="phone"
-          defaultValue={profile.phone ?? ""}
-          readOnly
-          className="cursor-default bg-secondary/50"
-        />
-      </div>
+          {/* 닉네임 */}
+          <div className="space-y-1.5">
+            <label htmlFor="nickname" className="text-sm font-medium text-foreground">
+              닉네임
+            </label>
+            {isEditing ? (
+              <>
+                <Input
+                  id="nickname"
+                  name="nickname"
+                  defaultValue={profile.nickname}
+                  minLength={2}
+                  maxLength={20}
+                  pattern={NICKNAME_PATTERN_RAW}
+                  title={NICKNAME_HINT}
+                  placeholder="닉네임 입력"
+                />
+                <p className="text-xs text-muted-foreground">{NICKNAME_HINT}</p>
+              </>
+            ) : (
+              <>
+                <input type="hidden" name="nickname" value={profile.nickname} />
+                <p className="flex h-8 items-center rounded-lg bg-secondary/50 px-3 text-sm text-foreground">
+                  {profile.nickname}
+                </p>
+              </>
+            )}
+          </div>
 
-      {/* 에러 / 성공 */}
-      {state.error && (
-        <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.success && (
-        <p className="rounded-lg bg-primary/10 px-4 py-3 text-sm text-primary">
-          프로필이 저장됐습니다!
-        </p>
-      )}
+          {/* 핸드폰번호 */}
+          <div className="space-y-1.5">
+            <label htmlFor="phone" className="text-sm font-medium text-foreground">
+              핸드폰번호
+            </label>
+            {isEditing ? (
+              <PhoneInput
+                id="phone"
+                name="phone"
+                defaultValue={profile.phone ?? ""}
+                placeholder="010-0000-0000"
+              />
+            ) : (
+              <>
+                <input type="hidden" name="phone" value={profile.phone ?? ""} />
+                <p className="flex h-8 items-center rounded-lg bg-secondary/50 px-3 text-sm text-foreground">
+                  {profile.phone ?? "—"}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
 
-      <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "저장 중..." : "저장"}
-      </Button>
-    </form>
+        {/* 에러 / 성공 */}
+        {state.error && (
+          <p className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {state.error}
+          </p>
+        )}
+        {state.success && (
+          <p className="rounded-lg bg-primary/10 px-4 py-3 text-sm text-primary">
+            프로필이 저장됐습니다!
+          </p>
+        )}
+
+        {isEditing ? (
+          <div className="flex gap-2">
+            {/* 핸드폰이 이미 있는 경우만 취소 가능 */}
+            {profile.phone && (
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <X className="size-4" />
+                취소
+              </button>
+            )}
+            <Button type="submit" disabled={pending} className="flex-1">
+              {pending ? "저장 중..." : "저장"}
+            </Button>
+          </div>
+        ) : null}
+      </form>
     </>
   )
 }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { localKstToIso } from "@/features/events/lib/date"
 import {
   formatKoreanPhone,
   validateKoreanPhone,
@@ -263,6 +264,44 @@ function revalidateAdminApplications() {
   revalidatePath("/admin/applications")
 }
 
+/**
+ * 봉사 신청 승인 시 캘린더 이벤트를 upsert.
+ * - 해당 신청에 연결된 기존 이벤트가 없으면 INSERT, 있으면 스킵(다중 등록은 상세 페이지에서).
+ * - startsAt / endsAt 이 null 이면 아무것도 하지 않음.
+ */
+async function upsertVolunteerEventForApplication(
+  applicationId: string,
+  applicantName: string,
+  partySize: number,
+  startsAt: string | null,
+  endsAt: string | null,
+) {
+  if (!startsAt || !endsAt) return
+  const admin = createAdminClient()
+
+  // 이미 연결된 이벤트가 있으면 중복 생성 방지
+  const { count } = await admin
+    .from("events")
+    .select("id", { count: "exact", head: true })
+    .eq("source_application_type", "volunteer")
+    .eq("source_application_id", applicationId)
+  if ((count ?? 0) > 0) return
+
+  const title =
+    partySize > 1
+      ? `봉사 – ${applicantName} (${partySize}명)`
+      : `봉사 – ${applicantName}`
+
+  await admin.from("events").insert({
+    title,
+    starts_at: startsAt,
+    ends_at: endsAt,
+    is_all_day: false,
+    source_application_type: "volunteer",
+    source_application_id: applicationId,
+  })
+}
+
 export async function updateAdoptionApplication(
   id: string,
   formData: FormData
@@ -424,6 +463,12 @@ export async function updateVolunteerApplication(
   const adminNote = String(formData.get("admin_note") ?? "").trim()
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
 
+  // 일정 등록 필드 (Step 3 — 승인 시만 채워짐)
+  const scheduledStartRaw = String(formData.get("scheduled_starts_at") ?? "").trim()
+  const scheduledEndRaw = String(formData.get("scheduled_ends_at") ?? "").trim()
+  const scheduledStart = localKstToIso(scheduledStartRaw)
+  const scheduledEnd = localKstToIso(scheduledEndRaw)
+
   if (status === "취소" && !cancelReason) {
     return { error: "취소 사유를 입력해주세요." }
   }
@@ -454,6 +499,17 @@ export async function updateVolunteerApplication(
   if (error) {
     console.error("[updateVolunteerApplication]", error)
     return { error: error.message }
+  }
+
+  // 승인 → 일정 등록 (폼에서 날짜가 입력된 경우에만)
+  if (status === "승인" && prev) {
+    await upsertVolunteerEventForApplication(
+      id,
+      prev.applicant_name ?? "",
+      prev.party_size ?? 1,
+      scheduledStart,
+      scheduledEnd,
+    )
   }
 
   // 취소·반려 → 연결 캘린더 이벤트 삭제

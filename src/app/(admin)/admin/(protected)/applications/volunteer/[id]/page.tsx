@@ -335,6 +335,10 @@ export default async function VolunteerApplicationDetailPage({
         currentStatus={app.status}
         currentNote={app.admin_note}
         applicantName={app.applicant_name}
+        hint={{
+          availableDates: app.available_dates,
+          availableTime: app.available_time,
+        }}
       />
     </div>
   )

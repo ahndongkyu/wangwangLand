@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
 
 import {
   deleteAdoptionApplication,
@@ -11,10 +11,12 @@ import {
   updateVolunteerApplication,
 } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
+import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { useToast } from "@/shared/components/toast"
 import { cn } from "@/shared/lib/utils"
+import { todayKstDate } from "@/features/events/lib/date"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
@@ -31,6 +33,11 @@ interface Props {
   currentStatus: ApplicationStatus
   currentNote: string | null
   applicantName: string
+  /** 봉사 신청에서 내려주는 힌트 (일정 입력 prefill 등) */
+  hint?: {
+    availableDates?: string[]
+    availableTime?: string | null
+  }
 }
 
 export function ApplicationStatusForm({
@@ -39,6 +46,7 @@ export function ApplicationStatusForm({
   currentStatus,
   currentNote,
   applicantName,
+  hint,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -48,11 +56,23 @@ export function ApplicationStatusForm({
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<ApplicationStatus>(currentStatus)
 
+  // 일정 등록 스텝은 봉사 + 승인일 때만
+  const showSchedule = kind === "volunteer" && status === "승인"
+
   // 모바일 스텝 상태
   const showCancelReason = status === "취소"
-  const totalSteps = 2
+  const totalSteps = showSchedule ? 3 : 2
+  const scheduleStep = 3
   const [step, setStep] = useState(1)
   const [cancelReason, setCancelReason] = useState("")
+
+  // 일정 입력 상태 (Step 3)
+  const defaultDate = hint?.availableDates?.[0] ?? todayKstDate()
+  const isAfternoon = hint?.availableTime?.startsWith("오후") ?? false
+  const defaultStartHour = isAfternoon ? "13:00" : "10:00"
+  const defaultEndHour = isAfternoon ? "16:00" : "13:00"
+  const [startsAt, setStartsAt] = useState(`${defaultDate}T${defaultStartHour}`)
+  const [endsAt, setEndsAt] = useState(`${defaultDate}T${defaultEndHour}`)
 
   const VOLUNTEER_DEFAULT_NOTE =
     "안녕하세요! 봉사 신청해주셔서 정말 감사해요 🐾\n야외 견사라 아래 내용 참고해서 편하게 오세요!\n\n• 헌옷 + 헌 신발(장화도 좋아요) + 목장갑 챙겨오시면 좋아요\n• 먼지나 오물이 묻을 수 있으니 아끼는 옷은 피해주세요 😅\n• 현장 물품 지원이 어려울 수 있는 점 양해 부탁드려요 🙏\n\n궁금한 점은 카카오톡 상담을 통해 편하게 문의주세요^^"
@@ -80,7 +100,9 @@ export function ApplicationStatusForm({
   }
 
   // 스텝 레이블
-  const stepLabels = ["상태 선택", "메모 작성"]
+  const stepLabels = showSchedule
+    ? ["상태 선택", "메모 작성", "일정 등록"]
+    : ["상태 선택", "메모 작성"]
 
   // 모바일에서 각 섹션의 가시성
   function sectionVisible(sectionStep: number) {
@@ -183,6 +205,70 @@ export function ApplicationStatusForm({
               placeholder="취소 사유를 입력해주세요. 신청자에게 표시됩니다."
               className="mt-2"
             />
+          </div>
+        )}
+
+        {/* ── Step 3: 일정 등록 (봉사 승인 시만) ──────────── */}
+        {showSchedule && (
+          <div className={sectionVisible(scheduleStep)}>
+            <div className="mb-3 flex items-center gap-2">
+              <CalendarDays className="size-4 text-primary" aria-hidden />
+              <Label className="text-sm font-semibold">캘린더 일정 등록</Label>
+            </div>
+            {hint?.availableDates && hint.availableDates.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                <span className="text-xs text-muted-foreground">신청 날짜:</span>
+                {hint.availableDates.map((d) => {
+                  const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(d).getDay()]
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        const start = startsAt.split("T")[1] ?? "10:00"
+                        const end = endsAt.split("T")[1] ?? "13:00"
+                        setStartsAt(`${d}T${start}`)
+                        setEndsAt(`${d}T${end}`)
+                      }}
+                      className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                    >
+                      {d.slice(5).replace("-", "/")} ({wd})
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="scheduled_starts_at" className="mb-1.5 block text-xs text-muted-foreground">
+                  시작 일시
+                </Label>
+                <Input
+                  id="scheduled_starts_at"
+                  name="scheduled_starts_at"
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <Label htmlFor="scheduled_ends_at" className="mb-1.5 block text-xs text-muted-foreground">
+                  종료 일시
+                </Label>
+                <Input
+                  id="scheduled_ends_at"
+                  name="scheduled_ends_at"
+                  type="datetime-local"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              입력하지 않으면 일정은 등록되지 않습니다. 이미 등록된 일정이 있으면 중복 등록되지 않아요.
+            </p>
           </div>
         )}
 
