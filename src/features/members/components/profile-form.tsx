@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react"
 import Image from "next/image"
-import { Camera, Pencil, User, X } from "lucide-react"
+import { Camera, Pencil, User } from "lucide-react"
 import { updateProfile } from "../api/actions"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -111,14 +111,15 @@ export function ProfileForm({ profile }: Props) {
           {/* 수정 버튼 (수정 모드가 아닐 때만) */}
           {!isEditing && (
             <div className="flex justify-end">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
-                <Pencil className="size-3.5" />
+                <Pencil />
                 수정
-              </button>
+              </Button>
             </div>
           )}
 
@@ -190,14 +191,14 @@ export function ProfileForm({ profile }: Props) {
           <div className="flex gap-2">
             {/* 핸드폰이 이미 있는 경우만 취소 가능 */}
             {profile.phone && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setIsEditing(false)}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+                className="flex-1"
               >
-                <X className="size-4" />
                 취소
-              </button>
+              </Button>
             )}
             <Button type="submit" disabled={pending} className="flex-1">
               {pending ? "저장 중..." : "저장"}
