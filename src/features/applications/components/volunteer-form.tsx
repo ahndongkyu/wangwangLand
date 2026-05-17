@@ -48,6 +48,8 @@ interface Props {
   termsAlreadyAgreed?: boolean
   /** 날짜별 출근 예정 운영진 데이터 (서버에서 사전 fetch) */
   staffByDate?: Record<string, StaffEntry[]>
+  /** 로그인 회원의 등록 핸드폰번호 — 연락처 자동 입력용 */
+  profilePhone?: string
 }
 
 function formatTime(t: string | null): string | null {
@@ -55,7 +57,7 @@ function formatTime(t: string | null): string | null {
   return t.slice(0, 5)
 }
 
-export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: Props) {
+export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, profilePhone = "" }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -83,8 +85,10 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
       if (!nameCheck.valid) { setError(nameCheck.error!); return }
       const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
       if (!phoneCheck.valid) { setError(phoneCheck.error!); return }
-      const partySizeCheck = validatePartySize(String(fd.get("party_size") ?? "1"))
-      if (!partySizeCheck.valid) { setError(partySizeCheck.error!); return }
+      if (partyType === "group") {
+        const partySizeCheck = validatePartySize(String(fd.get("party_size") ?? "1"))
+        if (!partySizeCheck.valid) { setError(partySizeCheck.error!); return }
+      }
       if (hasMinor && !minorGuardian) { setError("미성년자 참여 시 보호자 동의가 필요합니다."); return }
     }
     if (step === 2) {
@@ -108,8 +112,10 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
     if (!nameCheck.valid) return setError(nameCheck.error!)
     const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
     if (!phoneCheck.valid) return setError(phoneCheck.error!)
-    const partyCheck = validatePartySize(String(formData.get("party_size") ?? "1"))
-    if (!partyCheck.valid) return setError(partyCheck.error!)
+    if (partyType === "group") {
+      const partyCheck = validatePartySize(String(formData.get("party_size") ?? "1"))
+      if (!partyCheck.valid) return setError(partyCheck.error!)
+    }
 
     if (!safetyAcknowledged) return setError("안전 사항 인지 동의가 필요합니다.")
     if (hasMinor && !minorGuardian) {
@@ -268,23 +274,39 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {} }: 
               </p>
             </Field>
             <Field id="phone" label={partyType === "group" ? "인솔자 연락처" : "연락처"} required>
-              <PhoneInput id="phone" name="phone" required />
-              <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
-            </Field>
-            <Field id="party_size" label="인원수" required>
-              <Input
-                id="party_size"
-                name="party_size"
-                type="number"
-                min={1}
-                max={20}
-                defaultValue={1}
+              <PhoneInput
+                id="phone"
+                name="phone"
                 required
+                defaultValue={profilePhone}
+                readOnly={partyType === "individual" && !!profilePhone}
+                className={partyType === "individual" && !!profilePhone ? "cursor-default bg-secondary/50" : ""}
               />
-              <p className="text-[11px] text-muted-foreground">
-                본인 포함, 최대 20명
-              </p>
+              {partyType === "individual" && profilePhone ? (
+                <p className="text-[11px] text-muted-foreground/80">프로필에 등록된 번호입니다.</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
+              )}
             </Field>
+            {/* 인원수 — 단체일 때만 표시, 개인은 hidden으로 1 전송 */}
+            {partyType === "group" ? (
+              <Field id="party_size" label="인원수" required>
+                <Input
+                  id="party_size"
+                  name="party_size"
+                  type="number"
+                  min={2}
+                  max={20}
+                  defaultValue={2}
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  인솔자 포함, 최대 20명
+                </p>
+              </Field>
+            ) : (
+              <input type="hidden" name="party_size" value="1" />
+            )}
             {partyType === "group" && (
               <CheckRow
                 checked={hasMinor}

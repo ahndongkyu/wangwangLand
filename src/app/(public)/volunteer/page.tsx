@@ -128,7 +128,11 @@ export default async function VolunteerPage() {
         />
       </section>
 
-      <VolunteerForm termsAlreadyAgreed={termsAlreadyAgreed} staffByDate={staffByDate} />
+      <VolunteerForm
+        termsAlreadyAgreed={termsAlreadyAgreed}
+        staffByDate={staffByDate}
+        profilePhone={profile.phone ?? ""}
+      />
     </div>
   )
 }
