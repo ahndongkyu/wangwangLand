@@ -32,6 +32,7 @@ const AGREEMENT_GUARD_EXEMPT = [
   "/terms",
   "/privacy",
   "/login",
+  "/profile",
 ]
 
 function isExemptPath(pathname: string): boolean {
@@ -50,16 +51,21 @@ export default async function PublicLayout({
     getCurrentProfile(),
   ])
 
-  // 약관 가드 — 인증된 승인 회원이 약관/개인정보 미동의 또는 버전 불일치 시
-  // 예외 경로가 아니면 /agreement 로 강제 redirect.
   if (profile && profile.status === "approved" && !profile.is_banned) {
+    const h = await headers()
+    const pathname = h.get("x-pathname") ?? h.get("x-invoke-path") ?? "/"
+
+    // 핸드폰번호 없는 회원 → 프로필 설정으로 강제 redirect
+    if (!profile.phone && !isExemptPath(pathname)) {
+      redirect("/profile")
+    }
+
+    // 약관 가드 — 약관/개인정보 미동의 또는 버전 불일치 시 /agreement 로 강제 redirect
     const termsOk =
       !!profile.terms_agreed_at && profile.terms_version === TERMS_VERSION
     const privacyOk =
       !!profile.privacy_agreed_at && profile.privacy_version === PRIVACY_VERSION
     if (!termsOk || !privacyOk) {
-      const h = await headers()
-      const pathname = h.get("x-pathname") ?? h.get("x-invoke-path") ?? "/"
       if (!isExemptPath(pathname)) {
         redirect("/agreement")
       }
