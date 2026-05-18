@@ -72,25 +72,19 @@ export default async function AdminEventDetailPage({
       <section className="mb-6 space-y-2 rounded-lg border border-border bg-card p-5 text-sm">
         <Row icon={Calendar} label="일시">
           <span>{formatKoreanDayLabel(event.starts_at, event.all_day)}</span>
-          {!event.all_day && (
-            <span className="text-muted-foreground">
-              {" "}
-              ~ {formatKoreanDayLabel(event.ends_at, false)}
-            </span>
-          )}
         </Row>
         {event.location && (
           <Row icon={MapPin} label="장소">
             <span>{event.location}</span>
           </Row>
         )}
-        <Row icon={Users} label="신청">
-          <span>
-            {event.signup_enabled
-              ? `${signups.filter((s) => s.status === "접수").length}건 · 총 ${totalParty}명`
-              : "신청 없음"}
-          </span>
-        </Row>
+        {event.signup_enabled && (
+          <Row icon={Users} label="신청">
+            <span>
+              {signups.filter((s) => s.status === "접수").length}건 · 총 {totalParty}명
+            </span>
+          </Row>
+        )}
         {event.source_application_id && event.source_application_type && (
           <Row icon={Users} label="원본">
             <Link

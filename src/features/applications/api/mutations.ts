@@ -288,8 +288,8 @@ async function upsertVolunteerEventForApplication(
 
   const title =
     partySize > 1
-      ? `봉사 – ${applicantName} (${partySize}명)`
-      : `봉사 – ${applicantName}`
+      ? `${applicantName} (${partySize}명)`
+      : applicantName
 
   const { error } = await admin.from("events").insert({
     category: "volunteer",
