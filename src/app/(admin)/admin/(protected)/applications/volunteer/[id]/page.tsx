@@ -73,7 +73,7 @@ export default async function VolunteerApplicationDetailPage({
     const admin = createAdminClient()
     const { data } = await admin
       .from("events")
-      .select("id, title, starts_at, ends_at")
+      .select("id, title, starts_at, ends_at, source_application_id")
       .eq("source_application_type", "volunteer")
       .eq("source_application_id", id)
       .order("starts_at", { ascending: true })
