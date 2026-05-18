@@ -30,14 +30,14 @@ export function FormFooter({
   disabled = false,
 }: Props) {
   return (
-    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
+    <div className="flex flex-row gap-2 pt-2">
       <Button
         type="button"
         variant="outline"
         size="lg"
         onClick={onCancel}
         disabled={pending}
-        className="sm:flex-1"
+        className="flex-1"
       >
         {cancelLabel}
       </Button>
@@ -45,7 +45,7 @@ export function FormFooter({
         type="submit"
         size="lg"
         disabled={pending || disabled}
-        className="sm:flex-[2]"
+        className="flex-[2]"
       >
         {pending ? pendingLabel : submitLabel}
       </Button>

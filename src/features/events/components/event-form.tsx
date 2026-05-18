@@ -341,7 +341,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="starts_at">
-              시작 <span className="text-destructive">*</span>
+              방문 시간 <span className="text-destructive">*</span>
             </Label>
             <Input
               id="starts_at"
@@ -378,21 +378,9 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
         </div>
       )}
 
-      {/* 장소 */}
+      {/* 메모 */}
       <div className="space-y-1.5">
-        <Label htmlFor="location">장소</Label>
-        <Input
-          id="location"
-          name="location"
-          maxLength={100}
-          defaultValue={event?.location ?? ""}
-          placeholder="예: 왕왕랜드 본관"
-        />
-      </div>
-
-      {/* 설명 */}
-      <div className="space-y-1.5">
-        <Label htmlFor="description">상세 안내</Label>
+        <Label htmlFor="description">메모</Label>
         <Textarea
           id="description"
           name="description"

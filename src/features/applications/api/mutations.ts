@@ -292,10 +292,13 @@ async function upsertVolunteerEventForApplication(
       : `봉사 – ${applicantName}`
 
   const { error } = await admin.from("events").insert({
+    category: "volunteer",
     title,
     starts_at: startsAt,
-    ends_at: startsAt, // DB NOT NULL 대비, UI에는 노출 안 함
-    is_all_day: false,
+    ends_at: startsAt,
+    all_day: false,
+    signup_enabled: false,
+    visibility: "public",
     source_application_type: "volunteer",
     source_application_id: applicationId,
   })
