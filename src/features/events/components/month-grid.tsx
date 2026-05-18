@@ -254,7 +254,10 @@ export function MonthGrid({
               const isCustom = ev.category === "custom"
               const color = CATEGORY_COLOR[ev.category]
               const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
-              const displayTitle = maskNames ? publicEventTitle(ev) : ev.title
+              const rawTitle = maskNames ? publicEventTitle(ev) : ev.title
+              const displayTitle = ev.source_application_id
+                ? rawTitle.replace(/^봉사\s*[–\-]\s*/, "")
+                : rawTitle
 
               const content = (
                 <div className="flex items-start gap-3 px-4 py-3">
@@ -273,7 +276,7 @@ export function MonthGrid({
                       {displayTitle}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {ev.all_day ? "종일" : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
+                      {ev.all_day ? "종일" : ev.starts_at === ev.ends_at ? formatTimeKst(ev.starts_at) : `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`}
                       {ev.location && ` · ${ev.location}`}
                     </p>
                   </div>
