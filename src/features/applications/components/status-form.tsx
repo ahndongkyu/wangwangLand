@@ -284,27 +284,6 @@ export function ApplicationStatusForm({
               <CalendarDays className="size-4 text-primary" aria-hidden />
               <Label className="text-sm font-semibold">캘린더 일정 등록</Label>
             </div>
-            {hint?.availableDates && hint.availableDates.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-1.5">
-                <span className="text-xs text-muted-foreground">신청 날짜:</span>
-                {hint.availableDates.map((d) => {
-                  const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(d).getDay()]
-                  return (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => {
-                        const time = startsAt.split("T")[1] ?? defaultTime
-                        setStartsAt(`${d}T${time}`)
-                      }}
-                      className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      {d.slice(5).replace("-", "/")} ({wd})
-                    </button>
-                  )
-                })}
-              </div>
-            )}
             <div>
               <Label htmlFor="scheduled_starts_at" className="mb-1.5 block text-xs text-muted-foreground">
                 방문 시간
