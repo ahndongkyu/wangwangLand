@@ -40,6 +40,14 @@ const STATUS_COLOR: Record<string, string> = {
   취소: "bg-muted text-muted-foreground/60",
 }
 
+const STATUS_HEADER_BG: Record<string, string> = {
+  접수: "border-primary/30 bg-primary/5",
+  검토중: "border-amber-300 bg-amber-50/60 dark:border-amber-700/50 dark:bg-amber-950/20",
+  승인: "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/50 dark:bg-emerald-950/20",
+  반려: "border-border bg-muted/30",
+  취소: "border-border bg-muted/20",
+}
+
 export default async function AdoptionApplicationDetailPage({
   params,
 }: {
@@ -60,14 +68,15 @@ export default async function AdoptionApplicationDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
-      <nav className="mb-4 text-sm text-muted-foreground">
-        <Link href="/admin/applications" className="hover:text-foreground">
-          ← 신청 목록
-        </Link>
-      </nav>
+      <div className={`mb-6 rounded-xl border p-5 ${STATUS_HEADER_BG[app.status] ?? "border-border bg-card"}`}>
+        <nav className="mb-4 text-sm text-muted-foreground">
+          <Link href="/admin/applications" className="hover:text-foreground">
+            ← 신청 목록
+          </Link>
+        </nav>
 
-      {/* 헤더 */}
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        {/* 헤더 */}
+        <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">
@@ -116,7 +125,8 @@ export default async function AdoptionApplicationDetailPage({
             label="문자"
           />
         </div>
-      </header>
+        </header>
+      </div>
 
       {/* 대상 아이 — 헤드라인 카드 */}
       {targetAnimal && (

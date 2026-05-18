@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ChevronRight } from "lucide-react"
 
 import {
   listAdoptionApplications,
@@ -6,7 +7,6 @@ import {
 } from "@/features/applications"
 import { EmptyState } from "@/shared/components/empty-state"
 import { Pagination } from "@/shared/components/pagination"
-import { SearchBox } from "@/shared/components/search-box"
 import { Badge } from "@/shared/components/ui/badge"
 import { formatKoreanPhone } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
@@ -56,6 +56,21 @@ function statusBadgeColor(status: ApplicationStatus) {
       return "bg-muted text-muted-foreground"
     case "취소":
       return "bg-muted text-muted-foreground/60"
+  }
+}
+
+function statusBorderColor(status: ApplicationStatus) {
+  switch (status) {
+    case "접수":
+      return "border-l-primary"
+    case "검토중":
+      return "border-l-amber-400"
+    case "승인":
+      return "border-l-emerald-500"
+    case "반려":
+      return "border-l-muted-foreground/40"
+    case "취소":
+      return "border-l-muted-foreground/20"
   }
 }
 
@@ -281,151 +296,197 @@ export default async function AdminApplicationsPage({
       {current.rows.length === 0 ? (
         <EmptyState title="해당 조건의 신청이 없습니다" />
       ) : activeType === "adoption" ? (
-        <div className="rounded-lg border border-border bg-card md:overflow-x-auto">
-          <table className="w-full md:min-w-[520px]">
-            <thead className="border-b border-border bg-secondary/40 text-left text-sm">
-              <tr>
-                <th className="px-4 py-3 font-semibold">신청자</th>
-                <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                  연락처
-                </th>
-                <th className="hidden px-4 py-3 font-semibold lg:table-cell">
-                  대상 아이
-                </th>
-                <th className="px-4 py-3 font-semibold">상태</th>
-                <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                  신청일시
-                </th>
-                <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {adoption.rows.map((a) => (
-                <tr
-                  key={a.id}
-                  className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
-                >
-                  <td className="px-4 py-3 font-medium">
-                    <Link
-                      href={`/admin/applications/adoption/${a.id}`}
-                      className="block hover:text-primary"
-                    >
-                      {a.applicant_name}
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                    {formatKoreanPhone(a.phone)}
-                  </td>
-                  <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
-                    {a.dog?.name ?? a.cat?.name ?? "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/applications/adoption/${a.id}`}
-                      className="inline-block"
-                    >
-                      <Badge
-                        className={cn(
-                          "border-0 font-semibold",
-                          statusBadgeColor(a.status)
-                        )}
-                      >
-                        {a.status}
-                      </Badge>
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
-                  </td>
-                  <td className="hidden px-4 py-3 text-right md:table-cell">
-                    <Link
-                      href={`/admin/applications/adoption/${a.id}`}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      열기 →
-                    </Link>
-                  </td>
+        <>
+          {/* 모바일 카드 리스트 */}
+          <div className="md:hidden divide-y divide-border rounded-lg border border-border bg-card overflow-hidden">
+            {adoption.rows.map((item) => (
+              <Link key={item.id} href={`/admin/applications/adoption/${item.id}`}
+                className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{item.applicant_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatKoreanPhone(item.phone)} · {new Date(item.submitted_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "short", day: "numeric" })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge className={cn("border-0 font-semibold text-xs", statusBadgeColor(item.status))}>
+                    {item.status}
+                  </Badge>
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </div>
+              </Link>
+            ))}
+          </div>
+          {/* 데스크톱 테이블 */}
+          <div className="hidden md:block rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="w-full md:min-w-[520px]">
+              <thead className="border-b border-border bg-secondary/40 text-left text-sm">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">신청자</th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
+                    연락처
+                  </th>
+                  <th className="hidden px-4 py-3 font-semibold lg:table-cell">
+                    대상 아이
+                  </th>
+                  <th className="px-4 py-3 font-semibold">상태</th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
+                    신청일시
+                  </th>
+                  <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {adoption.rows.map((a) => (
+                  <tr
+                    key={a.id}
+                    className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
+                  >
+                    <td className={`px-4 py-3 font-medium border-l-4 ${statusBorderColor(a.status)}`}>
+                      <Link
+                        href={`/admin/applications/adoption/${a.id}`}
+                        className="block hover:text-primary"
+                      >
+                        {a.applicant_name}
+                      </Link>
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+                      {formatKoreanPhone(a.phone)}
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
+                      {a.dog?.name ?? a.cat?.name ?? "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/applications/adoption/${a.id}`}
+                        className="inline-block"
+                      >
+                        <Badge
+                          className={cn(
+                            "border-0 font-semibold",
+                            statusBadgeColor(a.status)
+                          )}
+                        >
+                          {a.status}
+                        </Badge>
+                      </Link>
+                    </td>
+                    <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
+                      {new Date(a.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
+                    </td>
+                    <td className="hidden px-4 py-3 text-right md:table-cell">
+                      <Link
+                        href={`/admin/applications/adoption/${a.id}`}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        열기 →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
-        <div className="rounded-lg border border-border bg-card md:overflow-x-auto">
-          <table className="w-full md:min-w-[520px]">
-            <thead className="border-b border-border bg-secondary/40 text-left text-sm">
-              <tr>
-                <th className="px-4 py-3 font-semibold">신청자</th>
-                <th className="hidden px-4 py-3 font-semibold sm:table-cell">
-                  인원
-                </th>
-                <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                  연락처
-                </th>
-                <th className="hidden px-4 py-3 font-semibold lg:table-cell">
-                  희망 활동
-                </th>
-                <th className="px-4 py-3 font-semibold">상태</th>
-                <th className="hidden px-4 py-3 font-semibold md:table-cell">
-                  신청일시
-                </th>
-                <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {volunteer.rows.map((v) => (
-                <tr
-                  key={v.id}
-                  className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
-                >
-                  <td className="px-4 py-3 font-medium">
-                    <Link
-                      href={`/admin/applications/volunteer/${v.id}`}
-                      className="block hover:text-primary"
-                    >
-                      {v.applicant_name}
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
-                    {v.party_size}명
-                  </td>
-                  <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-                    {formatKoreanPhone(v.phone)}
-                  </td>
-                  <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
-                    {v.activities.join(", ") || "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/applications/volunteer/${v.id}`}
-                      className="inline-block"
-                    >
-                      <Badge
-                        className={cn(
-                          "border-0 font-semibold",
-                          statusBadgeColor(v.status)
-                        )}
-                      >
-                        {v.status}
-                      </Badge>
-                    </Link>
-                  </td>
-                  <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-                    {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
-                  </td>
-                  <td className="hidden px-4 py-3 text-right md:table-cell">
-                    <Link
-                      href={`/admin/applications/volunteer/${v.id}`}
-                      className="text-sm font-medium text-primary hover:underline"
-                    >
-                      열기 →
-                    </Link>
-                  </td>
+        <>
+          {/* 모바일 카드 리스트 */}
+          <div className="md:hidden divide-y divide-border rounded-lg border border-border bg-card overflow-hidden">
+            {volunteer.rows.map((item) => (
+              <Link key={item.id} href={`/admin/applications/volunteer/${item.id}`}
+                className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{item.applicant_name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {formatKoreanPhone(item.phone)} · {new Date(item.submitted_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "short", day: "numeric" })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge className={cn("border-0 font-semibold text-xs", statusBadgeColor(item.status))}>
+                    {item.status}
+                  </Badge>
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </div>
+              </Link>
+            ))}
+          </div>
+          {/* 데스크톱 테이블 */}
+          <div className="hidden md:block rounded-lg border border-border bg-card overflow-x-auto">
+            <table className="w-full md:min-w-[520px]">
+              <thead className="border-b border-border bg-secondary/40 text-left text-sm">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">신청자</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">
+                    인원
+                  </th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
+                    연락처
+                  </th>
+                  <th className="hidden px-4 py-3 font-semibold lg:table-cell">
+                    희망 활동
+                  </th>
+                  <th className="px-4 py-3 font-semibold">상태</th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">
+                    신청일시
+                  </th>
+                  <th className="hidden px-4 py-3 text-right font-semibold md:table-cell">작업</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {volunteer.rows.map((v) => (
+                  <tr
+                    key={v.id}
+                    className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
+                  >
+                    <td className={`px-4 py-3 font-medium border-l-4 ${statusBorderColor(v.status)}`}>
+                      <Link
+                        href={`/admin/applications/volunteer/${v.id}`}
+                        className="block hover:text-primary"
+                      >
+                        {v.applicant_name}
+                      </Link>
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
+                      {v.party_size}명
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+                      {formatKoreanPhone(v.phone)}
+                    </td>
+                    <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
+                      {v.activities.join(", ") || "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/admin/applications/volunteer/${v.id}`}
+                        className="inline-block"
+                      >
+                        <Badge
+                          className={cn(
+                            "border-0 font-semibold",
+                            statusBadgeColor(v.status)
+                          )}
+                        >
+                          {v.status}
+                        </Badge>
+                      </Link>
+                    </td>
+                    <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
+                      {new Date(v.submitted_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short", hour12: false })}
+                    </td>
+                    <td className="hidden px-4 py-3 text-right md:table-cell">
+                      <Link
+                        href={`/admin/applications/volunteer/${v.id}`}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        열기 →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <Pagination
