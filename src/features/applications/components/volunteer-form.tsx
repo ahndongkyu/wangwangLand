@@ -92,6 +92,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
       if (hasMinor && !minorGuardian) { setError("미성년자 참여 시 보호자 동의가 필요합니다."); return }
     }
     if (step === 2) {
+      if (selectedDates.length === 0) { setError("가능한 날짜를 하나 이상 선택해주세요."); return }
       if (!visitTime) { setError("방문 예정 시간을 선택해주세요."); return }
     }
     setStep(s => s + 1)
@@ -117,6 +118,8 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
       if (!partyCheck.valid) return setError(partyCheck.error!)
     }
 
+    if (selectedDates.length === 0) return setError("가능한 날짜를 하나 이상 선택해주세요.")
+    if (!visitTime) return setError("방문 예정 시간을 선택해주세요.")
     if (!safetyAcknowledged) return setError("안전 사항 인지 동의가 필요합니다.")
     if (hasMinor && !minorGuardian) {
       return setError("미성년자 참여 시 보호자 동의가 필요합니다.")
@@ -335,7 +338,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
         <Card title="활동 일정 · 희망 활동">
           <div className="space-y-2">
             <Label className="text-xs font-medium text-muted-foreground">
-              가능한 날짜
+              가능한 날짜 <span className="text-destructive">*</span>
             </Label>
             <DateMultiPicker name="available_dates" onChange={setSelectedDates} />
             <p className="text-[11px] text-muted-foreground/80">
