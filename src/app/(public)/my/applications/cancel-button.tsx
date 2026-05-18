@@ -12,9 +12,10 @@ import { useToast } from "@/shared/components/toast"
 interface Props {
   id: string
   kind: "adoption" | "volunteer"
+  triggerClassName?: string
 }
 
-export function CancelMyApplicationButton({ id, kind }: Props) {
+export function CancelMyApplicationButton({ id, kind, triggerClassName }: Props) {
   const toast = useToast()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -62,7 +63,7 @@ export function CancelMyApplicationButton({ id, kind }: Props) {
       <button
         type="button"
         onClick={handleOpen}
-        className="text-[11px] text-muted-foreground/70 underline-offset-4 hover:text-destructive hover:underline"
+        className={triggerClassName ?? "text-[11px] text-muted-foreground/70 underline-offset-4 hover:text-destructive hover:underline"}
       >
         신청 취소
       </button>

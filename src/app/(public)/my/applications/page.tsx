@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { ChevronDown } from "lucide-react"
 
 import { CancelMyApplicationButton } from "./cancel-button"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -35,6 +36,18 @@ function formatDate(iso: string) {
   })
 }
 
+/** 봉사 날짜 요약 표시: "05/20 (화)" 또는 "05/20 외 2일" */
+function volunteerDateLabel(dates: string[], days: string[]): string {
+  if (dates.length > 0) {
+    const first = dates[0]
+    const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(first).getDay()]
+    const label = `${first.slice(5).replace("-", "/")} (${wd})`
+    return dates.length > 1 ? `${label} 외 ${dates.length - 1}일` : label
+  }
+  if (days.length > 0) return `${days.join(", ")}요일`
+  return "봉사 신청"
+}
+
 export default async function MyApplicationsPage() {
   const supabase = await createClient()
   const {
@@ -43,8 +56,6 @@ export default async function MyApplicationsPage() {
 
   if (!session) redirect("/login")
 
-  // RLS SELECT 정책이 운영진만 허용하므로, 본인 신청도 차단됨.
-  // 세션으로 본인 인증은 끝났으니, 본인 created_by 필터만 강제하고 admin client 로 우회.
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
 
@@ -89,13 +100,9 @@ export default async function MyApplicationsPage() {
 
   const hasAny = volunteers.length > 0 || adoptions.length > 0
 
-  // 봉사 신청에 포함된 날짜들 모아서 운영진 정보 한 번에 조회
-  const allDates = Array.from(
-    new Set(volunteers.flatMap((v) => v.available_dates ?? []))
-  )
+  const allDates = Array.from(new Set(volunteers.flatMap((v) => v.available_dates ?? [])))
   const staffByDate = allDates.length > 0 ? await listStaffOnDates(allDates) : {}
 
-  // 이미 인증글 작성한 신청 ID → daily_post id 매핑
   const approvedVolunteerIds = volunteers
     .filter((v) => v.status === "승인")
     .map((v) => v.id)
@@ -112,10 +119,14 @@ export default async function MyApplicationsPage() {
     }
   }
 
-  // 봉사일이 지났는지 (오늘 또는 과거)
   const today = new Date().toISOString().slice(0, 10)
+
   function hasPastVolunteerDate(dates: string[]): boolean {
     return dates.some((d) => d <= today)
+  }
+  /** 모든 날짜가 오늘 이전 → 일정변경 불가 */
+  function allDatesPast(dates: string[]): boolean {
+    return dates.length > 0 && dates.every((d) => d < today)
   }
 
   return (
@@ -131,233 +142,234 @@ export default async function MyApplicationsPage() {
         <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
           아직 신청 내역이 없습니다.
           <div className="mt-4 flex justify-center gap-3">
-            <Link
-              href="/adopt"
-              className="text-sm font-medium text-primary hover:underline"
-            >
+            <Link href="/adopt" className="text-sm font-medium text-primary hover:underline">
               입양 신청 →
             </Link>
-            <Link
-              href="/volunteer"
-              className="text-sm font-medium text-primary hover:underline"
-            >
+            <Link href="/volunteer" className="text-sm font-medium text-primary hover:underline">
               봉사 신청 →
             </Link>
           </div>
         </div>
       ) : (
         <div className="space-y-8">
-          {/* 봉사 신청 */}
+          {/* ── 봉사 신청 ───────────────────────────────────── */}
           {activeVolunteers.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">봉사 신청</h2>
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {activeVolunteers.map((v, i) => (
-                  <div
-                    key={v.id}
-                    className={cn(
-                      "px-5 py-4",
-                      i !== activeVolunteers.length - 1 && "border-b border-border"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {v.available_dates.length > 0
-                            ? `${v.available_dates.join(", ")} 봉사`
-                            : v.available_days.length > 0
-                              ? `${v.available_days.join(", ")} 봉사`
-                              : "봉사 신청"}
-                        </p>
-                        {v.activities.length > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            {v.activities.join(", ")}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(v.submitted_at)} 신청
-                        </p>
-                      </div>
-                      <Badge
-                        className={cn(
-                          "shrink-0 border-0 font-semibold",
-                          statusBadgeClass(v.status)
-                        )}
-                      >
-                        {v.status}
-                      </Badge>
-                    </div>
-                    {v.admin_note && (
-                      <div className="mt-3 rounded-md bg-secondary/50 px-3 py-2 text-xs text-foreground">
-                        <span className="font-semibold text-muted-foreground">운영진 메모</span>
-                        <p className="mt-1.5 whitespace-pre-line leading-relaxed">{v.admin_note}</p>
-                      </div>
-                    )}
+              <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
+                {activeVolunteers.map((v) => {
+                  const isPast = allDatesPast(v.available_dates)
+                  const hasCert = !!certificationByAppId[v.id]
+                  const showCertBtn = v.status === "승인" && hasPastVolunteerDate(v.available_dates)
+                  const canEdit = v.status !== "반려" && v.status !== "취소" && !isPast
 
-                    {/* 그 날 출근 예정 운영진 */}
-                    {v.available_dates.length > 0 && (
-                      <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5">
-                        <p className="text-xs font-semibold text-foreground">
-                          📌 봉사일 운영진 출근 예정
-                        </p>
-                        <div className="mt-2 space-y-2">
-                          {v.available_dates.map((date) => {
-                            const list = staffByDate[date] ?? []
-                            const dt = new Date(date)
-                            const wd = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
-                            return (
-                              <div key={date}>
-                                <p className="text-xs font-medium text-foreground">
-                                  {date.slice(5).replace("-", "/")} ({wd})
-                                </p>
-                                <div className="mt-0.5 pl-2">
-                                  <StaffAvailabilityDisplay items={list} showNote />
-                                </div>
-                              </div>
+                  return (
+                    <details key={v.id} className="group">
+                      {/* ── 요약 행: 날짜 + 상태 ── */}
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {volunteerDateLabel(v.available_dates, v.available_days)} 봉사
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {formatDate(v.submitted_at)} 신청
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge className={cn("border-0 font-semibold", statusBadgeClass(v.status))}>
+                            {v.status}
+                          </Badge>
+                          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                        </div>
+                      </summary>
+
+                      {/* ── 펼쳐지는 상세 ── */}
+                      <div className="border-t border-border/60 px-5 pb-4 pt-3 space-y-3">
+                        {/* 운영진 메모 */}
+                        {v.admin_note && (
+                          <div className="rounded-md bg-secondary/50 px-3 py-2 text-xs text-foreground">
+                            <span className="font-semibold text-muted-foreground">운영진 메모</span>
+                            <p className="mt-1.5 whitespace-pre-line leading-relaxed">{v.admin_note}</p>
+                          </div>
+                        )}
+
+                        {/* 날짜별 출근 예정 운영진 */}
+                        {v.available_dates.length > 0 && (
+                          <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5">
+                            <p className="text-xs font-semibold text-foreground">📌 봉사일 운영진 출근 예정</p>
+                            <div className="mt-2 space-y-2">
+                              {v.available_dates.map((date) => {
+                                const list = staffByDate[date] ?? []
+                                const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
+                                return (
+                                  <div key={date}>
+                                    <p className="text-xs font-medium text-foreground">
+                                      {date.slice(5).replace("-", "/")} ({wd})
+                                    </p>
+                                    <div className="mt-0.5 pl-2">
+                                      <StaffAvailabilityDisplay items={list} showNote />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── 버튼 행 ── */}
+                        <div className="flex items-center gap-2 border-t border-border/60 pt-3">
+                          {/* 인증글 버튼 (왼쪽) */}
+                          <div className="flex-1">
+                            {showCertBtn && (
+                              hasCert ? (
+                                <Link
+                                  href={`/daily/${certificationByAppId[v.id]}`}
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/40 dark:bg-pink-900/20 dark:text-pink-300"
+                                >
+                                  ✓ 봉사 후기 보기
+                                </Link>
+                              ) : (
+                                <Link
+                                  href={`/daily/new?application=${v.id}`}
+                                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                                >
+                                  ✍️ 인증글 작성
+                                </Link>
+                              )
+                            )}
+                          </div>
+
+                          {/* 일정 변경 */}
+                          {v.status !== "반려" && v.status !== "승인" && (
+                            canEdit ? (
+                              <Link
+                                href={`/my/applications/volunteer/${v.id}/edit`}
+                                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                              >
+                                일정 변경
+                              </Link>
+                            ) : (
+                              <span className="rounded-md border border-border/50 bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground/40 cursor-not-allowed">
+                                일정 변경
+                              </span>
                             )
-                          })}
+                          )}
+
+                          {/* 신청 취소 */}
+                          <CancelMyApplicationButton
+                            id={v.id}
+                            kind="volunteer"
+                            triggerClassName="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-destructive/40 hover:text-destructive"
+                          />
                         </div>
                       </div>
-                    )}
-
-                    {/* 봉사 인증글 작성 또는 보기 */}
-                    {v.status === "승인" && hasPastVolunteerDate(v.available_dates) && (
-                      <div className="mt-3">
-                        {certificationByAppId[v.id] ? (
-                          <Link
-                            href={`/daily/${certificationByAppId[v.id]}`}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-pink-200 bg-pink-50 px-3 py-2 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/40 dark:bg-pink-900/20 dark:text-pink-300"
-                          >
-                            ✓ 봉사 후기 보기
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/daily/new?application=${v.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                          >
-                            ✍️ 봉사 인증글 작성하기
-                          </Link>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex items-center justify-end gap-2">
-                      {v.status !== "반려" && (
-                        <Link
-                          href={`/my/applications/volunteer/${v.id}/edit`}
-                          className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-                        >
-                          일정 변경
-                        </Link>
-                      )}
-                      <CancelMyApplicationButton id={v.id} kind="volunteer" />
-                    </div>
-                  </div>
-                ))}
+                    </details>
+                  )
+                })}
               </div>
             </section>
           )}
 
-          {/* 입양 신청 */}
+          {/* ── 입양 신청 ───────────────────────────────────── */}
           {activeAdoptions.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">입양 신청</h2>
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
-                {activeAdoptions.map((a, i) => (
-                  <div
-                    key={a.id}
-                    className={cn(
-                      "px-5 py-4",
-                      i !== activeAdoptions.length - 1 && "border-b border-border"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {a.dog?.[0]?.name ?? a.cat?.[0]?.name
-                            ? `${a.dog?.[0]?.name ?? a.cat?.[0]?.name} 입양 신청`
-                            : "입양 신청"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(a.submitted_at)} 신청
-                        </p>
-                      </div>
-                      <Badge
-                        className={cn(
-                          "shrink-0 border-0 font-semibold",
-                          statusBadgeClass(a.status)
+              <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
+                {activeAdoptions.map((a) => {
+                  const animalName = a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                  return (
+                    <details key={a.id} className="group">
+                      {/* ── 요약 행: 신청 항목 + 상태 ── */}
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {animalName ? `${animalName} 입양 신청` : "입양 신청"}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {formatDate(a.submitted_at)} 신청
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge className={cn("border-0 font-semibold", statusBadgeClass(a.status))}>
+                            {a.status}
+                          </Badge>
+                          <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+                        </div>
+                      </summary>
+
+                      {/* ── 펼쳐지는 상세 ── */}
+                      <div className="border-t border-border/60 px-5 pb-4 pt-3 space-y-3">
+                        {a.admin_note && (
+                          <div className="rounded-md bg-secondary/50 px-3 py-2 text-xs text-foreground">
+                            <span className="font-semibold text-muted-foreground">운영진 메모 · </span>
+                            {a.admin_note}
+                          </div>
                         )}
-                      >
-                        {a.status}
-                      </Badge>
-                    </div>
-                    {a.admin_note && (
-                      <div className="mt-3 rounded-md bg-secondary/50 px-3 py-2 text-xs text-foreground">
-                        <span className="font-semibold text-muted-foreground">운영진 메모 · </span>
-                        {a.admin_note}
+
+                        {/* ── 버튼 행 ── */}
+                        <div className="flex items-center justify-end border-t border-border/60 pt-3">
+                          <CancelMyApplicationButton
+                            id={a.id}
+                            kind="adoption"
+                            triggerClassName="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-destructive/40 hover:text-destructive"
+                          />
+                        </div>
                       </div>
-                    )}
-                    <div className="mt-3 flex justify-end">
-                      <CancelMyApplicationButton id={a.id} kind="adoption" />
-                    </div>
-                  </div>
-                ))}
+                    </details>
+                  )
+                })}
               </div>
             </section>
           )}
         </div>
       )}
 
-      {/* 취소된 신청 내역 */}
+      {/* ── 취소된 신청 내역 ────────────────────────────────── */}
       {(cancelledVolunteers.length > 0 || cancelledAdoptions.length > 0) && (
         <div className="mt-10 space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground">취소된 신청</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-card opacity-70">
+          <div className="overflow-hidden rounded-lg border border-border bg-card opacity-70 divide-y divide-border">
             {[
               ...cancelledVolunteers.map((v) => ({ ...v, kind: "volunteer" as const })),
               ...cancelledAdoptions.map((a) => ({ ...a, kind: "adoption" as const })),
             ]
               .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at))
-              .map((item, i, arr) => (
-                <div
-                  key={item.id}
-                  className={cn("px-5 py-4", i !== arr.length - 1 && "border-b border-border")}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {item.kind === "volunteer"
-                          ? (() => {
-                              const v = item as typeof cancelledVolunteers[0]
-                              return v.available_dates.length > 0
-                                ? `${v.available_dates.join(", ")} 봉사`
-                                : v.available_days.length > 0
-                                  ? `${v.available_days.join(", ")} 봉사`
-                                  : "봉사 신청"
-                            })()
-                          : (() => {
-                              const a = item as typeof cancelledAdoptions[0]
-                              return a.dog?.[0]?.name ?? a.cat?.[0]?.name
-                                ? `${a.dog?.[0]?.name ?? a.cat?.[0]?.name} 입양 신청`
-                                : "입양 신청"
-                            })()}
-                      </p>
-                      <p className="text-xs text-muted-foreground/60">
-                        {formatDate(item.submitted_at)} 신청
-                      </p>
-                    </div>
-                    <Badge className="shrink-0 border-0 bg-muted text-[11px] font-semibold text-muted-foreground/60">
-                      취소
-                    </Badge>
-                  </div>
-                  {item.cancel_reason && (
-                    <div className="mt-2 rounded-md bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-                      <span className="font-semibold">취소 사유 · </span>
-                      {item.cancel_reason}
-                    </div>
-                  )}
-                </div>
-              ))}
+              .map((item) => {
+                const title = item.kind === "volunteer"
+                  ? `${volunteerDateLabel((item as typeof cancelledVolunteers[0]).available_dates, (item as typeof cancelledVolunteers[0]).available_days)} 봉사`
+                  : (() => {
+                      const a = item as typeof cancelledAdoptions[0]
+                      const name = a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                      return name ? `${name} 입양 신청` : "입양 신청"
+                    })()
+
+                return (
+                  <details key={item.id} className="group">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground/60">
+                          {formatDate(item.submitted_at)} 신청
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge className="border-0 bg-muted text-[11px] font-semibold text-muted-foreground/60">
+                          취소
+                        </Badge>
+                        <ChevronDown className="size-4 text-muted-foreground/40 transition-transform duration-200 group-open:rotate-180" />
+                      </div>
+                    </summary>
+                    {item.cancel_reason && (
+                      <div className="border-t border-border/60 px-5 pb-4 pt-3">
+                        <div className="rounded-md bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+                          <span className="font-semibold">취소 사유 · </span>
+                          {item.cancel_reason}
+                        </div>
+                      </div>
+                    )}
+                  </details>
+                )
+              })}
           </div>
         </div>
       )}
