@@ -341,7 +341,7 @@ export function ApplicationStatusForm({
             <span />
           )}
 
-          {step < totalSteps ? (
+          {step < totalSteps && (
             <Button
               type="button"
               onClick={() => setStep((s) => s + 1)}
@@ -349,12 +349,17 @@ export function ApplicationStatusForm({
               다음
               <ChevronRight className="size-4" />
             </Button>
-          ) : (
-            <Button type="submit" disabled={pending}>
-              {pending ? "저장 중..." : "저장"}
-            </Button>
           )}
         </div>
+
+        {/* ── 모바일 저장 버튼 (마지막 스텝에서만, 네비게이션과 분리) ── */}
+        {step === totalSteps && (
+          <div className="sm:hidden">
+            <Button type="submit" disabled={pending} className="w-full">
+              {pending ? "저장 중..." : "저장"}
+            </Button>
+          </div>
+        )}
 
         {/* ── 데스크톱 버튼 영역 ──────────────────────────── */}
         <div className="hidden sm:flex items-center justify-between gap-2 pt-2">
