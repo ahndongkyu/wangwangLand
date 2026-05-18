@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import React, { useState, useTransition } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
 
 import {
@@ -95,8 +95,10 @@ export function ApplicationStatusForm({
   const defaultNote =
     kind === "volunteer" && !currentNote ? VOLUNTEER_DEFAULT_NOTE : (currentNote ?? "")
 
-  async function handleSubmit(formData: FormData) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
+    const formData = new FormData(e.currentTarget)
     startTransition(async () => {
       const result =
         kind === "adoption"
@@ -178,7 +180,7 @@ export function ApplicationStatusForm({
 
   return (
     <form
-      action={handleSubmit}
+      onSubmit={handleSubmit}
       className="overflow-hidden rounded-xl border border-border bg-card"
     >
       {/* ── 모바일 스텝 인디케이터 ─────────────────────────── */}
