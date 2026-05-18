@@ -67,6 +67,7 @@ export default async function VolunteerApplicationDetailPage({
     title: string
     starts_at: string
     ends_at: string
+    source_application_id: string | null
   }> = []
   {
     const { createAdminClient } = await import("@/shared/lib/supabase/admin")
