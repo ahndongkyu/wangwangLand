@@ -359,14 +359,22 @@ export default async function MyApplicationsPage() {
                         <ChevronDown className="size-4 text-muted-foreground/40 transition-transform duration-200 group-open:rotate-180" />
                       </div>
                     </summary>
-                    {item.cancel_reason && (
-                      <div className="border-t border-border/60 px-5 pb-4 pt-3">
-                        <div className="rounded-md bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-                          <span className="font-semibold">취소 사유 · </span>
-                          {item.cancel_reason}
-                        </div>
+                    <div className="border-t border-border/60 px-5 pb-4 pt-3 space-y-2.5">
+                      {/* 직접 취소 */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          직접 취소
+                        </span>
+                        <span>신청자가 직접 취소한 신청입니다.</span>
                       </div>
-                    )}
+                      {/* 취소사유 */}
+                      {item.cancel_reason && (
+                        <div className="rounded-md bg-secondary/40 px-3 py-2.5 text-xs text-muted-foreground">
+                          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">취소사유</p>
+                          <p className="whitespace-pre-line leading-relaxed">{item.cancel_reason}</p>
+                        </div>
+                      )}
+                    </div>
                   </details>
                 )
               })}
