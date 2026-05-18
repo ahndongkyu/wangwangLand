@@ -349,27 +349,26 @@ export function ApplicationStatusForm({
         {/* ── 모바일 스텝 네비게이션 ──────────────────────── */}
         <div className="sm:hidden flex items-center justify-between gap-2 pt-1">
           {step > 1 ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
               <ChevronLeft className="size-4" />
               이전
-            </button>
+            </Button>
           ) : (
             <span />
           )}
 
           {step < totalSteps ? (
-            <button
+            <Button
               type="button"
               onClick={() => setStep((s) => s + 1)}
-              className="flex items-center gap-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               다음
               <ChevronRight className="size-4" />
-            </button>
+            </Button>
           ) : (
             <Button type="submit" disabled={pending}>
               {pending ? "저장 중..." : "저장"}
@@ -430,13 +429,14 @@ export function ApplicationStatusForm({
         {/* ── 모바일 삭제 버튼 (맨 아래) ─────────────────── */}
         <div className="sm:hidden pt-1 border-t border-border">
           {!confirmDelete ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={() => setConfirmDelete(true)}
-              className="w-full rounded-lg border border-border bg-background py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
               신청 삭제
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2">
               <span className="text-xs text-destructive">
