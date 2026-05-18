@@ -121,15 +121,30 @@ export function maskEventTitle(title: string): string {
 }
 
 /**
+ * 봉사 신청 자동 등록 시 저장된 구형 "봉사 – 이름" 접두사 제거.
+ * source_application_id 가 있는 이벤트에만 적용.
+ */
+export function getEventTitle(event: {
+  title: string
+  source_application_id: string | null
+}): string {
+  if (event.source_application_id) {
+    return event.title.replace(/^봉사\s*[–\-]\s*/, "")
+  }
+  return event.title
+}
+
+/**
  * 공개 화면 표시용 이벤트 제목.
  * 봉사 신청 자동 등록 이벤트는 마스킹, 그 외는 그대로.
  */
 export function publicEventTitle(event: {
   title: string
   source_application_type: EventSourceApplicationType | null
+  source_application_id: string | null
 }): string {
   if (event.source_application_type === "volunteer") {
-    return maskEventTitle(event.title)
+    return maskEventTitle(getEventTitle(event))
   }
   return event.title
 }

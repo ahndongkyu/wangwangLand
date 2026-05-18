@@ -6,6 +6,7 @@ import {
   ApplicationStatusForm,
   getVolunteerApplication,
 } from "@/features/applications"
+import { getEventTitle } from "@/features/events"
 import { listStaffOnDates, StaffAvailabilityDisplay } from "@/features/staff-schedule"
 import { formatKoreanPhone } from "@/shared/lib/validation"
 
@@ -316,7 +317,7 @@ export default async function VolunteerApplicationDetailPage({
                 className="flex items-center justify-between gap-2 py-2 text-sm"
               >
                 <span className="min-w-0">
-                  <span className="font-medium text-foreground">{ev.title}</span>
+                  <span className="font-medium text-foreground">{getEventTitle(ev)}</span>
                   <span className="ml-2 text-xs text-muted-foreground">
                     {new Date(ev.starts_at).toLocaleString("ko-KR", {
                       timeZone: "Asia/Seoul",

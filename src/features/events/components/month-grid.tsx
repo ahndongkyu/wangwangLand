@@ -9,6 +9,7 @@ import {
   CATEGORY_COLOR,
   customColorStyle,
   eventDisplayLabel,
+  getEventTitle,
   publicEventTitle,
   type CalendarEvent,
 } from "../types"
@@ -254,10 +255,7 @@ export function MonthGrid({
               const isCustom = ev.category === "custom"
               const color = CATEGORY_COLOR[ev.category]
               const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
-              const rawTitle = maskNames ? publicEventTitle(ev) : ev.title
-              const displayTitle = ev.source_application_id
-                ? rawTitle.replace(/^봉사\s*[–\-]\s*/, "")
-                : rawTitle
+              const displayTitle = maskNames ? publicEventTitle(ev) : getEventTitle(ev)
 
               const content = (
                 <div className="flex items-start gap-3 px-4 py-3">
@@ -332,7 +330,7 @@ function EventChip({
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
-  const displayTitle = maskNames ? publicEventTitle(event) : event.title
+  const displayTitle = maskNames ? publicEventTitle(event) : getEventTitle(event)
 
   if (readOnly) {
     if (event.all_day) {

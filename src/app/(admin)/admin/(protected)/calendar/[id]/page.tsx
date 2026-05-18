@@ -6,6 +6,7 @@ import {
   CATEGORY_COLOR,
   customColorStyle,
   eventDisplayLabel,
+  getEventTitle,
   getEventWithMySignup,
   listEventSignups,
 } from "@/features/events"
@@ -55,9 +56,7 @@ export default async function AdminEventDetailPage({
             {eventDisplayLabel(event)}
           </span>
           <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
-            {event.source_application_id
-              ? event.title.replace(/^봉사\s*[–\-]\s*/, "")
-              : event.title}
+            {getEventTitle(event)}
           </h1>
         </div>
         <div className="flex items-center gap-2">

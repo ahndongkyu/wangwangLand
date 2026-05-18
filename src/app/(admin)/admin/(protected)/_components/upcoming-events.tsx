@@ -14,6 +14,7 @@ import {
   CATEGORY_COLOR,
   eventDisplayLabel,
   customColorStyle,
+  getEventTitle,
 } from "@/features/events/types"
 import type { EventWithSignupCount } from "@/features/events/types"
 
@@ -51,7 +52,7 @@ function buildShareText(dateStr: string, evs: EventWithSignupCount[]): string {
     const label = eventDisplayLabel(ev)
     const time = formatRange(ev)
     const signup = ev.signup_enabled && ev.signup_count > 0 ? ` (신청 ${ev.signup_count}명)` : ""
-    return `• ${time} [${label}] ${ev.title}${signup}`
+    return `• ${time} [${label}] ${getEventTitle(ev)}${signup}`
   })
   return [header, ...lines].join("\n")
 }
@@ -147,7 +148,7 @@ function buildScheduleImage(
       ctx.fillStyle = "#2C2C2A"
       ctx.font = "500 14px sans-serif"
       const maxTitleW = W - titleX - PAD - 80
-      ctx.fillText(truncateText(ctx, ev.title, maxTitleW), titleX, y + ROW_H / 2 - 2)
+      ctx.fillText(truncateText(ctx, getEventTitle(ev), maxTitleW), titleX, y + ROW_H / 2 - 2)
 
       // 시간
       ctx.fillStyle = "#9B8F80"
@@ -373,7 +374,7 @@ export function UpcomingEvents({ events }: Props) {
                       {eventDisplayLabel(ev)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{ev.title}</p>
+                      <p className="truncate text-sm font-medium text-foreground">{getEventTitle(ev)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {formatRange(ev)}
                         {ev.location && ` · ${ev.location}`}

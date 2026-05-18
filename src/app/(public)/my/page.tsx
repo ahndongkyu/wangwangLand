@@ -21,6 +21,7 @@ import {
   CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
+  getEventTitle,
   listMyUpcomingEvents,
 } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
@@ -260,7 +261,7 @@ export default async function MyPage() {
                   {eventDisplayLabel(ev)}
                 </span>
                 <span className="truncate text-sm font-medium text-foreground">
-                  {ev.title}
+                  {getEventTitle(ev)}
                 </span>
               </div>
               <span className="shrink-0 text-xs text-muted-foreground">

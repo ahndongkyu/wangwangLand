@@ -10,6 +10,7 @@ export {
   CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
+  getEventTitle,
   maskEventTitle,
   maskName,
   publicEventTitle,

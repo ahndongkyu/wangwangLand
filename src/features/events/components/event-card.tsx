@@ -6,6 +6,7 @@ import {
   CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
+  getEventTitle,
   publicEventTitle,
   type EventWithSignupCount,
 } from "../types"
@@ -43,7 +44,7 @@ export function EventCard({ event, basePath = "/calendar", maskNames = false }: 
           {eventDisplayLabel(event)}
         </span>
         <h3 className="min-w-0 flex-1 truncate text-base font-bold text-foreground sm:text-lg">
-          {maskNames ? publicEventTitle(event) : event.title}
+          {maskNames ? publicEventTitle(event) : getEventTitle(event)}
         </h3>
         {event.signup_enabled && event.signup_count > 0 && (
           <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
