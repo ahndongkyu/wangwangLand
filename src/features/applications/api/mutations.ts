@@ -291,13 +291,10 @@ async function upsertVolunteerEventForApplication(
       ? `봉사 – ${applicantName} (${partySize}명)`
       : `봉사 – ${applicantName}`
 
-  // ends_at: NOT NULL 대비 시작 +3시간 기본값
-  const endsAt = new Date(new Date(startsAt).getTime() + 3 * 60 * 60 * 1000).toISOString()
-
   const { error } = await admin.from("events").insert({
     title,
     starts_at: startsAt,
-    ends_at: endsAt,
+    ends_at: startsAt, // DB NOT NULL 대비, UI에는 노출 안 함
     is_all_day: false,
     source_application_type: "volunteer",
     source_application_id: applicationId,
