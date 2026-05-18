@@ -59,6 +59,11 @@ function statusBadgeColor(status: ApplicationStatus) {
   }
 }
 
+const PROCESSED: ApplicationStatus[] = ["승인", "반려", "취소"]
+function isProcessed(status: ApplicationStatus) {
+  return PROCESSED.includes(status)
+}
+
 function statusBorderColor(status: ApplicationStatus) {
   switch (status) {
     case "접수":
@@ -301,7 +306,7 @@ export default async function AdminApplicationsPage({
           <div className="md:hidden divide-y divide-border rounded-lg border border-border bg-card overflow-hidden">
             {adoption.rows.map((item) => (
               <Link key={item.id} href={`/admin/applications/adoption/${item.id}`}
-                className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`}>
+                className={cn(`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`, isProcessed(item.status) && "opacity-60 hover:opacity-100")}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">{item.applicant_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -340,7 +345,7 @@ export default async function AdminApplicationsPage({
                 {adoption.rows.map((a) => (
                   <tr
                     key={a.id}
-                    className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
+                    className={cn("border-b border-border last:border-0 transition-colors hover:bg-secondary/30", isProcessed(a.status) && "opacity-60 hover:opacity-100")}
                   >
                     <td className={`px-4 py-3 font-medium border-l-4 ${statusBorderColor(a.status)}`}>
                       <Link
@@ -377,9 +382,9 @@ export default async function AdminApplicationsPage({
                     <td className="hidden px-4 py-3 text-right md:table-cell">
                       <Link
                         href={`/admin/applications/adoption/${a.id}`}
-                        className="text-sm font-medium text-primary hover:underline"
+                        className={cn("text-sm font-medium hover:underline", isProcessed(a.status) ? "text-muted-foreground" : "text-primary")}
                       >
-                        열기 →
+                        {isProcessed(a.status) ? "보기 →" : "처리하기 →"}
                       </Link>
                     </td>
                   </tr>
@@ -394,7 +399,7 @@ export default async function AdminApplicationsPage({
           <div className="md:hidden divide-y divide-border rounded-lg border border-border bg-card overflow-hidden">
             {volunteer.rows.map((item) => (
               <Link key={item.id} href={`/admin/applications/volunteer/${item.id}`}
-                className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`}>
+                className={cn(`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`, isProcessed(item.status) && "opacity-60 hover:opacity-100")}>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground">{item.applicant_name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -436,7 +441,7 @@ export default async function AdminApplicationsPage({
                 {volunteer.rows.map((v) => (
                   <tr
                     key={v.id}
-                    className="border-b border-border last:border-0 transition-colors hover:bg-secondary/30"
+                    className={cn("border-b border-border last:border-0 transition-colors hover:bg-secondary/30", isProcessed(v.status) && "opacity-60 hover:opacity-100")}
                   >
                     <td className={`px-4 py-3 font-medium border-l-4 ${statusBorderColor(v.status)}`}>
                       <Link
@@ -476,9 +481,9 @@ export default async function AdminApplicationsPage({
                     <td className="hidden px-4 py-3 text-right md:table-cell">
                       <Link
                         href={`/admin/applications/volunteer/${v.id}`}
-                        className="text-sm font-medium text-primary hover:underline"
+                        className={cn("text-sm font-medium hover:underline", isProcessed(v.status) ? "text-muted-foreground" : "text-primary")}
                       >
-                        열기 →
+                        {isProcessed(v.status) ? "보기 →" : "처리하기 →"}
                       </Link>
                     </td>
                   </tr>

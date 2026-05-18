@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
 
 import {
   deleteAdoptionApplication,
@@ -38,6 +38,17 @@ interface Props {
     availableDates?: string[]
     availableTime?: string | null
   }
+  /** 등록된 캘린더 일정 수 (뷰모드에서 표시용) */
+  linkedEventCount?: number
+}
+
+/** 처리 완료 상태 — 기본 뷰모드로 시작 */
+const PROCESSED_STATUSES: ApplicationStatus[] = ["승인", "반려", "취소"]
+
+const STATUS_VIEW_LABEL: Record<string, { icon: string; className: string }> = {
+  승인: { icon: "✓", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  반려: { icon: "✕", className: "bg-muted text-muted-foreground" },
+  취소: { icon: "✕", className: "bg-muted text-muted-foreground/70" },
 }
 
 export function ApplicationStatusForm({
@@ -47,6 +58,7 @@ export function ApplicationStatusForm({
   currentNote,
   applicantName,
   hint,
+  linkedEventCount = 0,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -55,6 +67,11 @@ export function ApplicationStatusForm({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<ApplicationStatus>(currentStatus)
+
+  // 처리 완료 상태면 기본으로 뷰모드
+  const [isViewMode, setIsViewMode] = useState(
+    PROCESSED_STATUSES.includes(currentStatus)
+  )
 
   // 일정 등록 스텝은 봉사 + 승인일 때만
   const showSchedule = kind === "volunteer" && status === "승인"
@@ -97,6 +114,57 @@ export function ApplicationStatusForm({
         router.push("/admin/applications")
       }
     })
+  }
+
+  // ── 뷰모드 (처리 완료 상태) ───────────────────────────
+  if (isViewMode) {
+    const viewInfo = STATUS_VIEW_LABEL[currentStatus]
+    return (
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between border-b border-border bg-secondary/20 px-5 py-3">
+          <div className="flex items-center gap-2">
+            <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", viewInfo?.className)}>
+              {viewInfo?.icon} {currentStatus} 처리 완료
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsViewMode(false)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <RotateCcw className="size-3" />
+            재처리
+          </button>
+        </div>
+
+        {/* 처리 내용 */}
+        <div className="space-y-4 p-5">
+          {currentNote ? (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-muted-foreground">운영진 메모</p>
+              <p className="whitespace-pre-line rounded-lg bg-secondary/40 px-3 py-2.5 text-sm leading-relaxed text-foreground">
+                {currentNote}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">운영진 메모 없음</p>
+          )}
+
+          {kind === "volunteer" && linkedEventCount > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CalendarDays className="size-4 text-primary" />
+              <span>캘린더 일정 <strong className="text-foreground">{linkedEventCount}개</strong> 등록됨</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 pt-1 text-[11px] text-muted-foreground/60">
+            <Lock className="size-3" />
+            변경이 필요하면 재처리 버튼을 눌러주세요
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // 스텝 레이블
