@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { Calendar, MapPin } from "lucide-react"
 
 import {
@@ -22,6 +22,7 @@ export default async function EventDetailPage({
   const { id } = await params
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
+  if (event.source_application_id) redirect("/my/applications")
 
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
