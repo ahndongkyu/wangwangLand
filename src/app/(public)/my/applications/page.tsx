@@ -156,7 +156,7 @@ export default async function MyApplicationsPage() {
           {activeVolunteers.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">봉사 신청</h2>
-              <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
+              <div className="space-y-2">
                 {activeVolunteers.map((v) => {
                   const isPast = allDatesPast(v.available_dates)
                   const hasCert = !!certificationByAppId[v.id]
@@ -164,7 +164,7 @@ export default async function MyApplicationsPage() {
                   const canEdit = v.status !== "반려" && v.status !== "취소" && !isPast
 
                   return (
-                    <details key={v.id} className="group">
+                    <details key={v.id} className="group overflow-hidden rounded-lg border border-border bg-card">
                       {/* ── 요약 행: 날짜 + 상태 ── */}
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
                         <div className="min-w-0">
@@ -274,11 +274,11 @@ export default async function MyApplicationsPage() {
           {activeAdoptions.length > 0 && (
             <section>
               <h2 className="mb-3 text-base font-semibold text-foreground">입양 신청</h2>
-              <div className="overflow-hidden rounded-lg border border-border bg-card divide-y divide-border">
+              <div className="space-y-2">
                 {activeAdoptions.map((a) => {
                   const animalName = a.dog?.[0]?.name ?? a.cat?.[0]?.name
                   return (
-                    <details key={a.id} className="group">
+                    <details key={a.id} className="group overflow-hidden rounded-lg border border-border bg-card">
                       {/* ── 요약 행: 신청 항목 + 상태 ── */}
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
                         <div className="min-w-0">
@@ -328,7 +328,7 @@ export default async function MyApplicationsPage() {
       {(cancelledVolunteers.length > 0 || cancelledAdoptions.length > 0) && (
         <div className="mt-10 space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground">취소된 신청</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-card opacity-70 divide-y divide-border">
+          <div className="space-y-2 opacity-70">
             {[
               ...cancelledVolunteers.map((v) => ({ ...v, kind: "volunteer" as const })),
               ...cancelledAdoptions.map((a) => ({ ...a, kind: "adoption" as const })),
@@ -344,7 +344,7 @@ export default async function MyApplicationsPage() {
                     })()
 
                 return (
-                  <details key={item.id} className="group">
+                  <details key={item.id} className="group overflow-hidden rounded-lg border border-border bg-card">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-muted-foreground">{title}</p>
