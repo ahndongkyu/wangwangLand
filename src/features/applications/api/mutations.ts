@@ -274,9 +274,8 @@ async function upsertVolunteerEventForApplication(
   applicantName: string,
   partySize: number,
   startsAt: string | null,
-  endsAt: string | null,
 ) {
-  if (!startsAt || !endsAt) return
+  if (!startsAt) return
   const admin = createAdminClient()
 
   // 이미 연결된 이벤트가 있으면 중복 생성 방지
@@ -295,7 +294,7 @@ async function upsertVolunteerEventForApplication(
   await admin.from("events").insert({
     title,
     starts_at: startsAt,
-    ends_at: endsAt,
+    ends_at: null,
     is_all_day: false,
     source_application_type: "volunteer",
     source_application_id: applicationId,
@@ -465,9 +464,7 @@ export async function updateVolunteerApplication(
 
   // 일정 등록 필드 (Step 3 — 승인 시만 채워짐)
   const scheduledStartRaw = String(formData.get("scheduled_starts_at") ?? "").trim()
-  const scheduledEndRaw = String(formData.get("scheduled_ends_at") ?? "").trim()
   const scheduledStart = localKstToIso(scheduledStartRaw)
-  const scheduledEnd = localKstToIso(scheduledEndRaw)
 
   if (status === "취소" && !cancelReason) {
     return { error: "취소 사유를 입력해주세요." }
@@ -508,7 +505,6 @@ export async function updateVolunteerApplication(
       prev.applicant_name ?? "",
       prev.party_size ?? 1,
       scheduledStart,
-      scheduledEnd,
     )
   }
 
