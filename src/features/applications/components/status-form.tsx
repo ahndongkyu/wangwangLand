@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import React, { useState, useTransition } from "react"
+import React, { useState, useTransition, useCallback } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
 
 import {
@@ -82,6 +82,14 @@ export function ApplicationStatusForm({
   const scheduleStep = 3
   const [step, setStep] = useState(1)
   const [cancelReason, setCancelReason] = useState("")
+
+  // 단계 전환 직후 event bleed 방지 — 전환 후 200ms 저장 버튼 비활성화
+  const [stepTransitioning, setStepTransitioning] = useState(false)
+  const goNextStep = useCallback(() => {
+    setStepTransitioning(true)
+    setStep((s) => s + 1)
+    setTimeout(() => setStepTransitioning(false), 200)
+  }, [])
 
   // 일정 입력 상태 (Step 3) — available_time은 "HH:MM" 형식
   const defaultDate = hint?.availableDates?.[0] ?? todayKstDate()
@@ -346,7 +354,7 @@ export function ApplicationStatusForm({
           {step < totalSteps && (
             <Button
               type="button"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={goNextStep}
             >
               다음
               <ChevronRight className="size-4" />
@@ -357,7 +365,7 @@ export function ApplicationStatusForm({
         {/* ── 모바일 저장 버튼 (마지막 스텝에서만, 네비게이션과 분리) ── */}
         {step === totalSteps && (
           <div className="sm:hidden">
-            <Button type="submit" disabled={pending} className="w-full">
+            <Button type="submit" disabled={pending || stepTransitioning} className="w-full">
               {pending ? "저장 중..." : "저장"}
             </Button>
           </div>
