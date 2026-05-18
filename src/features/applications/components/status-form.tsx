@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import React, { useState, useTransition, useCallback } from "react"
+import { useState, useTransition } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
 
 import {
@@ -83,14 +83,6 @@ export function ApplicationStatusForm({
   const [step, setStep] = useState(1)
   const [cancelReason, setCancelReason] = useState("")
 
-  // 단계 전환 직후 event bleed 방지 — 전환 후 200ms 저장 버튼 비활성화
-  const [stepTransitioning, setStepTransitioning] = useState(false)
-  const goNextStep = useCallback(() => {
-    setStepTransitioning(true)
-    setStep((s) => s + 1)
-    setTimeout(() => setStepTransitioning(false), 200)
-  }, [])
-
   // 일정 입력 상태 (Step 3) — available_time은 "HH:MM" 형식
   const defaultDate = hint?.availableDates?.[0] ?? todayKstDate()
   const defaultTime = hint?.availableTime ?? "10:00"
@@ -99,14 +91,19 @@ export function ApplicationStatusForm({
   const VOLUNTEER_DEFAULT_NOTE =
     "안녕하세요! 봉사 신청해주셔서 정말 감사해요 🐾\n야외 견사라 아래 내용 참고해서 편하게 오세요!\n\n• 헌옷 + 헌 신발(장화도 좋아요) + 목장갑 챙겨오시면 좋아요\n• 먼지나 오물이 묻을 수 있으니 아끼는 옷은 피해주세요 😅\n• 현장 물품 지원이 어려울 수 있는 점 양해 부탁드려요 🙏\n\n궁금한 점은 카카오톡 상담을 통해 편하게 문의주세요^^"
 
-  // 봉사 승인 시 기존 메모가 없으면 기본 안내문 자동 채움
-  const defaultNote =
+  // 운영진 메모 — controlled state (form 없이 값 수집)
+  const [adminNote, setAdminNote] = useState(
     kind === "volunteer" && !currentNote ? VOLUNTEER_DEFAULT_NOTE : (currentNote ?? "")
+  )
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  // form 없이 state에서 FormData 직접 구성해서 저장
+  function handleSave() {
     setError(null)
-    const formData = new FormData(e.currentTarget)
+    const formData = new FormData()
+    formData.set("status", status)
+    formData.set("admin_note", adminNote)
+    if (status === "취소") formData.set("cancel_reason", cancelReason)
+    if (showSchedule) formData.set("scheduled_starts_at", startsAt)
     startTransition(async () => {
       const result =
         kind === "adoption"
@@ -187,10 +184,7 @@ export function ApplicationStatusForm({
   const memoStep = 2
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="overflow-hidden rounded-xl border border-border bg-card"
-    >
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       {/* ── 모바일 스텝 인디케이터 ─────────────────────────── */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5">
         <div className="flex items-center gap-2">
@@ -257,9 +251,9 @@ export function ApplicationStatusForm({
           </Label>
           <Textarea
             id="admin_note"
-            name="admin_note"
             rows={4}
-            defaultValue={defaultNote}
+            value={adminNote}
+            onChange={(e) => setAdminNote(e.target.value)}
             placeholder="상담 진행 내용, 특이사항 등을 기록해 두세요."
             className="mt-2"
           />
@@ -354,7 +348,7 @@ export function ApplicationStatusForm({
           {step < totalSteps && (
             <Button
               type="button"
-              onClick={goNextStep}
+              onClick={() => setStep((s) => s + 1)}
             >
               다음
               <ChevronRight className="size-4" />
@@ -362,10 +356,10 @@ export function ApplicationStatusForm({
           )}
         </div>
 
-        {/* ── 모바일 저장 버튼 (마지막 스텝에서만, 네비게이션과 분리) ── */}
+        {/* ── 모바일 저장 버튼 (마지막 스텝에서만) ── */}
         {step === totalSteps && (
           <div className="sm:hidden">
-            <Button type="submit" disabled={pending || stepTransitioning} className="w-full">
+            <Button type="button" disabled={pending} onClick={handleSave} className="w-full">
               {pending ? "저장 중..." : "저장"}
             </Button>
           </div>
@@ -416,7 +410,7 @@ export function ApplicationStatusForm({
               </button>
             </div>
           )}
-          <Button type="submit" disabled={pending}>
+          <Button type="button" disabled={pending} onClick={handleSave}>
             {pending ? "저장 중..." : "저장"}
           </Button>
         </div>
@@ -469,6 +463,6 @@ export function ApplicationStatusForm({
           )}
         </div>
       </div>
-    </form>
+    </div>
   )
 }
