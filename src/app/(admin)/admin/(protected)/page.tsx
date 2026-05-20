@@ -302,18 +302,6 @@ export default async function AdminDashboardPage() {
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MonthCard
-            label="입양 신청"
-            value={appStats.adoption.thisMonth}
-            prev={appStats.adoption.lastMonth}
-            href="/admin/applications?type=adoption"
-          />
-          <MonthCard
-            label="봉사 신청"
-            value={appStats.volunteer.thisMonth}
-            prev={appStats.volunteer.lastMonth}
-            href="/admin/applications?type=volunteer"
-          />
-          <MonthCard
             label="공지/일상/후기"
             value={noticesCount + dailyCount + storiesCount}
             extra={
@@ -329,6 +317,18 @@ export default async function AdminDashboardPage() {
             prev={newMembersPrev}
             href="/admin/members"
             suffix="명"
+          />
+          <MonthCard
+            label="봉사 신청"
+            value={appStats.volunteer.thisMonth}
+            prev={appStats.volunteer.lastMonth}
+            href="/admin/applications?type=volunteer"
+          />
+          <MonthCard
+            label="입양 신청"
+            value={appStats.adoption.thisMonth}
+            prev={appStats.adoption.lastMonth}
+            href="/admin/applications?type=adoption"
           />
         </div>
       </section>
