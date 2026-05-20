@@ -393,10 +393,12 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
                 className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               >
                 <option value="">시</option>
-                {Array.from({ length: 10 }, (_, i) => {
-                  const h = String(i + 9).padStart(2, "0")
-                  return <option key={h} value={h}>{i + 9}시</option>
-                })}
+                {Array.from({ length: 10 }, (_, i) => i + 9)
+                  .filter((h) => h !== 12)
+                  .map((h) => {
+                    const hStr = String(h).padStart(2, "0")
+                    return <option key={hStr} value={hStr}>{h}시</option>
+                  })}
               </select>
               <select
                 value={visitMinute}
@@ -462,6 +464,9 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
           <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
             신청 후 <span className="font-semibold">1시간 이내</span>에 승인 처리하려 노력하고 있으니,
             번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+            평일 <span className="font-semibold">점심시간(12:00 – 13:00)</span>에는 승인 처리가 지연될 수 있습니다.
           </p>
         </div>
 
