@@ -466,7 +466,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
             번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-            평일 <span className="font-semibold">점심시간(12:00 – 13:00)</span>에는 승인 처리가 지연될 수 있습니다.
+            평일 <span className="font-semibold">12:00 – 13:00</span>는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
           </p>
         </div>
 
