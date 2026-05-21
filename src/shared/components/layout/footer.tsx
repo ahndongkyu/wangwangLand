@@ -21,13 +21,14 @@ export function Footer() {
       {/* 0) 통합 후원 CTA 카드 */}
       <section className="border-b border-white/[0.08] px-4 py-10 md:px-6 md:py-12">
         <div
-          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-10
-            bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)]
-            dark:bg-[linear-gradient(135deg,#523619_0%,#2D1D11_100%)]"
+          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl border border-white/[0.06] px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-10
+            bg-[linear-gradient(135deg,#FAF3E8_0%,#EFE4CF_100%)]
+            shadow-[0_8px_24px_rgba(0,0,0,0.18)]
+            dark:bg-[linear-gradient(135deg,#3F3220_0%,#231810_100%)]"
         >
           {/* 배경 데코 원 2개 */}
-          <span className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-[rgba(232,155,94,0.12)] dark:bg-[rgba(232,155,94,0.18)]" />
-          <span className="pointer-events-none absolute right-20 top-7 size-12 rounded-full bg-[rgba(255,212,161,0.25)] dark:bg-[rgba(255,212,161,0.15)]" />
+          <span className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-[rgba(42,61,47,0.06)] dark:bg-[rgba(232,155,94,0.10)]" />
+          <span className="pointer-events-none absolute right-20 top-7 size-12 rounded-full bg-[rgba(42,61,47,0.04)] dark:bg-[rgba(255,212,161,0.08)]" />
 
           {/* 좌우 분할: 모바일 1단 → 데스크탑 2단 */}
           <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-[1fr_1.3fr] md:items-center md:gap-10">
