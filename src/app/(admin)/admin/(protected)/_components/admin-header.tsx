@@ -192,9 +192,9 @@ export function AdminSidebar({
                 />
               </button>
 
-              {/* 메뉴 아이템 (좌측 세로선 + 들여쓰기 + 밝은 색) */}
+              {/* 메뉴 아이템 (들여쓰기 + 밝은 색) */}
               {isOpen && (
-                <div className="mt-1 ml-3 border-l border-white/[0.08] pl-1.5">
+                <div className="mt-1 ml-2">
                   {group.items.map((item) => (
                     <Link
                       key={item.href}
