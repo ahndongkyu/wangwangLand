@@ -44,14 +44,14 @@ interface AdminHeaderProps {
 function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
   return [
     {
-      label: "아이들 관리",
+      label: "입소 동물",
       items: [
         { label: "강아지", href: "/admin/dogs" },
         { label: "고양이", href: "/admin/cats" },
       ],
     },
     {
-      label: "게시글 관리",
+      label: "콘텐츠",
       items: [
         { label: "공지사항", href: "/admin/notices" },
         { label: "일상", href: "/admin/daily" },
@@ -60,14 +60,25 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
       ],
     },
     {
-      label: "회원 관리",
+      label: "신청 관리",
       items: [
-        { label: "회원 관리", href: "/admin/members" },
-        { label: "신청 관리", href: "/admin/applications" },
-        { label: "후원 관리", href: "/admin/donations" },
-        { label: "일정 관리", href: "/admin/calendar" },
+        { label: "봉사 신청", href: "/admin/applications/volunteer" },
+        { label: "입양 신청", href: "/admin/applications/adoption" },
+        { label: "후원 내역", href: "/admin/donations" },
+      ],
+    },
+    {
+      label: "일정",
+      items: [
+        { label: "전체 일정", href: "/admin/calendar" },
         { label: "운영진 일정", href: "/admin/schedule" },
-        ...(isTopAdmin ? [{ label: "운영진 관리", href: "/admin/admins" }] : []),
+      ],
+    },
+    {
+      label: "회원",
+      items: [
+        { label: "일반 회원", href: "/admin/members" },
+        ...(isTopAdmin ? [{ label: "운영진", href: "/admin/admins" }] : []),
       ],
     },
     ...(isTopAdmin
