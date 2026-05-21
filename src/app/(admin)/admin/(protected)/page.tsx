@@ -441,7 +441,7 @@ function QuickLink({
     <Link
       href={href}
       className={cn(
-        "group flex flex-col items-start gap-2 rounded-lg border bg-card p-4 transition-colors",
+        "group flex flex-col items-start gap-2 rounded-lg border bg-card p-4 transition-colors dark:bg-[#262b30]",
         highlight
           ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
           : "border-border hover:border-primary/40 hover:bg-secondary"
@@ -451,8 +451,8 @@ function QuickLink({
         className={cn(
           "flex size-9 items-center justify-center rounded-lg transition-colors",
           highlight
-            ? "bg-primary/20 group-hover:bg-primary/30"
-            : "bg-primary/10 group-hover:bg-primary/20"
+            ? "bg-primary/20 group-hover:bg-primary/30 dark:bg-[#4a2e1c] dark:group-hover:bg-[#5c3a23]"
+            : "bg-primary/10 group-hover:bg-primary/20 dark:bg-[#4a2e1c] dark:group-hover:bg-[#5c3a23]"
         )}
       >
         <BrandIcon name={icon} size={20} decorative />

@@ -102,7 +102,7 @@ function AdminThemeToggle({ sidebar }: { sidebar?: boolean }) {
       className={cn(
         "flex h-8 w-8 items-center justify-center rounded-lg",
         sidebar
-          ? "text-[#c5d0c7] hover:bg-white/[0.06]"
+          ? "text-[#d8e0d8] hover:bg-white/[0.08]"
           : "bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
       )}
       aria-label="테마 변경"
@@ -180,7 +180,7 @@ export function AdminSidebar({
               "flex items-center rounded-lg px-3 py-2.5 text-[14px] font-medium transition-colors",
               pathname === "/admin"
                 ? "bg-[#E87A43] font-semibold text-white"
-                : "text-[#c5d0c7] hover:bg-white/[0.06]"
+                : "text-[#d8e0d8] hover:bg-white/[0.08]"
             )}
           >
             대시보드
@@ -199,8 +199,8 @@ export function AdminSidebar({
                 className={cn(
                   "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[1px] transition-colors",
                   isOpen
-                    ? "text-[#9ab09e] hover:text-[#b5c7b8]"
-                    : "text-[#5d7565] hover:text-[#7a9080]"
+                    ? "text-[#9ab09e] hover:text-[#b5c7b8] dark:text-[#b5c7b8] dark:hover:text-[#d0dcd3]"
+                    : "text-[#5d7565] hover:text-[#7a9080] dark:text-[#7a9080] dark:hover:text-[#9ab09e]"
                 )}
               >
                 {group.label}
@@ -260,7 +260,7 @@ export function AdminSidebar({
           <Link
             href="/"
             target="_blank"
-            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#c5d0c7] hover:bg-white/[0.06] transition-colors"
+            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#d8e0d8] hover:bg-white/[0.08] transition-colors"
           >
             <ExternalLink className="size-3.5" />
             메인사이트
@@ -268,7 +268,7 @@ export function AdminSidebar({
           <button
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#c5d0c7] hover:bg-white/[0.06] transition-colors"
+            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#d8e0d8] hover:bg-white/[0.08] transition-colors"
           >
             {resolvedTheme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             테마

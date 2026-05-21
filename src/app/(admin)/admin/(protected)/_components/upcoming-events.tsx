@@ -301,7 +301,7 @@ export function UpcomingEvents({ events }: Props) {
               className={cn(
                 "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground dark:bg-[#d97045]"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
