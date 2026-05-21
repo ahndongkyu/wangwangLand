@@ -1,25 +1,52 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { setMaintenanceMessage, setMaintenanceMode } from "@/features/settings/api/mutations"
+import {
+  setMaintenanceEta,
+  setMaintenanceMessage,
+  setMaintenanceMode,
+} from "@/features/settings/api/mutations"
 import { DEFAULT_MAINTENANCE_MESSAGE } from "@/features/settings/api/queries"
+import {
+  datetimeLocalToIso,
+  formatMaintenanceEta,
+  isoToDatetimeLocal,
+} from "@/features/settings/lib/format"
 
 const MAX_LEN = 500
 
 interface Props {
   initialEnabled: boolean
   initialMessage: string
+  initialEta: string | null
 }
 
-export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
+export function MaintenanceSettings({
+  initialEnabled,
+  initialMessage,
+  initialEta,
+}: Props) {
   const [isOn, setIsOn] = useState(initialEnabled)
   const [message, setMessage] = useState(initialMessage)
   const [savedMessage, setSavedMessage] = useState(initialMessage)
+  const [etaLocal, setEtaLocal] = useState(isoToDatetimeLocal(initialEta))
+  const [savedEtaLocal, setSavedEtaLocal] = useState(
+    isoToDatetimeLocal(initialEta)
+  )
   const [toggling, startToggle] = useTransition()
-  const [saving, startSave] = useTransition()
+  const [savingMessage, startSaveMessage] = useTransition()
+  const [savingEta, startSaveEta] = useTransition()
   const [toast, setToast] = useState<{ type: "ok" | "err"; text: string } | null>(null)
 
-  const dirty = message.trim() !== savedMessage.trim()
+  const messageDirty = message.trim() !== savedMessage.trim()
+  const etaDirty = etaLocal !== savedEtaLocal
+
+  // 미리보기에 표시할 ETA 텍스트
+  const previewEta = (() => {
+    const iso = datetimeLocalToIso(etaLocal)
+    if (!iso) return null
+    return formatMaintenanceEta(iso)
+  })()
 
   function handleToggle() {
     const next = !isOn
@@ -42,7 +69,7 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
 
   function handleSaveMessage() {
     setToast(null)
-    startSave(async () => {
+    startSaveMessage(async () => {
       const res = await setMaintenanceMessage(message)
       if (res?.error) {
         setToast({ type: "err", text: res.error })
@@ -51,6 +78,27 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
         setToast({ type: "ok", text: "안내 문구가 저장되었습니다." })
       }
     })
+  }
+
+  function handleSaveEta() {
+    setToast(null)
+    startSaveEta(async () => {
+      const iso = datetimeLocalToIso(etaLocal)
+      const res = await setMaintenanceEta(iso)
+      if (res?.error) {
+        setToast({ type: "err", text: res.error })
+      } else {
+        setSavedEtaLocal(etaLocal)
+        setToast({
+          type: "ok",
+          text: iso ? "완료 예정 시간이 저장되었습니다." : "완료 예정 시간이 삭제되었습니다.",
+        })
+      }
+    })
+  }
+
+  function handleClearEta() {
+    setEtaLocal("")
   }
 
   function handleResetDefault() {
@@ -69,7 +117,6 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
             </p>
           </div>
 
-          {/* 토글 버튼 */}
           <button
             type="button"
             onClick={handleToggle}
@@ -87,7 +134,6 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
           </button>
         </div>
 
-        {/* 상태 표시 */}
         <div
           className={`mt-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
             isOn
@@ -141,7 +187,7 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
             {message.length}/{MAX_LEN}
           </span>
           <div className="flex items-center gap-2">
-            {dirty && (
+            {messageDirty && (
               <span className="text-[11px] text-amber-600 dark:text-amber-400">
                 저장 안 된 변경사항이 있습니다
               </span>
@@ -149,12 +195,62 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
             <button
               type="button"
               onClick={handleSaveMessage}
-              disabled={saving || !dirty}
+              disabled={savingMessage || !messageDirty}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? "저장 중..." : "저장"}
+              {savingMessage ? "저장 중..." : "저장"}
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 완료 예정 시간 */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">완료 예정 시간</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              점검 페이지에 표시될 완료 예정 시간(KST)입니다. 비워두면 표시되지 않습니다.
+            </p>
+          </div>
+          {etaLocal && (
+            <button
+              type="button"
+              onClick={handleClearEta}
+              className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              지우기
+            </button>
+          )}
+        </div>
+
+        <input
+          type="datetime-local"
+          value={etaLocal}
+          onChange={(e) => setEtaLocal(e.target.value)}
+          className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+
+        {previewEta && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            표시 형식: <span className="font-medium text-foreground">{previewEta}</span>
+          </p>
+        )}
+
+        <div className="mt-3 flex items-center justify-end gap-2">
+          {etaDirty && (
+            <span className="text-[11px] text-amber-600 dark:text-amber-400">
+              저장 안 된 변경사항이 있습니다
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSaveEta}
+            disabled={savingEta || !etaDirty}
+            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {savingEta ? "저장 중..." : "저장"}
+          </button>
         </div>
       </div>
 
@@ -172,6 +268,14 @@ export function MaintenanceSettings({ initialEnabled, initialMessage }: Props) {
             <p className="mt-3 max-w-sm whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
               {message.trim() || DEFAULT_MAINTENANCE_MESSAGE}
             </p>
+
+            {previewEta && (
+              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
+                <p className="font-semibold">예상 완료 시간</p>
+                <p className="mt-0.5 text-base font-bold">{previewEta}</p>
+              </div>
+            )}
+
             <div className="mt-5 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
               <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
               서버 점검 중

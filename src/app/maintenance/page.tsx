@@ -1,9 +1,17 @@
-import { getMaintenanceMessage } from "@/features/settings/api/queries"
+import {
+  getMaintenanceEta,
+  getMaintenanceMessage,
+} from "@/features/settings/api/queries"
+import { formatMaintenanceEta } from "@/features/settings/lib/format"
 
 export const dynamic = "force-dynamic"
 
 export default async function MaintenancePage() {
-  const message = await getMaintenanceMessage()
+  const [message, eta] = await Promise.all([
+    getMaintenanceMessage(),
+    getMaintenanceEta(),
+  ])
+  const etaText = eta ? formatMaintenanceEta(eta) : null
 
   return (
     <>
@@ -30,6 +38,13 @@ export default async function MaintenancePage() {
         <p className="mt-3 max-w-sm whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
           {message}
         </p>
+
+        {etaText && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
+            <p className="font-semibold">예상 완료 시간</p>
+            <p className="mt-0.5 text-base font-bold">{etaText}</p>
+          </div>
+        )}
 
         <div className="mt-6 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
           <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
