@@ -197,6 +197,24 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-8">
+      {/* 신청 전 안내 — 항상 최상단 */}
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
+        <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
+        <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+          현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+          곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
+        </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
+          확인 후 바로 승인 처리하려 노력하고 있으니, 번거로우시더라도 신청 후{" "}
+          <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
+        </p>
+        <p className="mt-2 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+          평일 점심시간(12:00 – 13:00)에는 승인 처리가 지연될 수 있습니다.
+        </p>
+      </div>
+
       {/* Mobile step indicator */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -452,24 +470,6 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
 
       {/* Step 3: 안전인지 + 동의 */}
       <div className={step === 3 ? "contents" : "hidden sm:contents"}>
-        {/* 신청 전 안내 — 안전사항 카드 바로 위 */}
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
-          <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
-          <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-            현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-            곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-            신청 후 <span className="font-semibold">1시간 이내</span>에 승인 처리하려 노력하고 있으니,
-            번거로우시더라도 신청 후 <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-            평일 <span className="font-semibold">12:00 – 13:00</span>는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
-          </p>
-        </div>
-
         {/* 5. 안전 사항 인지 */}
         <Card title="안전 사항 인지" required>
           <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
