@@ -155,7 +155,7 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
+    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] dark:bg-[#1a1f1c] md:flex">
       {/* 로고 + 알림벨 */}
       <div className="flex items-center justify-between gap-2 px-5 py-5">
         <div className="flex min-w-0 items-center gap-3">
@@ -341,7 +341,7 @@ export function AdminMobileHeader({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="w-[min(300px,85vw)] flex flex-col p-0 bg-[#FAF6F0] dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="w-[min(300px,85vw)] flex flex-col p-0 bg-[#FAF6F0] dark:bg-[#13161a] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{siteName} 관리자</SheetTitle>

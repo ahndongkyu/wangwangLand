@@ -329,3 +329,27 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
+/* ────────────────────────────────────────────────────────────
+ * 관리자 페이지 전용 다크모드 색상 (중성 다크 톤)
+ * 메인사이트는 기존 따뜻한 다크 유지, 관리자만 차분한 중성 다크
+ * ──────────────────────────────────────────────────────────── */
+.dark [data-admin-scope] {
+  --background: oklch(0.156 0.008 245);          /* #13161a — 컨텐츠 배경 */
+  --foreground: oklch(0.922 0.005 245);          /* #e4e6e9 — 본문 텍스트 */
+  --card: oklch(0.192 0.008 245);                /* #1e2226 — 카드 배경 */
+  --card-foreground: oklch(0.922 0.005 245);     /* #e4e6e9 */
+  --popover: oklch(0.192 0.008 245);             /* #1e2226 */
+  --popover-foreground: oklch(0.922 0.005 245);
+  --primary: oklch(0.745 0.110 50);              /* #F89968 — 살짝 톤다운 오렌지 */
+  --primary-foreground: oklch(0.156 0.008 245);
+  --secondary: oklch(0.220 0.010 245);           /* #262a30 — hover bg */
+  --secondary-foreground: oklch(0.795 0.008 245);
+  --muted: oklch(0.220 0.010 245);
+  --muted-foreground: oklch(0.620 0.012 245);    /* #8b9099 — 보조 텍스트 */
+  --accent: oklch(0.745 0.110 50);
+  --accent-foreground: oklch(0.156 0.008 245);
+  --border: oklch(0.260 0.010 245);              /* #2a2f35 — 카드 보더 */
+  --input: oklch(0.290 0.010 245);
+  --ring: oklch(0.745 0.110 50);
+}
