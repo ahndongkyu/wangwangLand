@@ -316,19 +316,6 @@ export function AdminMobileHeader({
     return true
   }
 
-  // 활성 그룹은 기본 열림
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      NAV_GROUPS.map((g) => [
-        g.label,
-        g.items.some((i) => pathname.startsWith(i.href.split("?")[0])),
-      ])
-    )
-  )
-  function toggleGroup(label: string) {
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
-  }
-
   return (
     <header className="border-b border-border bg-card md:hidden">
       <div className="flex h-14 items-center justify-between px-4">
@@ -354,26 +341,25 @@ export function AdminMobileHeader({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="admin-sidebar-scroll w-[min(300px,85vw)] flex flex-col p-0 bg-[#2A3D2F] dark:bg-[#1A2820] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="w-[min(300px,85vw)] flex flex-col p-0 bg-[#FAF6F0] dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{siteName} 관리자</SheetTitle>
               </SheetHeader>
 
-              {/* 드로어 헤더 (로고 + 닫기) */}
-              <div className="flex items-center justify-between px-4 py-4">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-[14px] font-bold text-white">{siteName}</span>
-                    <span className="text-[9px] font-semibold uppercase tracking-[1px] text-[#7a9080]">Admin</span>
-                  </div>
+              {/* 드로어 헤더 */}
+              <div className="flex items-center justify-between border-b border-[#E5DDD0] px-4 py-3.5 dark:border-[#3A3229]">
+                <div className="flex items-center gap-2">
+                  <Image src={SITE.logo} alt={SITE.name} width={28} height={28} className="size-7 rounded-full" />
+                  <span className="text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                    {siteName} 관리자
+                  </span>
                 </div>
                 <SheetClose
                   render={
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[#c5d0c7] hover:bg-white/[0.06]"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
                       aria-label="메뉴 닫기"
                     />
                   }
@@ -382,90 +368,70 @@ export function AdminMobileHeader({
                 </SheetClose>
               </div>
 
-              {/* 네비게이션 (스크롤바 숨김) */}
-              <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-2">
-                {/* 대시보드 */}
-                <div className="mb-1">
+              {/* 메뉴 (그룹 모두 펼친 상태, 토글 없음) */}
+              <nav className="flex-1 overflow-y-auto py-2">
+                <div className="px-4 py-1">
                   <Link
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center rounded-lg px-3 py-2.5 text-[14px] font-medium transition-colors",
+                      "flex items-center justify-between rounded-lg px-1 py-2.5 text-[13px] font-medium transition-colors",
                       pathname === "/admin"
-                        ? "bg-[#E87A43] font-semibold text-white"
-                        : "text-[#c5d0c7] hover:bg-white/[0.06]"
+                        ? "text-primary"
+                        : "text-[#2C2C2A] hover:bg-[#FAF3E8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.04)]"
                     )}
                   >
                     대시보드
+                    <ChevronRight className="size-3.5 text-[#9B8F80]" />
                   </Link>
                 </div>
 
-                {/* 그룹별 토글 메뉴 */}
-                {NAV_GROUPS.map((group) => {
-                  const isOpen = !!openGroups[group.label]
-                  return (
-                    <div key={group.label} className="mt-4">
-                      {/* 그룹 헤더 (캡션 스타일 — 클릭 시 토글) */}
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(group.label)}
-                        className={cn(
-                          "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[1px] transition-colors",
-                          isOpen
-                            ? "text-[#9ab09e] hover:text-[#b5c7b8]"
-                            : "text-[#5d7565] hover:text-[#7a9080]"
-                        )}
-                      >
+                {NAV_GROUPS.map((group, gi) => (
+                  <div key={group.label}>
+                    {gi > 0 && <div className="mx-4 my-1.5 h-px bg-[#E5DDD0] dark:bg-[#3A3229]" />}
+                    <div className="px-4 py-1">
+                      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-[#9B8F80]">
                         {group.label}
-                        <ChevronDown
+                      </p>
+                      {group.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
                           className={cn(
-                            "size-3 transition-transform duration-200",
-                            isOpen && "rotate-180"
+                            "flex items-center justify-between rounded-lg px-1 py-2.5 text-[13px] transition-colors",
+                            isActive(item.href)
+                              ? "font-medium text-primary"
+                              : "text-[#2C2C2A] hover:bg-[#FAF3E8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.04)]"
                           )}
-                        />
-                      </button>
-
-                      {/* 메뉴 아이템 */}
-                      {isOpen && (
-                        <div className="mt-1 ml-2">
-                          {group.items.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setMobileOpen(false)}
-                              className={cn(
-                                "flex items-center rounded-lg px-3 py-2.5 text-[14.5px] font-medium transition-colors",
-                                isActive(item.href)
-                                  ? "bg-[#E87A43] font-semibold text-white"
-                                  : "text-[#e4ebe5] hover:bg-white/[0.06]"
-                              )}
-                            >
-                              {item.label}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+                        >
+                          {item.label}
+                          <ChevronRight className="size-3.5 text-[#9B8F80]" />
+                        </Link>
+                      ))}
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </nav>
 
-              {/* 하단: 프로필 + 액션 버튼 (PC 사이드바와 동일) */}
-              <div className="border-t border-white/[0.08] px-4 py-4">
+              {/* 하단: 프로필 + 3열 액션 그리드 (PC 사이드바와 통일) */}
+              <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3.5 dark:border-[#3A3229] dark:bg-black/20">
                 {/* 프로필 */}
                 <div className="mb-3 flex items-center gap-3">
-                  <div className="relative size-9 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">
+                  <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
                     {adminAvatarUrl ? (
                       <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
                     ) : (
-                      <User className="size-full p-2 text-[#c5d0c7]" />
+                      <User className="size-full p-2 text-muted-foreground" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="inline-block rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-[#c5d0c7]">
+                    <span className="inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                       {ROLE_LABEL[adminRole] ?? adminRole}
                     </span>
-                    <p className="truncate text-[13px] font-semibold text-white">{adminName}</p>
+                    <p className="truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                      {adminName}
+                    </p>
                   </div>
                 </div>
 
@@ -475,26 +441,26 @@ export function AdminMobileHeader({
                     href="/"
                     target="_blank"
                     onClick={() => setMobileOpen(false)}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#c5d0c7] hover:bg-white/[0.06] transition-colors"
+                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-[#F0E8DC] transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
                   >
-                    <ExternalLink className="size-3.5" />
+                    <ExternalLink className="size-4" />
                     메인사이트
                   </Link>
                   <button
                     type="button"
                     onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#c5d0c7] hover:bg-white/[0.06] transition-colors"
+                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-[#F0E8DC] transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
                   >
-                    {resolvedTheme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+                    {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
                     테마
                   </button>
                   <form action={logoutAction} className="contents">
                     <button
                       type="submit"
                       onClick={() => setMobileOpen(false)}
-                      className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#ff9b9b] hover:bg-white/[0.06] transition-colors"
+                      className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
                     >
-                      <LogOut className="size-3.5" />
+                      <LogOut className="size-4" />
                       로그아웃
                     </button>
                   </form>
