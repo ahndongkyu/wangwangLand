@@ -171,12 +171,12 @@ export function AdminSidebar({
         {NAV_GROUPS.map((group) => {
           const isOpen = !!openGroups[group.label]
           return (
-            <div key={group.label} className="mt-3">
-              {/* 그룹 헤더 (클릭 시 토글) */}
+            <div key={group.label} className="mt-4">
+              {/* 그룹 헤더 (캡션 스타일 — 클릭 시 토글) */}
               <button
                 type="button"
                 onClick={() => toggleGroup(group.label)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.6px] text-[#7a9080] hover:text-[#c5d0c7] transition-colors"
+                className="flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[1px] text-[#5d7565] hover:text-[#7a9080] transition-colors"
               >
                 {group.label}
                 <ChevronDown
@@ -187,18 +187,18 @@ export function AdminSidebar({
                 />
               </button>
 
-              {/* 메뉴 아이템 */}
+              {/* 메뉴 아이템 (들여쓰기 + 밝은 색) */}
               {isOpen && (
-                <div className="mt-0.5">
+                <div className="mt-1 ml-2">
                   {group.items.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center rounded-lg px-3 py-2 text-[13px] transition-colors",
+                        "flex items-center rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors",
                         isActive(item.href)
                           ? "bg-[#E87A43] font-semibold text-white"
-                          : "text-[#c5d0c7] hover:bg-white/[0.06]"
+                          : "text-[#e4ebe5] hover:bg-white/[0.06]"
                       )}
                     >
                       {item.label}
