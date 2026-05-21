@@ -31,11 +31,11 @@ export default async function AdminProtectedLayout({
       <AdminSidebar {...sharedProps} />
 
       {/* 콘텐츠 영역 */}
-      <div className="flex flex-1 flex-col md:pl-[240px] md:bg-[#FAFAF7] dark:md:bg-[#151B17]">
+      <div className="flex min-w-0 flex-1 flex-col md:pl-[240px] md:bg-[#FAFAF7] dark:md:bg-[#151B17]">
         {/* 모바일 헤더 — md 이상에서 숨김 */}
         <AdminMobileHeader {...sharedProps} pendingCounts={pendingCounts} />
 
-        <main className="flex-1 pb-24 md:pb-0">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
       </div>
 
       {/* 모바일 하단탭 */}
