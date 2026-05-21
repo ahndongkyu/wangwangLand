@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
+import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
 import { useState } from "react"
 
 import { useTheme } from "@/shared/components/theme-provider"
@@ -128,8 +128,19 @@ export function AdminSidebar({
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
   const isActive = (href: string) => pathname.startsWith(href)
 
+  // 활성 그룹은 기본 열림
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      NAV_GROUPS.map((g) => [g.label, g.items.some((i) => pathname.startsWith(i.href))])
+    )
+  )
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
+  }
+
   return (
-    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
+    <aside className="admin-sidebar-scroll fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
       {/* 로고 */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
@@ -140,7 +151,7 @@ export function AdminSidebar({
       </div>
 
       {/* 네비게이션 (스크롤 가능) */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-2">
+      <nav className="admin-sidebar-scroll flex-1 overflow-y-auto px-3 pb-2">
         {/* 대시보드 */}
         <div className="mb-1">
           <Link
@@ -156,29 +167,48 @@ export function AdminSidebar({
           </Link>
         </div>
 
-        {/* 그룹별 플랫 메뉴 */}
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="mt-4">
-            {/* 그룹 레이블 (클릭 불가) */}
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.6px] text-[#7a9080]">
-              {group.label}
-            </p>
-            {group.items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center rounded-lg px-3 py-2 text-[13px] transition-colors",
-                  isActive(item.href)
-                    ? "bg-[#E87A43] font-semibold text-white"
-                    : "text-[#c5d0c7] hover:bg-white/[0.06]"
-                )}
+        {/* 그룹별 토글 메뉴 */}
+        {NAV_GROUPS.map((group) => {
+          const isOpen = !!openGroups[group.label]
+          return (
+            <div key={group.label} className="mt-3">
+              {/* 그룹 헤더 (클릭 시 토글) */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.6px] text-[#7a9080] hover:text-[#c5d0c7] transition-colors"
               >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        ))}
+                {group.label}
+                <ChevronDown
+                  className={cn(
+                    "size-3 transition-transform duration-200",
+                    isOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {/* 메뉴 아이템 */}
+              {isOpen && (
+                <div className="mt-0.5">
+                  {group.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center rounded-lg px-3 py-2 text-[13px] transition-colors",
+                        isActive(item.href)
+                          ? "bg-[#E87A43] font-semibold text-white"
+                          : "text-[#c5d0c7] hover:bg-white/[0.06]"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       {/* 하단: 프로필 + 액션 버튼 */}

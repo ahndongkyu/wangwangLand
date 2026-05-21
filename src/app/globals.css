@@ -318,3 +318,22 @@
 .kakao-float-btn:hover .kakao-puppy {
   animation: ww-wiggle 0.5s ease-in-out;
 }
+
+/* 관리자 사이드바 스크롤바 (다크 그린 테마) */
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.admin-sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
