@@ -423,24 +423,11 @@ function pushBodyForStatus(status: ApplicationStatus): string {
 }
 
 function buildVolunteerSmsText(applicantName: string, availableDates: string[]): string {
-  const name = `${applicantName}님`
-  const url = `\n\nwangwangland.kr/my/applications`
-  const dateStr = availableDates[0] ?? ""
-  let dateLine = ""
-  if (dateStr) {
-    const [, m, d] = dateStr.split("-").map(Number)
-    const dow = ["일", "월", "화", "수", "목", "금", "토"][
-      new Date(`${dateStr}T00:00:00+09:00`).getDay()
-    ]
-    dateLine = `\n일정: ${m}월 ${d}일(${dow})`
-  }
-  return `[왕왕랜드] ${name}, 봉사 신청이 승인됐어요.${dateLine}\n준비물 등 자세한 내용은 신청 내역에서 확인해주세요.${url}`
+  return `왕왕랜드\n${applicantName}님, 봉사 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
 }
 
 function buildAdoptionSmsText(applicantName: string): string {
-  const name = `${applicantName}님`
-  const url = `\n\nwangwangland.kr/my/applications`
-  return `[왕왕랜드] ${name}, 입양 신청이 승인됐어요.\n자세한 내용은 신청 내역에서 확인해주세요.${url}`
+  return `왕왕랜드\n${applicantName}님, 입양 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
 }
 
 function notificationTypeForStatus(status: ApplicationStatus): string {
