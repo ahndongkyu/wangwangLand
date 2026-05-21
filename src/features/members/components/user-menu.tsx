@@ -21,6 +21,13 @@ import { UserName } from "@/shared/components/user-name"
 import { cn } from "@/shared/lib/utils"
 import type { Profile } from "../api/queries"
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "관리자",
+  staff: "운영진",
+  full_member: "정회원",
+  member: "회원",
+}
+
 export function UserMenu({ profile }: { profile: Profile }) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
@@ -67,12 +74,8 @@ export function UserMenu({ profile }: { profile: Profile }) {
       {open && (
         <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-2xl border border-border bg-popover shadow-[0_16px_40px_rgba(40,30,20,0.18)]">
 
-          {/* ── 프로필 헤더 (다크 그린) → 마이페이지 링크 ── */}
-          <Link
-            href="/my"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 bg-[#2A3D2F] px-4 py-3.5 transition-colors hover:bg-[#1F2F23] dark:bg-[#1A2820] dark:hover:bg-[#0F1810]"
-          >
+          {/* ── 프로필 헤더 (다크 그린, 정보 표시용) ── */}
+          <div className="flex items-center gap-3 bg-[#2A3D2F] px-4 py-3.5 dark:bg-[#1A2820]">
             <div className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/10">
               {profile.avatar_url ? (
                 <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
@@ -80,12 +83,15 @@ export function UserMenu({ profile }: { profile: Profile }) {
                 <User className="size-full p-2 text-white/70" />
               )}
             </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <UserName nickname={profile.nickname} role={profile.role} showTier={false} />
-              <span className="text-[11px] text-[#9AB09E]">마이페이지 →</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold text-white">
+                {profile.nickname}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[#9AB09E]">
+                {ROLE_LABEL[profile.role] ?? "회원"}
+              </p>
             </div>
-            <ChevronRight className="size-4 shrink-0 text-[#9AB09E]" />
-          </Link>
+          </div>
 
           {/* ── 내 활동 ── */}
           <div className="px-1.5 pt-2">
