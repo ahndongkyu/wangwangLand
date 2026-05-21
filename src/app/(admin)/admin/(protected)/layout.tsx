@@ -26,12 +26,12 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background md:bg-[#F7F2EC] dark:md:bg-[#1A1714]">
+    <div className="flex min-h-screen bg-background md:bg-[#FAFAF7] dark:md:bg-[#151B17]">
       {/* PC 사이드바 — md 이상만 표시 */}
       <AdminSidebar {...sharedProps} />
 
       {/* 콘텐츠 영역 */}
-      <div className="flex flex-1 flex-col md:pl-[240px] md:bg-background">
+      <div className="flex flex-1 flex-col md:pl-[240px] md:bg-[#FAFAF7] dark:md:bg-[#151B17]">
         {/* 모바일 헤더 — md 이상에서 숨김 */}
         <AdminMobileHeader {...sharedProps} pendingCounts={pendingCounts} />
 
