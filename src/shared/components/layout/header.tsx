@@ -91,12 +91,16 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
                   <Link
                     href={node.href}
                     className={cn(
-                      "inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "group/navlink relative inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       isActive(node.href)
                         ? "bg-primary/10 text-primary"
-                        : "text-foreground/80 hover:bg-secondary hover:text-foreground"
+                        : "text-foreground/80 hover:text-[#2A3D2F] dark:hover:text-[#9ab09e]"
                     )}
                   >
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-3 bottom-1 h-px origin-left scale-x-0 bg-[#2A3D2F] transition-transform duration-200 group-hover/navlink:scale-x-100 dark:bg-[#9ab09e]"
+                    />
                     {node.label}
                     {node.href === "/notice" && (
                       <NoticeBadge notices={recentNotices} dbLastSeenAt={profile?.notices_last_seen_at} />

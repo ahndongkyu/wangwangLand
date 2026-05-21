@@ -5,12 +5,12 @@ import type { NoticeWithAuthor } from "../api/queries"
 
 const TAG_STYLES: Record<
   string,
-  { label: string; bg: string; color: string }
+  { label: string; bg: string; color: string; line: string }
 > = {
-  notice:  { label: "공지",   bg: "bg-[#FAEEDA] dark:bg-[#3B2A12]", color: "text-[#854F0B] dark:text-[#E6B97A]" },
-  event:   { label: "이벤트", bg: "bg-[#FAECE7] dark:bg-[#3B1F18]", color: "text-[#993C1D] dark:text-[#E89B6C]" },
-  recruit: { label: "모집",   bg: "bg-[#EAF3DE] dark:bg-[#1F2E14]", color: "text-[#3B6D11] dark:text-[#B5D687]" },
-  info:    { label: "안내",   bg: "bg-[#E6F1FB] dark:bg-[#152334]", color: "text-[#185FA5] dark:text-[#7EB6E8]" },
+  notice:  { label: "공지",   bg: "bg-[#FAEEDA] dark:bg-[#3B2A12]", color: "text-[#854F0B] dark:text-[#E6B97A]", line: "border-l-[#E89B5E]" },
+  event:   { label: "이벤트", bg: "bg-[#DCEBDE] dark:bg-[#1A2E20]", color: "text-[#2A3D2F] dark:text-[#9AB09E]", line: "border-l-[#2A3D2F]" },
+  recruit: { label: "모집",   bg: "bg-[#EAF3DE] dark:bg-[#1F2E14]", color: "text-[#3B6D11] dark:text-[#B5D687]", line: "border-l-[#5C8F4F]" },
+  info:    { label: "안내",   bg: "bg-[#E6F1FB] dark:bg-[#152334]", color: "text-[#185FA5] dark:text-[#7EB6E8]", line: "border-l-[#7EB6E8]" },
 }
 
 type CategoryKey = keyof typeof TAG_STYLES
@@ -89,7 +89,7 @@ export function RecentNewsSection({ notices }: Props) {
           </div>
           <Link
             href="/notice"
-            className="shrink-0 whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-primary"
+            className="shrink-0 whitespace-nowrap text-sm font-semibold text-[#2A3D2F] transition-colors hover:underline dark:text-[#9ab09e]"
           >
             전체 공지 →
           </Link>
@@ -109,8 +109,8 @@ export function RecentNewsSection({ notices }: Props) {
               <Link
                 key={n.id}
                 href={`/notice/${n.id}`}
-                className="group flex min-h-0 flex-col rounded-xl border border-black/[0.08] bg-card p-3.5 transition-all hover:border-primary/30 hover:bg-card sm:min-h-[120px] sm:p-4 dark:border-white/10 dark:hover:border-primary/40
-                  hover:-translate-y-0 sm:hover:-translate-y-0.5 sm:hover:shadow-[0_4px_12px_rgba(216,90,48,0.08)]"
+                className={`group flex min-h-0 flex-col rounded-xl border border-l-4 border-black/[0.08] bg-card p-3.5 transition-all hover:border-primary/30 hover:bg-card sm:min-h-[120px] sm:p-4 dark:border-white/10 dark:hover:border-primary/40
+                  hover:-translate-y-0 sm:hover:-translate-y-0.5 sm:hover:shadow-[0_4px_12px_rgba(60,80,55,0.08)] ${tag.line}`}
               >
                 {/* head: 카테고리 / NEW / (모바일 날짜) */}
                 <div className="mb-1.5 flex flex-wrap items-center gap-1.5 sm:mb-2.5">

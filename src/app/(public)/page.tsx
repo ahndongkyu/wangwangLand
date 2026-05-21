@@ -139,6 +139,7 @@ export default async function HomePage() {
               value={stats.rescued}
               suffix="마리"
               href="/dogs?status=전체"
+              accent="orange"
             />
             <CounterCard
               icon="home-shelter"
@@ -146,6 +147,7 @@ export default async function HomePage() {
               value={stats.sheltered}
               suffix="마리"
               href="/dogs?status=보호중"
+              accent="green"
             />
             <CounterCard
               icon="adopted"
@@ -153,6 +155,7 @@ export default async function HomePage() {
               value={stats.adopted}
               suffix="마리"
               href="/dogs?status=입양완료"
+              accent="deepGreen"
             />
             <CounterCard
               icon="volunteer"
@@ -161,6 +164,7 @@ export default async function HomePage() {
               suffix="명"
               href="/volunteer"
               fallbackText="모집 중"
+              accent="yellow"
             />
           </div>
         </div>
@@ -180,7 +184,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/dogs"
-              className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+              className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
             >
               전체 보기 →
             </Link>
@@ -218,7 +222,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/stories"
-                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
               >
                 전체 후기 →
               </Link>
@@ -249,7 +253,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/daily"
-                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
               >
                 전체 보기 →
               </Link>
@@ -278,7 +282,7 @@ export default async function HomePage() {
               </div>
               <Link
                 href="/cats"
-                className="hidden text-sm font-semibold text-primary hover:underline sm:inline"
+                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
               >
                 전체 보기 →
               </Link>
@@ -329,6 +333,30 @@ function MissionActionButton({
   )
 }
 
+type CounterAccent = "orange" | "green" | "deepGreen" | "yellow"
+
+const COUNTER_ACCENT: Record<
+  CounterAccent,
+  { ring: string; hoverBorder: string }
+> = {
+  orange: {
+    ring: "bg-[#FCE9D9] dark:bg-[rgba(232,155,94,0.18)]",
+    hoverBorder: "hover:border-[#E89B5E]",
+  },
+  green: {
+    ring: "bg-[#DCEBDE] dark:bg-[rgba(154,176,158,0.18)]",
+    hoverBorder: "hover:border-[#5C8F4F]",
+  },
+  deepGreen: {
+    ring: "bg-[#C8DBCB] dark:bg-[rgba(75,122,66,0.25)]",
+    hoverBorder: "hover:border-[#2A3D2F]",
+  },
+  yellow: {
+    ring: "bg-[#FBF1CC] dark:bg-[rgba(234,191,73,0.18)]",
+    hoverBorder: "hover:border-[#D4A92A]",
+  },
+}
+
 function CounterCard({
   icon,
   label,
@@ -336,6 +364,7 @@ function CounterCard({
   suffix,
   href,
   fallbackText,
+  accent = "orange",
 }: {
   icon: BrandIconName
   label: string
@@ -344,15 +373,27 @@ function CounterCard({
   href: string
   /** value 가 0 일 때 숫자 대신 보여줄 문구 (예: "모집 중") */
   fallbackText?: string
+  accent?: CounterAccent
 }) {
   const showFallback = value === 0 && !!fallbackText
+  const a = COUNTER_ACCENT[accent]
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md md:p-6"
+      className={cn(
+        "group rounded-xl border border-border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-md md:p-6",
+        a.hoverBorder
+      )}
     >
       <div className="flex justify-center">
-        <BrandIcon name={icon} size={36} decorative className="md:size-12" />
+        <span
+          className={cn(
+            "flex size-14 items-center justify-center rounded-full transition-transform group-hover:scale-105 md:size-16",
+            a.ring
+          )}
+        >
+          <BrandIcon name={icon} size={32} decorative className="md:size-10" />
+        </span>
       </div>
       <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:mt-3 md:text-xs">
         {label}

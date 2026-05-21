@@ -17,9 +17,9 @@ export function Footer() {
   )
 
   return (
-    <footer className="mt-auto border-t border-border/60 bg-secondary/40">
+    <footer className="mt-auto border-t border-black/20 bg-[#2A3D2F] text-[#E5EDE6] dark:bg-[#1A2820]">
       {/* 0) 통합 후원 CTA 카드 */}
-      <section className="border-b border-border/60 px-4 py-10 md:px-6 md:py-12">
+      <section className="border-b border-white/[0.08] px-4 py-10 md:px-6 md:py-12">
         <div
           className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-2xl px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-10
             bg-[linear-gradient(135deg,#FCE9D9_0%,#F5E1C8_100%)]
@@ -105,8 +105,8 @@ export function Footer() {
                 <Link
                   href="/donate"
                   className="inline-flex items-center justify-center gap-1.5 rounded-xl border-[1.5px] py-3.5 text-sm font-semibold transition-all hover:-translate-y-px
-                    bg-white border-[#E89B5E] text-[#C06B2A] hover:bg-[#E89B5E] hover:text-white
-                    dark:bg-[rgba(255,212,161,0.08)] dark:border-[rgba(255,212,161,0.4)] dark:text-[#FFD4A1] dark:hover:bg-[#E89B5E] dark:hover:text-[#2C2C2A]"
+                    bg-white border-[#2A3D2F] text-[#2A3D2F] hover:bg-[#2A3D2F] hover:text-white
+                    dark:bg-[rgba(154,176,158,0.08)] dark:border-[#9ab09e] dark:text-[#9ab09e] dark:hover:bg-[#2A3D2F] dark:hover:text-white"
                 >
                   <BrandIcon name="heart" size={16} decorative />
                   물품 후원하기
@@ -131,13 +131,13 @@ export function Footer() {
                 height={36}
                 className="size-9 rounded-full"
               />
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-lg font-bold text-white">
                 {SITE.name}
               </span>
             </Link>
 
             {/* 주소 카드 */}
-            <div className="mt-4 rounded-lg border border-border bg-card px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+            <div className="mt-4 rounded-lg border border-white/[0.12] bg-white/[0.04] px-3 py-2.5 text-xs leading-relaxed text-[#B5C7B8]">
               <p>{SITE.contact.addressShort}</p>
               <p>유기견보호소 왕왕랜드</p>
             </div>
@@ -150,7 +150,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="네이버 카페"
-                  className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="flex size-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.04] text-[#B5C7B8] transition-colors hover:border-[#E89B5E] hover:text-[#E89B5E]"
                 >
                   <NaverCafeIcon className="size-4" />
                 </a>
@@ -161,7 +161,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="인스타그램"
-                  className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="flex size-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.04] text-[#B5C7B8] transition-colors hover:border-[#E89B5E] hover:text-[#E89B5E]"
                 >
                   <InstagramIcon className="size-4" />
                 </a>
@@ -172,7 +172,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="유튜브"
-                  className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="flex size-9 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.04] text-[#B5C7B8] transition-colors hover:border-[#E89B5E] hover:text-[#E89B5E]"
                 >
                   <YouTubeIcon className="size-4" />
                 </a>
@@ -191,19 +191,19 @@ export function Footer() {
             <NavGroup group={FOOTER_LINK_GROUPS[2]} />
             {phones.length > 0 && (
               <div className="mt-6">
-                <p className="text-sm font-semibold text-foreground">연락처</p>
+                <p className="text-sm font-semibold text-white">연락처</p>
                 <ul className="mt-3 flex flex-col gap-1.5 text-sm">
                   {phones.map((p) => (
                     <li
                       key={p.label}
                       className="flex flex-wrap items-center gap-2"
                     >
-                      <span className="w-16 shrink-0 text-xs text-muted-foreground">
+                      <span className="w-16 shrink-0 text-xs text-[#B5C7B8]">
                         {p.label}
                       </span>
                       <a
                         href={`tel:${p.number}`}
-                        className="text-foreground hover:text-primary"
+                        className="text-white hover:text-[#E89B5E]"
                       >
                         {p.number}
                       </a>
@@ -221,7 +221,7 @@ export function Footer() {
 
         {/* 단체 정보 */}
         {hasRegistration && (
-          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-1 border-t border-border/60 pt-6 text-xs text-muted-foreground">
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-1 border-t border-white/[0.08] pt-6 text-xs text-[#B5C7B8]">
             {reg.representativeName && (
               <span>대표자 {reg.representativeName}</span>
             )}
@@ -235,10 +235,10 @@ export function Footer() {
         {/* 저작권 + 약관 링크 */}
         <div
           className={cn(
-            "flex flex-col gap-3 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between",
+            "flex flex-col gap-3 text-xs text-[#B5C7B8] md:flex-row md:items-center md:justify-between",
             hasRegistration
               ? "mt-4"
-              : "mt-10 border-t border-border/60 pt-6"
+              : "mt-10 border-t border-white/[0.08] pt-6"
           )}
         >
           <div>
@@ -254,7 +254,7 @@ export function Footer() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="transition-colors hover:text-foreground"
+                  className="transition-colors hover:text-[#E89B5E]"
                 >
                   {item.label}
                 </Link>
@@ -274,13 +274,13 @@ function NavGroup({
 }) {
   return (
     <div>
-      <p className="text-sm font-semibold text-foreground">{group.title}</p>
+      <p className="text-sm font-semibold text-white">{group.title}</p>
       <ul className="mt-3 flex flex-col gap-2 text-sm">
         {group.links.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-[#B5C7B8] transition-colors hover:text-[#E89B5E]"
             >
               {item.label}
             </Link>

@@ -11,10 +11,10 @@ import type { Dog } from "@/shared/types/database"
 function statusVariant(status: Dog["status"]) {
   switch (status) {
     case "보호중":
-      // 따뜻한 민트 — primary(코랄)와 보색 대비, 살아있음·청신함 강조
-      return "bg-[#7BBF8F] text-white"
-    case "임시보호중":
+      // 딥 그린 — 의미별 색 분리 (보호=그린)
       return "bg-[#4B7A42] text-white"
+    case "임시보호중":
+      return "bg-[#2A3D2F] text-white"
     case "입양완료":
       return "bg-foreground/80 text-background"
     case "무지개다리":
