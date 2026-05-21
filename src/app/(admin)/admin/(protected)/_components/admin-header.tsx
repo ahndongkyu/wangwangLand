@@ -44,14 +44,14 @@ interface AdminHeaderProps {
 function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
   return [
     {
-      label: "입소 동물",
+      label: "아이들 관리",
       items: [
         { label: "강아지", href: "/admin/dogs" },
         { label: "고양이", href: "/admin/cats" },
       ],
     },
     {
-      label: "콘텐츠",
+      label: "게시글 관리",
       items: [
         { label: "공지사항", href: "/admin/notices" },
         { label: "일상", href: "/admin/daily" },
