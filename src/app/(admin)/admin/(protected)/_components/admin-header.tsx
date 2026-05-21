@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
+import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
 import { useState } from "react"
 
 import { useTheme } from "@/shared/components/theme-provider"
@@ -111,8 +111,19 @@ export function AdminSidebar({
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
   const isActive = (href: string) => pathname.startsWith(href)
 
+  // 활성 그룹은 기본 열림, 나머지는 닫힘
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      NAV_GROUPS.map((g) => [g.label, g.items.some((i) => pathname.startsWith(i.href))])
+    )
+  )
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
+  }
+
   return (
-    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col border-r border-[#E5DDD0] bg-[#FAF6F0] dark:border-[#3A3229] dark:bg-[#2B2520] md:flex">
+    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col border-r border-[#E5DDD0] bg-[#F5EDE0] dark:border-[#3A3229] dark:bg-[#221E1A] md:flex">
       {/* 로고 */}
       <div className="flex items-center gap-2.5 border-b border-[#E5DDD0] px-5 py-4 dark:border-[#3A3229]">
         <Image src={SITE.logo} alt={SITE.name} width={28} height={28} className="size-7 rounded-full" />
@@ -122,7 +133,7 @@ export function AdminSidebar({
       </div>
 
       {/* 관리자 프로필 */}
-      <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] px-4 py-3 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
+      <div className="border-b border-[#E5DDD0] px-4 py-3 dark:border-[#3A3229]">
         <div className="flex items-center gap-3">
           <div className="relative size-9 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
             {adminAvatarUrl ? (
@@ -152,42 +163,57 @@ export function AdminSidebar({
               "flex items-center rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors",
               pathname === "/admin"
                 ? "bg-primary/10 text-primary"
-                : "text-[#2C2C2A] hover:bg-[#FAF3E8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.04)]"
+                : "text-[#2C2C2A] hover:bg-[#EDE5D8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.07)]"
             )}
           >
             대시보드
           </Link>
         </div>
 
-        {/* 그룹별 메뉴 */}
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={group.label}>
-            {gi >= 0 && <div className="mx-3 my-1.5 h-px bg-[#E5DDD0] dark:bg-[#3A3229]" />}
-            <div className="px-3 py-1">
-              <p className="mb-1 px-3 text-[10px] font-semibold tracking-wider text-[#9B8F80]">
-                {group.label}
-              </p>
-              {group.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center rounded-lg px-3 py-2.5 text-[13px] transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary/10 font-medium text-primary"
-                      : "text-[#2C2C2A] hover:bg-[#FAF3E8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.04)]"
-                  )}
+        {/* 그룹별 드롭다운 메뉴 */}
+        {NAV_GROUPS.map((group, gi) => {
+          const isOpen = !!openGroups[group.label]
+          return (
+            <div key={group.label}>
+              {gi >= 0 && <div className="mx-3 my-1 h-px bg-[#E5DDD0] dark:bg-[#3A3229]" />}
+              <div className="px-3">
+                {/* 그룹 헤더 (클릭 시 토글) */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-[11px] font-semibold tracking-wider text-[#9B8F80] hover:bg-[#EDE5D8] dark:hover:bg-[rgba(255,212,161,0.07)] transition-colors"
                 >
-                  {item.label}
-                </Link>
-              ))}
+                  {group.label}
+                  <ChevronDown className={cn("size-3.5 transition-transform duration-200", isOpen && "rotate-180")} />
+                </button>
+
+                {/* 메뉴 아이템 */}
+                {isOpen && (
+                  <div className="pb-1 pt-0.5">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex items-center rounded-lg px-3 py-2 text-[13px] transition-colors",
+                          isActive(item.href)
+                            ? "bg-primary/10 font-medium text-primary"
+                            : "text-[#2C2C2A] hover:bg-[#EDE5D8] dark:text-[#F5EDE0] dark:hover:bg-[rgba(255,212,161,0.07)]"
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </nav>
 
       {/* 하단: 테마 토글 + 메인사이트 + 로그아웃 */}
-      <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-3 py-3 dark:border-[#3A3229] dark:bg-black/20">
+      <div className="border-t border-[#E5DDD0] px-3 py-3 dark:border-[#3A3229]">
         <div className="flex items-center justify-between px-2 pb-2">
           <span className="text-[11px] text-[#9B8F80]">테마</span>
           <AdminThemeToggle />
@@ -195,7 +221,7 @@ export function AdminSidebar({
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-medium text-[#5F5048] hover:bg-[#F0E8DC] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          className="flex items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-medium text-[#5F5048] hover:bg-[#EDE5D8] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.07)]"
         >
           <ExternalLink className="size-3.5" />
           메인사이트
