@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
 import { useState } from "react"
 
@@ -62,8 +62,8 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
     {
       label: "신청 관리",
       items: [
-        { label: "봉사 신청", href: "/admin/applications/volunteer" },
-        { label: "입양 신청", href: "/admin/applications/adoption" },
+        { label: "봉사 신청", href: "/admin/applications?type=volunteer" },
+        { label: "입양 신청", href: "/admin/applications?type=adoption" },
         { label: "후원 내역", href: "/admin/donations" },
       ],
     },
@@ -125,14 +125,28 @@ export function AdminSidebar({
   pendingCounts,
 }: AdminHeaderProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { resolvedTheme, setTheme } = useTheme()
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
-  const isActive = (href: string) => pathname.startsWith(href)
+  const isActive = (href: string) => {
+    const [path, query] = href.split("?")
+    if (!pathname.startsWith(path)) return false
+    if (!query) return true
+    // 모든 쿼리 파라미터가 현재 URL 과 일치해야 함
+    const target = new URLSearchParams(query)
+    for (const [k, v] of target.entries()) {
+      if (searchParams.get(k) !== v) return false
+    }
+    return true
+  }
 
   // 활성 그룹은 기본 열림
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
-      NAV_GROUPS.map((g) => [g.label, g.items.some((i) => pathname.startsWith(i.href))])
+      NAV_GROUPS.map((g) => [
+        g.label,
+        g.items.some((i) => pathname.startsWith(i.href.split("?")[0])),
+      ])
     )
   )
 
@@ -287,9 +301,19 @@ export function AdminMobileHeader({
   pendingCounts,
 }: AdminHeaderProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [mobileOpen, setMobileOpen] = useState(false)
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
-  const isActive = (href: string) => pathname.startsWith(href)
+  const isActive = (href: string) => {
+    const [path, query] = href.split("?")
+    if (!pathname.startsWith(path)) return false
+    if (!query) return true
+    const target = new URLSearchParams(query)
+    for (const [k, v] of target.entries()) {
+      if (searchParams.get(k) !== v) return false
+    }
+    return true
+  }
 
   return (
     <header className="border-b border-border bg-card md:hidden">
