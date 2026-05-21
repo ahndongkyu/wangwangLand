@@ -23,8 +23,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "왕왕랜드"
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/images/logo.png",
-    badge: payload.badge || "/images/logo.png",
+    icon: payload.icon || "/images/wangwang_logo.png",
+    badge: payload.badge || "/images/wangwang_logo.png",
     image: payload.image,
     data: { url: payload.url || "/" },
     tag: payload.tag, // 같은 tag 알림은 덮어쓰기
