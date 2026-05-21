@@ -3,18 +3,29 @@
 import { useTransition, useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, LogOut, Moon, Settings, Sun, User } from "lucide-react"
+import {
+  ChevronRight,
+  ClipboardList,
+  ExternalLink,
+  Heart,
+  LogOut,
+  Monitor,
+  Moon,
+  Settings,
+  Sun,
+  User,
+} from "lucide-react"
 import { signOut } from "../api/actions"
 import { useTheme } from "@/shared/components/theme-provider"
 import { UserName } from "@/shared/components/user-name"
+import { cn } from "@/shared/lib/utils"
 import type { Profile } from "../api/queries"
 
 export function UserMenu({ profile }: { profile: Profile }) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
-  const { resolvedTheme, setTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -54,68 +65,120 @@ export function UserMenu({ profile }: { profile: Profile }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+        <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-2xl border border-border bg-popover shadow-[0_16px_40px_rgba(40,30,20,0.18)]">
 
-          {/* ── 프로필 헤더 (마이페이지 링크) ── */}
+          {/* ── 프로필 헤더 (다크 그린) → 마이페이지 링크 ── */}
           <Link
             href="/my"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-secondary/60"
+            className="flex items-center gap-3 bg-[#2A3D2F] px-4 py-3.5 transition-colors hover:bg-[#1F2F23] dark:bg-[#1A2820] dark:hover:bg-[#0F1810]"
           >
-            <div className="relative size-9 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-muted">
+            <div className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/10">
               {profile.avatar_url ? (
                 <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
               ) : (
-                <User className="size-full p-1.5 text-muted-foreground" />
+                <User className="size-full p-2 text-white/70" />
               )}
             </div>
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <UserName nickname={profile.nickname} role={profile.role} showTier={false} />
+              <span className="text-[11px] text-[#9AB09E]">마이페이지 →</span>
             </div>
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/50" />
+            <ChevronRight className="size-4 shrink-0 text-[#9AB09E]" />
           </Link>
 
-          <div className="h-px bg-border" />
+          {/* ── 내 활동 ── */}
+          <div className="px-1.5 pt-2">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.8px] text-muted-foreground">
+              내 활동
+            </p>
+            <MenuItem
+              href="/my/applications"
+              icon={<ClipboardList className="size-4" />}
+              label="내 신청 내역"
+              onClose={() => setOpen(false)}
+            />
+            <MenuItem
+              href="/my/donations"
+              icon={<Heart className="size-4" />}
+              label="내 후원 내역"
+              onClose={() => setOpen(false)}
+            />
+            <MenuItem
+              href="/my/likes"
+              icon={<Heart className="size-4 fill-current" />}
+              label="관심 아이"
+              onClose={() => setOpen(false)}
+            />
+          </div>
 
-          {/* ── 운영진 전용: 어드민 진입 ── */}
+          {/* ── 운영진 전용 ── */}
           {isStaff && (
             <>
-              <div className="p-1.5">
-                <DropdownItem
+              <div className="mx-3 my-2 h-px bg-border" />
+              <div className="px-1.5">
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.8px] text-muted-foreground">
+                  운영진
+                </p>
+                <Link
                   href="/admin"
-                  icon={<Settings className="size-4" />}
-                  label="어드민 페이지"
-                  accent
-                  onClose={() => setOpen(false)}
-                />
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#2A3D2F] transition-colors hover:bg-[#DCEBDE] dark:text-[#9AB09E] dark:hover:bg-[#1A2820]"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#DCEBDE] text-[#2A3D2F] dark:bg-[#1A2820] dark:text-[#9AB09E]">
+                    <Settings className="size-4" />
+                  </span>
+                  <span className="flex-1">어드민 페이지</span>
+                  <span className="rounded-full bg-[#2A3D2F] px-1.5 py-0.5 text-[9px] font-bold tracking-[0.5px] text-white dark:bg-[#9AB09E] dark:text-[#1A2820]">
+                    STAFF
+                  </span>
+                  <ChevronRight className="size-3.5 text-muted-foreground/50" />
+                </Link>
               </div>
-              <div className="h-px bg-border" />
             </>
           )}
 
-          {/* ── 테마 토글 + 로그아웃 (한 블록) ── */}
-          <div className="space-y-0.5 p-1.5">
-            <button
-              type="button"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary"
+          <div className="mx-3 my-2 h-px bg-border" />
+
+          {/* ── 테마 (3-way 세그먼트) ── */}
+          <div className="px-3 pb-2">
+            <div className="flex items-center gap-3 py-1.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#FBF1CC] text-[#B89020] dark:bg-[rgba(234,191,73,0.18)] dark:text-[#EAB849]">
+                <Sun className="size-4" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-foreground">테마</span>
+              <div className="inline-flex rounded-full bg-secondary p-0.5 gap-0.5">
+                <ThemeSegBtn current={theme} value="light" onClick={setTheme} icon={<Sun className="size-3" />} />
+                <ThemeSegBtn current={theme} value="dark" onClick={setTheme} icon={<Moon className="size-3" />} />
+                <ThemeSegBtn current={theme} value="system" onClick={setTheme} icon={<Monitor className="size-3" />} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── 푸터 액션 그리드 (관리자 사이드바 스타일) ── */}
+          <div className="grid grid-cols-3 gap-1 border-t border-border bg-secondary/40 p-2">
+            <Link
+              href="/my"
+              onClick={() => setOpen(false)}
+              className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-secondary">
-                {isDark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
-              </span>
-              <span className="flex-1 text-left">{isDark ? "다크 모드" : "라이트 모드"}</span>
-              <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                전환
-              </span>
-            </button>
+              <ExternalLink className="size-4" />
+              마이페이지
+            </Link>
+            <Link
+              href="/my/likes"
+              onClick={() => setOpen(false)}
+              className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <Heart className="size-4" />
+              관심 아이
+            </Link>
             <button
               type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-destructive transition-colors hover:bg-destructive/10"
             >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-destructive/10">
-                <LogOut className="size-3.5" />
-              </span>
+              <LogOut className="size-4" />
               로그아웃
             </button>
           </div>
@@ -126,35 +189,58 @@ export function UserMenu({ profile }: { profile: Profile }) {
   )
 }
 
-function DropdownItem({
+function MenuItem({
   href,
   icon,
   label,
-  accent,
   onClose,
 }: {
   href: string
   icon: React.ReactNode
   label: string
-  accent?: boolean
   onClose: () => void
 }) {
   return (
     <Link
       href={href}
       onClick={onClose}
-      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-        accent
-          ? "font-medium text-primary hover:bg-primary/10"
-          : "text-foreground hover:bg-secondary"
-      }`}
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
     >
-      <span className={`flex size-7 shrink-0 items-center justify-center rounded-md ${
-        accent ? "bg-primary/10" : "bg-secondary"
-      }`}>
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         {icon}
       </span>
-      {label}
+      <span className="flex-1">{label}</span>
+      <ChevronRight className="size-3.5 text-muted-foreground/50" />
     </Link>
+  )
+}
+
+function ThemeSegBtn({
+  current,
+  value,
+  onClick,
+  icon,
+}: {
+  current: string | undefined
+  value: "light" | "dark" | "system"
+  onClick: (v: "light" | "dark" | "system") => void
+  icon: React.ReactNode
+}) {
+  const active = current === value
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      aria-label={value === "light" ? "라이트" : value === "dark" ? "다크" : "시스템"}
+      title={value === "light" ? "라이트" : value === "dark" ? "다크" : "시스템"}
+      className={cn(
+        "flex size-7 items-center justify-center rounded-full transition-all",
+        active
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      {icon}
+    </button>
   )
 }
