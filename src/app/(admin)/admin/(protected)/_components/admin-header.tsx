@@ -176,7 +176,12 @@ export function AdminSidebar({
               <button
                 type="button"
                 onClick={() => toggleGroup(group.label)}
-                className="flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[1px] text-[#5d7565] hover:text-[#7a9080] transition-colors"
+                className={cn(
+                  "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[1px] transition-colors",
+                  isOpen
+                    ? "text-[#9ab09e] hover:text-[#b5c7b8]"
+                    : "text-[#5d7565] hover:text-[#7a9080]"
+                )}
               >
                 {group.label}
                 <ChevronDown
@@ -187,9 +192,9 @@ export function AdminSidebar({
                 />
               </button>
 
-              {/* 메뉴 아이템 (들여쓰기 + 밝은 색) */}
+              {/* 메뉴 아이템 (좌측 세로선 + 들여쓰기 + 밝은 색) */}
               {isOpen && (
-                <div className="mt-1 ml-2">
+                <div className="mt-1 ml-3 border-l border-white/[0.08] pl-1.5">
                   {group.items.map((item) => (
                     <Link
                       key={item.href}
