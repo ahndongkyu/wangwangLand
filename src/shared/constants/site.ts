@@ -150,6 +150,7 @@ export const FOOTER_LINK_GROUPS: ReadonlyArray<{
     links: [
       { label: "입양 문의", href: "/adopt" },
       { label: "봉사 신청", href: "/volunteer" },
+      { label: "일정 바로가기", href: "/calendar" },
       { label: "후원하기", href: "/donate" },
     ],
   },
