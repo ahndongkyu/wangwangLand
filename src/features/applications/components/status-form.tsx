@@ -151,8 +151,8 @@ export function ApplicationStatusForm({
         {/* 처리 내용 */}
         <div className="space-y-4 p-5">
           {isRescheduleRequest && rescheduleInfo && rescheduleInfo.dates.length > 0 && (
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-muted-foreground">요청 날짜</p>
+            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-800/40 dark:bg-blue-950/20">
+              <p className="mb-1.5 text-xs font-semibold text-blue-800 dark:text-blue-300">요청 날짜</p>
               <div className="flex flex-wrap gap-1.5">
                 {rescheduleInfo.dates.map((date) => {
                   const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
@@ -168,9 +168,44 @@ export function ApplicationStatusForm({
                   희망 시간: <span className="font-medium text-foreground">{rescheduleInfo.time}</span>
                 </p>
               )}
-              <p className="mt-2 text-xs text-muted-foreground">
-                재처리 → 승인 선택 시 일정 확정, 다른 상태 선택 시 요청 거절됩니다.
-              </p>
+              {/* 승인 / 거절 빠른 버튼 */}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    const formData = new FormData()
+                    formData.set("status", "승인")
+                    formData.set("admin_note", adminNote)
+                    startTransition(async () => {
+                      const result = await updateVolunteerApplication(id, formData)
+                      if (result.error) { toast.error(`실패: ${result.error}`) }
+                      else { toast.success("일정변경 승인됐습니다"); router.refresh(); router.push("/admin/applications") }
+                    })
+                  }}
+                  className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {pending ? "처리 중..." : "일정변경 승인"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    const formData = new FormData()
+                    formData.set("status", "승인")
+                    formData.set("admin_note", adminNote)
+                    formData.set("reject_reschedule", "true")
+                    startTransition(async () => {
+                      const result = await updateVolunteerApplication(id, formData)
+                      if (result.error) { toast.error(`실패: ${result.error}`) }
+                      else { toast.success("일정변경 거절됐습니다"); router.refresh(); router.push("/admin/applications") }
+                    })
+                  }}
+                  className="rounded-lg border border-border bg-background px-4 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary disabled:opacity-50"
+                >
+                  거절
+                </button>
+              </div>
             </div>
           )}
 
@@ -192,10 +227,12 @@ export function ApplicationStatusForm({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 pt-1 text-[11px] text-muted-foreground/60">
-            <Lock className="size-3" />
-            변경이 필요하면 재처리 버튼을 눌러주세요
-          </div>
+          {!isRescheduleRequest && (
+            <div className="flex items-center gap-1.5 pt-1 text-[11px] text-muted-foreground/60">
+              <Lock className="size-3" />
+              변경이 필요하면 재처리 버튼을 눌러주세요
+            </div>
+          )}
         </div>
       </div>
     )

@@ -475,6 +475,7 @@ export async function updateVolunteerApplication(
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
+  const rejectReschedule = formData.get("reject_reschedule") === "true"
 
   // 일정 등록 필드 (Step 3 — 승인 시만 채워짐)
   const scheduledStartRaw = String(formData.get("scheduled_starts_at") ?? "").trim()
@@ -513,7 +514,7 @@ export async function updateVolunteerApplication(
   }
 
   // 일정변경요청 → 승인: available_dates/time을 reschedule로 덮어씌우고 이벤트 upsert
-  if (prev?.status === "일정변경요청" && status === "승인") {
+  if (prev?.status === "일정변경요청" && status === "승인" && !rejectReschedule) {
     const newDates = (prev.reschedule_dates as string[] | null) ?? prev.available_dates ?? []
     const newTime = (prev.reschedule_time as string | null) ?? prev.available_time ?? null
     await admin
@@ -540,6 +541,12 @@ export async function updateVolunteerApplication(
       prev.party_size ?? 1,
       newStartsAt,
     )
+  } else if (prev?.status === "일정변경요청" && status === "승인" && rejectReschedule) {
+    // 일정변경요청 거절 → reschedule 클리어, 원래 승인 상태 유지
+    await admin
+      .from("volunteer_applications")
+      .update({ reschedule_dates: null, reschedule_time: null })
+      .eq("id", id)
   } else if (status === "승인" && prev) {
     // 일반 승인 → 일정 등록 (폼에서 날짜가 입력된 경우에만)
     await upsertVolunteerEventForApplication(
@@ -597,7 +604,9 @@ export async function updateVolunteerApplication(
     // SMS 발송
     if (prev.phone) {
       let smsText: string | null = null
-      if (status === "승인" && prev.status === "일정변경요청") {
+      if (status === "승인" && prev.status === "일정변경요청" && rejectReschedule) {
+        smsText = buildRescheduleRejectedSmsText(prev.applicant_name ?? "")
+      } else if (status === "승인" && prev.status === "일정변경요청") {
         smsText = buildRescheduleSmsText(prev.applicant_name ?? "")
       } else if (status === "승인" && prev.status !== "일정변경요청") {
         smsText = buildVolunteerSmsText(prev.applicant_name ?? "", prev.available_dates ?? [])

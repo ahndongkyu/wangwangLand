@@ -148,6 +148,10 @@ export default async function VolunteerApplicationDetailPage({
                 </p>
               )}
             </div>
+          ) : app.status === "일정변경요청" ? (
+            <div className="mt-3 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-700/50 dark:bg-blue-950/30 dark:text-blue-300">
+              일정변경 요청이 접수됐어요. 아래에서 <span className="font-semibold">승인 또는 거절</span> 처리해주세요.
+            </div>
           ) : app.status !== "접수" ? (
             <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-300">
               이 신청은 이미 <span className="font-semibold">{app.status}</span> 처리되었어요.
