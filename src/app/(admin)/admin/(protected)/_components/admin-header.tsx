@@ -368,6 +368,27 @@ export function AdminMobileHeader({
                 </SheetClose>
               </div>
 
+              {/* 관리자 프로필 (상단) */}
+              <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] px-4 py-3.5 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
+                <div className="flex items-center gap-3">
+                  <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+                    {adminAvatarUrl ? (
+                      <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
+                    ) : (
+                      <User className="size-full p-2 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                      {ROLE_LABEL[adminRole] ?? adminRole}
+                    </span>
+                    <p className="truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                      {adminName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* 메뉴 (그룹 모두 펼친 상태, 토글 없음) */}
               <nav className="flex-1 overflow-y-auto py-2">
                 <div className="px-4 py-1">
@@ -414,28 +435,8 @@ export function AdminMobileHeader({
                 ))}
               </nav>
 
-              {/* 하단: 프로필 + 3열 액션 그리드 (PC 사이드바와 통일) */}
-              <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3.5 dark:border-[#3A3229] dark:bg-black/20">
-                {/* 프로필 */}
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
-                    {adminAvatarUrl ? (
-                      <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
-                    ) : (
-                      <User className="size-full p-2 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="inline-block rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
-                      {ROLE_LABEL[adminRole] ?? adminRole}
-                    </span>
-                    <p className="truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
-                      {adminName}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 액션 버튼 3열 그리드 */}
+              {/* 하단: 3열 액션 그리드 (PC 사이드바와 통일) */}
+              <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3 dark:border-[#3A3229] dark:bg-black/20">
                 <div className="grid grid-cols-3 gap-1">
                   <Link
                     href="/"
