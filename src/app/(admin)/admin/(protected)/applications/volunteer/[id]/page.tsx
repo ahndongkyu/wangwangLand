@@ -35,6 +35,7 @@ const STATUS_COLOR: Record<string, string> = {
   승인: "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
   반려: "bg-muted text-muted-foreground",
   취소: "bg-muted text-muted-foreground/60",
+  일정변경요청: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
 }
 
 const STATUS_HEADER_BG: Record<string, string> = {
@@ -43,6 +44,7 @@ const STATUS_HEADER_BG: Record<string, string> = {
   승인: "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/50 dark:bg-emerald-950/20",
   반려: "border-border bg-muted/30",
   취소: "border-border bg-muted/20",
+  일정변경요청: "border-blue-300 bg-blue-50/60 dark:border-blue-700/50 dark:bg-blue-950/20",
 }
 
 export default async function VolunteerApplicationDetailPage({
@@ -349,9 +351,18 @@ export default async function VolunteerApplicationDetailPage({
         applicantName={app.applicant_name}
         linkedEventCount={linkedEvents.length}
         hint={{
-          availableDates: app.available_dates,
-          availableTime: app.available_time,
+          availableDates: app.status === "일정변경요청" && app.reschedule_dates?.length
+            ? app.reschedule_dates
+            : app.available_dates,
+          availableTime: app.status === "일정변경요청" && app.reschedule_time
+            ? app.reschedule_time
+            : app.available_time,
         }}
+        rescheduleInfo={
+          app.status === "일정변경요청" && app.reschedule_dates?.length
+            ? { dates: app.reschedule_dates, time: app.reschedule_time ?? null }
+            : undefined
+        }
       />
     </div>
   )

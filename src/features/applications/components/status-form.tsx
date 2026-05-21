@@ -40,15 +40,18 @@ interface Props {
   }
   /** 등록된 캘린더 일정 수 (뷰모드에서 표시용) */
   linkedEventCount?: number
+  /** 일정변경요청 상태일 때 신청자가 요청한 날짜/시간 */
+  rescheduleInfo?: { dates: string[]; time: string | null }
 }
 
 /** 처리 완료 상태 — 기본 뷰모드로 시작 */
-const PROCESSED_STATUSES: ApplicationStatus[] = ["승인", "반려", "취소"]
+const PROCESSED_STATUSES: ApplicationStatus[] = ["승인", "반려", "취소", "일정변경요청"]
 
 const STATUS_VIEW_LABEL: Record<string, { icon: string; className: string }> = {
   승인: { icon: "✓", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   반려: { icon: "✕", className: "bg-muted text-muted-foreground" },
   취소: { icon: "✕", className: "bg-muted text-muted-foreground/70" },
+  일정변경요청: { icon: "🗓️", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
 }
 
 export function ApplicationStatusForm({
@@ -59,6 +62,7 @@ export function ApplicationStatusForm({
   applicantName,
   hint,
   linkedEventCount = 0,
+  rescheduleInfo,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -123,13 +127,15 @@ export function ApplicationStatusForm({
   // ── 뷰모드 (처리 완료 상태) ───────────────────────────
   if (isViewMode) {
     const viewInfo = STATUS_VIEW_LABEL[currentStatus]
+    const isRescheduleRequest = currentStatus === "일정변경요청"
+    const headerLabel = isRescheduleRequest ? "일정변경 요청 중" : `${currentStatus} 처리 완료`
     return (
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* 헤더 */}
         <div className="flex items-center justify-between border-b border-border bg-secondary/20 px-5 py-3">
           <div className="flex items-center gap-2">
             <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold", viewInfo?.className)}>
-              {viewInfo?.icon} {currentStatus} 처리 완료
+              {viewInfo?.icon} {headerLabel}
             </span>
           </div>
           <button
@@ -144,6 +150,30 @@ export function ApplicationStatusForm({
 
         {/* 처리 내용 */}
         <div className="space-y-4 p-5">
+          {isRescheduleRequest && rescheduleInfo && rescheduleInfo.dates.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-muted-foreground">요청 날짜</p>
+              <div className="flex flex-wrap gap-1.5">
+                {rescheduleInfo.dates.map((date) => {
+                  const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
+                  return (
+                    <span key={date} className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      {date.slice(5).replace("-", "/")} ({wd})
+                    </span>
+                  )
+                })}
+              </div>
+              {rescheduleInfo.time && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  희망 시간: <span className="font-medium text-foreground">{rescheduleInfo.time}</span>
+                </p>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                재처리 → 승인 선택 시 일정 확정, 다른 상태 선택 시 요청 거절됩니다.
+              </p>
+            </div>
+          )}
+
           {currentNote ? (
             <div>
               <p className="mb-1.5 text-xs font-semibold text-muted-foreground">운영진 메모</p>

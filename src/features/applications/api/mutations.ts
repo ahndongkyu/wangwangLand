@@ -372,16 +372,23 @@ export async function updateAdoptionApplication(
       console.error("[push adoption-status]", e)
     }
 
-    // SMS 발송 (승인 시만)
-    if (status === "승인" && prev.phone) {
-      try {
-        const { sendSms } = await import("@/features/sms")
-        await sendSms(
-          prev.phone,
-          buildAdoptionSmsText(prev.applicant_name ?? "")
-        )
-      } catch (e) {
-        console.error("[sms adoption-status]", e)
+    // SMS 발송
+    if (prev.phone) {
+      let smsText: string | null = null
+      if (status === "승인") {
+        smsText = buildAdoptionSmsText(prev.applicant_name ?? "")
+      } else if (status === "검토중" && prev.status !== "검토중") {
+        smsText = buildReviewSmsText(prev.applicant_name ?? "", "입양")
+      } else if (status === "취소" && prev.status !== "취소") {
+        smsText = buildCancelSmsText(prev.applicant_name ?? "", "입양")
+      }
+      if (smsText) {
+        try {
+          const { sendSms } = await import("@/features/sms")
+          await sendSms(prev.phone, smsText)
+        } catch (e) {
+          console.error("[sms adoption-status]", e)
+        }
       }
     }
   }
@@ -430,6 +437,22 @@ function buildAdoptionSmsText(applicantName: string): string {
   return `왕왕랜드\n${applicantName}님, 입양 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
 }
 
+function buildReviewSmsText(applicantName: string, kind: "입양" | "봉사"): string {
+  return `왕왕랜드\n${applicantName}님, ${kind} 신청이 검토중이에요.\n운영진 상의 후 연락드릴게요.`
+}
+
+function buildCancelSmsText(applicantName: string, kind: "입양" | "봉사"): string {
+  return `왕왕랜드\n${applicantName}님, ${kind} 신청이 취소되었어요.\n사유는 홈페이지에서 확인해주세요.`
+}
+
+function buildRescheduleSmsText(applicantName: string): string {
+  return `왕왕랜드\n${applicantName}님, 봉사 일정이 변경됐어요.\n신청내역에서 안내사항 확인해주세요.`
+}
+
+function buildRescheduleRejectedSmsText(applicantName: string): string {
+  return `왕왕랜드\n${applicantName}님, 봉사 일정변경 요청이 거절됐어요.\n신청내역에서 확인해주세요.`
+}
+
 function notificationTypeForStatus(status: ApplicationStatus): string {
   switch (status) {
     case "승인":
@@ -468,7 +491,7 @@ export async function updateVolunteerApplication(
   const { data: prev } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status, phone"
+      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time"
     )
     .eq("id", id)
     .maybeSingle()
@@ -489,14 +512,50 @@ export async function updateVolunteerApplication(
     return { error: error.message }
   }
 
-  // 승인 → 일정 등록 (폼에서 날짜가 입력된 경우에만)
-  if (status === "승인" && prev) {
+  // 일정변경요청 → 승인: available_dates/time을 reschedule로 덮어씌우고 이벤트 upsert
+  if (prev?.status === "일정변경요청" && status === "승인") {
+    const newDates = (prev.reschedule_dates as string[] | null) ?? prev.available_dates ?? []
+    const newTime = (prev.reschedule_time as string | null) ?? prev.available_time ?? null
+    await admin
+      .from("volunteer_applications")
+      .update({
+        available_dates: newDates,
+        available_time: newTime,
+        reschedule_dates: null,
+        reschedule_time: null,
+      })
+      .eq("id", id)
+    // 기존 이벤트 삭제 후 새로 upsert
+    await admin
+      .from("events")
+      .delete()
+      .eq("source_application_type", "volunteer")
+      .eq("source_application_id", id)
+    const newStartsAt = newDates[0]
+      ? localKstToIso(`${newDates[0]}T${newTime ?? "10:00"}`)
+      : null
+    await upsertVolunteerEventForApplication(
+      id,
+      prev.applicant_name ?? "",
+      prev.party_size ?? 1,
+      newStartsAt,
+    )
+  } else if (status === "승인" && prev) {
+    // 일반 승인 → 일정 등록 (폼에서 날짜가 입력된 경우에만)
     await upsertVolunteerEventForApplication(
       id,
       prev.applicant_name ?? "",
       prev.party_size ?? 1,
       scheduledStart,
     )
+  }
+
+  // 일정변경요청 → 거절(승인 외): reschedule 클리어
+  if (prev?.status === "일정변경요청" && status !== "승인") {
+    await admin
+      .from("volunteer_applications")
+      .update({ reschedule_dates: null, reschedule_time: null })
+      .eq("id", id)
   }
 
   // 취소·반려 → 연결 캘린더 이벤트 삭제
@@ -535,16 +594,27 @@ export async function updateVolunteerApplication(
       console.error("[push volunteer-status]", e)
     }
 
-    // SMS 발송 (승인 시만)
-    if (status === "승인" && prev.phone) {
-      try {
-        const { sendSms } = await import("@/features/sms")
-        await sendSms(
-          prev.phone,
-          buildVolunteerSmsText(prev.applicant_name ?? "", prev.available_dates ?? [])
-        )
-      } catch (e) {
-        console.error("[sms volunteer-status]", e)
+    // SMS 발송
+    if (prev.phone) {
+      let smsText: string | null = null
+      if (status === "승인" && prev.status === "일정변경요청") {
+        smsText = buildRescheduleSmsText(prev.applicant_name ?? "")
+      } else if (status === "승인" && prev.status !== "일정변경요청") {
+        smsText = buildVolunteerSmsText(prev.applicant_name ?? "", prev.available_dates ?? [])
+      } else if (prev.status === "일정변경요청" && status !== "승인") {
+        smsText = buildRescheduleRejectedSmsText(prev.applicant_name ?? "")
+      } else if (status === "검토중" && prev.status !== "검토중") {
+        smsText = buildReviewSmsText(prev.applicant_name ?? "", "봉사")
+      } else if (status === "취소" && prev.status !== "취소") {
+        smsText = buildCancelSmsText(prev.applicant_name ?? "", "봉사")
+      }
+      if (smsText) {
+        try {
+          const { sendSms } = await import("@/features/sms")
+          await sendSms(prev.phone, smsText)
+        } catch (e) {
+          console.error("[sms volunteer-status]", e)
+        }
       }
     }
   }
@@ -660,6 +730,82 @@ export async function cancelOwnVolunteerApplication(
   revalidatePath("/calendar")
   revalidatePath("/admin/applications")
   revalidatePath("/admin/calendar")
+  return { id }
+}
+
+/**
+ * 승인된 봉사 신청자가 일정변경을 요청.
+ * - status → "일정변경요청", reschedule_dates / reschedule_time 저장
+ * - 운영진에게 푸시 알림 발송
+ */
+export async function requestReschedule(
+  id: string,
+  formData: FormData
+): Promise<SubmitResult> {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const admin = createAdminClient()
+
+  const { data: prev } = await admin
+    .from("volunteer_applications")
+    .select("id, created_by, status, applicant_name")
+    .eq("id", id)
+    .maybeSingle()
+
+  if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
+  if (prev.created_by !== user.id) return { error: "본인 신청만 변경 요청할 수 있습니다." }
+  if (prev.status !== "승인" && prev.status !== "일정변경요청") {
+    return { error: "승인된 신청만 일정변경 요청할 수 있습니다." }
+  }
+
+  const datesRaw = String(formData.get("available_dates") ?? "").trim()
+  const time = String(formData.get("available_time") ?? "").trim() || null
+
+  let dates: string[]
+  try {
+    dates = JSON.parse(datesRaw)
+    if (!Array.isArray(dates)) throw new Error()
+  } catch {
+    return { error: "날짜 형식이 올바르지 않습니다." }
+  }
+
+  if (dates.length === 0) return { error: "봉사 가능 날짜를 1개 이상 선택해주세요." }
+
+  const { error } = await admin
+    .from("volunteer_applications")
+    .update({
+      status: "일정변경요청",
+      reschedule_dates: dates,
+      reschedule_time: time,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+
+  if (error) {
+    console.error("[requestReschedule]", error)
+    return { error: error.message }
+  }
+
+  // 운영진에게 푸시 알림
+  try {
+    const { sendPushToStaff } = await import("@/features/push")
+    await sendPushToStaff(
+      {
+        title: "🗓️ 봉사 일정변경 요청",
+        body: `${prev.applicant_name}님이 일정변경을 요청했어요.`,
+        url: `/admin/applications/volunteer/${id}`,
+        tag: `volunteer-reschedule-${id}`,
+      },
+      user.id
+    )
+  } catch (e) {
+    console.error("[push reschedule]", e)
+  }
+
+  revalidatePath("/my/applications")
   return { id }
 }
 

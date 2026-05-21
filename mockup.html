@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>신청 관리 목업</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f4f0; color: #1a1a1a; font-size: 14px; }
+
+  /* NAV */
+  .nav { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 24px; display: flex; align-items: center; gap: 8px; height: 52px; }
+  .nav-logo { font-weight: 800; font-size: 15px; color: #c97d46; }
+  .nav-sep { color: #ddd; }
+  .nav-item { font-size: 13px; color: #666; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+  .nav-item.active { background: #f5ede3; color: #c97d46; font-weight: 600; }
+
+  /* LAYOUT */
+  .layout { display: flex; gap: 0; }
+  .sidebar { width: 200px; background: #fff; border-right: 1px solid #e5e5e5; min-height: calc(100vh - 52px); padding: 16px 12px; flex-shrink: 0; }
+  .sidebar-item { padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #555; cursor: pointer; display: flex; align-items: center; gap-8px; margin-bottom: 2px; }
+  .sidebar-item.active { background: #f5ede3; color: #c97d46; font-weight: 600; }
+  .sidebar-badge { background: #c97d46; color: #fff; border-radius: 99px; font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: auto; }
+  .main { flex: 1; padding: 32px 24px; overflow: auto; }
+
+  /* PAGE SECTIONS */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h1 { font-size: 22px; font-weight: 700; }
+  h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .sub { font-size: 12px; color: #888; margin-top: 4px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid #e5e5e5; margin-bottom: 16px; }
+  .tab { padding: 8px 16px; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; position: relative; }
+  .tab.active { color: #c97d46; }
+  .tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #c97d46; }
+
+  /* FILTERS */
+  .filters { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-chip { padding: 4px 12px; border-radius: 99px; border: 1px solid #e5e5e5; background: #fff; font-size: 12px; cursor: pointer; }
+  .filter-chip.active { background: #c97d46; color: #fff; border-color: #c97d46; }
+
+  /* TABLE */
+  .table-wrap { background: #fff; border-radius: 10px; border: 1px solid #e5e5e5; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: #fafafa; border-bottom: 1px solid #e5e5e5; }
+  th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: #666; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .row-접수 td:first-child { border-left: 3px solid #c97d46; }
+  .row-검토중 td:first-child { border-left: 3px solid #f59e0b; }
+  .row-승인 td:first-child { border-left: 3px solid #10b981; }
+  .row-반려 td:first-child { border-left: 3px solid #ccc; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-접수 { background: rgba(201,125,70,.15); color: #c97d46; }
+  .badge-검토중 { background: rgba(245,158,11,.15); color: #d97706; }
+  .badge-승인 { background: rgba(16,185,129,.15); color: #059669; }
+  .badge-반려 { background: #f0f0f0; color: #888; }
+  .link { color: #c97d46; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+  .link:hover { text-decoration: underline; }
+
+  /* DETAIL PAGE */
+  .back-link { font-size: 13px; color: #888; cursor: pointer; margin-bottom: 0; }
+  .back-link:hover { color: #333; }
+
+  .header-band { border-radius: 12px; border: 1px solid; padding: 20px; margin-bottom: 20px; }
+  .header-band-접수 { border-color: rgba(201,125,70,.3); background: rgba(201,125,70,.05); }
+  .header-band-검토중 { border-color: rgba(245,158,11,.3); background: rgba(245,158,11,.05); }
+  .header-band-승인 { border-color: rgba(16,185,129,.3); background: rgba(16,185,129,.05); }
+  .header-band-반려 { border-color: #e5e5e5; background: #f8f8f8; }
+
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header-title { display: flex; align-items: center; gap: 8px; }
+  .header-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .meta-chip { padding: 2px 8px; border-radius: 99px; background: rgba(0,0,0,.06); font-size: 11px; color: #555; }
+  .contact-btns { display: flex; gap: 6px; }
+  .contact-btn { padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; background: #fff; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+  /* SECTIONS GRID */
+  .sections-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 16px; }
+  .card h3 { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 10px; }
+  .row-item { display: flex; gap: 12px; margin-bottom: 8px; font-size: 13px; }
+  .row-label { width: 80px; flex-shrink: 0; font-size: 11px; color: #888; padding-top: 1px; }
+  .row-val { font-weight: 500; }
+
+  /* PROCESS SECTION */
+  .process-section { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .process-header { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  .process-title { font-size: 14px; font-weight: 700; }
+  .process-body { padding: 16px; }
+
+  /* STATUS RADIO GROUP */
+  .status-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+  .status-opt { padding: 8px 4px; border: 1px solid #e5e5e5; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 600; cursor: pointer; background: #fafafa; color: #666; }
+  .status-opt.selected { background: #c97d46; color: #fff; border-color: #c97d46; }
+  .status-opt.disabled { opacity: .4; cursor: default; }
+
+  .memo-area { width: 100%; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px; font-size: 13px; resize: none; font-family: inherit; background: #fafafa; color: #555; min-height: 80px; }
+
+  /* VIEW MODE — 처리완료 */
+  .view-mode-box { background: #f8f8f8; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .view-mode-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+  .view-mode-body { padding: 16px; }
+  .view-row { display: flex; gap: 12px; margin-bottom: 10px; font-size: 13px; }
+  .view-label { width: 80px; flex-shrink: 0; font-size: 11px; color: #888; padding-top: 2px; }
+  .processed-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .processed-승인 { background: rgba(16,185,129,.12); color: #059669; }
+
+  .btn { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-primary { background: #c97d46; color: #fff; }
+  .btn-outline { background: #fff; border: 1px solid #e5e5e5; color: #555; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-ghost { background: transparent; color: #c97d46; font-size: 12px; border: 1px solid rgba(201,125,70,.3); padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+
+  .divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
+
+  /* LOCKED OVERLAY hint */
+  .locked-hint { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #aaa; }
+  .lock-icon { font-size: 12px; }
+
+  /* STEP INDICATOR */
+  .steps { display: flex; align-items: center; gap: 0; margin-bottom: 14px; }
+  .step { display: flex; align-items: center; gap: 6px; }
+  .step-num { width: 22px; height: 22px; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .step-num.done { background: rgba(201,125,70,.2); color: #c97d46; }
+  .step-num.active { background: #c97d46; color: #fff; }
+  .step-num.todo { background: #f0f0f0; color: #aaa; }
+  .step-label { font-size: 11px; font-weight: 500; color: #555; }
+  .step-arrow { color: #ccc; margin: 0 8px; font-size: 12px; }
+
+  /* PAGE TOGGLE */
+  .page-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
+  .page-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; color: #888; }
+  .page-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+
+  .notice-banner { background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; margin-bottom: 12px; }
+
+  .col-span-2 { grid-column: span 2; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <span class="nav-logo">왕왕랜드</span>
+  <span class="nav-sep">|</span>
+  <span class="nav-item">대시보드</span>
+  <span class="nav-item active">신청 관리</span>
+  <span class="nav-item">캘린더</span>
+  <span class="nav-item">회원</span>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-item" style="font-size:11px;color:#aaa;font-weight:600;padding:4px 12px;margin-bottom:6px;">신청 관리</div>
+    <div class="sidebar-item active" onclick="showPage('list')">
+      봉사 신청
+      <span class="sidebar-badge">3</span>
+    </div>
+    <div class="sidebar-item" onclick="showPage('list')">입양 신청</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PAGE TOGGLE (mockup nav) -->
+    <div class="page-toggle">
+      <button class="page-btn active" onclick="switchPage('list', this)">① 목록 페이지</button>
+      <button class="page-btn" onclick="switchPage('detail-pending', this)">② 상세 (접수중)</button>
+      <button class="page-btn" onclick="switchPage('detail-approved', this)">③ 상세 (승인완료)</button>
+    </div>
+
+    <!-- ====== PAGE 1: LIST ====== -->
+    <div class="page active" id="page-list">
+      <div style="margin-bottom:20px;">
+        <h1>신청 관리</h1>
+        <p class="sub">입양·봉사 신청의 상태를 변경하고 운영 메모를 기록할 수 있습니다.</p>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">봉사 신청</div>
+        <div class="tab">입양 신청</div>
+      </div>
+
+      <div class="filters">
+        <span class="filter-chip active">전체</span>
+        <span class="filter-chip" style="background:rgba(201,125,70,.1);border-color:rgba(201,125,70,.3);color:#c97d46;">접수 <strong>3</strong></span>
+        <span class="filter-chip">검토중</span>
+        <span class="filter-chip">승인</span>
+        <span class="filter-chip">반려</span>
+        <span class="filter-chip">취소</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>신청자</th>
+              <th>인원</th>
+              <th>연락처</th>
+              <th>상태</th>
+              <th>신청일</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-접수" onclick="switchPage('detail-pending', document.querySelectorAll('.page-btn')[1])" style="cursor:pointer;">
+              <td><strong>김민지</strong></td>
+              <td>1명</td>
+              <td>010-1234-5678</td>
+              <td><span class="badge badge-접수">접수</span></td>
+              <td style="color:#888;font-size:12px;">2026.05.18</td>
+              <td><a class="link">처리하기 →</a></td>
+            </tr>
+            <tr class="row-접수" style="cursor:pointer;">
+              <td><strong>박지훈</strong></td>
+              <td>3명</td>
+              <td>010-9876-5432</td>
+              <td><span class="badge badge-접수">접수</span></td>
+              <td style="color:#888;font-size:12px;">2026.05.17</td>
+              <td><a class="link">처리하기 →</a></td>
+            </tr>
+            <tr class="row-검토중" style="cursor:pointer;">
+              <td><strong>이수현</strong></td>
+              <td>1명</td>
+              <td>010-5555-1234</td>
+              <td><span class="badge badge-검토중">검토중</span></td>
+              <td style="color:#888;font-size:12px;">2026.05.16</td>
+              <td><a class="link">처리하기 →</a></td>
+            </tr>
+            <tr class="row-승인" style="cursor:pointer;opacity:.6;" onclick="switchPage('detail-approved', document.querySelectorAll('.page-btn')[2])">
+              <td><strong>최영수</strong></td>
+              <td>2명</td>
+              <td>010-3333-9999</td>
+              <td><span class="badge badge-승인">승인</span></td>
+              <td style="color:#888;font-size:12px;">2026.05.14</td>
+              <td><a class="link" style="color:#aaa;">보기 →</a></td>
+            </tr>
+            <tr class="row-반려" style="cursor:pointer;opacity:.5;">
+              <td><strong>정민호</strong></td>
+              <td>1명</td>
+              <td>010-7777-2222</td>
+              <td><span class="badge badge-반려">반려</span></td>
+              <td style="color:#888;font-size:12px;">2026.05.10</td>
+              <td><a class="link" style="color:#aaa;">보기 →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:12px;font-size:12px;color:#aaa;">
+        💡 <strong style="color:#c97d46;">접수·검토중</strong> 상태는 처리가 필요해요. 승인·반려는 처리 완료 내역입니다.
+      </p>
+    </div>
+
+    <!-- ====== PAGE 2: DETAIL (접수 — 처리 모드) ====== -->
+    <div class="page" id="page-detail-pending">
+      <div class="header-band header-band-접수">
+        <div style="margin-bottom:12px;">
+          <span class="back-link" onclick="switchPage('list', document.querySelectorAll('.page-btn')[0])">← 신청 목록</span>
+        </div>
+        <div class="header-top">
+          <div>
+            <div class="header-title">
+              <h1 style="font-size:20px;">봉사 신청 상세</h1>
+              <span class="badge badge-접수">접수</span>
+            </div>
+            <div class="header-meta">
+              <span class="meta-chip">2026.05.18 14:32 제출</span>
+              <span class="meta-chip" style="background:rgba(201,125,70,.12);color:#c97d46;">회원</span>
+              <span class="meta-chip">개인</span>
+            </div>
+          </div>
+          <div class="contact-btns">
+            <button class="contact-btn">📞 전화</button>
+            <button class="contact-btn">💬 문자</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 신청 정보 (read-only) -->
+      <div class="sections-grid" style="margin-bottom:16px;">
+        <div class="card">
+          <h3>신청자 정보</h3>
+          <div class="row-item"><span class="row-label">이름</span><span class="row-val">김민지</span></div>
+          <div class="row-item"><span class="row-label">연락처</span><span class="row-val" style="color:#c97d46;">010-1234-5678</span></div>
+          <div class="row-item"><span class="row-label">인원수</span><span class="row-val">1명</span></div>
+        </div>
+        <div class="card">
+          <h3>가능 일정</h3>
+          <div class="row-item"><span class="row-label">가능 날짜</span><span class="row-val">05/20 (화), 05/21 (수)</span></div>
+          <div class="row-item"><span class="row-label">시간대</span><span class="row-val">오전</span></div>
+        </div>
+        <div class="card col-span-2">
+          <h3>희망 활동</h3>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="background:rgba(201,125,70,.1);color:#c97d46;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;">산책</span>
+            <span style="background:rgba(201,125,70,.1);color:#c97d46;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;">청소·정리</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 처리 섹션 (활성화) -->
+      <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="margin:0;">처리</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num active">1</div>
+            <span class="step-label">상태 선택</span>
+          </div>
+          <span class="step-arrow">›</span>
+          <div class="step">
+            <div class="step-num todo">2</div>
+            <span class="step-label">메모 작성</span>
+          </div>
+          <span class="step-arrow">›</span>
+          <div class="step">
+            <div class="step-num todo">3</div>
+            <span class="step-label">일정 등록</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="process-section">
+        <div class="process-body">
+          <div style="margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:8px;">처리 상태 선택</div>
+            <div class="status-grid">
+              <div class="status-opt">접수</div>
+              <div class="status-opt">검토중</div>
+              <div class="status-opt selected">승인</div>
+              <div class="status-opt">반려</div>
+              <div class="status-opt">취소</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px;">운영진 메모</div>
+            <textarea class="memo-area" readonly>안녕하세요! 봉사 신청해주셔서 정말 감사해요 🐾
+야외 견사라 아래 내용 참고해서 편하게 오세요!
+
+• 헌옷 + 헌 신발 + 목장갑 챙겨오시면 좋아요</textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px;gap:8px;">
+            <button class="btn btn-outline">삭제</button>
+            <button class="btn btn-primary">저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PAGE 3: DETAIL (승인완료 — 뷰 모드) ====== -->
+    <div class="page" id="page-detail-approved">
+      <div class="header-band header-band-승인">
+        <div style="margin-bottom:12px;">
+          <span class="back-link" onclick="switchPage('list', document.querySelectorAll('.page-btn')[0])">← 신청 목록</span>
+        </div>
+        <div class="header-top">
+          <div>
+            <div class="header-title">
+              <h1 style="font-size:20px;">봉사 신청 상세</h1>
+              <span class="badge badge-승인">승인</span>
+            </div>
+            <div class="header-meta">
+              <span class="meta-chip">2026.05.14 09:15 제출</span>
+              <span class="meta-chip" style="background:rgba(201,125,70,.12);color:#c97d46;">회원</span>
+              <span class="meta-chip">단체 (2명)</span>
+            </div>
+          </div>
+          <div class="contact-btns">
+            <button class="contact-btn">📞 전화</button>
+            <button class="contact-btn">💬 문자</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 신청 정보 -->
+      <div class="sections-grid" style="margin-bottom:16px;">
+        <div class="card">
+          <h3>신청자 정보</h3>
+          <div class="row-item"><span class="row-label">이름</span><span class="row-val">최영수</span></div>
+          <div class="row-item"><span class="row-label">연락처</span><span class="row-val" style="color:#c97d46;">010-3333-9999</span></div>
+          <div class="row-item"><span class="row-label">인원수</span><span class="row-val">2명 (단체)</span></div>
+        </div>
+        <div class="card">
+          <h3>가능 일정</h3>
+          <div class="row-item"><span class="row-label">가능 날짜</span><span class="row-val">05/15 (목)</span></div>
+          <div class="row-item"><span class="row-label">시간대</span><span class="row-val">오후</span></div>
+        </div>
+        <div class="card col-span-2">
+          <h3>희망 활동</h3>
+          <div style="display:flex;gap:6px;">
+            <span style="background:rgba(16,185,129,.1);color:#059669;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;">산책</span>
+            <span style="background:rgba(16,185,129,.1);color:#059669;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;">홍보·촬영</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 처리 결과 (뷰 모드) -->
+      <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="margin:0;">처리 내역</h2>
+        <button class="btn-ghost">✏️ 재처리</button>
+      </div>
+
+      <div class="view-mode-box">
+        <div class="view-mode-header">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="processed-badge processed-승인">✓ 승인 완료</span>
+            <span style="font-size:12px;color:#888;">2026.05.14 · 운영진 처리</span>
+          </div>
+          <span class="locked-hint"><span class="lock-icon">🔒</span> 수정하려면 재처리 버튼을 눌러주세요</span>
+        </div>
+        <div class="view-mode-body">
+          <div class="view-row">
+            <span class="view-label">운영진 메모</span>
+            <span style="font-size:13px;color:#444;line-height:1.6;">안녕하세요! 봉사 신청해주셔서 감사해요 🐾<br>헌옷·장화·목장갑 챙겨오시면 좋아요.</span>
+          </div>
+          <div class="divider"></div>
+          <div class="view-row">
+            <span class="view-label">등록 일정</span>
+            <span style="font-size:13px;color:#444;">봉사 – 최영수 (2명) · 2026.05.15 13:00 ~ 16:00</span>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:10px;font-size:11px;color:#aaa;text-align:right;">
+        🔒 처리 완료된 신청입니다. 변경이 필요하면 <strong>재처리</strong> 버튼을 이용하세요.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+}
+function switchPage(id, btn) {
+  showPage(id);
+  document.querySelectorAll('.page-btn').forEach(b => b.classList.remove('active'));
+  btn?.classList.add('active');
+}
+</script>
+</body>
+</html>

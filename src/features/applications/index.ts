@@ -12,6 +12,7 @@ export {
   cancelOwnAdoptionApplication,
   cancelOwnVolunteerApplication,
   updateMyVolunteerApplication,
+  requestReschedule,
 } from "./api/mutations"
 export {
   listAdoptionApplications,

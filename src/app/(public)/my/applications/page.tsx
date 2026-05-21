@@ -24,6 +24,8 @@ function statusBadgeClass(status: ApplicationStatus) {
       return "bg-muted text-muted-foreground"
     case "취소":
       return "bg-muted text-muted-foreground/60"
+    case "일정변경요청":
+      return "bg-blue-500/20 text-blue-700 dark:text-blue-400"
   }
 }
 
@@ -67,7 +69,7 @@ export default async function MyApplicationsPage() {
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, activities")
+      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, activities, reschedule_dates, reschedule_time")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
   ])
@@ -91,6 +93,8 @@ export default async function MyApplicationsPage() {
     available_days: string[]
     available_dates: string[]
     activities: string[]
+    reschedule_dates: string[] | null
+    reschedule_time: string | null
   }>
 
   const activeVolunteers = volunteers.filter((v) => v.status !== "취소")
@@ -161,7 +165,9 @@ export default async function MyApplicationsPage() {
                   const isPast = allDatesPast(v.available_dates)
                   const hasCert = !!certificationByAppId[v.id]
                   const showCertBtn = v.status === "승인" && hasPastVolunteerDate(v.available_dates)
-                  const canEdit = v.status !== "반려" && v.status !== "취소" && !isPast
+                  const canRequestEdit = v.status !== "반려" && v.status !== "취소" && !isPast
+                  const isRescheduleMode = v.status === "승인" || v.status === "일정변경요청"
+                  const editBtnLabel = isRescheduleMode ? "일정변경 요청" : "일정 변경"
 
                   return (
                     <details key={v.id} className="group overflow-hidden rounded-lg border border-border bg-card">
@@ -239,21 +245,23 @@ export default async function MyApplicationsPage() {
                             )}
                           </div>
 
-                          {/* 일정 변경 */}
-                          {v.status !== "반려" && v.status !== "승인" && (
-                            canEdit ? (
-                              <Link
-                                href={`/my/applications/volunteer/${v.id}/edit`}
-                                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
-                              >
-                                일정 변경
-                              </Link>
-                            ) : (
-                              <span className="rounded-md border border-border/50 bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground/40 cursor-not-allowed">
-                                일정 변경
-                              </span>
-                            )
-                          )}
+                          {/* 일정 변경 / 일정변경 요청 */}
+                          {v.status === "일정변경요청" ? (
+                            <span className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-500 cursor-not-allowed dark:border-blue-800/40 dark:bg-blue-950/20 dark:text-blue-400">
+                              변경 검토 중
+                            </span>
+                          ) : canRequestEdit ? (
+                            <Link
+                              href={`/my/applications/volunteer/${v.id}/edit`}
+                              className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary"
+                            >
+                              {editBtnLabel}
+                            </Link>
+                          ) : v.status !== "반려" && v.status !== "취소" ? (
+                            <span className="rounded-md border border-border/50 bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground/40 cursor-not-allowed">
+                              {editBtnLabel}
+                            </span>
+                          ) : null}
 
                           {/* 신청 취소 */}
                           <CancelMyApplicationButton

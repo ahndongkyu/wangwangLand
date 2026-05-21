@@ -1,7 +1,7 @@
 export type DogStatus = "보호중" | "임시보호중" | "입양완료" | "무지개다리"
 export type DogGender = "수컷" | "암컷" | "미상"
 export type DogSize = "소" | "중소" | "중" | "중대" | "대" | "대대"
-export type ApplicationStatus = "접수" | "검토중" | "승인" | "반려" | "취소"
+export type ApplicationStatus = "접수" | "검토중" | "승인" | "반려" | "취소" | "일정변경요청"
 export type AdminRole = "admin" | "staff"
 export type VolunteerActivity = "산책" | "목욕·미용" | "청소·정리" | "홍보·촬영"
 export type HousingType = "아파트" | "주택" | "빌라" | "오피스텔" | "기타"
@@ -162,6 +162,8 @@ export interface VolunteerApplication {
   submitted_at: string
   updated_at: string
   created_by: string | null
+  reschedule_dates?: string[] | null
+  reschedule_time?: string | null
 }
 
 /** 운영진 상주 일정 — 봉사자에게 그 날 누가 출근하는지 알리기 위한 데이터 */
