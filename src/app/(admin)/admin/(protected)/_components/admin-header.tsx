@@ -368,9 +368,10 @@ export function AdminMobileHeader({
                 </SheetClose>
               </div>
 
-              {/* 관리자 프로필 (상단) */}
+              {/* 관리자 프로필 + 3열 액션 그리드 (상단, 한 세트) */}
               <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] px-4 py-3.5 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
-                <div className="flex items-center gap-3">
+                {/* 프로필 */}
+                <div className="mb-3 flex items-center gap-3">
                   <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
                     {adminAvatarUrl ? (
                       <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
@@ -386,6 +387,37 @@ export function AdminMobileHeader({
                       {adminName}
                     </p>
                   </div>
+                </div>
+
+                {/* 액션 버튼 3열 그리드 */}
+                <div className="grid grid-cols-3 gap-1">
+                  <Link
+                    href="/"
+                    target="_blank"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-white/60 transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.06)]"
+                  >
+                    <ExternalLink className="size-4" />
+                    메인사이트
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-white/60 transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.06)]"
+                  >
+                    {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                    테마
+                  </button>
+                  <form action={logoutAction} className="contents">
+                    <button
+                      type="submit"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <LogOut className="size-4" />
+                      로그아웃
+                    </button>
+                  </form>
                 </div>
               </div>
 
@@ -435,38 +467,6 @@ export function AdminMobileHeader({
                 ))}
               </nav>
 
-              {/* 하단: 3열 액션 그리드 (PC 사이드바와 통일) */}
-              <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3 dark:border-[#3A3229] dark:bg-black/20">
-                <div className="grid grid-cols-3 gap-1">
-                  <Link
-                    href="/"
-                    target="_blank"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-[#F0E8DC] transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
-                  >
-                    <ExternalLink className="size-4" />
-                    메인사이트
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#5F5048] hover:bg-[#F0E8DC] transition-colors dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
-                  >
-                    {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-                    테마
-                  </button>
-                  <form action={logoutAction} className="contents">
-                    <button
-                      type="submit"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <LogOut className="size-4" />
-                      로그아웃
-                    </button>
-                  </form>
-                </div>
-              </div>
             </SheetContent>
           </Sheet>
         </div>
