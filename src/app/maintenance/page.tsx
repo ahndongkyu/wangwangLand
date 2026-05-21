@@ -1,6 +1,10 @@
+import { getMaintenanceMessage } from "@/features/settings/api/queries"
+
 export const dynamic = "force-dynamic"
 
-export default function MaintenancePage() {
+export default async function MaintenancePage() {
+  const message = await getMaintenanceMessage()
+
   return (
     <>
       <style>{`
@@ -23,17 +27,9 @@ export default function MaintenancePage() {
           잠시 점검 중입니다<span className="dots" />
         </h1>
 
-        <p className="mt-3 max-w-sm text-sm text-muted-foreground leading-relaxed">
-          왕왕랜드 홈페이지를 더 나은 서비스로 개선하기 위해
-          일시적으로 점검 중입니다.
-          <br />
-          잠시 후 다시 방문해 주세요 🙏
+        <p className="mt-3 max-w-sm whitespace-pre-line text-sm text-muted-foreground leading-relaxed">
+          {message}
         </p>
-
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/20 dark:text-amber-300">
-          <p className="font-semibold">예상 완료 시간</p>
-          <p className="mt-0.5 text-base font-bold">2026년 5월 7일 (목) 오후 5시</p>
-        </div>
 
         <div className="mt-6 flex items-center gap-2 rounded-full bg-secondary px-4 py-2 text-xs text-muted-foreground">
           <span className="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse" />

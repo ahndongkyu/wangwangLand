@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { getCurrentAdmin } from "@/features/auth"
-import { getMaintenanceMode } from "@/features/settings/api/queries"
-import { MaintenanceToggle } from "./maintenance-toggle"
+import { getMaintenanceConfig } from "@/features/settings/api/queries"
+import { MaintenanceSettings } from "./maintenance-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -9,7 +9,7 @@ export default async function AdminSettingsPage() {
   const admin = await getCurrentAdmin()
   if (!admin || admin.role !== "admin") notFound()
 
-  const isOn = await getMaintenanceMode()
+  const { enabled, message } = await getMaintenanceConfig()
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 md:px-6">
@@ -18,7 +18,7 @@ export default async function AdminSettingsPage() {
         <p className="mt-1 text-sm text-muted-foreground">홈페이지 운영 상태를 관리합니다.</p>
       </header>
 
-      <MaintenanceToggle initialValue={isOn} />
+      <MaintenanceSettings initialEnabled={enabled} initialMessage={message} />
     </div>
   )
 }
