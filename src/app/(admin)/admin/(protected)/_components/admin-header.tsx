@@ -122,7 +122,8 @@ export function AdminSidebar({
   adminAvatarUrl,
   isTopAdmin,
   logoutAction,
-}: Omit<AdminHeaderProps, "pendingCounts">) {
+  pendingCounts,
+}: AdminHeaderProps) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
@@ -141,12 +142,17 @@ export function AdminSidebar({
 
   return (
     <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
-      {/* 로고 */}
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
-        <div className="flex flex-col leading-tight">
-          <span className="text-[14px] font-bold text-white">{siteName}</span>
-          <span className="text-[9px] font-semibold uppercase tracking-[1px] text-[#7a9080]">Admin</span>
+      {/* 로고 + 알림벨 */}
+      <div className="flex items-center justify-between gap-2 px-5 py-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-[14px] font-bold text-white">{siteName}</span>
+            <span className="text-[9px] font-semibold uppercase tracking-[1px] text-[#7a9080]">Admin</span>
+          </div>
+        </div>
+        <div className="shrink-0 [&_button]:text-[#c5d0c7] [&_button:hover]:bg-white/[0.06]">
+          <AdminNotificationBell counts={pendingCounts} />
         </div>
       </div>
 
