@@ -140,7 +140,7 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="admin-sidebar-scroll fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
+    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
       {/* 로고 */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
@@ -150,8 +150,8 @@ export function AdminSidebar({
         </div>
       </div>
 
-      {/* 네비게이션 (스크롤 가능) */}
-      <nav className="admin-sidebar-scroll flex-1 overflow-y-auto px-3 pb-2">
+      {/* 네비게이션 (스크롤 가능, 스크롤바 숨김) */}
+      <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-2">
         {/* 대시보드 */}
         <div className="mb-1">
           <Link
