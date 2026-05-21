@@ -144,11 +144,11 @@ export function AdminSidebar({
     <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#2A3D2F] md:flex">
       {/* 로고 + 알림벨 */}
       <div className="flex items-center justify-between gap-2 px-5 py-5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Image src={SITE.logo} alt={SITE.name} width={32} height={32} className="size-8 rounded-full" />
+        <div className="flex min-w-0 items-center gap-3">
+          <Image src={SITE.logo} alt={SITE.name} width={40} height={40} className="size-10 rounded-full" />
           <div className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-[14px] font-bold text-white">{siteName}</span>
-            <span className="text-[9px] font-semibold uppercase tracking-[1px] text-[#7a9080]">Admin</span>
+            <span className="truncate text-[16px] font-bold text-white">{siteName}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[1px] text-[#7a9080]">Admin</span>
           </div>
         </div>
         <div className="shrink-0 [&_button]:text-[#c5d0c7] [&_button:hover]:bg-white/[0.06]">
@@ -163,7 +163,7 @@ export function AdminSidebar({
           <Link
             href="/admin"
             className={cn(
-              "flex items-center rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+              "flex items-center rounded-lg px-3 py-2.5 text-[14px] font-medium transition-colors",
               pathname === "/admin"
                 ? "bg-[#E87A43] font-semibold text-white"
                 : "text-[#c5d0c7] hover:bg-white/[0.06]"
@@ -183,7 +183,7 @@ export function AdminSidebar({
                 type="button"
                 onClick={() => toggleGroup(group.label)}
                 className={cn(
-                  "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[1px] transition-colors",
+                  "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[1px] transition-colors",
                   isOpen
                     ? "text-[#9ab09e] hover:text-[#b5c7b8]"
                     : "text-[#5d7565] hover:text-[#7a9080]"
@@ -206,7 +206,7 @@ export function AdminSidebar({
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors",
+                        "flex items-center rounded-lg px-3 py-2.5 text-[14.5px] font-medium transition-colors",
                         isActive(item.href)
                           ? "bg-[#E87A43] font-semibold text-white"
                           : "text-[#e4ebe5] hover:bg-white/[0.06]"
