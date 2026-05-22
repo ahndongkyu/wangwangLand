@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react"
 import { Camera, Check, Copy, Share2 } from "lucide-react"
 import Link from "next/link"
 
+import { toPng } from "html-to-image"
 import {
   buildDayShareImage,
   buildDayShareText,
-  buildMonthShareImage,
   buildMonthShareText,
   fullDayLabel,
   formatRange,
@@ -143,11 +143,26 @@ export function MonthShare({ yearMonth, events }: Props) {
   }
   async function handleScreenshotMonth() {
     if (capturingMonth) return
+    const node = document.getElementById("admin-month-grid-capture")
+    if (!node) {
+      console.error("month grid DOM not found")
+      return
+    }
     setCapturingMonth(true)
     try {
-      const blob = await buildMonthShareImage(yearMonth, events)
+      // 화면에 보이는 캘린더 그리드를 그대로 PNG 로 캡처
+      const dataUrl = await toPng(node, {
+        pixelRatio: 2,
+        backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+        cacheBust: true,
+      })
       const fileName = `왕왕랜드_${y}년${m}월_일정.png`
+
+      // dataUrl → Blob → File
+      const resp = await fetch(dataUrl)
+      const blob = await resp.blob()
       const file = new File([blob], fileName, { type: "image/png" })
+
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: fileName })
@@ -156,12 +171,10 @@ export function MonthShare({ yearMonth, events }: Props) {
           /* 취소 → 다운로드 */
         }
       }
-      const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
-      a.href = url
+      a.href = dataUrl
       a.download = fileName
       a.click()
-      URL.revokeObjectURL(url)
     } catch (e) {
       console.error("month screenshot error", e)
     } finally {

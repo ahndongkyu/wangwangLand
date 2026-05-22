@@ -82,12 +82,14 @@ export default async function AdminCalendarPage({
         searchParams={{ ym: yearMonth }}
       />
 
-      <MonthGrid
-        yearMonth={yearMonth}
-        events={events}
-        hrefBase="/admin/calendar"
-        addHrefBase="/admin/calendar/new"
-      />
+      <div id="admin-month-grid-capture" className="bg-background">
+        <MonthGrid
+          yearMonth={yearMonth}
+          events={events}
+          hrefBase="/admin/calendar"
+          addHrefBase="/admin/calendar/new"
+        />
+      </div>
 
       {/* 일정 공유 — 월 전체 / 하루치 */}
       <MonthShare yearMonth={yearMonth} events={events} />
