@@ -175,17 +175,28 @@ export function MemberRowActions({
 
       {/* 상태 */}
       <td className="px-4 py-3 whitespace-nowrap">
-        <span className="inline-flex items-center gap-1.5">
-          {isPending && (
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+        <div className="flex flex-col gap-1">
+          <span className="inline-flex items-center gap-1.5">
+            {isPending && (
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-amber-500" />
+              </span>
+            )}
+            <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold", STATUS_COLOR[status])}>
+              {STATUS_LABEL[status]}
+            </span>
+          </span>
+          {isPending && !profile.terms_agreed_at && (
+            <span
+              className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              title="가입 폼 작성 중 이탈한 계정. 4일 후 자동 삭제됩니다."
+            >
+              <span className="size-1.5 rounded-full bg-muted-foreground/60" />
+              약관 미동의
             </span>
           )}
-          <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold", STATUS_COLOR[status])}>
-            {STATUS_LABEL[status]}
-          </span>
-        </span>
+        </div>
       </td>
 
       {/* 권한 */}
