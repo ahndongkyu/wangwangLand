@@ -13,7 +13,7 @@ import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
 import { listVolunteerApplications } from "@/features/applications"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
-import { MonthShare } from "./_components/month-share"
+import { MonthShareButton } from "./_components/month-share-button"
 
 export const metadata: Metadata = { title: "일정 관리" }
 export const dynamic = "force-dynamic"
@@ -63,9 +63,12 @@ export default async function AdminCalendarPage({
             봉사·행사·휴무 일정을 등록·수정합니다.
           </p>
         </div>
-        <Link href="/admin/calendar/new" className={cn(buttonVariants())}>
-          + 새 일정
-        </Link>
+        <div className="flex items-center gap-2">
+          <MonthShareButton yearMonth={yearMonth} />
+          <Link href="/admin/calendar/new" className={cn(buttonVariants())}>
+            + 새 일정
+          </Link>
+        </div>
       </header>
 
       <MonthNav
@@ -90,9 +93,6 @@ export default async function AdminCalendarPage({
           addHrefBase="/admin/calendar/new"
         />
       </div>
-
-      {/* 일정 공유 — 월 전체 / 하루치 */}
-      <MonthShare yearMonth={yearMonth} events={events} />
 
       {/* 처리 대기 봉사 신청 → 캘린더에 등록 */}
       {pendingApps.length > 0 && (
