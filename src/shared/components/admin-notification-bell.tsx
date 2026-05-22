@@ -8,9 +8,15 @@ import type { PendingCounts } from "@/shared/lib/pending-counts"
 
 interface Props {
   counts: PendingCounts
+  /**
+   * 드롭다운 위치
+   * - "right" (기본): 벨 우측 정렬, 왼쪽으로 펼침 (헤더 우측에 있을 때)
+   * - "side": 벨 옆(오른쪽)으로 펼침 — PC 사이드바처럼 좌측에 위치할 때
+   */
+  align?: "right" | "side"
 }
 
-export function AdminNotificationBell({ counts }: Props) {
+export function AdminNotificationBell({ counts, align = "right" }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const hasItems = counts.total > 0
@@ -73,7 +79,14 @@ export function AdminNotificationBell({ counts }: Props) {
       </button>
 
       {open && hasItems && (
-        <div className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+        <div
+          className={cn(
+            "absolute z-50 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
+            align === "side"
+              ? "left-full top-0 ml-2"
+              : "right-0 top-11"
+          )}
+        >
           <div className="border-b border-border px-4 py-2.5">
             <p className="text-xs font-semibold text-muted-foreground">처리 대기 알림</p>
           </div>

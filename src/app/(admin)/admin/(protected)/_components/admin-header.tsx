@@ -166,7 +166,7 @@ export function AdminSidebar({
           </div>
         </div>
         <div className="shrink-0 [&_button]:text-[#c5d0c7] [&_button:hover]:bg-white/[0.06]">
-          <AdminNotificationBell counts={pendingCounts} />
+          <AdminNotificationBell counts={pendingCounts} align="side" />
         </div>
       </div>
 
