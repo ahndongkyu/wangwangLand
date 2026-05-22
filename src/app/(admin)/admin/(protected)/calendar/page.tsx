@@ -63,12 +63,9 @@ export default async function AdminCalendarPage({
             봉사·행사·휴무 일정을 등록·수정합니다.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <MonthShareButton yearMonth={yearMonth} />
-          <Link href="/admin/calendar/new" className={cn(buttonVariants())}>
-            + 새 일정
-          </Link>
-        </div>
+        <Link href="/admin/calendar/new" className={cn(buttonVariants())}>
+          + 새 일정
+        </Link>
       </header>
 
       <MonthNav
@@ -79,11 +76,14 @@ export default async function AdminCalendarPage({
         }}
       />
 
-      <CategoryFilter
-        active={categories}
-        basePath="/admin/calendar"
-        searchParams={{ ym: yearMonth }}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CategoryFilter
+          active={categories}
+          basePath="/admin/calendar"
+          searchParams={{ ym: yearMonth }}
+        />
+        <MonthShareButton yearMonth={yearMonth} />
+      </div>
 
       <div id="admin-month-grid-capture" className="bg-background">
         <MonthGrid
