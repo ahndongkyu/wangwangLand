@@ -87,8 +87,8 @@ export function DonationTicker({ items, speed = 6 }: Props) {
         </div>
       </div>
 
-      {/* 오른쪽 고정 CTA */}
-      <div className="shrink-0 border-l border-border/50 px-3 py-2">
+      {/* 오른쪽 고정 CTA — 모바일 숨김 */}
+      <div className="hidden shrink-0 border-l border-border/50 px-3 py-2 sm:block">
         <Link
           href="/donate"
           className="whitespace-nowrap rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
