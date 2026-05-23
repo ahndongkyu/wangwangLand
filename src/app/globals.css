@@ -267,6 +267,18 @@
 }
 
 /* 종 흔들림 — 안 읽은 알림 어필 */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker linear infinite;
+  will-change: transform;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
 @keyframes bell-ring {
   0%, 70%, 100% { transform: rotate(0); }
   10%, 30%, 50% { transform: rotate(-12deg); }

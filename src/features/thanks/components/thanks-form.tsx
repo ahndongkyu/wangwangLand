@@ -26,10 +26,10 @@ export function ThanksForm({ post, cancelHref = "/admin/thanks" }: Props) {
   const isEdit = Boolean(post?.id)
   const contentRef = useRef<string>(post?.content ?? "")
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  function handleSubmit(formData: FormData) {
     setError(null)
-    const formData = new FormData(e.currentTarget)
+    // RichTextEditor 의 hidden input 이 DOM 에서 이미 최신값을 갖지만,
+    // contentRef 로도 덮어써서 이중 보장.
     formData.set("content", contentRef.current)
     startTransition(async () => {
       const result =
@@ -41,7 +41,7 @@ export function ThanksForm({ post, cancelHref = "/admin/thanks" }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form action={handleSubmit} className="space-y-6">
       <div className="space-y-1.5">
         <Label htmlFor="title">
           제목 <span className="text-destructive">*</span>

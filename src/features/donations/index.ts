@@ -4,6 +4,7 @@ export {
   listMyDonations,
   listDonationsByUser,
   getDonationStats,
+  listRecentApprovedDonations,
 } from "./api/queries"
 export type {
   Donation,
@@ -18,3 +19,5 @@ export { AdminDonationForm } from "./components/admin-donation-form"
 export { DonationStatusBadge } from "./components/donation-status-badge"
 export { DonationCancelButton } from "./components/donation-cancel-button"
 export { DonationAdminActions } from "./components/donation-admin-actions"
+export { DonationSlider } from "./components/donation-slider"
+export { DonationTicker } from "./components/donation-ticker"

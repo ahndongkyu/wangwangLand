@@ -23,3 +23,13 @@ export function extractImagesFromHtml(html: string): string[] {
 export function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
 }
+
+/**
+ * 이름 가운데 글자 마스킹
+ * "홍길동" → "홍*동" / "김철" → "김*" / "남궁민준" → "남**준"
+ */
+export function maskName(name: string): string {
+  if (!name || name.length <= 1) return name
+  if (name.length === 2) return name[0] + "*"
+  return name[0] + "*".repeat(name.length - 2) + name[name.length - 1]
+}

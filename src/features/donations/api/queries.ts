@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { createServiceClient } from "@/shared/lib/supabase/service"
 import type { Donation, DonationStatus, DonationType } from "@/shared/types/database"
 
 export type { Donation, DonationStatus, DonationType }
@@ -58,6 +59,24 @@ export async function getDonation(id: string): Promise<Donation | null> {
     return null
   }
   return data as Donation | null
+}
+
+/** 홈/후원 페이지 슬라이더 — 승인된 최근 N건 (공개용, 서비스 롤로 RLS 우회) */
+export async function listRecentApprovedDonations(
+  limit = 8
+): Promise<Donation[]> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from("donations")
+    .select("*")
+    .eq("status", "approved")
+    .order("approved_at", { ascending: false })
+    .limit(limit)
+  if (error) {
+    console.error("[listRecentApprovedDonations]", error)
+    return []
+  }
+  return (data ?? []) as Donation[]
 }
 
 /** 마이페이지: 본인 후원 내역 (RLS 가 자동으로 본인 것만 반환) */

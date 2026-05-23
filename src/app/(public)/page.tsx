@@ -5,6 +5,7 @@ import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogsForHome } from "@/features/dogs"
 import { listNotices, RecentNewsSection } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
+import { listRecentApprovedDonations, DonationTicker } from "@/features/donations"
 import { Heart } from "lucide-react"
 import {
   BrandIcon,
@@ -47,7 +48,7 @@ const HERO_SLIDES: HeroSlide[] = [
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult] =
+  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult, recentThanks] =
     await Promise.all([
       listDogsForHome(10),
       listCats({ status: "보호중", limit: 4 }),
@@ -55,6 +56,7 @@ export default async function HomePage() {
       listAdoptionStories({ limit: 4 }),
       getSiteStats(),
       listNotices({ limit: 4 }),
+      listRecentApprovedDonations(8),
     ])
   const recentDaily = dailyResult.posts
   const recentStories = storiesResult.stories
@@ -170,7 +172,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. 새 가족을 기다려요 (강아지) */}
+      {/* 3. 후원자 티커 — 실적 카운터 바로 아래 */}
+      {recentThanks.length > 0 && (
+        <DonationTicker items={recentThanks} />
+      )}
+
+      {/* 5. 새 가족을 기다려요 (강아지) */}
       <section className="border-t border-border/60 bg-background">
         <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
           <div className="mb-10 flex items-end justify-between gap-4">

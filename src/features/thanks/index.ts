@@ -13,3 +13,4 @@ export {
 export { ThanksCard } from "./components/thanks-card"
 export { ThanksDeleteButton } from "./components/thanks-delete-button"
 export { ThanksForm } from "./components/thanks-form"
+export { ThanksSlider } from "./components/thanks-slider"
