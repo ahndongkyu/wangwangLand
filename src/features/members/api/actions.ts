@@ -4,6 +4,7 @@ import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
+import { createServiceClient } from "@/shared/lib/supabase/service"
 import {
   validateKoreanPhone,
   formatKoreanPhone,
@@ -86,8 +87,8 @@ export async function updateNickname(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
-  // 중복 확인
-  const { data: dup } = await supabase
+  // 중복 확인 — service role 로 RLS 우회 (anon 키로는 타인 프로필 조회 불가)
+  const { data: dup } = await createServiceClient()
     .from("profiles")
     .select("id")
     .eq("nickname", nickname)
@@ -140,8 +141,8 @@ export async function updateProfile(
   const user = session?.user
   if (!user) return { error: "로그인이 필요합니다." }
 
-  // 닉네임 중복 확인
-  const { data: dup } = await supabase
+  // 닉네임 중복 확인 — service role 로 RLS 우회
+  const { data: dup } = await createServiceClient()
     .from("profiles")
     .select("id")
     .eq("nickname", nickname)
