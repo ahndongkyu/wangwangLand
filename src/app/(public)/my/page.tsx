@@ -391,6 +391,21 @@ export default async function MyPage() {
         likedAnimals={likedAnimals}
       />
 
+      {/* ── 랭킹 바로가기 ── */}
+      <Link
+        href="/ranking"
+        className="mb-3 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 transition-colors hover:bg-amber-100 dark:border-amber-800/40 dark:bg-amber-900/10"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30">
+          <Trophy className="size-4" />
+        </span>
+        <span className="flex-1">
+          <span className="block text-sm font-semibold text-amber-800 dark:text-amber-400">봉사 랭킹</span>
+          <span className="block text-xs text-amber-700/70 dark:text-amber-500/70">내 순위 확인하기</span>
+        </span>
+        <ChevronRight className="size-4 shrink-0 text-amber-400" />
+      </Link>
+
       {/* ── 계정 관리 ── */}
       <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-card">
         {isStaff && (

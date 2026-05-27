@@ -113,6 +113,7 @@ export async function getVolunteerRanking(): Promise<RankedVolunteer[]> {
     .from("profiles")
     .select("id, nickname, role, phone")
     .in("id", userIds)
+    .not("role", "in", '("staff","admin")') // 운영진 제외
 
   return (profiles ?? [])
     .map((p) => ({
