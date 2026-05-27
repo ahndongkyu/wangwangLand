@@ -3,12 +3,12 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import {
+  CalendarDays,
   ChevronRight,
   ClipboardList,
   HandCoins,
   Heart,
   LogOut,
-  CalendarDays,
   Settings,
   User,
 } from "lucide-react"
@@ -26,7 +26,7 @@ import {
 } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
 import {
-  getVolunteerCount,
+  getVolunteerCountBreakdown,
   getTier,
   getNextTier,
   remainingToNextTier,
@@ -70,7 +70,6 @@ export default async function MyPage() {
 
   const isStaff = profile.role === "staff" || profile.role === "admin"
 
-  // 본인 활동 데이터 — RLS 가 막으므로 admin client 로 created_by 필터.
   const supabase = await createClient()
   const {
     data: { session },
@@ -85,7 +84,7 @@ export default async function MyPage() {
     adoptionRes,
     volunteerRes,
     donations,
-    volunteerCount,
+    volunteerBreakdown,
     dogLikesRes,
     catLikesRes,
   ] = await Promise.all([
@@ -95,28 +94,30 @@ export default async function MyPage() {
       .select("id, status, submitted_at, dog:dogs(name), cat:cats(name)")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
-      .limit(2),
+      .limit(3),
     admin
       .from("volunteer_applications")
       .select("id, status, submitted_at, available_dates")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
-      .limit(2),
+      .limit(3),
     listMyDonations(),
-    getVolunteerCount(userId),
+    getVolunteerCountBreakdown(userId),
     admin
       .from("dog_likes")
       .select("dog:dogs(id, name, status, images, thumbnail_index)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(2),
+      .limit(4),
     admin
       .from("cat_likes")
       .select("cat:cats(id, name, status, images, thumbnail_index)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(2),
+      .limit(4),
   ])
+
+  const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
 
   const currentTier = getTier(volunteerCount, profile.role)
   const nextTier = getNextTier(volunteerCount, profile.role)
@@ -136,10 +137,7 @@ export default async function MyPage() {
     submitted_at: string
     available_dates: string[]
   }>
-  const recentDonations = donations.slice(0, 2)
-
-  const totalApps = adoptions.length + volunteers.length
-  const totalDonations = donations.length
+  const recentDonations = donations.slice(0, 3)
 
   type LikeAnimalPreview = {
     id: string
@@ -154,266 +152,247 @@ export default async function MyPage() {
   const likedCatPreviews = (catLikesRes.data ?? [])
     .map((r) => (Array.isArray(r.cat) ? r.cat[0] : r.cat))
     .filter(Boolean) as LikeAnimalPreview[]
-  const totalLikes = likedDogPreviews.length + likedCatPreviews.length
+  const likedAnimals = [
+    ...likedDogPreviews.map((d) => ({ ...d, kind: "dog" as const })),
+    ...likedCatPreviews.map((c) => ({ ...c, kind: "cat" as const })),
+  ].slice(0, 4)
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
-      {/* 프로필 */}
-      <div className="mb-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="relative size-16 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-muted">
-            {profile.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={profile.nickname}
-                fill
-                className="object-cover"
+    <div className="mx-auto w-full max-w-3xl px-4 py-10 md:py-14">
+      <h1 className="mb-6 text-2xl font-bold text-foreground">마이페이지</h1>
+
+      {/* Row 1: 프로필 | 등급 */}
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* 프로필 */}
+        <DashCard label="프로필">
+          <div className="flex items-center gap-3">
+            <div className="relative size-14 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-muted">
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt={profile.nickname}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <User className="size-full p-3 text-muted-foreground" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <UserName
+                nickname={profile.nickname}
+                role={profile.role}
+                size="md"
+                showTier={false}
               />
-            ) : (
-              <User className="size-full p-3.5 text-muted-foreground" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <UserName
-              nickname={profile.nickname}
-              role={profile.role}
-              size="md"
-              showTier={false}
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {currentTier.icon} {currentTier.name}
-            </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {profile.phone ?? "전화번호 없음"}
+              </p>
+            </div>
           </div>
           <Link
             href="/profile"
-            className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+            className="mt-3 block w-full rounded-lg border border-border bg-secondary/60 py-1.5 text-center text-xs font-medium text-foreground/70 transition-colors hover:bg-secondary"
           >
             프로필 수정
           </Link>
-        </div>
-      </div>
+        </DashCard>
 
-      {/* 봉사 등급 카드 */}
-      <div className="mb-6 rounded-2xl border border-border bg-gradient-to-br from-primary/5 to-card p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">현재 등급</p>
-            <p className="mt-1 text-2xl font-bold text-foreground">
-              <span className="mr-1.5">{currentTier.icon}</span>
-              {currentTier.name}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              봉사 인증 <span className="font-bold text-foreground">{volunteerCount}</span>회
-            </p>
-          </div>
-          <Link
-            href="/my/applications"
-            className="shrink-0 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
-          >
-            내 봉사
-          </Link>
-        </div>
-
-        {nextTier && (
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-              <span>다음 등급: <span className="font-semibold text-foreground">{nextTier.name}</span></span>
-              <span><span className="font-bold text-primary">{tierRemaining}</span>회 남음</span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
-              <div
-                className="h-full rounded-full bg-primary transition-all"
-                style={{ width: `${tierProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 다가오는 봉사 일정 */}
-      <Section
-        icon={CalendarDays}
-        title="다가오는 봉사 일정"
-        count={upcomingEvents.length}
-        href="/calendar"
-        hrefLabel="전체 →"
-        emptyText="예정된 봉사 일정이 없습니다."
-      >
-        {upcomingEvents.slice(0, 3).map((ev) => {
-          const isCustom = ev.category === "custom"
-          const color = CATEGORY_COLOR[ev.category]
-          const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
-          return (
-            <Link
-              key={ev.id}
-              href={`/calendar/${ev.id}`}
-              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <span
-                  style={customStyle?.soft}
-                  className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                    !isCustom && color.soft,
-                    !isCustom && color.softText
-                  )}
-                >
-                  {eventDisplayLabel(ev)}
-                </span>
-                <span className="truncate text-sm font-medium text-foreground">
-                  {getEventTitle(ev)}
-                </span>
+        {/* 현재 등급 */}
+        <DashCard label="현재 등급">
+          <p className="text-xl font-bold text-foreground">{currentTier.name}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">봉사 {volunteerCount}회 달성</p>
+          {nextTier ? (
+            <>
+              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${tierProgress}%` }}
+                />
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatKoreanDayLabel(ev.starts_at, ev.all_day)}
-              </span>
-            </Link>
-          )
-        })}
-      </Section>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">
+                다음 등급까지 <span className="font-semibold text-primary">{tierRemaining}회</span>
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-[11px] font-semibold text-primary">최고 등급 달성 🎉</p>
+          )}
+        </DashCard>
+      </div>
 
-      {/* 찜한 아이들 */}
-      <Section
-        icon={Heart}
-        title="찜한 아이들"
-        count={totalLikes}
-        href="/my/likes"
-        hrefLabel="전체 →"
-        emptyText="찜한 아이가 없습니다."
-      >
-        {[
-          ...likedDogPreviews.map((d) => ({ ...d, kind: "dog" as const })),
-          ...likedCatPreviews.map((c) => ({ ...c, kind: "cat" as const })),
-        ].map((animal) => {
-          const thumbnailSrc =
-            animal.images[animal.thumbnail_index] ?? animal.images[0] ?? null
-          return (
-            <Link
-              key={`${animal.kind}:${animal.id}`}
-              href={`/${animal.kind === "dog" ? "dogs" : "cats"}/${animal.id}`}
-              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  {thumbnailSrc ? (
-                    <Image
-                      src={thumbnailSrc}
-                      alt={animal.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-lg">
-                      {animal.kind === "dog" ? "🐾" : "🐱"}
+      {/* Row 2: 봉사 횟수 | 다가오는 일정 */}
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* 봉사 횟수 */}
+        <DashCard label="봉사 횟수">
+          <div className="flex h-full items-center justify-center gap-8 py-2">
+            <StatBox value={volunteerCount} label="총" valueClass="text-primary" />
+            <StatBox value={volunteerYearly} label="올해" valueClass="text-emerald-600 dark:text-emerald-400" />
+            <StatBox value={volunteerMonthly} label="이번 달" valueClass="text-blue-600 dark:text-blue-400" />
+          </div>
+        </DashCard>
+
+        {/* 다가오는 일정 */}
+        <DashCard label="다가오는 일정">
+          {upcomingEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground">예정된 봉사 일정이 없습니다.</p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingEvents.slice(0, 3).map((ev) => {
+                const isCustom = ev.category === "custom"
+                const color = CATEGORY_COLOR[ev.category]
+                const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
+                return (
+                  <Link
+                    key={ev.id}
+                    href={`/calendar/${ev.id}`}
+                    className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-secondary/50"
+                  >
+                    <span
+                      style={customStyle?.soft}
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+                        !isCustom && color.soft,
+                        !isCustom && color.softText
+                      )}
+                    >
+                      {eventDisplayLabel(ev)}
                     </span>
-                  )}
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
+                      {getEventTitle(ev)}
+                    </span>
+                    <span className="shrink-0 text-[10px] text-muted-foreground">
+                      {formatKoreanDayLabel(ev.starts_at, ev.all_day)}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </DashCard>
+      </div>
+
+      {/* Row 3: 신청내역 | 후원내역 */}
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* 신청내역 */}
+        <DashCard label="신청내역">
+          {volunteers.length === 0 && adoptions.length === 0 ? (
+            <p className="text-xs text-muted-foreground">신청 내역이 없습니다.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {volunteers.map((v) => (
+                <div key={v.id} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
+                      봉사
+                    </Badge>
+                    <span className="truncate text-xs text-foreground/80">
+                      {v.available_dates.length > 0
+                        ? v.available_dates[0]
+                        : formatDate(v.submitted_at)}
+                    </span>
+                  </div>
+                  <Badge className={cn("shrink-0 border-0 text-[10px] font-semibold", statusBadgeClass(v.status))}>
+                    {v.status}
+                  </Badge>
                 </div>
-                <span className="truncate text-sm font-medium text-foreground">
-                  {animal.name}
-                </span>
-              </div>
-              <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                {animal.status}
-              </Badge>
+              ))}
+              {adoptions.map((a) => (
+                <div key={a.id} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
+                      입양
+                    </Badge>
+                    <span className="truncate text-xs text-foreground/80">
+                      {a.dog?.[0]?.name ?? a.cat?.[0]?.name ?? "신청"}
+                    </span>
+                  </div>
+                  <Badge className={cn("shrink-0 border-0 text-[10px] font-semibold", statusBadgeClass(a.status))}>
+                    {a.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+          <Link href="/my/applications" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
+            전체 보기 →
+          </Link>
+        </DashCard>
+
+        {/* 후원내역 */}
+        <DashCard label="후원내역">
+          {recentDonations.length === 0 ? (
+            <p className="text-xs text-muted-foreground">후원 내역이 없습니다.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {recentDonations.map((d) => (
+                <div key={d.id} className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
+                      {d.type === "cash" ? "현금" : "물품"}
+                    </Badge>
+                    <span className="truncate text-xs text-foreground/80">
+                      {d.type === "cash"
+                        ? `${(d.amount ?? 0).toLocaleString()}원`
+                        : [d.item_description, d.item_quantity].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {formatDate(d.donated_at)}
+                  </span>
+                </div>
+              ))}
+              <p className="text-[11px] text-muted-foreground">총 {donations.length}건</p>
+            </div>
+          )}
+          <Link href="/my/donations" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
+            전체 보기 →
+          </Link>
+        </DashCard>
+      </div>
+
+      {/* Row 4: 찜한 아이들 (full width) */}
+      <div className="mb-3">
+        <DashCard label="찜한 아이들">
+          {likedAnimals.length === 0 ? (
+            <p className="text-xs text-muted-foreground">찜한 아이가 없습니다.</p>
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              {likedAnimals.map((animal) => {
+                const thumbnailSrc =
+                  animal.images[animal.thumbnail_index] ?? animal.images[0] ?? null
+                return (
+                  <Link
+                    key={`${animal.kind}:${animal.id}`}
+                    href={`/${animal.kind === "dog" ? "dogs" : "cats"}/${animal.id}`}
+                    className="group overflow-hidden rounded-xl border border-border bg-muted transition-colors hover:border-primary/30"
+                  >
+                    <div className="relative aspect-square w-full overflow-hidden bg-muted">
+                      {thumbnailSrc ? (
+                        <Image
+                          src={thumbnailSrc}
+                          alt={animal.name}
+                          fill
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-2xl">
+                          {animal.kind === "dog" ? "🐾" : "🐱"}
+                        </span>
+                      )}
+                    </div>
+                    <p className="px-2 py-1.5 text-xs font-semibold text-foreground truncate">{animal.name}</p>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+          {likedAnimals.length > 0 && (
+            <Link href="/my/likes" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
+              전체 보기 →
             </Link>
-          )
-        })}
-      </Section>
-
-      {/* 신청 내역 */}
-      <Section
-        icon={ClipboardList}
-        title="신청 내역"
-        count={totalApps}
-        href="/my/applications"
-        hrefLabel="전체 →"
-        emptyText="아직 신청 내역이 없습니다."
-      >
-        {volunteers.map((v) => (
-          <Link
-            key={v.id}
-            href="/my/applications"
-            className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                봉사
-              </Badge>
-              <span className="truncate text-sm text-foreground">
-                {v.available_dates.length > 0
-                  ? `${v.available_dates.join(", ")}`
-                  : `${formatDate(v.submitted_at)} 신청`}
-              </span>
-              <Badge
-                className={cn(
-                  "shrink-0 border-0 text-[10px] font-semibold",
-                  statusBadgeClass(v.status)
-                )}
-              >
-                {v.status}
-              </Badge>
-            </div>
-          </Link>
-        ))}
-        {adoptions.map((a) => (
-          <Link
-            key={a.id}
-            href="/my/applications"
-            className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                입양
-              </Badge>
-              <span className="truncate text-sm text-foreground">
-                {a.dog?.[0]?.name ?? a.cat?.[0]?.name ?? "신청"}
-              </span>
-              <Badge
-                className={cn(
-                  "shrink-0 border-0 text-[10px] font-semibold",
-                  statusBadgeClass(a.status)
-                )}
-              >
-                {a.status}
-              </Badge>
-            </div>
-          </Link>
-        ))}
-      </Section>
-
-      {/* 후원 내역 */}
-      <Section
-        icon={HandCoins}
-        title="후원 내역"
-        count={totalDonations}
-        href="/my/donations"
-        hrefLabel="전체 →"
-        emptyText="아직 후원 내역이 없습니다."
-      >
-        {recentDonations.map((d) => (
-          <Link
-            key={d.id}
-            href="/my/donations"
-            className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-          >
-            <div className="flex min-w-0 items-center gap-2">
-              <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                {d.type === "cash" ? "현금" : "물품"}
-              </Badge>
-              <span className="truncate text-sm text-foreground">
-                {d.type === "cash"
-                  ? `${(d.amount ?? 0).toLocaleString()}원`
-                  : [d.item_description, d.item_quantity]
-                      .filter(Boolean)
-                      .join(" · ")}
-              </span>
-            </div>
-            <span className="shrink-0 text-[11px] text-muted-foreground">
-              {formatDate(d.donated_at)}
-            </span>
-          </Link>
-        ))}
-      </Section>
+          )}
+        </DashCard>
+      </div>
 
       {/* 운영진 진입 */}
       {isStaff && (
@@ -425,12 +404,8 @@ export default async function MyPage() {
             <Settings className="size-4" />
           </span>
           <span className="flex-1">
-            <span className="block text-sm font-semibold text-primary">
-              어드민 페이지
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              운영자 대시보드
-            </span>
+            <span className="block text-sm font-semibold text-primary">어드민 페이지</span>
+            <span className="block text-xs text-muted-foreground">운영자 대시보드</span>
           </span>
           <ChevronRight className="size-4 shrink-0 text-primary/60" />
         </Link>
@@ -448,69 +423,43 @@ export default async function MyPage() {
             </span>
             <span className="flex-1">
               <span className="block text-sm font-medium">로그아웃</span>
-              <span className="block text-xs text-muted-foreground">
-                계정에서 로그아웃합니다
-              </span>
+              <span className="block text-xs text-muted-foreground">계정에서 로그아웃합니다</span>
             </span>
           </button>
         </form>
       </div>
 
-      {/* 회원 탈퇴 (가장 하단, 작게) */}
       <DeleteAccountButton />
     </div>
   )
 }
 
-function Section({
-  icon: Icon,
-  title,
-  count,
-  href,
-  hrefLabel,
-  emptyText,
-  children,
-}: {
-  icon: typeof User
-  title: string
-  count: number
-  href: string
-  hrefLabel: string
-  emptyText: string
-  children: React.ReactNode
-}) {
-  // children 이 비어있는지 체크: React 가 빈 배열 등을 children 으로 줄 수 있어 count 로 판정.
-  const isEmpty = count === 0
+/** 대시보드 카드 래퍼 */
+function DashCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="mb-4">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          <Icon className="size-4 text-muted-foreground" aria-hidden />
-          {title}
-          {count > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">
-              ({count})
-            </span>
-          )}
-        </h2>
-        {!isEmpty && (
-          <Link
-            href={href}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            {hrefLabel}
-          </Link>
-        )}
-      </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        {isEmpty ? (
-          <p className="px-4 py-6 text-center text-xs text-muted-foreground">
-            {emptyText}
-          </p>
-        ) : (
-          <div className="divide-y divide-border">{children}</div>
-        )}
-      </div>
-    </section>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+/** 봉사 횟수 단일 통계 박스 */
+function StatBox({
+  value,
+  label,
+  valueClass,
+}: {
+  value: number
+  label: string
+  valueClass?: string
+}) {
+  return (
+    <div className="text-center">
+      <p className={cn("text-3xl font-extrabold leading-none", valueClass)}>{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
+    </div>
   )
 }
