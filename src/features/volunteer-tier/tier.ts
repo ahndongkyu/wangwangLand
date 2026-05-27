@@ -17,13 +17,13 @@ export interface VolunteerTier {
 }
 
 export const VOLUNTEER_TIERS: VolunteerTier[] = [
-  { level: 0, name: "예비 친구",        icon: "🥚", threshold: 0   },
-  { level: 1, name: "새싹 친구",        icon: "🌱", threshold: 1   },
-  { level: 2, name: "새내기 친구",      icon: "🐣", threshold: 3   },
-  { level: 3, name: "어엿한 친구",      icon: "🐶", threshold: 10  },
-  { level: 4, name: "왕왕랜드 지킴이",  icon: "🏠", threshold: 25, isFullMember: true },
-  { level: 5, name: "베테랑 지킴이",    icon: "🐕‍🦺", threshold: 50  },
-  { level: 6, name: "명예 지킴이",      icon: "👑", threshold: 100 },
+  { level: 0, name: "새 얼굴",          icon: "", threshold: 0   },
+  { level: 1, name: "산책 친구",        icon: "", threshold: 1   },
+  { level: 2, name: "단골 봉사자",      icon: "", threshold: 3   },
+  { level: 3, name: "든든한 동반자",    icon: "", threshold: 10  },
+  { level: 4, name: "왕왕랜드 가족",    icon: "", threshold: 25, isFullMember: true },
+  { level: 5, name: "베테랑 보호자",    icon: "", threshold: 50  },
+  { level: 6, name: "명예 수호자",      icon: "", threshold: 100 },
 ]
 
 /** 운영진(admin/staff) 여부 체크 — 운영진은 카운트 무관하게 최고 등급 */

@@ -3,7 +3,23 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { CalendarDays, ChevronRight, ClipboardList, HandCoins, Heart, LogOut, Settings, User } from "lucide-react"
+import {
+  CalendarCheck,
+  CalendarDays,
+  ChevronRight,
+  ClipboardList,
+  Footprints,
+  HandCoins,
+  Heart,
+  Home,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  Trophy,
+  User,
+  UserPlus,
+  Users,
+} from "lucide-react"
 
 import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
@@ -34,8 +50,11 @@ import { MyPageTabs } from "./_components/mypage-tabs"
 export const metadata: Metadata = { title: "마이페이지" }
 export const dynamic = "force-dynamic"
 
-// 등급 dots 에 표시할 짧은 이름
-const TIER_SHORT = ["예비", "새싹", "새내기", "어엿한", "지킴이", "베테랑", "명예"]
+// 등급 레벨 짧은 이름
+const TIER_SHORT = ["새얼굴", "산책", "단골", "동반자", "가족", "베테랑", "명예"]
+
+// 등급별 Lucide 아이콘
+const TIER_ICONS = [UserPlus, Footprints, CalendarCheck, Users, Home, ShieldCheck, Trophy]
 
 export default async function MyPage() {
   const profile = await getCurrentProfile()
@@ -230,28 +249,31 @@ export default async function MyPage() {
             style={{ width: `${tierProgress}%` }}
           />
         </div>
-        {/* 등급 레벨 점 */}
+        {/* 등급 레벨 아이콘 */}
         <div className="mt-3 flex justify-between">
-          {VOLUNTEER_TIERS.map((tier, i) => (
-            <div key={i} className="flex flex-col items-center gap-1">
-              <div
-                className={cn(
-                  "size-2 rounded-full",
-                  currentTier.level >= tier.level ? "bg-primary" : "bg-secondary"
-                )}
-              />
-              <span
-                className={cn(
-                  "text-[9px] leading-tight",
-                  currentTier.level === tier.level
-                    ? "font-bold text-primary"
-                    : "text-muted-foreground"
-                )}
-              >
-                {TIER_SHORT[i]}
-              </span>
-            </div>
-          ))}
+          {VOLUNTEER_TIERS.map((tier, i) => {
+            const TierIcon = TIER_ICONS[i]
+            const reached = currentTier.level >= tier.level
+            const current = currentTier.level === tier.level
+            return (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <TierIcon
+                  className={cn(
+                    "size-4 transition-all",
+                    reached ? "text-primary" : "text-muted-foreground/30"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-[9px] leading-tight",
+                    current ? "font-bold text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {TIER_SHORT[i]}
+                </span>
+              </div>
+            )
+          })}
         </div>
       </div>
 
