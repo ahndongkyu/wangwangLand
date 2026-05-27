@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>마이페이지 목업</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f3ef; color: #1a1a1a; padding: 24px 16px; }
+  .page { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .full  { margin-bottom: 12px; }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid #e8e4df;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9a9087;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  /* 프로필 */
+  .profile-row { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #e6ddd4; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .profile-name { font-size: 15px; font-weight: 700; }
+  .profile-sub  { font-size: 12px; color: #9a9087; margin-top: 2px; }
+  .edit-btn {
+    margin-top: 10px; width: 100%;
+    background: #f5f3ef; border: none; border-radius: 8px;
+    padding: 7px; font-size: 12px; color: #6b6560; cursor: pointer;
+  }
+
+  /* 등급 */
+  .tier-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .tier-sub  { font-size: 12px; color: #9a9087; margin-bottom: 12px; }
+  .progress-bg {
+    background: #f0ece8; border-radius: 99px; height: 6px; overflow: hidden;
+  }
+  .progress-fill {
+    background: #d4845a; height: 100%; border-radius: 99px; width: 60%;
+  }
+  .progress-label { font-size: 11px; color: #9a9087; margin-top: 6px; }
+
+  /* 봉사 횟수 */
+  .big-num { font-size: 36px; font-weight: 800; color: #d4845a; line-height: 1; }
+  .big-unit { font-size: 14px; color: #9a9087; margin-top: 4px; }
+  .stat-row { display: flex; gap: 16px; margin-top: 12px; }
+  .stat-item { text-align: center; }
+  .stat-val  { font-size: 18px; font-weight: 700; }
+  .stat-key  { font-size: 11px; color: #9a9087; }
+
+  /* 다가오는 일정 */
+  .schedule-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid #f0ece8;
+  }
+  .schedule-item:last-child { border-bottom: none; }
+  .sch-date {
+    background: #d4845a; color: #fff; border-radius: 8px;
+    padding: 4px 8px; font-size: 11px; font-weight: 700;
+    text-align: center; min-width: 36px;
+  }
+  .sch-title { font-size: 13px; font-weight: 600; }
+  .sch-sub   { font-size: 11px; color: #9a9087; }
+  .empty { font-size: 12px; color: #b0a89f; text-align: center; padding: 16px 0; }
+
+  /* 신청내역 / 후원내역 */
+  .list-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid #f0ece8; font-size: 13px;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .badge {
+    font-size: 11px; font-weight: 600; border-radius: 99px;
+    padding: 2px 8px;
+  }
+  .badge-pending  { background: #fff3e0; color: #d4845a; }
+  .badge-approved { background: #e8f5e9; color: #4caf50; }
+  .badge-done     { background: #f0ece8; color: #9a9087; }
+  .more-btn {
+    width: 100%; margin-top: 10px; background: none;
+    border: 1px solid #e8e4df; border-radius: 8px;
+    padding: 7px; font-size: 12px; color: #9a9087; cursor: pointer;
+  }
+
+  /* 찜한아이들 */
+  .dogs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .dog-card {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid #e8e4df; background: #fff;
+  }
+  .dog-img {
+    aspect-ratio: 1; background: #e6ddd4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .dog-name { font-size: 12px; font-weight: 600; padding: 6px 8px 8px; }
+
+  @media (max-width: 480px) {
+    .dogs-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>마이페이지</h1>
+
+  <!-- Row 1: 프로필 | 등급 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">프로필</div>
+      <div class="profile-row">
+        <div class="avatar">🐾</div>
+        <div>
+          <div class="profile-name">왕왕이</div>
+          <div class="profile-sub">010-1234-5678</div>
+        </div>
+      </div>
+      <button class="edit-btn">프로필 수정</button>
+    </div>
+    <div class="card">
+      <div class="card-label">현재 등급</div>
+      <div class="tier-name">어엿한 친구</div>
+      <div class="tier-sub">봉사 12회 달성</div>
+      <div class="progress-bg">
+        <div class="progress-fill"></div>
+      </div>
+      <div class="progress-label">다음 등급까지 13회</div>
+    </div>
+  </div>
+
+  <!-- Row 2: 봉사 횟수 | 다가오는 일정 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">봉사 횟수</div>
+      <div class="big-num">12</div>
+      <div class="big-unit">회 참여</div>
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="stat-val">2</div>
+          <div class="stat-key">이번 달</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val">8</div>
+          <div class="stat-key">올해</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">다가오는 일정</div>
+      <div class="schedule-item">
+        <div class="sch-date">05<br>30</div>
+        <div>
+          <div class="sch-title">오전 봉사</div>
+          <div class="sch-sub">09:00 – 12:00</div>
+        </div>
+      </div>
+      <div class="schedule-item">
+        <div class="sch-date">06<br>07</div>
+        <div>
+          <div class="sch-title">주말 봉사</div>
+          <div class="sch-sub">10:00 – 13:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: 신청내역 | 후원내역 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">신청내역</div>
+      <div class="list-item">
+        <span>봉사 신청</span>
+        <span class="badge badge-pending">접수</span>
+      </div>
+      <div class="list-item">
+        <span>입양 신청 · 몽이</span>
+        <span class="badge badge-approved">승인</span>
+      </div>
+      <div class="list-item">
+        <span>봉사 신청</span>
+        <span class="badge badge-done">완료</span>
+      </div>
+      <button class="more-btn">전체 보기 →</button>
+    </div>
+    <div class="card">
+      <div class="card-label">후원내역</div>
+      <div class="list-item">
+        <span>사료 5kg</span>
+        <span class="badge badge-approved">승인</span>
+      </div>
+      <div class="list-item">
+        <span>30,000원</span>
+        <span class="badge badge-done">완료</span>
+      </div>
+      <div class="empty" style="padding:8px 0">총 2건</div>
+      <button class="more-btn">전체 보기 →</button>
+    </div>
+  </div>
+
+  <!-- Row 4: 찜한아이들 (full width) -->
+  <div class="full card">
+    <div class="card-label" style="margin-bottom:14px">찜한 아이들</div>
+    <div class="dogs-grid">
+      <div class="dog-card">
+        <div class="dog-img">🐶</div>
+        <div class="dog-name">몽이</div>
+      </div>
+      <div class="dog-card">
+        <div class="dog-img">🐕</div>
+        <div class="dog-name">코코</div>
+      </div>
+      <div class="dog-card">
+        <div class="dog-img">🐩</div>
+        <div class="dog-name">하늘이</div>
+      </div>
+      <div class="dog-card">
+        <div class="dog-img">🦮</div>
+        <div class="dog-name">보리</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

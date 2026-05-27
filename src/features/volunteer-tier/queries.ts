@@ -71,6 +71,62 @@ export async function getVolunteerCountBreakdown(
   }
 }
 
+export interface RankedVolunteer {
+  userId: string
+  nickname: string
+  phone?: string | null
+  role: string
+  count: number
+  rank: number
+}
+
+/**
+ * 전체 봉사 랭킹 (내림차순).
+ * 어드민/메인 공용 — 마스킹은 호출하는 쪽에서 처리.
+ */
+export async function getVolunteerRanking(): Promise<RankedVolunteer[]> {
+  const supabase = createServiceClient()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data: apps } = await supabase
+    .from("volunteer_applications")
+    .select("created_by, available_dates")
+    .eq("status", "승인")
+
+  // 유저별 카운트 집계
+  const countMap: Record<string, number> = {}
+  for (const app of (apps ?? []) as { created_by: string; available_dates: string[] }[]) {
+    if (!app.created_by) continue
+    const dates = app.available_dates
+    if (!dates || dates.length === 0) continue
+    const volunteerDate = parseLocalDate(dates[0])
+    if (volunteerDate < today) {
+      countMap[app.created_by] = (countMap[app.created_by] ?? 0) + 1
+    }
+  }
+
+  const userIds = Object.keys(countMap)
+  if (userIds.length === 0) return []
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, nickname, role, phone")
+    .in("id", userIds)
+
+  return (profiles ?? [])
+    .map((p) => ({
+      userId: p.id,
+      nickname: p.nickname,
+      phone: p.phone as string | null,
+      role: p.role as string,
+      count: countMap[p.id] ?? 0,
+    }))
+    .filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .map((r, i) => ({ ...r, rank: i + 1 }))
+}
+
 /** 여러 사용자의 카운트 한 번에 조회 (목록 페이지 등급 뱃지용) */
 export async function getVolunteerCountMap(
   userIds: string[]
