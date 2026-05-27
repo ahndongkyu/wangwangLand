@@ -190,8 +190,8 @@ export default async function MyPage() {
             <p className="mb-1 text-xs text-foreground/50">안녕하세요</p>
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               <UserName nickname={profile.nickname} role={profile.role} size="md" showTier={false} />
-              <span className="inline-flex items-center rounded-full border border-primary/40 bg-background/80 px-3 py-0.5 text-xs font-semibold text-primary">
-                {currentTier.name}
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-background/80 px-3 py-0.5 text-xs font-semibold text-primary">
+                <span>{currentTier.icon}</span>{currentTier.name}
               </span>
             </div>
             <p className="text-xs text-foreground/60">오늘도 따뜻한 마음 감사합니다. 아이들이 기다리고 있어요.</p>
@@ -211,12 +211,12 @@ export default async function MyPage() {
         <div className="mb-4 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             현재 등급{" "}
-            <strong className="text-primary">{currentTier.name}</strong>
+            <strong className="text-primary">{currentTier.icon} {currentTier.name}</strong>
           </p>
           {nextTier ? (
             <p className="text-xs text-muted-foreground">
               다음 등급까지{" "}
-              <span className="font-semibold text-foreground">{nextTier.name} {tierRemaining}회</span>
+              <span className="font-semibold text-foreground">{nextTier.icon} {nextTier.name} {tierRemaining}회</span>
             </p>
           ) : (
             <p className="text-xs font-semibold text-primary">최고 등급 달성 🎉</p>
@@ -232,13 +232,15 @@ export default async function MyPage() {
         {/* 등급 레벨 점 */}
         <div className="mt-3 flex justify-between">
           {VOLUNTEER_TIERS.map((tier, i) => (
-            <div key={i} className="flex flex-col items-center gap-1">
-              <div
+            <div key={i} className="flex flex-col items-center gap-0.5">
+              <span
                 className={cn(
-                  "size-2 rounded-full",
-                  currentTier.level >= tier.level ? "bg-primary" : "bg-secondary"
+                  "text-base leading-none transition-all",
+                  currentTier.level >= tier.level ? "opacity-100" : "opacity-25"
                 )}
-              />
+              >
+                {tier.icon}
+              </span>
               <span
                 className={cn(
                   "text-[9px] leading-tight",
