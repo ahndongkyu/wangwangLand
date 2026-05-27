@@ -2,23 +2,13 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import {
-  CalendarDays,
-  ChevronRight,
-  ClipboardList,
-  HandCoins,
-  Heart,
-  LogOut,
-  Settings,
-  User,
-} from "lucide-react"
+import { ChevronRight, LogOut, Settings, User } from "lucide-react"
 
 import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
 import { listMyDonations } from "@/features/donations"
 import {
   CATEGORY_COLOR,
-  CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
   getEventTitle,
@@ -31,36 +21,20 @@ import {
   getNextTier,
   remainingToNextTier,
   progressToNextTier,
+  VOLUNTEER_TIERS,
 } from "@/features/volunteer-tier"
 import { UserName } from "@/shared/components/user-name"
-import { Badge } from "@/shared/components/ui/badge"
 import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
 
+import { MyPageTabs } from "./_components/mypage-tabs"
+
 export const metadata: Metadata = { title: "마이페이지" }
 export const dynamic = "force-dynamic"
 
-function statusBadgeClass(status: ApplicationStatus) {
-  switch (status) {
-    case "접수":
-      return "bg-primary/20 text-primary"
-    case "검토중":
-      return "bg-amber-500/20 text-amber-700 animate-amber-pulse"
-    case "승인":
-      return "bg-emerald-600/20 text-emerald-700"
-    case "반려":
-      return "bg-muted text-muted-foreground"
-  }
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "long",
-    day: "numeric",
-  })
-}
+// 등급 dots 에 표시할 짧은 이름
+const TIER_SHORT = ["예비", "새싹", "새내기", "어엿한", "지킴이", "베테랑", "명예"]
 
 export default async function MyPage() {
   const profile = await getCurrentProfile()
@@ -87,6 +61,9 @@ export default async function MyPage() {
     volunteerBreakdown,
     dogLikesRes,
     catLikesRes,
+    dogLikesCountRes,
+    catLikesCountRes,
+    adoptionCountRes,
   ] = await Promise.all([
     listMyUpcomingEvents(),
     admin
@@ -94,13 +71,13 @@ export default async function MyPage() {
       .select("id, status, submitted_at, dog:dogs(name), cat:cats(name)")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
-      .limit(3),
+      .limit(20),
     admin
       .from("volunteer_applications")
       .select("id, status, submitted_at, available_dates")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
-      .limit(3),
+      .limit(20),
     listMyDonations(),
     getVolunteerCountBreakdown(userId),
     admin
@@ -108,13 +85,25 @@ export default async function MyPage() {
       .select("dog:dogs(id, name, status, images, thumbnail_index)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(4),
+      .limit(8),
     admin
       .from("cat_likes")
       .select("cat:cats(id, name, status, images, thumbnail_index)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(4),
+      .limit(8),
+    admin
+      .from("dog_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+    admin
+      .from("cat_likes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+    admin
+      .from("adoption_applications")
+      .select("*", { count: "exact", head: true })
+      .eq("created_by", userId),
   ])
 
   const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
@@ -137,7 +126,26 @@ export default async function MyPage() {
     submitted_at: string
     available_dates: string[]
   }>
-  const recentDonations = donations.slice(0, 3)
+
+  const totalLikes = (dogLikesCountRes.count ?? 0) + (catLikesCountRes.count ?? 0)
+  const totalAdoptions = adoptionCountRes.count ?? 0
+  const activeAdoptions = adoptions.filter((a) => a.status !== "반려").length
+
+  // 현금 후원 승인 총액
+  const totalCashDonation = donations
+    .filter((d) => d.type === "cash" && d.status === "approved")
+    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
+
+  const now = new Date()
+  const yearStart = new Date(now.getFullYear(), 0, 1)
+  const yearlyCashDonation = donations
+    .filter(
+      (d) =>
+        d.type === "cash" &&
+        d.status === "approved" &&
+        new Date(d.donated_at) >= yearStart
+    )
+    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
 
   type LikeAnimalPreview = {
     id: string
@@ -155,311 +163,275 @@ export default async function MyPage() {
   const likedAnimals = [
     ...likedDogPreviews.map((d) => ({ ...d, kind: "dog" as const })),
     ...likedCatPreviews.map((c) => ({ ...c, kind: "cat" as const })),
-  ].slice(0, 4)
+  ]
+
+  const nextEvent = upcomingEvents[0] ?? null
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 md:py-14">
-      <h1 className="mb-6 text-2xl font-bold text-foreground">마이페이지</h1>
 
-      {/* Row 1: 프로필 | 등급 */}
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* 프로필 */}
-        <DashCard label="프로필">
-          <div className="flex items-center gap-3">
-            <div className="relative size-14 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-muted">
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.nickname}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <User className="size-full p-3 text-muted-foreground" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <UserName
-                nickname={profile.nickname}
-                role={profile.role}
-                size="md"
-                showTier={false}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {profile.phone ?? "전화번호 없음"}
-              </p>
-            </div>
+      {/* ── 환영 헤더 ── */}
+      <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/8 to-primary/3 p-7">
+        {/* 배경 워터마크 */}
+        <span className="pointer-events-none absolute -bottom-8 -right-5 select-none text-[160px] leading-none opacity-[0.05]">
+          🐾
+        </span>
+        <div className="relative flex items-center gap-5">
+          {/* 아바타 */}
+          <div className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-background/80 bg-muted shadow-md">
+            {profile.avatar_url ? (
+              <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
+            ) : (
+              <User className="size-full p-4 text-muted-foreground" />
+            )}
           </div>
+          {/* 정보 */}
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-xs text-foreground/50">안녕하세요</p>
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <UserName nickname={profile.nickname} role={profile.role} size="md" showTier={false} />
+              <span className="inline-flex items-center rounded-full border border-primary/40 bg-background/80 px-3 py-0.5 text-xs font-semibold text-primary">
+                {currentTier.name}
+              </span>
+            </div>
+            <p className="text-xs text-foreground/60">오늘도 따뜻한 마음 감사합니다. 아이들이 기다리고 있어요.</p>
+          </div>
+          {/* 수정 버튼 */}
           <Link
             href="/profile"
-            className="mt-3 block w-full rounded-lg border border-border bg-secondary/60 py-1.5 text-center text-xs font-medium text-foreground/70 transition-colors hover:bg-secondary"
+            className="hidden shrink-0 rounded-xl border border-border bg-background/80 px-4 py-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary sm:block"
           >
             프로필 수정
           </Link>
-        </DashCard>
+        </div>
+      </div>
 
-        {/* 현재 등급 */}
-        <DashCard label="현재 등급">
-          <p className="text-xl font-bold text-foreground">{currentTier.name}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">봉사 {volunteerCount}회 달성</p>
+      {/* ── 등급 진행도 ── */}
+      <div className="mb-5 rounded-2xl border border-border bg-card p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            현재 등급{" "}
+            <strong className="text-primary">{currentTier.name}</strong>
+          </p>
           {nextTier ? (
-            <>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full bg-primary transition-all"
-                  style={{ width: `${tierProgress}%` }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                다음 등급까지 <span className="font-semibold text-primary">{tierRemaining}회</span>
+            <p className="text-xs text-muted-foreground">
+              다음 등급까지{" "}
+              <span className="font-semibold text-foreground">{nextTier.name} {tierRemaining}회</span>
+            </p>
+          ) : (
+            <p className="text-xs font-semibold text-primary">최고 등급 달성 🎉</p>
+          )}
+        </div>
+        {/* 프로그레스 바 */}
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700"
+            style={{ width: `${tierProgress}%` }}
+          />
+        </div>
+        {/* 등급 레벨 점 */}
+        <div className="mt-3 flex justify-between">
+          {VOLUNTEER_TIERS.map((tier, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <div
+                className={cn(
+                  "size-2 rounded-full",
+                  currentTier.level >= tier.level ? "bg-primary" : "bg-secondary"
+                )}
+              />
+              <span
+                className={cn(
+                  "text-[9px] leading-tight",
+                  currentTier.level === tier.level
+                    ? "font-bold text-primary"
+                    : "text-muted-foreground"
+                )}
+              >
+                {TIER_SHORT[i]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 활동 현황 4칸 그리드 ── */}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <ActivityCard
+          icon="✋"
+          iconBg="bg-primary/10"
+          label="총 봉사"
+          value={volunteerCount}
+          unit="회"
+          sub={`올해 ${volunteerYearly}회 · 이번 달 ${volunteerMonthly}회`}
+        />
+        <ActivityCard
+          icon="❤️"
+          iconBg="bg-rose-100"
+          label="총 후원"
+          value={totalCashDonation.toLocaleString()}
+          unit="원"
+          sub={`올해 ${yearlyCashDonation.toLocaleString()}원`}
+        />
+        <ActivityCard
+          icon="🏠"
+          iconBg="bg-emerald-100"
+          label="입양 신청"
+          value={totalAdoptions}
+          unit="건"
+          sub={`진행 중 ${activeAdoptions}건`}
+        />
+        <ActivityCard
+          icon="⭐"
+          iconBg="bg-amber-100"
+          label="찜한 아이들"
+          value={totalLikes}
+          unit="마리"
+          sub={totalLikes === 0 ? "관심 목록 비어있음" : `${likedAnimals[0]?.name ?? ""} 외`}
+        />
+      </div>
+
+      {/* ── 다가오는 일정 ── */}
+      {nextEvent ? (
+        <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#2A3D2F] to-[#3a5440] p-6 text-white">
+          <span className="pointer-events-none absolute -bottom-2 right-6 select-none text-7xl leading-none opacity-10">
+            📅
+          </span>
+          <div className="relative flex items-center gap-4">
+            {/* 날짜 박스 */}
+            <div className="shrink-0 rounded-xl bg-white/15 px-4 py-3 text-center">
+              <p className="text-[10px] text-white/70">
+                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
+                  timeZone: "Asia/Seoul",
+                  weekday: "short",
+                })}
               </p>
-            </>
-          ) : (
-            <p className="mt-2 text-[11px] font-semibold text-primary">최고 등급 달성 🎉</p>
-          )}
-        </DashCard>
-      </div>
-
-      {/* Row 2: 봉사 횟수 | 다가오는 일정 */}
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* 봉사 횟수 */}
-        <DashCard label="봉사 횟수">
-          <div className="flex h-full items-center justify-center gap-8 py-2">
-            <StatBox value={volunteerCount} label="총" valueClass="text-primary" />
-            <StatBox value={volunteerYearly} label="올해" valueClass="text-emerald-600 dark:text-emerald-400" />
-            <StatBox value={volunteerMonthly} label="이번 달" valueClass="text-blue-600 dark:text-blue-400" />
-          </div>
-        </DashCard>
-
-        {/* 다가오는 일정 */}
-        <DashCard label="다가오는 일정">
-          {upcomingEvents.length === 0 ? (
-            <p className="text-xs text-muted-foreground">예정된 봉사 일정이 없습니다.</p>
-          ) : (
-            <div className="space-y-2">
-              {upcomingEvents.slice(0, 3).map((ev) => {
-                const isCustom = ev.category === "custom"
-                const color = CATEGORY_COLOR[ev.category]
-                const customStyle = isCustom ? customColorStyle(ev.custom_color) : null
+              <p className="text-2xl font-bold leading-none">
+                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
+                  timeZone: "Asia/Seoul",
+                  day: "numeric",
+                })}
+              </p>
+              <p className="text-[10px] text-white/70">
+                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
+                  timeZone: "Asia/Seoul",
+                  month: "long",
+                })}
+              </p>
+            </div>
+            {/* 이벤트 정보 */}
+            <div className="min-w-0 flex-1">
+              {(() => {
+                const isCustom = nextEvent.category === "custom"
+                const color = CATEGORY_COLOR[nextEvent.category]
+                const customStyle = isCustom ? customColorStyle(nextEvent.custom_color) : null
                 return (
-                  <Link
-                    key={ev.id}
-                    href={`/calendar/${ev.id}`}
-                    className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-secondary/50"
+                  <span
+                    style={customStyle?.soft}
+                    className={cn(
+                      "mb-2 inline-block rounded px-2 py-0.5 text-[10px] font-bold",
+                      !isCustom && color.soft,
+                      !isCustom && color.softText
+                    )}
                   >
-                    <span
-                      style={customStyle?.soft}
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
-                        !isCustom && color.soft,
-                        !isCustom && color.softText
-                      )}
-                    >
-                      {eventDisplayLabel(ev)}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-                      {getEventTitle(ev)}
-                    </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {formatKoreanDayLabel(ev.starts_at, ev.all_day)}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </DashCard>
-      </div>
-
-      {/* Row 3: 신청내역 | 후원내역 */}
-      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* 신청내역 */}
-        <DashCard label="신청내역">
-          {volunteers.length === 0 && adoptions.length === 0 ? (
-            <p className="text-xs text-muted-foreground">신청 내역이 없습니다.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {volunteers.map((v) => (
-                <div key={v.id} className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                      봉사
-                    </Badge>
-                    <span className="truncate text-xs text-foreground/80">
-                      {v.available_dates.length > 0
-                        ? v.available_dates[0]
-                        : formatDate(v.submitted_at)}
-                    </span>
-                  </div>
-                  <Badge className={cn("shrink-0 border-0 text-[10px] font-semibold", statusBadgeClass(v.status))}>
-                    {v.status}
-                  </Badge>
-                </div>
-              ))}
-              {adoptions.map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                      입양
-                    </Badge>
-                    <span className="truncate text-xs text-foreground/80">
-                      {a.dog?.[0]?.name ?? a.cat?.[0]?.name ?? "신청"}
-                    </span>
-                  </div>
-                  <Badge className={cn("shrink-0 border-0 text-[10px] font-semibold", statusBadgeClass(a.status))}>
-                    {a.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-          <Link href="/my/applications" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
-            전체 보기 →
-          </Link>
-        </DashCard>
-
-        {/* 후원내역 */}
-        <DashCard label="후원내역">
-          {recentDonations.length === 0 ? (
-            <p className="text-xs text-muted-foreground">후원 내역이 없습니다.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {recentDonations.map((d) => (
-                <div key={d.id} className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <Badge className="shrink-0 border-0 bg-secondary text-[10px] font-semibold text-foreground/70">
-                      {d.type === "cash" ? "현금" : "물품"}
-                    </Badge>
-                    <span className="truncate text-xs text-foreground/80">
-                      {d.type === "cash"
-                        ? `${(d.amount ?? 0).toLocaleString()}원`
-                        : [d.item_description, d.item_quantity].filter(Boolean).join(" · ")}
-                    </span>
-                  </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground">
-                    {formatDate(d.donated_at)}
+                    {eventDisplayLabel(nextEvent)}
                   </span>
-                </div>
-              ))}
-              <p className="text-[11px] text-muted-foreground">총 {donations.length}건</p>
-            </div>
-          )}
-          <Link href="/my/donations" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
-            전체 보기 →
-          </Link>
-        </DashCard>
-      </div>
-
-      {/* Row 4: 찜한 아이들 (full width) */}
-      <div className="mb-3">
-        <DashCard label="찜한 아이들">
-          {likedAnimals.length === 0 ? (
-            <p className="text-xs text-muted-foreground">찜한 아이가 없습니다.</p>
-          ) : (
-            <div className="grid grid-cols-4 gap-2">
-              {likedAnimals.map((animal) => {
-                const thumbnailSrc =
-                  animal.images[animal.thumbnail_index] ?? animal.images[0] ?? null
-                return (
-                  <Link
-                    key={`${animal.kind}:${animal.id}`}
-                    href={`/${animal.kind === "dog" ? "dogs" : "cats"}/${animal.id}`}
-                    className="group overflow-hidden rounded-xl border border-border bg-muted transition-colors hover:border-primary/30"
-                  >
-                    <div className="relative aspect-square w-full overflow-hidden bg-muted">
-                      {thumbnailSrc ? (
-                        <Image
-                          src={thumbnailSrc}
-                          alt={animal.name}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center text-2xl">
-                          {animal.kind === "dog" ? "🐾" : "🐱"}
-                        </span>
-                      )}
-                    </div>
-                    <p className="px-2 py-1.5 text-xs font-semibold text-foreground truncate">{animal.name}</p>
-                  </Link>
                 )
-              })}
+              })()}
+              <p className="text-base font-bold">{getEventTitle(nextEvent)}</p>
+              <p className="mt-1 text-xs text-white/70">
+                {formatKoreanDayLabel(nextEvent.starts_at, nextEvent.all_day)}
+              </p>
             </div>
-          )}
-          {likedAnimals.length > 0 && (
-            <Link href="/my/likes" className="mt-3 block text-right text-[11px] font-medium text-primary hover:underline">
-              전체 보기 →
+            {/* 상세 보기 버튼 */}
+            <Link
+              href={`/calendar/${nextEvent.id}`}
+              className="hidden shrink-0 rounded-lg bg-white px-4 py-2 text-xs font-bold text-[#2A3D2F] transition-opacity hover:opacity-90 sm:block"
+            >
+              상세 보기
             </Link>
-          )}
-        </DashCard>
-      </div>
-
-      {/* 운영진 진입 */}
-      {isStaff && (
-        <Link
-          href="/admin"
-          className="mb-3 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 transition-colors hover:bg-primary/10"
-        >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-            <Settings className="size-4" />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-semibold text-primary">어드민 페이지</span>
-            <span className="block text-xs text-muted-foreground">운영자 대시보드</span>
-          </span>
-          <ChevronRight className="size-4 shrink-0 text-primary/60" />
-        </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-5 rounded-2xl border border-dashed border-border bg-card p-6 text-center">
+          <p className="text-sm text-muted-foreground">예정된 봉사 일정이 없습니다.</p>
+          <Link href="/calendar" className="mt-2 inline-block text-xs font-medium text-primary hover:underline">
+            봉사 일정 보기 →
+          </Link>
+        </div>
       )}
 
-      {/* 로그아웃 */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      {/* ── 탭 섹션 (신청내역 / 후원내역 / 찜한아이들) ── */}
+      <MyPageTabs
+        volunteers={volunteers}
+        adoptions={adoptions}
+        donations={donations}
+        likedAnimals={likedAnimals}
+      />
+
+      {/* ── 계정 관리 ── */}
+      <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-card">
+        {isStaff && (
+          <Link
+            href="/admin"
+            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/50"
+          >
+            <Settings className="size-4 text-muted-foreground" />
+            <span className="flex-1 text-sm font-medium text-primary">어드민 페이지</span>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Link>
+        )}
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 border-t border-border px-5 py-4 transition-colors hover:bg-secondary/50 first:border-t-0"
+        >
+          <User className="size-4 text-muted-foreground" />
+          <span className="flex-1 text-sm text-foreground">프로필 수정</span>
+          <ChevronRight className="size-4 text-muted-foreground" />
+        </Link>
         <form action={signOut}>
           <button
             type="submit"
-            className="flex w-full items-center gap-3 px-5 py-4 text-left text-destructive transition-colors hover:bg-destructive/5"
+            className="flex w-full items-center gap-3 border-t border-border px-5 py-4 text-left text-destructive transition-colors hover:bg-destructive/5"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10">
-              <LogOut className="size-4" />
-            </span>
-            <span className="flex-1">
-              <span className="block text-sm font-medium">로그아웃</span>
-              <span className="block text-xs text-muted-foreground">계정에서 로그아웃합니다</span>
-            </span>
+            <LogOut className="size-4" />
+            <span className="flex-1 text-sm font-medium">로그아웃</span>
+            <ChevronRight className="size-4 opacity-50" />
           </button>
         </form>
       </div>
 
+      {/* ── 회원 탈퇴 ── */}
       <DeleteAccountButton />
     </div>
   )
 }
 
-/** 대시보드 카드 래퍼 */
-function DashCard({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
-      {children}
-    </div>
-  )
-}
-
-/** 봉사 횟수 단일 통계 박스 */
-function StatBox({
-  value,
+function ActivityCard({
+  icon,
+  iconBg,
   label,
-  valueClass,
+  value,
+  unit,
+  sub,
 }: {
-  value: number
+  icon: string
+  iconBg: string
   label: string
-  valueClass?: string
+  value: number | string
+  unit: string
+  sub: string
 }) {
   return (
-    <div className="text-center">
-      <p className={cn("text-3xl font-extrabold leading-none", valueClass)}>{value}</p>
-      <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
+    <div className="rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div className={cn("mb-3 flex size-10 items-center justify-center rounded-xl text-lg", iconBg)}>
+        {icon}
+      </div>
+      <p className="mb-1 text-xs text-muted-foreground">{label}</p>
+      <p className="text-2xl font-bold leading-none text-foreground">
+        {value}
+        <span className="ml-0.5 text-sm font-normal text-muted-foreground">{unit}</span>
+      </p>
+      <p className="mt-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">{sub}</p>
     </div>
   )
 }
