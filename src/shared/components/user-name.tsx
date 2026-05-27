@@ -53,7 +53,7 @@ export function UserName({
       </span>
       {showTier && tier && tier.level > 0 && (
         <span className="text-[11px] text-muted-foreground" title={`봉사 ${volunteerCount}회`}>
-          {tier.icon} {tier.name}
+          {tier.name}
         </span>
       )}
     </span>

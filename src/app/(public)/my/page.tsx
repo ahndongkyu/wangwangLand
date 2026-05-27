@@ -217,7 +217,7 @@ export default async function MyPage() {
         {nextTier && (
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-              <span>다음 등급: <span className="font-semibold text-foreground">{nextTier.icon} {nextTier.name}</span></span>
+              <span>다음 등급: <span className="font-semibold text-foreground">{nextTier.name}</span></span>
               <span><span className="font-bold text-primary">{tierRemaining}</span>회 남음</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">

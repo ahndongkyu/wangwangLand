@@ -70,10 +70,10 @@ export function progressToNextTier(count: number, role?: string | null): number 
   return Math.min(100, Math.max(0, Math.round((done / span) * 100)))
 }
 
-/** "🐶 어엿한 친구" 형식의 라벨 */
+/** "어엿한 친구" 형식의 라벨 */
 export function tierLabel(count: number, role?: string | null): string {
   const tier = getTier(count, role)
-  return `${tier.icon} ${tier.name}`
+  return tier.name
 }
 
 /** 정회원 자격 도달 여부 */
