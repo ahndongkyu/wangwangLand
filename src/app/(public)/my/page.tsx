@@ -1,8 +1,9 @@
+import type React from "react"
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, LogOut, Settings, User } from "lucide-react"
+import { CalendarDays, ChevronRight, ClipboardList, HandCoins, Heart, LogOut, Settings, User } from "lucide-react"
 
 import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
@@ -256,35 +257,35 @@ export default async function MyPage() {
         </div>
       </div>
 
-      {/* ── 활동 현황 4칸 그리드 ── */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* ── 활동 현황 2×2 그리드 ── */}
+      <div className="mb-5 grid grid-cols-2 gap-3">
         <ActivityCard
-          icon="✋"
-          iconBg="bg-primary/10"
+          icon={<CalendarDays className="size-5" />}
+          iconBg="bg-primary/10 text-primary"
           label="총 봉사"
           value={volunteerCount}
           unit="회"
           sub={`올해 ${volunteerYearly}회 · 이번 달 ${volunteerMonthly}회`}
         />
         <ActivityCard
-          icon="❤️"
-          iconBg="bg-rose-100"
+          icon={<HandCoins className="size-5" />}
+          iconBg="bg-rose-100 text-rose-500"
           label="총 후원"
           value={totalCashDonation.toLocaleString()}
           unit="원"
           sub={`올해 ${yearlyCashDonation.toLocaleString()}원`}
         />
         <ActivityCard
-          icon="🏠"
-          iconBg="bg-emerald-100"
+          icon={<ClipboardList className="size-5" />}
+          iconBg="bg-emerald-100 text-emerald-600"
           label="입양 신청"
           value={totalAdoptions}
           unit="건"
           sub={`진행 중 ${activeAdoptions}건`}
         />
         <ActivityCard
-          icon="⭐"
-          iconBg="bg-amber-100"
+          icon={<Heart className="size-5" />}
+          iconBg="bg-amber-100 text-amber-500"
           label="찜한 아이들"
           value={totalLikes}
           unit="마리"
@@ -416,7 +417,7 @@ function ActivityCard({
   unit,
   sub,
 }: {
-  icon: string
+  icon: React.ReactNode
   iconBg: string
   label: string
   value: number | string
@@ -425,7 +426,7 @@ function ActivityCard({
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
-      <div className={cn("mb-3 flex size-10 items-center justify-center rounded-xl text-lg", iconBg)}>
+      <div className={cn("mb-3 flex size-10 items-center justify-center rounded-xl", iconBg)}>
         {icon}
       </div>
       <p className="mb-1 text-xs text-muted-foreground">{label}</p>
