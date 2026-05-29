@@ -261,8 +261,8 @@ export function UpcomingEvents({ events }: Props) {
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: fileName })
-          return
-        } catch { /* 취소 시 다운로드 */ }
+        } catch { /* 취소 */ }
+        return // 공유 시도 후엔 성공/취소 무관하게 다운로드 fallback 실행 안 함
       }
 
       // 데스크톱 fallback: 다운로드
