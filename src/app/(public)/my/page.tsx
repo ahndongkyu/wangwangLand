@@ -256,17 +256,18 @@ export default async function MyPage() {
             const reached = currentTier.level >= tier.level
             const current = currentTier.level === tier.level
             return (
-              <div key={i} className="flex flex-col items-center gap-1">
+              <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
                 <TierIcon
                   className={cn(
-                    "size-4 transition-all",
-                    reached ? "text-primary" : "text-muted-foreground/30"
+                    "size-3.5 shrink-0 transition-all",
+                    reached ? "text-primary" : "text-muted-foreground/25"
                   )}
                 />
+                {/* 현재 등급만 라벨 표시, 나머지는 숨김 */}
                 <span
                   className={cn(
-                    "text-[9px] leading-tight",
-                    current ? "font-bold text-primary" : "text-muted-foreground"
+                    "w-full truncate text-center text-[8px] leading-tight",
+                    current ? "font-bold text-primary" : "text-transparent select-none"
                   )}
                 >
                   {TIER_SHORT[i]}

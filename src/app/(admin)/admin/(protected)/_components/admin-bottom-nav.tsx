@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, ClipboardList, CalendarDays, Bell, ArrowLeft, Trophy } from "lucide-react"
+import { LayoutDashboard, ClipboardList, CalendarDays, Bell, ArrowLeft } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 
@@ -14,7 +14,6 @@ const HOME_TAB = { label: "대시보드", icon: LayoutDashboard, href: "/admin",
 const REST_TABS = [
   { label: "신청", icon: ClipboardList, href: "/admin/applications", exact: false },
   { label: "일정", icon: CalendarDays, href: "/admin/calendar", exact: false },
-  { label: "랭킹", icon: Trophy, href: "/admin/ranking", exact: false },
   { label: "알림", icon: Bell, href: "/admin/members", exact: false },
 ] as const
 
