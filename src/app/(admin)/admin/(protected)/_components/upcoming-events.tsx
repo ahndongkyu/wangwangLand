@@ -217,6 +217,7 @@ export function UpcomingEvents({ events }: Props) {
   const [selected, setSelected] = useState<string>(dates[0] ?? todayStr)
   const [copied, setCopied] = useState(false)
   const [capturing, setCapturing] = useState(false)
+  const captureRef = useRef(false) // 동기 이중 호출 방지 (state는 리렌더 전 통과 가능)
   const tabsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -250,7 +251,8 @@ export function UpcomingEvents({ events }: Props) {
   }
 
   async function handleScreenshot() {
-    if (capturing) return
+    if (captureRef.current) return
+    captureRef.current = true
     setCapturing(true)
     try {
       const blob = await buildScheduleImage(selected, selectedEvents)
@@ -275,6 +277,7 @@ export function UpcomingEvents({ events }: Props) {
     } catch (e) {
       console.error("screenshot error", e)
     } finally {
+      captureRef.current = false
       setCapturing(false)
     }
   }
