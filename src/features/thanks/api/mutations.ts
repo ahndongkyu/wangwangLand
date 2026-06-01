@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -85,7 +84,7 @@ export async function createDonationThanks(
   }
 
   revalidateAll()
-  redirect("/admin/thanks")
+  return {}
 }
 
 export async function updateDonationThanks(
@@ -134,7 +133,7 @@ export async function updateDonationThanks(
   }
 
   revalidateAll(id)
-  redirect("/admin/thanks")
+  return {}
 }
 
 export async function deleteDonationThanks(

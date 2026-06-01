@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
 
 import {
@@ -20,23 +21,25 @@ interface Props {
 }
 
 export function ThanksForm({ post, cancelHref = "/admin/thanks" }: Props) {
+  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  // 수정 모드 판정 — 기존 행이면 id 가 있음.
   const isEdit = Boolean(post?.id)
   const contentRef = useRef<string>(post?.content ?? "")
 
   function handleSubmit(formData: FormData) {
     setError(null)
-    // RichTextEditor 의 hidden input 이 DOM 에서 이미 최신값을 갖지만,
-    // contentRef 로도 덮어써서 이중 보장.
     formData.set("content", contentRef.current)
     startTransition(async () => {
       const result =
         isEdit && post?.id
           ? await updateDonationThanks(post.id, formData)
           : await createDonationThanks(formData)
-      if (result?.error) setError(result.error)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        router.push(cancelHref)
+      }
     })
   }
 
