@@ -1,14 +1,13 @@
 import { cn } from "@/shared/lib/utils"
-import { getTier } from "@/features/volunteer-tier/tier"
 
 export type UserRole = "member" | "full_member" | "staff" | "admin"
 
 interface Props {
   nickname: string
   role?: string | null
-  /** 봉사 인증 횟수 — 있으면 등급 뱃지 노출 */
+  /** @deprecated 등급 표시 제거로 미사용 */
   volunteerCount?: number | null
-  /** 등급 뱃지 표시 여부 (좁은 공간에선 false) */
+  /** @deprecated 등급 표시 제거로 미사용 */
   showTier?: boolean
   /** 사이즈 */
   size?: "sm" | "md"
@@ -25,25 +24,15 @@ const ROLE_BORDER: Record<UserRole, string> = {
 /**
  * 작성자/회원 이름 표시 컴포넌트.
  * - 권한(role) → 닉네임 둘레 테두리 색
- * - 봉사 인증 횟수 → 옆에 등급 뱃지
  */
 export function UserName({
   nickname,
   role,
-  volunteerCount,
-  showTier = true,
   size = "sm",
   className,
 }: Props) {
   const key = (role && role in ROLE_BORDER ? role : "member") as UserRole
   const border = ROLE_BORDER[key]
-  // 운영진(admin/staff)은 카운트 무관하게 최고 등급 표시
-  const isStaff = key === "admin" || key === "staff"
-  const tier =
-    isStaff || typeof volunteerCount === "number"
-      ? getTier(volunteerCount ?? 0, role)
-      : null
-
   const padding = size === "md" ? "px-2.5 py-0.5 text-sm" : "px-2 py-[1px] text-xs"
 
   return (
@@ -51,11 +40,6 @@ export function UserName({
       <span className={cn("inline-flex items-center rounded-full border font-semibold", padding, border)}>
         {nickname}
       </span>
-      {showTier && tier && tier.level > 0 && (
-        <span className="text-[11px] text-muted-foreground" title={`봉사 ${volunteerCount}회`}>
-          {tier.name}
-        </span>
-      )}
     </span>
   )
 }

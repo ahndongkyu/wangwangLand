@@ -4,21 +4,15 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  CalendarCheck,
   CalendarDays,
   ChevronRight,
   ClipboardList,
-  Footprints,
   HandCoins,
   Heart,
-  Home,
   LogOut,
   Settings,
-  ShieldCheck,
   Trophy,
   User,
-  UserPlus,
-  Users,
 } from "lucide-react"
 
 import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
@@ -34,11 +28,6 @@ import {
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
 import {
   getVolunteerCountBreakdown,
-  getTier,
-  getNextTier,
-  remainingToNextTier,
-  progressToNextTier,
-  VOLUNTEER_TIERS,
 } from "@/features/volunteer-tier"
 import { UserName } from "@/shared/components/user-name"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -50,11 +39,6 @@ import { MyPageTabs } from "./_components/mypage-tabs"
 export const metadata: Metadata = { title: "마이페이지" }
 export const dynamic = "force-dynamic"
 
-// 등급 레벨 짧은 이름
-const TIER_SHORT = ["새얼굴", "산책", "단골", "동반자", "가족", "베테랑", "명예"]
-
-// 등급별 Lucide 아이콘
-const TIER_ICONS = [UserPlus, Footprints, CalendarCheck, Users, Home, ShieldCheck, Trophy]
 
 export default async function MyPage() {
   const profile = await getCurrentProfile()
@@ -127,11 +111,6 @@ export default async function MyPage() {
   ])
 
   const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
-
-  const currentTier = getTier(volunteerCount, profile.role)
-  const nextTier = getNextTier(volunteerCount, profile.role)
-  const tierProgress = progressToNextTier(volunteerCount, profile.role)
-  const tierRemaining = remainingToNextTier(volunteerCount, profile.role)
 
   const adoptions = (adoptionRes.data ?? []) as Array<{
     id: string
@@ -209,10 +188,7 @@ export default async function MyPage() {
           <div className="min-w-0 flex-1">
             <p className="mb-1 text-xs text-foreground/50">안녕하세요</p>
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <UserName nickname={profile.nickname} role={profile.role} size="md" showTier={false} />
-              <span className="inline-flex items-center rounded-full border border-primary/40 bg-background/80 px-3 py-0.5 text-xs font-semibold text-primary">
-                {currentTier.name}
-              </span>
+              <UserName nickname={profile.nickname} role={profile.role} size="md" />
             </div>
             <p className="text-xs text-foreground/60">오늘도 따뜻한 마음 감사합니다. 아이들이 기다리고 있어요.</p>
           </div>
@@ -223,58 +199,6 @@ export default async function MyPage() {
           >
             프로필 수정
           </Link>
-        </div>
-      </div>
-
-      {/* ── 등급 진행도 ── */}
-      <div className="mb-5 rounded-2xl border border-border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            현재 등급{" "}
-            <strong className="text-primary">{currentTier.name}</strong>
-          </p>
-          {nextTier ? (
-            <p className="text-xs text-muted-foreground">
-              다음 등급까지{" "}
-              <span className="font-semibold text-foreground">{nextTier.name} {tierRemaining}회</span>
-            </p>
-          ) : (
-            <p className="text-xs font-semibold text-primary">최고 등급 달성 🎉</p>
-          )}
-        </div>
-        {/* 프로그레스 바 */}
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700"
-            style={{ width: `${tierProgress}%` }}
-          />
-        </div>
-        {/* 등급 레벨 아이콘 */}
-        <div className="mt-3 flex justify-between">
-          {VOLUNTEER_TIERS.map((tier, i) => {
-            const TierIcon = TIER_ICONS[i]
-            const reached = currentTier.level >= tier.level
-            const current = currentTier.level === tier.level
-            return (
-              <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-0.5">
-                <TierIcon
-                  className={cn(
-                    "size-3.5 shrink-0 transition-all",
-                    reached ? "text-primary" : "text-muted-foreground/25"
-                  )}
-                />
-                {/* 현재 등급만 라벨 표시, 나머지는 숨김 */}
-                <span
-                  className={cn(
-                    "w-full truncate text-center text-[8px] leading-tight",
-                    current ? "font-bold text-primary" : "text-transparent select-none"
-                  )}
-                >
-                  {TIER_SHORT[i]}
-                </span>
-              </div>
-            )
-          })}
         </div>
       </div>
 
