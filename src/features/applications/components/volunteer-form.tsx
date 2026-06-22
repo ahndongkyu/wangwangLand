@@ -201,14 +201,13 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
       <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
         <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
         <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          현재는 승인 처리가 되어도 별도로 알림을 보내드리지 못하는 상황입니다.
+          봉사 신청 후 승인 내역은 <span className="font-semibold">문자</span>를 통해 안내드리고 있습니다.
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          곧 <span className="font-semibold">카카오톡 알림 서비스</span>를 통해 신청 결과를 받아보실 수 있도록 준비 중이에요.
+          승인 처리가 완료되면 홈페이지에서 봉사 안내 및 준비물 등을 확인하실 수 있으니 꼭 확인해 주세요.
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          확인 후 바로 승인 처리하려 노력하고 있으니, 번거로우시더라도 신청 후{" "}
-          <span className="font-semibold">마이페이지</span>에서 승인 상태와 안내사항을 확인해 주세요.
+          봉사 신청 가능 시간은 <span className="font-semibold">오전 10시 ~ 오후 5시</span>입니다.
         </p>
         <p className="mt-2 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
           평일 12:00 – 13:00는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
@@ -411,7 +410,7 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
                 className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               >
                 <option value="">시</option>
-                {Array.from({ length: 10 }, (_, i) => i + 9)
+                {Array.from({ length: 8 }, (_, i) => i + 10)
                   .filter((h) => h !== 12)
                   .map((h) => {
                     const hStr = String(h).padStart(2, "0")
