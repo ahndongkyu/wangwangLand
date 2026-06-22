@@ -10,6 +10,7 @@ import {
   publicEventTitle,
 } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
+import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -22,7 +23,22 @@ export default async function EventDetailPage({
   const { id } = await params
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
-  if (event.source_application_id) redirect("/my/applications")
+
+  // 봉사 신청으로 생성된 일정 — 본인 신청이면 신청 내역으로, 남의 일정이면 캘린더로
+  if (event.source_application_id && event.source_application_type === "volunteer") {
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      const { data: myApp } = await supabase
+        .from("volunteer_applications")
+        .select("id")
+        .eq("id", event.source_application_id)
+        .eq("created_by", session.user.id)
+        .maybeSingle()
+      if (myApp) redirect("/my/applications")
+    }
+    redirect("/calendar")
+  }
 
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
