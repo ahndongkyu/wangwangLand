@@ -33,13 +33,15 @@ export async function getSiteStats(): Promise<SiteStats> {
     supabase.from("cats").select("*", { count: "exact", head: true }),
     supabase.from("cats").select("*", { count: "exact", head: true }).eq("status", "입양완료"),
     supabase.from("cats").select("*", { count: "exact", head: true }).in("status", ["보호중", "임시보호중"]),
-    supabase.from("volunteer_applications").select("*", { count: "exact", head: true }),
+    supabase.from("volunteer_applications").select("party_size").eq("status", "승인"),
   ])
+
+  const totalVolunteers = (volRes.data ?? []).reduce((sum, r) => sum + (r.party_size ?? 1), 0)
 
   return {
     rescued: (dogTotalRes.count ?? 0) + (catTotalRes.count ?? 0),
     adopted: (dogAdoptedRes.count ?? 0) + (catAdoptedRes.count ?? 0),
     sheltered: (dogShelteredRes.count ?? 0) + (catShelteredRes.count ?? 0),
-    volunteers: volRes.count ?? 0,
+    volunteers: totalVolunteers,
   }
 }
