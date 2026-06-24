@@ -48,7 +48,7 @@ export const SITE = {
   partners: {
     barunPuppyLab: {
       name: "바른퍼피랩",
-      url: "https://smartstore.naver.com/barunpuppylab/products/13278162589",
+      url: "https://naver.me/GprxU7ii",
     },
   },
   /**
