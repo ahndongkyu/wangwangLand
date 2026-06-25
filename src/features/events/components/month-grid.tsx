@@ -351,17 +351,19 @@ function EventChip({
     return (
       <span
         title={`${formatTimeKst(event.starts_at)} ${displayTitle}`}
-        className="flex w-full min-w-0 items-center gap-1 rounded-sm px-1 py-0.5 text-left text-[11px]"
+        className="flex w-full min-w-0 items-center gap-1 rounded-sm px-0.5 py-0.5 text-left text-[11px]"
       >
         <span
-          aria-hidden
-          style={customStyle?.dot}
-          className={cn("size-1.5 shrink-0 rounded-full", !isCustom && color.dot)}
-        />
-        <span className="min-w-0 truncate text-muted-foreground">
-          <span className="text-foreground/80">{formatTimeKst(event.starts_at)}</span>{" "}
-          {displayTitle}
+          style={customStyle?.soft}
+          className={cn(
+            "shrink-0 rounded px-1 py-px text-[10px] font-semibold tabular-nums",
+            !isCustom && color.soft,
+            !isCustom && color.softText
+          )}
+        >
+          {formatTimeKst(event.starts_at)}
         </span>
+        <span className="min-w-0 truncate text-foreground/85">{displayTitle}</span>
       </span>
     )
   }
@@ -389,17 +391,19 @@ function EventChip({
       type="button"
       onClick={onClick}
       title={`${formatTimeKst(event.starts_at)} ${displayTitle}`}
-      className="flex w-full min-w-0 items-center gap-1 rounded-sm px-1 py-0.5 text-left text-[11px] hover:bg-secondary"
+      className="flex w-full min-w-0 items-center gap-1 rounded-sm px-0.5 py-0.5 text-left text-[11px] hover:bg-secondary"
     >
       <span
-        aria-hidden
-        style={customStyle?.dot}
-        className={cn("size-1.5 shrink-0 rounded-full", !isCustom && color.dot)}
-      />
-      <span className="min-w-0 truncate text-muted-foreground">
-        <span className="text-foreground/80">{formatTimeKst(event.starts_at)}</span>{" "}
-        {displayTitle}
+        style={customStyle?.soft}
+        className={cn(
+          "shrink-0 rounded px-1 py-px text-[10px] font-semibold tabular-nums",
+          !isCustom && color.soft,
+          !isCustom && color.softText
+        )}
+      >
+        {formatTimeKst(event.starts_at)}
       </span>
+      <span className="min-w-0 truncate text-foreground/85">{displayTitle}</span>
     </button>
   )
 }
