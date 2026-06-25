@@ -71,8 +71,8 @@ export const CATEGORY_COLOR: Record<
     bg: "bg-primary",
     text: "text-primary-foreground",
     dot: "bg-primary",
-    soft: "bg-primary/15",
-    softText: "text-primary",
+    soft: "bg-orange-200/80 dark:bg-orange-900/40",
+    softText: "text-orange-900 dark:text-orange-200",
   },
   event: {
     bg: "bg-emerald-600",

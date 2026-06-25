@@ -148,7 +148,7 @@ export function MonthGrid({
                   <span
                     className={cn(
                       "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
-                      today && "bg-primary text-primary-foreground",
+                      today && "bg-foreground text-background",
                       !today && inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
                       !today && inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
                       !today && inMonth && dow !== 0 && dow !== 6 && !isHolidayCell && "text-foreground",
@@ -356,7 +356,7 @@ function EventChip({
         <span
           style={customStyle?.soft}
           className={cn(
-            "shrink-0 rounded px-1 py-px text-[10px] font-semibold tabular-nums",
+            "w-[3.7rem] shrink-0 rounded py-px text-center text-[10px] font-semibold tabular-nums",
             !isCustom && color.soft,
             !isCustom && color.softText
           )}
