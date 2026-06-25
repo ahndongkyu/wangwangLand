@@ -175,35 +175,49 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
         </>
       )}
 
-      {/* 카테고리 */}
-      <div>
-        <Label htmlFor="category" className="mb-2 block text-sm font-semibold">
-          카테고리
-        </Label>
-        <select
-          id="category"
-          name="category"
-          value={category}
-          onChange={(e) => setCategory(e.target.value as EventCategory)}
-          className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c === "custom"
-                ? "직접 입력"
-                : INTERNAL_CATEGORIES.includes(c)
-                  ? `${CATEGORY_LABEL[c]} (관리자 전용)`
-                  : CATEGORY_LABEL[c]}
-            </option>
-          ))}
-        </select>
-        {isInternal && (
-          <p className="mt-2 flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
-            <Lock className="size-3.5 shrink-0" aria-hidden />
-            이 카테고리는 관리자·운영진에게만 보이며, 사용자 캘린더에는 표시되지 않습니다.
-          </p>
-        )}
+      {/* 카테고리 + 제목 (한 줄) */}
+      <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
+        <div className="space-y-1.5">
+          <Label htmlFor="category">카테고리</Label>
+          <select
+            id="category"
+            name="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as EventCategory)}
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c === "custom"
+                  ? "직접 입력"
+                  : INTERNAL_CATEGORIES.includes(c)
+                    ? `${CATEGORY_LABEL[c]} 🔒`
+                    : CATEGORY_LABEL[c]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="title">
+            제목 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="title"
+            name="title"
+            required
+            maxLength={100}
+            defaultValue={defaultTitle}
+            placeholder="예: 보리·뽀삐 산책 봉사"
+          />
+        </div>
       </div>
+
+      {isInternal && (
+        <p className="-mt-2 flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+          <Lock className="size-3.5 shrink-0" aria-hidden />
+          이 카테고리는 관리자·운영진에게만 보이며, 사용자 캘린더에는 표시되지 않습니다.
+        </p>
+      )}
 
       {/* 직접 입력 카테고리 — 이름 + 색상 */}
       {category === "custom" && (
@@ -249,38 +263,6 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
               </span>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 제목 */}
-      <div className="space-y-1.5">
-        <Label htmlFor="title">
-          제목 <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="title"
-          name="title"
-          required
-          maxLength={100}
-          defaultValue={defaultTitle}
-          placeholder="예: 보리·뽀삐 산책 봉사"
-        />
-      </div>
-
-      {/* 종일 토글 — 다중 날짜 모드에선 숨김 */}
-      {!isMultiDateMode && (
-        <div className="flex items-center gap-2">
-          <input
-            id="all_day"
-            name="all_day"
-            type="checkbox"
-            checked={allDay}
-            onChange={(e) => setAllDay(e.target.checked)}
-            className="size-4 accent-primary"
-          />
-          <Label htmlFor="all_day" className="cursor-pointer text-sm">
-            종일 일정
-          </Label>
         </div>
       )}
 
@@ -344,9 +326,22 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
       ) : (
         /* 일시 (단일 날짜 + 시작 시간) */
         <div className="space-y-1.5">
-          <Label htmlFor="starts_at">
-            일시 <span className="text-destructive">*</span>
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="starts_at">
+              일시 <span className="text-destructive">*</span>
+            </Label>
+            <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+              <input
+                id="all_day"
+                name="all_day"
+                type="checkbox"
+                checked={allDay}
+                onChange={(e) => setAllDay(e.target.checked)}
+                className="size-3.5 accent-primary"
+              />
+              종일
+            </label>
+          </div>
           <Input
             id="starts_at"
             name="starts_at"
@@ -359,6 +354,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
                   ? fallbackDate
                   : defaultStartFor(fallbackDate)
             }
+            className="sm:max-w-[280px]"
           />
         </div>
       )}
