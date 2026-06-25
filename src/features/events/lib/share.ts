@@ -42,6 +42,7 @@ const CATEGORY_HEX: Record<string, { bg: string; text: string }> = {
   event: { bg: "#059669", text: "#FFFFFF" },
   closed: { bg: "#9CA3AF", text: "#FFFFFF" },
   custom: { bg: "#7C7AC9", text: "#FFFFFF" },
+  adoption_consult: { bg: "#BAE6FD", text: "#0C4A6E" },
 }
 
 function roundRect(

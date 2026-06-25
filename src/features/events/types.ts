@@ -98,11 +98,11 @@ export const CATEGORY_COLOR: Record<
     softText: "text-muted-foreground",
   },
   adoption_consult: {
-    bg: "bg-blue-600",
-    text: "text-white",
-    dot: "bg-blue-600",
-    soft: "bg-blue-100 dark:bg-blue-900/30",
-    softText: "text-blue-700 dark:text-blue-400",
+    bg: "bg-sky-200 dark:bg-sky-800",
+    text: "text-sky-900 dark:text-sky-50",
+    dot: "bg-sky-400",
+    soft: "bg-sky-100 dark:bg-sky-900/30",
+    softText: "text-sky-700 dark:text-sky-300",
   },
 }
 
