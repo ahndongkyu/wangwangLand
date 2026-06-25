@@ -148,10 +148,10 @@ export function MonthGrid({
                   <span
                     className={cn(
                       "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
-                      today && "border-[1.5px] border-red-500",
-                      inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
-                      inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
-                      inMonth && dow !== 0 && dow !== 6 && !isHolidayCell && "text-foreground",
+                      today && "bg-rose-200 text-rose-800 dark:bg-rose-400/30 dark:text-rose-200",
+                      !today && inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
+                      !today && inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
+                      !today && inMonth && dow !== 0 && dow !== 6 && !isHolidayCell && "text-foreground",
                       !inMonth && "text-muted-foreground/40"
                     )}
                   >
