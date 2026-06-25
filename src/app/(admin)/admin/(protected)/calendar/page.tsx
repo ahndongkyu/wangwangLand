@@ -23,7 +23,6 @@ const VALID_CATS: EventCategory[] = [
   "event",
   "closed",
   "adoption_consult",
-  "foster_consult",
 ]
 const YM_RE = /^\d{4}-\d{2}$/
 

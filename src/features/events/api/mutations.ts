@@ -38,7 +38,6 @@ const VALID_CATEGORIES: EventCategory[] = [
   "closed",
   "custom",
   "adoption_consult",
-  "foster_consult",
 ]
 
 function parseEventInput(formData: FormData): EventInput | { error: string } {

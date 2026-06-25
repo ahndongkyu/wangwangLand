@@ -4,13 +4,9 @@ export type EventCategory =
   | "closed"
   | "custom"
   | "adoption_consult"
-  | "foster_consult"
 
 /** 항상 internal(관리자 전용)로 저장되는 카테고리. */
-export const INTERNAL_CATEGORIES: EventCategory[] = [
-  "adoption_consult",
-  "foster_consult",
-]
+export const INTERNAL_CATEGORIES: EventCategory[] = ["adoption_consult"]
 
 export type EventVisibility = "public" | "internal"
 export type EventSourceApplicationType = "volunteer" | "adoption"
@@ -59,8 +55,7 @@ export const CATEGORY_LABEL: Record<EventCategory, string> = {
   event: "행사",
   closed: "휴무",
   custom: "기타",
-  adoption_consult: "입양상담",
-  foster_consult: "임보상담",
+  adoption_consult: "입양/임보 상담",
 }
 
 /**
@@ -108,13 +103,6 @@ export const CATEGORY_COLOR: Record<
     dot: "bg-blue-600",
     soft: "bg-blue-100 dark:bg-blue-900/30",
     softText: "text-blue-700 dark:text-blue-400",
-  },
-  foster_consult: {
-    bg: "bg-violet-600",
-    text: "text-white",
-    dot: "bg-violet-600",
-    soft: "bg-violet-100 dark:bg-violet-900/30",
-    softText: "text-violet-700 dark:text-violet-400",
   },
 }
 

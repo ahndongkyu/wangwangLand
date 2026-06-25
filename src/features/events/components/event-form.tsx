@@ -44,7 +44,6 @@ const CATEGORIES: EventCategory[] = [
   "event",
   "closed",
   "adoption_consult",
-  "foster_consult",
   "custom",
 ]
 const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
@@ -188,11 +187,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c === "custom"
-                  ? "직접 입력"
-                  : INTERNAL_CATEGORIES.includes(c)
-                    ? `${CATEGORY_LABEL[c]} 🔒`
-                    : CATEGORY_LABEL[c]}
+                {c === "custom" ? "직접 입력" : CATEGORY_LABEL[c]}
               </option>
             ))}
           </select>
