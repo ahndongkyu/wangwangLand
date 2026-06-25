@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { CalendarDays, LayoutGrid } from "lucide-react"
 
 import {
   EventCard,
   listMyUpcomingEvents,
-  listUpcomingEvents,
   type EventWithSignupCount,
 } from "@/features/events"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -22,17 +22,16 @@ export default async function CalendarPage() {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // 로그인 사용자 → 본인이 신청한 일정만 (마스킹 안 함, 본인 일정이라 OK)
-  // 게스트 → 다가오는 전체 일정 (마스킹)
-  let events: EventWithSignupCount[] = []
-  let isMember = false
-  if (session?.user) {
-    isMember = true
-    const myEvents = await listMyUpcomingEvents()
-    events = myEvents.map((e) => ({ ...e, signup_count: 0 }))
-  } else {
-    events = await listUpcomingEvents(40)
-  }
+  // 로그인하지 않은 사용자는 일정 페이지 접근 불가.
+  if (!session?.user) redirect("/login")
+
+  // 본인이 신청한 일정만 (마스킹 안 함, 본인 일정이라 OK)
+  const isMember = true
+  const myEvents = await listMyUpcomingEvents()
+  const events: EventWithSignupCount[] = myEvents.map((e) => ({
+    ...e,
+    signup_count: 0,
+  }))
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:py-16">

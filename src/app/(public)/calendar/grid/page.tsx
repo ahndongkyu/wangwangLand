@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { CalendarDays, List } from "lucide-react"
 
 import {
@@ -38,7 +39,11 @@ export default async function CalendarGridPage({
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
-  const isMember = !!session?.user
+
+  // 로그인하지 않은 사용자는 일정 페이지 접근 불가.
+  if (!session?.user) redirect("/login")
+
+  const isMember = true
 
   // 관리자/운영진 여부 — 캘린더에서 바로 일정 관리 진입 가능하게
   let isStaff = false
