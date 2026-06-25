@@ -2,10 +2,16 @@
 
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
+import { Lock } from "lucide-react"
 
 import { createEvent, updateEvent } from "../api/mutations"
 import { isoToLocalKstInput, todayKstDate } from "../lib/date"
-import { CATEGORY_LABEL, type CalendarEvent, type EventCategory } from "../types"
+import {
+  CATEGORY_LABEL,
+  INTERNAL_CATEGORIES,
+  type CalendarEvent,
+  type EventCategory,
+} from "../types"
 import { FormFooter } from "@/shared/components/form-footer"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -33,7 +39,14 @@ interface Props {
   }
 }
 
-const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed", "custom"]
+const CATEGORIES: EventCategory[] = [
+  "volunteer",
+  "event",
+  "closed",
+  "adoption_consult",
+  "foster_consult",
+  "custom",
+]
 const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
 
 /** 기본값: 시작 10:00, 종료 12:00 (KST). datetime-local 입력 형식. */
@@ -72,6 +85,7 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
   )
 
   const isEdit = !!event
+  const isInternal = INTERNAL_CATEGORIES.includes(category)
   const showSignupToggle = category === "event" // 봉사=항상 true, 휴무=항상 false
 
   // 다중 날짜 모드 — 봉사 신청에서 가져왔고 가능 날짜가 1개 이상이면 활성화.
@@ -185,6 +199,12 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
             </button>
           ))}
         </div>
+        {isInternal && (
+          <p className="mt-2 flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
+            <Lock className="size-3.5 shrink-0" aria-hidden />
+            이 카테고리는 관리자·운영진에게만 보이며, 사용자 캘린더에는 표시되지 않습니다.
+          </p>
+        )}
       </div>
 
       {/* 직접 입력 카테고리 — 이름 + 색상 */}

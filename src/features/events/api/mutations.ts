@@ -7,7 +7,7 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { dispatchEventNotification } from "../notify"
 import { localKstToIso } from "../lib/date"
-import type { EventCategory } from "../types"
+import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
 
 export interface ActionResult {
   error?: string
@@ -29,11 +29,21 @@ interface EventInput {
   ends_at: string
   all_day?: boolean
   signup_enabled?: boolean
+  visibility: EventVisibility
 }
+
+const VALID_CATEGORIES: EventCategory[] = [
+  "volunteer",
+  "event",
+  "closed",
+  "custom",
+  "adoption_consult",
+  "foster_consult",
+]
 
 function parseEventInput(formData: FormData): EventInput | { error: string } {
   const category = String(formData.get("category") ?? "") as EventCategory
-  if (!["volunteer", "event", "closed", "custom"].includes(category)) {
+  if (!VALID_CATEGORIES.includes(category)) {
     return { error: "카테고리를 선택해주세요." }
   }
 
@@ -77,6 +87,11 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
   // 봉사 카테고리는 기본값으로 신청 받음.
   const finalSignupEnabled = category === "volunteer" ? true : signup_enabled
 
+  // 상담 카테고리(입양상담/임보상담)는 항상 관리자 전용. 그 외는 공개.
+  const visibility: EventVisibility = INTERNAL_CATEGORIES.includes(category)
+    ? "internal"
+    : "public"
+
   return {
     category,
     custom_label,
@@ -88,6 +103,7 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
     ends_at: ends.toISOString(),
     all_day,
     signup_enabled: finalSignupEnabled,
+    visibility,
   }
 }
 

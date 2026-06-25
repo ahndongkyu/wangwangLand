@@ -18,7 +18,13 @@ import { MonthShareButton } from "./_components/month-share-button"
 export const metadata: Metadata = { title: "일정 관리" }
 export const dynamic = "force-dynamic"
 
-const VALID_CATS: EventCategory[] = ["volunteer", "event", "closed"]
+const VALID_CATS: EventCategory[] = [
+  "volunteer",
+  "event",
+  "closed",
+  "adoption_consult",
+  "foster_consult",
+]
 const YM_RE = /^\d{4}-\d{2}$/
 
 function parseCategories(raw: string | undefined): EventCategory[] {
@@ -81,6 +87,7 @@ export default async function AdminCalendarPage({
           active={categories}
           basePath="/admin/calendar"
           searchParams={{ ym: yearMonth }}
+          categories={VALID_CATS}
         />
         <MonthShareButton yearMonth={yearMonth} />
       </div>

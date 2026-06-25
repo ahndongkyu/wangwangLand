@@ -10,12 +10,19 @@ interface Props {
   basePath: string
   /** 추가 쿼리 보존 */
   searchParams?: Record<string, string | undefined>
+  /** 노출할 카테고리 칩. 기본 3개. 관리자 페이지에선 상담 카테고리 추가 가능. */
+  categories?: EventCategory[]
 }
 
 // 필터 칩에는 기본 3개만 노출. 'custom' 은 자유 입력이라 필터 단위로 의미가 없음.
-const CATEGORIES: EventCategory[] = ["volunteer", "event", "closed"]
+const DEFAULT_CATEGORIES: EventCategory[] = ["volunteer", "event", "closed"]
 
-export function CategoryFilter({ active, basePath, searchParams = {} }: Props) {
+export function CategoryFilter({
+  active,
+  basePath,
+  searchParams = {},
+  categories: CATEGORIES = DEFAULT_CATEGORIES,
+}: Props) {
   const isAll = active.length === 0 || active.length === CATEGORIES.length
 
   function buildHref(next: EventCategory[]): string {
