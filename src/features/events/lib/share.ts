@@ -32,6 +32,7 @@ export function fullDayLabel(dateStr: string): string {
 
 export function formatRange(ev: EventWithSignupCount): string {
   if (ev.all_day) return "종일"
+  if (ev.starts_at === ev.ends_at) return formatTimeKst(ev.starts_at)
   return `${formatTimeKst(ev.starts_at)} – ${formatTimeKst(ev.ends_at)}`
 }
 

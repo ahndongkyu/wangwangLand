@@ -71,7 +71,7 @@ export default async function EventDetailPage({
       <section className="mb-6 space-y-2 rounded-lg border border-border bg-card p-5 text-sm">
         <Row icon={Calendar} label="일시">
           <span>{formatKoreanDayLabel(event.starts_at, event.all_day)}</span>
-          {!event.all_day && (
+          {!event.all_day && event.starts_at !== event.ends_at && (
             <span className="text-muted-foreground">
               {" "}
               ~ {formatKoreanDayLabel(event.ends_at, false)}

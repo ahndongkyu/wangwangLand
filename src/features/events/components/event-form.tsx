@@ -49,12 +49,9 @@ const CATEGORIES: EventCategory[] = [
 ]
 const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
 
-/** 기본값: 시작 10:00, 종료 12:00 (KST). datetime-local 입력 형식. */
+/** 기본값: 시작 10:00 (KST). datetime-local 입력 형식. */
 function defaultStartFor(date: string): string {
   return `${date}T10:00`
-}
-function defaultEndFor(date: string): string {
-  return `${date}T12:00`
 }
 
 function pickContrast(hex: string): string {
@@ -180,25 +177,26 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
 
       {/* 카테고리 */}
       <div>
-        <Label className="mb-2 block text-sm font-semibold">카테고리</Label>
-        <input type="hidden" name="category" value={category} />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Label htmlFor="category" className="mb-2 block text-sm font-semibold">
+          카테고리
+        </Label>
+        <select
+          id="category"
+          name="category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as EventCategory)}
+          className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        >
           {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCategory(c)}
-              className={cn(
-                "rounded-md border px-3 py-2 text-sm font-medium transition-colors",
-                category === c
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {c === "custom" ? "직접 입력" : CATEGORY_LABEL[c]}
-            </button>
+            <option key={c} value={c}>
+              {c === "custom"
+                ? "직접 입력"
+                : INTERNAL_CATEGORIES.includes(c)
+                  ? `${CATEGORY_LABEL[c]} (관리자 전용)`
+                  : CATEGORY_LABEL[c]}
+            </option>
           ))}
-        </div>
+        </select>
         {isInternal && (
           <p className="mt-2 flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300">
             <Lock className="size-3.5 shrink-0" aria-hidden />
@@ -325,76 +323,43 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
             ))}
           </div>
 
-          {/* 시간대 (HH:MM only — 모든 선택 날짜에 동일 적용) */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="start_time">
-                시작 시간 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="start_time"
-                name="start_time"
-                type="time"
-                defaultValue="10:00"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="end_time">
-                종료 시간 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="end_time"
-                name="end_time"
-                type="time"
-                defaultValue="12:00"
-                required
-              />
-            </div>
+          {/* 시작 시간 (HH:MM only — 모든 선택 날짜에 동일 적용) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="start_time">
+              시작 시간 <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="start_time"
+              name="start_time"
+              type="time"
+              defaultValue="10:00"
+              required
+              className="sm:max-w-[200px]"
+            />
           </div>
           <p className="text-[11px] text-muted-foreground/80">
-            선택한 모든 날짜에 동일 시간대로 등록됩니다.
+            선택한 모든 날짜에 동일 시간으로 등록됩니다.
           </p>
         </>
       ) : (
-        /* 시작·종료 (단일 날짜 + 시간) */
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="starts_at">
-              방문 시간 <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="starts_at"
-              name="starts_at"
-              type={allDay ? "date" : "datetime-local"}
-              required
-              defaultValue={
-                event
-                  ? isoToLocalKstInput(event.starts_at, allDay)
-                  : allDay
-                    ? fallbackDate
-                    : defaultStartFor(fallbackDate)
-              }
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ends_at">
-              종료 <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="ends_at"
-              name="ends_at"
-              type={allDay ? "date" : "datetime-local"}
-              required
-              defaultValue={
-                event
-                  ? isoToLocalKstInput(event.ends_at, allDay)
-                  : allDay
-                    ? fallbackDate
-                    : defaultEndFor(fallbackDate)
-              }
-            />
-          </div>
+        /* 일시 (단일 날짜 + 시작 시간) */
+        <div className="space-y-1.5">
+          <Label htmlFor="starts_at">
+            일시 <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="starts_at"
+            name="starts_at"
+            type={allDay ? "date" : "datetime-local"}
+            required
+            defaultValue={
+              event
+                ? isoToLocalKstInput(event.starts_at, allDay)
+                : allDay
+                  ? fallbackDate
+                  : defaultStartFor(fallbackDate)
+            }
+          />
         </div>
       )}
 

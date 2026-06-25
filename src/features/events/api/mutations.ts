@@ -65,10 +65,11 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
 
   const all_day = formData.get("all_day") === "on"
   const startsRaw = String(formData.get("starts_at") ?? "")
-  const endsRaw = String(formData.get("ends_at") ?? "")
+  // 종료 시간 입력은 제거됨 — 미입력 시 시작 시간과 동일하게(시점 일정) 저장.
+  const endsRaw = String(formData.get("ends_at") ?? "") || startsRaw
 
-  if (!startsRaw || !endsRaw) {
-    return { error: "시작·종료 시간을 입력해주세요." }
+  if (!startsRaw) {
+    return { error: "일시를 입력해주세요." }
   }
 
   // datetime-local 은 timezone 이 없어서 서버에서 그대로 new Date() 하면 UTC 로 해석됨.
@@ -116,9 +117,10 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     .map(String)
     .filter(Boolean)
   const startTime = String(formData.get("start_time") ?? "").trim()
-  const endTime = String(formData.get("end_time") ?? "").trim()
+  // 종료 시간 입력 제거됨 — 미입력 시 시작 시간과 동일.
+  const endTime = String(formData.get("end_time") ?? "").trim() || startTime
 
-  if (approveAppId && selectedDates.length > 0 && startTime && endTime) {
+  if (approveAppId && selectedDates.length > 0 && startTime) {
     const supabase = await createClient()
     const {
       data: { session },
@@ -150,7 +152,7 @@ async function createMultiDateEvents(opts: {
   if (!/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
     return { error: "시간 형식이 올바르지 않습니다." }
   }
-  if (endTime <= startTime) {
+  if (endTime < startTime) {
     return { error: "종료 시간이 시작 시간보다 빨라요." }
   }
 
