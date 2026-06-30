@@ -4,6 +4,9 @@ import Link from "next/link"
 import { VolunteerForm } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 import { TERMS_VERSION } from "@/features/legal"
+import { listEventsInRange } from "@/features/events"
+import { dateKey } from "@/features/events/lib/date"
+import { GROUP_BLOCKING_CATEGORIES, GROUP_BLOCK_THRESHOLD } from "@/features/events/types"
 import { listStaffAvailability } from "@/features/staff-schedule"
 import { SITE } from "@/shared/constants/site"
 
@@ -96,6 +99,16 @@ export default async function VolunteerPage() {
     })
   }
 
+  // 정기봉사가 있는 날짜 — 단체(5명+) 신청 차단용
+  const regularEvents = await listEventsInRange({
+    from: new Date(`${startStr}T00:00:00+09:00`).toISOString(),
+    to: new Date(`${endStr}T23:59:59+09:00`).toISOString(),
+    categories: GROUP_BLOCKING_CATEGORIES,
+  })
+  const regularVolunteerDates = Array.from(
+    new Set(regularEvents.map((e) => dateKey(new Date(e.starts_at))))
+  )
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <header className="mb-10">
@@ -132,6 +145,8 @@ export default async function VolunteerPage() {
         termsAlreadyAgreed={termsAlreadyAgreed}
         staffByDate={staffByDate}
         profilePhone={profile.phone ?? ""}
+        regularVolunteerDates={regularVolunteerDates}
+        groupBlockThreshold={GROUP_BLOCK_THRESHOLD}
       />
     </div>
   )

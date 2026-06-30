@@ -1,5 +1,6 @@
 export type EventCategory =
   | "volunteer"
+  | "regular_volunteer"
   | "event"
   | "closed"
   | "custom"
@@ -7,6 +8,11 @@ export type EventCategory =
 
 /** 항상 internal(관리자 전용)로 저장되는 카테고리. */
 export const INTERNAL_CATEGORIES: EventCategory[] = ["adoption_consult"]
+
+/** 단체(5명 이상) 봉사 신청이 차단되는 날에 해당하는 카테고리. */
+export const GROUP_BLOCKING_CATEGORIES: EventCategory[] = ["regular_volunteer"]
+/** 위 차단 기준 인원 (이 인원 이상이면 단체로 보고 정기봉사 날 신청 불가). */
+export const GROUP_BLOCK_THRESHOLD = 5
 
 export type EventVisibility = "public" | "internal"
 export type EventSourceApplicationType = "volunteer" | "adoption"
@@ -26,6 +32,7 @@ export interface CalendarEvent {
   custom_color: string | null
   source_application_type: EventSourceApplicationType | null
   source_application_id: string | null
+  recurrence_group_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -52,6 +59,7 @@ export type EventWithMySignup = CalendarEvent & {
 
 export const CATEGORY_LABEL: Record<EventCategory, string> = {
   volunteer: "봉사",
+  regular_volunteer: "정기봉사",
   event: "행사",
   closed: "휴무",
   custom: "기타",
@@ -73,6 +81,14 @@ export const CATEGORY_COLOR: Record<
     dot: "bg-primary",
     soft: "bg-orange-200/80 dark:bg-orange-900/40",
     softText: "text-orange-900 dark:text-orange-200",
+  },
+  regular_volunteer: {
+    // 달력 크림/주황 톤과 어울리는 더스티 로즈.
+    bg: "bg-[#BE7B8B]",
+    text: "text-white",
+    dot: "bg-[#BE7B8B]",
+    soft: "bg-[#F2E2E6] dark:bg-[#BE7B8B]/25",
+    softText: "text-[#8E4F60] dark:text-[#E9C7D0]",
   },
   event: {
     bg: "bg-emerald-600",

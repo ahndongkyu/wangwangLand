@@ -7,6 +7,11 @@ import { Lock } from "lucide-react"
 import { createEvent, updateEvent } from "../api/mutations"
 import { isoToLocalKstInput, todayKstDate } from "../lib/date"
 import {
+  generateOccurrenceDates,
+  type RecurrenceMode,
+  type MonthlyMode,
+} from "../lib/recurrence"
+import {
   CATEGORY_LABEL,
   INTERNAL_CATEGORIES,
   type CalendarEvent,
@@ -41,16 +46,37 @@ interface Props {
 
 const CATEGORIES: EventCategory[] = [
   "volunteer",
+  "regular_volunteer",
+  "adoption_consult",
   "event",
   "closed",
-  "adoption_consult",
   "custom",
 ]
 const DEFAULT_CUSTOM_COLOR = "#7C7AC9"
 
+const DOW_LABELS = ["일", "월", "화", "수", "목", "금", "토"]
+
 /** 기본값: 시작 10:00 (KST). datetime-local 입력 형식. */
 function defaultStartFor(date: string): string {
   return `${date}T10:00`
+}
+
+/** "2026-07-04" → "7/4 (토)" */
+function previewDateLabel(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number)
+  const dow = DOW_LABELS[new Date(y, m - 1, d).getDay()]
+  return `${m}/${d} (${dow})`
+}
+
+/** datetime-local 값에서 "오전 10:00" 추출. allDay 면 "종일". */
+function previewTimeLabel(startAt: string, allDay: boolean): string {
+  if (allDay) return "종일"
+  const t = startAt.split("T")[1] || "10:00"
+  const [h, mi] = t.split(":").map(Number)
+  const ap = h < 12 ? "오전" : "오후"
+  let hh = h % 12
+  if (hh === 0) hh = 12
+  return `${ap} ${hh}:${String(mi).padStart(2, "0")}`
 }
 
 function pickContrast(hex: string): string {
@@ -80,9 +106,46 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
     event?.custom_color ?? DEFAULT_CUSTOM_COLOR
   )
 
+  // 일시 (단일 날짜 모드) — 반복 미리보기 계산을 위해 controlled 로 관리.
+  const initialFallbackDate =
+    fromApplication?.availableDates[0] ?? defaultDate ?? todayKstDate()
+  const [startAt, setStartAt] = useState(
+    event
+      ? isoToLocalKstInput(event.starts_at, event.all_day)
+      : defaultStartFor(initialFallbackDate)
+  )
+  const startDateOnly = startAt.split("T")[0]
+
+  // 반복 설정 (신규 + 단일 날짜 모드에서만)
+  const [recurMode, setRecurMode] = useState<RecurrenceMode>("none")
+  const [recurWeekdays, setRecurWeekdays] = useState<Set<number>>(new Set())
+  const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("bydate")
+  const [monthDay, setMonthDay] = useState<number>(
+    Number(startDateOnly.split("-")[2]) || 1
+  )
+  const [nth, setNth] = useState<number>(2)
+  const [nthDow, setNthDow] = useState<number>(6)
+  const [recurUntil, setRecurUntil] = useState<string>("")
+  const [recurExpanded, setRecurExpanded] = useState(false)
+
   const isEdit = !!event
   const isInternal = INTERNAL_CATEGORIES.includes(category)
   const showSignupToggle = category === "event" // 봉사=항상 true, 휴무=항상 false
+
+  // 반복 미리보기 (신규 + 단일 날짜 모드)
+  const recurDates =
+    recurMode === "none"
+      ? []
+      : generateOccurrenceDates(startDateOnly, {
+          mode: recurMode,
+          weekdays: Array.from(recurWeekdays),
+          monthlyMode,
+          monthDay,
+          nth,
+          nthWeekday: nthDow,
+          until: recurUntil,
+        })
+  const RECUR_PREVIEW_LIMIT = 8
 
   // 다중 날짜 모드 — 봉사 신청에서 가져왔고 가능 날짜가 1개 이상이면 활성화.
   // 신청자가 여러 날짜를 골랐을 때 운영진이 한 번에 모두 등록할 수 있게 함.
@@ -112,8 +175,6 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
     return ""
   })()
 
-  const fallbackDate =
-    fromApplication?.availableDates[0] ?? defaultDate ?? todayKstDate()
   const defaultDescription = (() => {
     if (event) return event.description ?? ""
     if (fromApplication) {
@@ -331,7 +392,14 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
                 name="all_day"
                 type="checkbox"
                 checked={allDay}
-                onChange={(e) => setAllDay(e.target.checked)}
+                onChange={(e) => {
+                  const on = e.target.checked
+                  setAllDay(on)
+                  setStartAt((prev) => {
+                    const date = prev.split("T")[0]
+                    return on ? date : `${date}T10:00`
+                  })
+                }}
                 className="size-3.5 accent-primary"
               />
               종일
@@ -342,15 +410,207 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
             name="starts_at"
             type={allDay ? "date" : "datetime-local"}
             required
-            defaultValue={
-              event
-                ? isoToLocalKstInput(event.starts_at, allDay)
-                : allDay
-                  ? fallbackDate
-                  : defaultStartFor(fallbackDate)
-            }
+            value={startAt}
+            onChange={(e) => setStartAt(e.target.value)}
             className="sm:max-w-[280px]"
           />
+          {!allDay && (
+            <p className="text-[11px] text-muted-foreground/80">
+              종료 시간 없이 시작 시간만 등록됩니다.
+            </p>
+          )}
+
+          {/* 반복(정기) 설정 — 신규 등록에서만 */}
+          {!isEdit && (
+            <div className="mt-3 rounded-lg border border-border bg-secondary/20 p-3">
+              <Label className="mb-2 block text-sm font-semibold">반복</Label>
+              <div className="inline-flex rounded-lg bg-secondary p-0.5">
+                {(["none", "weekly", "monthly"] as RecurrenceMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setRecurMode(m)
+                      setRecurExpanded(false)
+                    }}
+                    className={cn(
+                      "rounded-md px-3.5 py-1.5 text-sm font-semibold transition-colors",
+                      recurMode === m
+                        ? "bg-card text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {m === "none" ? "안 함" : m === "weekly" ? "매주" : "매월"}
+                  </button>
+                ))}
+              </div>
+
+              {recurMode === "weekly" && (
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    요일 선택 (여러 개 가능)
+                  </p>
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {DOW_LABELS.map((lbl, i) => {
+                      const on = recurWeekdays.has(i)
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() =>
+                            setRecurWeekdays((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(i)) next.delete(i)
+                              else next.add(i)
+                              return next
+                            })
+                          }
+                          className={cn(
+                            "h-9 rounded-md border text-sm font-semibold transition-colors",
+                            on
+                              ? "border-[#BE7B8B] bg-[#BE7B8B] text-white"
+                              : "border-border bg-card text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {lbl}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {recurMode === "monthly" && (
+                <div className="mt-3 space-y-1">
+                  <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                    <input
+                      type="radio"
+                      name="monthly_mode"
+                      checked={monthlyMode === "bydate"}
+                      onChange={() => setMonthlyMode("bydate")}
+                      className="size-4 accent-primary"
+                    />
+                    매월
+                    <select
+                      value={monthDay}
+                      onChange={(e) => setMonthDay(Number(e.target.value))}
+                      className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                    일
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 py-1 text-sm">
+                    <input
+                      type="radio"
+                      name="monthly_mode"
+                      checked={monthlyMode === "bydow"}
+                      onChange={() => setMonthlyMode("bydow")}
+                      className="size-4 accent-primary"
+                    />
+                    매월
+                    <select
+                      value={nth}
+                      onChange={(e) => setNth(Number(e.target.value))}
+                      className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      <option value={1}>첫째 주</option>
+                      <option value={2}>둘째 주</option>
+                      <option value={3}>셋째 주</option>
+                      <option value={4}>넷째 주</option>
+                      <option value={-1}>마지막 주</option>
+                    </select>
+                    <select
+                      value={nthDow}
+                      onChange={(e) => setNthDow(Number(e.target.value))}
+                      className="h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+                    >
+                      {DOW_LABELS.map((lbl, i) => (
+                        <option key={i} value={i}>
+                          {lbl}요일
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
+              {recurMode !== "none" && (
+                <div className="mt-3">
+                  <Label htmlFor="recur_until" className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    종료 날짜 <span className="font-normal">(비우면 6개월까지)</span>
+                  </Label>
+                  <Input
+                    id="recur_until"
+                    type="date"
+                    value={recurUntil}
+                    onChange={(e) => setRecurUntil(e.target.value)}
+                    className="sm:max-w-[180px]"
+                  />
+
+                  {/* 미리보기 */}
+                  <div className="mt-3 rounded-md border border-dashed border-border bg-card p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold">생성될 일정 미리보기</span>
+                      <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground">
+                        {recurDates.length}건
+                      </span>
+                    </div>
+                    {recurDates.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">조건에 맞는 날짜가 없어요.</p>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(recurExpanded
+                            ? recurDates
+                            : recurDates.slice(0, RECUR_PREVIEW_LIMIT)
+                          ).map((d) => (
+                            <span
+                              key={d}
+                              className="rounded-md bg-[#F2E2E6] px-2 py-1 text-[11px] font-semibold text-[#8E4F60] dark:bg-[#BE7B8B]/25 dark:text-[#E9C7D0]"
+                            >
+                              {previewDateLabel(d)}{" "}
+                              <span className="font-normal text-[#B98A98]">
+                                {previewTimeLabel(startAt, allDay)}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                        {recurDates.length > RECUR_PREVIEW_LIMIT && (
+                          <button
+                            type="button"
+                            onClick={() => setRecurExpanded((v) => !v)}
+                            className="mt-2 text-[11px] font-bold text-primary hover:underline"
+                          >
+                            {recurExpanded
+                              ? "접기 ▲"
+                              : `+ ${recurDates.length - RECUR_PREVIEW_LIMIT}개 더보기 ▼`}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* 제출용 hidden 필드 */}
+                  <input type="hidden" name="recurrence_mode" value={recurMode} />
+                  <input
+                    type="hidden"
+                    name="recurrence_weekdays"
+                    value={Array.from(recurWeekdays).join(",")}
+                  />
+                  <input type="hidden" name="recurrence_monthly_mode" value={monthlyMode} />
+                  <input type="hidden" name="recurrence_month_day" value={monthDay} />
+                  <input type="hidden" name="recurrence_nth" value={nth} />
+                  <input type="hidden" name="recurrence_nth_dow" value={nthDow} />
+                  <input type="hidden" name="recurrence_until" value={recurUntil} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -390,7 +650,13 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
 
       <FormFooter
         pending={pending}
-        submitLabel={isEdit ? "수정 저장" : "일정 등록"}
+        submitLabel={
+          isEdit
+            ? "수정 저장"
+            : recurDates.length > 0
+              ? `${recurDates.length}건 일정 등록`
+              : "일정 등록"
+        }
         pendingLabel={isEdit ? "저장 중..." : "등록 중..."}
         onCancel={() => router.back()}
       />

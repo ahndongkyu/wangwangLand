@@ -5,7 +5,11 @@ import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
-import { localKstToIso } from "@/features/events/lib/date"
+import { localKstToIso, dateKey } from "@/features/events/lib/date"
+import {
+  GROUP_BLOCK_THRESHOLD,
+  GROUP_BLOCKING_CATEGORIES,
+} from "@/features/events/types"
 import {
   formatKoreanPhone,
   validateKoreanPhone,
@@ -154,6 +158,26 @@ export async function submitVolunteerApplication(
   // SELECT 는 운영진만 RLS 허용이므로 admin client 로 우회
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
+
+  // 정기봉사가 있는 날엔 단체(5명 이상) 봉사 신청 불가
+  if ((partyCheck.partySize ?? 1) >= GROUP_BLOCK_THRESHOLD && availableDates.length > 0) {
+    const sorted = [...availableDates].sort()
+    const fromIso = new Date(`${sorted[0]}T00:00:00+09:00`).toISOString()
+    const toIso = new Date(`${sorted[sorted.length - 1]}T23:59:59+09:00`).toISOString()
+    const { data: regEvents } = await admin
+      .from("events")
+      .select("starts_at")
+      .in("category", GROUP_BLOCKING_CATEGORIES)
+      .gte("starts_at", fromIso)
+      .lte("starts_at", toIso)
+    const blocked = new Set((regEvents ?? []).map((e) => dateKey(new Date(e.starts_at))))
+    const conflicts = availableDates.filter((d) => blocked.has(d))
+    if (conflicts.length > 0) {
+      return {
+        error: `정기봉사가 있는 날(${conflicts.join(", ")})은 ${GROUP_BLOCK_THRESHOLD}명 이상 단체 신청이 어려워요. 날짜를 변경하거나 인원을 조정해주세요.`,
+      }
+    }
+  }
 
   const { data, error } = await admin
     .from("volunteer_applications")

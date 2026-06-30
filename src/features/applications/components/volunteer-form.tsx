@@ -50,6 +50,10 @@ interface Props {
   staffByDate?: Record<string, StaffEntry[]>
   /** 로그인 회원의 등록 핸드폰번호 — 연락처 자동 입력용 */
   profilePhone?: string
+  /** 정기봉사가 있는 날짜 (YYYY-MM-DD) — 단체 신청 차단용 */
+  regularVolunteerDates?: string[]
+  /** 단체 차단 기준 인원 (이 인원 이상이면 정기봉사 날 신청 불가) */
+  groupBlockThreshold?: number
 }
 
 function formatTime(t: string | null): string | null {
@@ -57,7 +61,13 @@ function formatTime(t: string | null): string | null {
   return t.slice(0, 5)
 }
 
-export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, profilePhone = "" }: Props) {
+export function VolunteerForm({
+  termsAlreadyAgreed = false,
+  staffByDate = {},
+  profilePhone = "",
+  regularVolunteerDates = [],
+  groupBlockThreshold = 5,
+}: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -70,12 +80,18 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
   const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
 
   const [partyType, setPartyType] = useState<"individual" | "group">("individual")
+  const [partySize, setPartySize] = useState(2)
   const [hasMinor, setHasMinor] = useState(false)
   const [minorGuardian, setMinorGuardian] = useState(false)
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
   const [selectedDates, setSelectedDates] = useState<string[]>([])
+
+  // 단체(기준 인원 이상)면 정기봉사 날짜 선택 차단
+  const groupBlocking =
+    partyType === "group" && partySize >= groupBlockThreshold
+  const blockedDates = groupBlocking ? regularVolunteerDates : []
 
   function handleNext() {
     setError(null)
@@ -317,7 +333,10 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
                   type="number"
                   min={2}
                   max={20}
-                  defaultValue={2}
+                  value={partySize}
+                  onChange={(e) =>
+                    setPartySize(Math.max(2, Math.min(20, Number(e.target.value) || 2)))
+                  }
                   required
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -357,10 +376,21 @@ export function VolunteerForm({ termsAlreadyAgreed = false, staffByDate = {}, pr
             <Label className="text-xs font-medium text-muted-foreground">
               가능한 날짜 <span className="text-destructive">*</span>
             </Label>
-            <DateMultiPicker name="available_dates" onChange={setSelectedDates} />
+            <DateMultiPicker
+              name="available_dates"
+              onChange={setSelectedDates}
+              disabledDates={blockedDates}
+              disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`}
+            />
             <p className="text-[11px] text-muted-foreground/80">
               여러 날짜 선택 가능. 운영진이 확인 후 가능한 날짜로 일정을 조율합니다.
             </p>
+            {groupBlocking && blockedDates.length > 0 && (
+              <p className="rounded-md bg-rose-50 px-3 py-2 text-[11px] font-medium leading-relaxed text-rose-700 dark:bg-rose-950/20 dark:text-rose-300">
+                정기봉사가 있는 날(분홍색·취소선)은 {groupBlockThreshold}명 이상 단체 신청이
+                어려워요. 다른 날짜를 골라주시거나 인원을 조정해 주세요.
+              </p>
+            )}
 
             {/* 선택된 날짜에 출근 예정인 운영진 안내 */}
             {selectedDates.length > 0 && (

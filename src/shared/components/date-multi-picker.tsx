@@ -18,6 +18,10 @@ interface Props {
   max?: number
   /** 선택 변경 콜백 — 선택된 날짜 배열(YYYY-MM-DD) 전달 */
   onChange?: (dates: string[]) => void
+  /** 선택 불가 날짜 (YYYY-MM-DD). 예: 정기봉사로 단체 신청 차단. */
+  disabledDates?: string[]
+  /** 차단 날짜에 마우스 올렸을 때 안내 문구. */
+  disabledTitle?: string
 }
 
 const KST_OFFSET = 9 * 60 * 60 * 1000
@@ -73,8 +77,11 @@ export function DateMultiPicker({
   monthsAhead = 2,
   max,
   onChange,
+  disabledDates = [],
+  disabledTitle = "선택할 수 없는 날짜예요.",
 }: Props) {
   const today = todayKey()
+  const blockedSet = useMemo(() => new Set(disabledDates), [disabledDates])
   const initialYm = today.slice(0, 7)
   const maxYm = useMemo(
     () => shiftYm(initialYm, Math.max(0, monthsAhead - 1)),
@@ -99,6 +106,7 @@ export function DateMultiPicker({
   function toggle(key: string, isPast: boolean, isOtherMonth: boolean) {
     if (isOtherMonth) return
     if (!allowPast && isPast) return
+    if (blockedSet.has(key)) return
     const next = new Set(selected)
     if (next.has(key)) {
       next.delete(key)
@@ -161,7 +169,8 @@ export function DateMultiPicker({
           const isSelected = selected.has(key)
           const dow = i % 7
           const isToday = key === today
-          const disabled = isOtherMonth || (!allowPast && isPast)
+          const isBlocked = !isOtherMonth && blockedSet.has(key)
+          const disabled = isOtherMonth || (!allowPast && isPast) || isBlocked
 
           return (
             <button
@@ -169,10 +178,12 @@ export function DateMultiPicker({
               type="button"
               onClick={() => toggle(key, isPast, isOtherMonth)}
               disabled={disabled}
+              title={isBlocked ? disabledTitle : undefined}
               className={cn(
                 "relative flex aspect-square items-center justify-center rounded-md text-xs font-medium transition-colors",
                 isOtherMonth && "text-muted-foreground/30",
-                !isOtherMonth && disabled && "text-muted-foreground/40 line-through",
+                isBlocked && "bg-rose-50 text-rose-400 line-through dark:bg-rose-950/20",
+                !isBlocked && !isOtherMonth && disabled && "text-muted-foreground/40 line-through",
                 !disabled && !isSelected && "text-foreground hover:bg-secondary",
                 !disabled && !isSelected && dow === 0 && "text-destructive/80",
                 !disabled && !isSelected && dow === 6 && "text-sky-600/80",

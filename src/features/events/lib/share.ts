@@ -39,6 +39,7 @@ export function formatRange(ev: EventWithSignupCount): string {
 // 카테고리 → 실제 컬러값 (CSS 변수 없이 고정)
 const CATEGORY_HEX: Record<string, { bg: string; text: string }> = {
   volunteer: { bg: "#E87C3E", text: "#FFFFFF" },
+  regular_volunteer: { bg: "#BE7B8B", text: "#FFFFFF" },
   event: { bg: "#059669", text: "#FFFFFF" },
   closed: { bg: "#9CA3AF", text: "#FFFFFF" },
   custom: { bg: "#7C7AC9", text: "#FFFFFF" },

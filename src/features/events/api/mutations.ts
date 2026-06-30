@@ -1,5 +1,7 @@
 "use server"
 
+import { randomUUID } from "crypto"
+
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -7,6 +9,7 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { dispatchEventNotification } from "../notify"
 import { localKstToIso } from "../lib/date"
+import { generateOccurrenceDates } from "../lib/recurrence"
 import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
 
 export interface ActionResult {
@@ -135,7 +138,89 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     })
   }
 
+  // 반복(정기) 일정 — 신청 연동이 아닌 일반 일정에서만.
+  const recurMode = String(formData.get("recurrence_mode") ?? "none")
+  if (!approveAppId && recurMode !== "none") {
+    return createRecurringEvents(formData)
+  }
+
   return createSingleEvent(formData)
+}
+
+async function createRecurringEvents(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.user) return { error: "로그인이 필요합니다." }
+
+  const parsed = parseEventInput(formData)
+  if ("error" in parsed) return parsed
+
+  const startRaw = String(formData.get("starts_at") ?? "")
+  const startDate = startRaw.split("T")[0]
+  const startTime = startRaw.split("T")[1] || "10:00"
+  const allDay = parsed.all_day ?? false
+
+  const dates = generateOccurrenceDates(startDate, {
+    mode:
+      String(formData.get("recurrence_mode")) === "monthly"
+        ? "monthly"
+        : "weekly",
+    weekdays: String(formData.get("recurrence_weekdays") ?? "")
+      .split(",")
+      .filter(Boolean)
+      .map(Number),
+    monthlyMode:
+      String(formData.get("recurrence_monthly_mode") ?? "bydate") === "bydow"
+        ? "bydow"
+        : "bydate",
+    monthDay: Number(formData.get("recurrence_month_day") ?? 1),
+    nth: Number(formData.get("recurrence_nth") ?? 1),
+    nthWeekday: Number(formData.get("recurrence_nth_dow") ?? 0),
+    until: String(formData.get("recurrence_until") ?? ""),
+  })
+
+  if (dates.length === 0) {
+    return { error: "생성할 반복 일정이 없습니다. 조건을 확인해주세요." }
+  }
+
+  const groupId = randomUUID()
+  const rows = dates
+    .map((date) => {
+      const local = allDay ? date : `${date}T${startTime}`
+      const sIso = localKstToIso(local, { allDay })
+      const eIso = localKstToIso(local, { allDay, isEnd: true })
+      if (!sIso || !eIso) return null
+      return {
+        category: parsed.category,
+        custom_label: parsed.custom_label,
+        custom_color: parsed.custom_color,
+        title: parsed.title,
+        description: parsed.description ?? null,
+        location: parsed.location ?? null,
+        starts_at: sIso,
+        ends_at: eIso,
+        all_day: allDay,
+        signup_enabled: parsed.signup_enabled,
+        visibility: parsed.visibility,
+        recurrence_group_id: groupId,
+        created_by: session.user.id,
+      }
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+
+  const { error } = await supabase.from("events").insert(rows)
+  if (error) {
+    console.error("[createRecurringEvents]", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/calendar")
+  revalidatePath("/calendar")
+  redirect("/admin/calendar")
 }
 
 async function createMultiDateEvents(opts: {
