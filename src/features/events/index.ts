@@ -21,6 +21,7 @@ export {
   listEventSignups,
   listMyUpcomingEvents,
   listMyUpcomingSignups,
+  listRecurrenceGroupDates,
   listUpcomingEvents,
 } from "./api/queries"
 export {
@@ -29,7 +30,9 @@ export {
   createSignup,
   deleteEvent,
   updateEvent,
+  type RecurrenceScope,
 } from "./api/mutations"
+export { RecurringScopeDialog } from "./components/recurring-scope-dialog"
 export { CategoryFilter } from "./components/category-filter"
 export { EventCard } from "./components/event-card"
 export { MonthGrid } from "./components/month-grid"

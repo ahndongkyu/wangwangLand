@@ -3,19 +3,23 @@
 import { randomUUID } from "crypto"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { dispatchEventNotification } from "../notify"
-import { localKstToIso } from "../lib/date"
+import { localKstToIso, dateKey, KST_OFFSET_MS } from "../lib/date"
 import { generateOccurrenceDates } from "../lib/recurrence"
 import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
 
 export interface ActionResult {
   error?: string
   id?: string
+  /** 생성/수정/삭제된 건수 (반복 일괄 처리 시). */
+  count?: number
 }
+
+/** 반복 일정 일괄 처리 범위. */
+export type RecurrenceScope = "one" | "after" | "all"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 어드민: 이벤트 CRUD
@@ -221,7 +225,7 @@ async function createRecurringEvents(
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  redirect("/admin/calendar")
+  return { count: rows.length }
 }
 
 async function createMultiDateEvents(opts: {
@@ -316,7 +320,7 @@ async function createMultiDateEvents(opts: {
   revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  redirect("/admin/calendar")
+  return { count: insertedCount }
 }
 
 async function createSingleEvent(formData: FormData): Promise<ActionResult> {
@@ -411,44 +415,126 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  redirect(`/admin/calendar`)
+  return { id: data.id }
+}
+
+/** 반복 그룹에서 scope 에 해당하는 이벤트 id 들. 단건이면 [id]. */
+async function resolveScopeIds(
+  admin: ReturnType<typeof createAdminClient>,
+  id: string,
+  scope: RecurrenceScope
+): Promise<string[]> {
+  if (scope === "one") return [id]
+  const { data: ev } = await admin
+    .from("events")
+    .select("recurrence_group_id, starts_at")
+    .eq("id", id)
+    .maybeSingle()
+  if (!ev?.recurrence_group_id) return [id]
+  let q = admin
+    .from("events")
+    .select("id")
+    .eq("recurrence_group_id", ev.recurrence_group_id)
+  if (scope === "after") q = q.gte("starts_at", ev.starts_at)
+  const { data: group } = await q
+  const ids = (group ?? []).map((g) => g.id as string)
+  return ids.length > 0 ? ids : [id]
 }
 
 export async function updateEvent(
   id: string,
-  formData: FormData
+  formData: FormData,
+  scope: RecurrenceScope = "one"
 ): Promise<ActionResult> {
   const parsed = parseEventInput(formData)
   if ("error" in parsed) return parsed
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from("events")
-    .update(parsed)
-    .eq("id", id)
-
-  if (error) {
-    console.error("[updateEvent]", error)
-    return { error: error.message }
+  // 단건 수정
+  if (scope === "one") {
+    const supabase = await createClient()
+    const { error } = await supabase.from("events").update(parsed).eq("id", id)
+    if (error) {
+      console.error("[updateEvent]", error)
+      return { error: error.message }
+    }
+    await dispatchEventNotification({ eventId: id, type: "event_changed" })
+    revalidatePath("/admin/calendar")
+    revalidatePath(`/admin/calendar/${id}`)
+    revalidatePath("/calendar")
+    revalidatePath(`/calendar/${id}`)
+    return {}
   }
 
-  // 신청자 전원에게 변경 알림
-  await dispatchEventNotification({ eventId: id, type: "event_changed" })
+  // 반복 일괄 수정 — 날짜는 각자 유지, 시간/제목/장소/메모/카테고리 등만 일괄 적용
+  const admin = createAdminClient()
+  const { data: ev } = await admin
+    .from("events")
+    .select("recurrence_group_id, starts_at")
+    .eq("id", id)
+    .maybeSingle()
+  if (!ev?.recurrence_group_id) {
+    const { error } = await admin.from("events").update(parsed).eq("id", id)
+    if (error) return { error: error.message }
+    await dispatchEventNotification({ eventId: id, type: "event_changed" })
+    revalidatePath("/admin/calendar")
+    revalidatePath("/calendar")
+    return {}
+  }
+
+  let q = admin
+    .from("events")
+    .select("id, starts_at")
+    .eq("recurrence_group_id", ev.recurrence_group_id)
+  if (scope === "after") q = q.gte("starts_at", ev.starts_at)
+  const { data: group } = await q
+  const targets = group ?? []
+
+  const newAllDay = parsed.all_day ?? false
+  const k = new Date(new Date(parsed.starts_at).getTime() + KST_OFFSET_MS)
+  const newTime = `${String(k.getUTCHours()).padStart(2, "0")}:${String(k.getUTCMinutes()).padStart(2, "0")}`
+  const seriesFields = {
+    category: parsed.category,
+    custom_label: parsed.custom_label,
+    custom_color: parsed.custom_color,
+    title: parsed.title,
+    description: parsed.description ?? null,
+    location: parsed.location ?? null,
+    signup_enabled: parsed.signup_enabled,
+    visibility: parsed.visibility,
+    all_day: newAllDay,
+  }
+
+  for (const g of targets) {
+    const date = dateKey(new Date(g.starts_at as string))
+    const local = newAllDay ? date : `${date}T${newTime}`
+    const sIso = localKstToIso(local, { allDay: newAllDay })
+    const eIso = localKstToIso(local, { allDay: newAllDay, isEnd: true })
+    if (!sIso || !eIso) continue
+    await admin
+      .from("events")
+      .update({ ...seriesFields, starts_at: sIso, ends_at: eIso })
+      .eq("id", g.id as string)
+    await dispatchEventNotification({ eventId: g.id as string, type: "event_changed" })
+  }
 
   revalidatePath("/admin/calendar")
-  revalidatePath(`/admin/calendar/${id}`)
   revalidatePath("/calendar")
-  revalidatePath(`/calendar/${id}`)
-  redirect(`/admin/calendar`)
+  return { count: targets.length }
 }
 
-export async function deleteEvent(id: string): Promise<ActionResult> {
+export async function deleteEvent(
+  id: string,
+  scope: RecurrenceScope = "one"
+): Promise<ActionResult> {
   const admin = createAdminClient()
+  const targetIds = await resolveScopeIds(admin, id, scope)
 
-  // 삭제 전 알림 (신청자 전원)
-  await dispatchEventNotification({ eventId: id, type: "event_canceled" })
+  // 삭제 전 알림 (각 일정 신청자)
+  for (const tid of targetIds) {
+    await dispatchEventNotification({ eventId: tid, type: "event_canceled" })
+  }
 
-  const { error } = await admin.from("events").delete().eq("id", id)
+  const { error } = await admin.from("events").delete().in("id", targetIds)
   if (error) {
     console.error("[deleteEvent]", error)
     return { error: error.message }
@@ -456,7 +542,7 @@ export async function deleteEvent(id: string): Promise<ActionResult> {
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  redirect("/admin/calendar")
+  return { count: targetIds.length }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

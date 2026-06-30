@@ -253,3 +253,23 @@ export async function listMyUpcomingEvents(): Promise<CalendarEvent[]> {
     a.starts_at.localeCompare(b.starts_at)
   )
 }
+
+/**
+ * 반복 그룹에 속한 일정들의 (id, starts_at) — 일괄 수정/삭제 범위 선택용.
+ * starts_at 오름차순.
+ */
+export async function listRecurrenceGroupDates(
+  groupId: string
+): Promise<{ id: string; starts_at: string }[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, starts_at")
+    .eq("recurrence_group_id", groupId)
+    .order("starts_at", { ascending: true })
+  if (error || !data) {
+    if (error) console.error("[listRecurrenceGroupDates]", error)
+    return []
+  }
+  return data as { id: string; starts_at: string }[]
+}

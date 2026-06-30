@@ -1,10 +1,11 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { Lock } from "lucide-react"
 
-import { createEvent, updateEvent } from "../api/mutations"
+import { createEvent, updateEvent, type RecurrenceScope } from "../api/mutations"
+import { RecurringScopeDialog } from "./recurring-scope-dialog"
 import { isoToLocalKstInput, todayKstDate } from "../lib/date"
 import {
   generateOccurrenceDates,
@@ -42,6 +43,8 @@ interface Props {
     activities: string[]
     message: string | null
   }
+  /** 수정 모드에서 이 일정이 반복 그룹이면, 같은 그룹 일정 목록 (범위 선택용) */
+  groupDates?: { id: string; starts_at: string }[]
 }
 
 const CATEGORIES: EventCategory[] = [
@@ -88,10 +91,12 @@ function pickContrast(hex: string): string {
   return lum > 0.6 ? "#1F1B16" : "#FFFFFF"
 }
 
-export function EventForm({ event, defaultDate, fromApplication }: Props) {
+export function EventForm({ event, defaultDate, fromApplication, groupDates = [] }: Props) {
   const router = useRouter()
   const toast = useToast()
   const [pending, startTransition] = useTransition()
+  const [scopeOpen, setScopeOpen] = useState(false)
+  const pendingFormData = useRef<FormData | null>(null)
 
   // 신청에서 가져온 모드면 카테고리 강제 volunteer.
   const [category, setCategory] = useState<EventCategory>(
@@ -193,17 +198,58 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
     return ""
   })()
 
+  const isRecurringEdit = isEdit && groupDates.length > 1
+
+  function goSuccess(msg: string) {
+    toast.success(msg)
+    router.push("/admin/calendar")
+    router.refresh()
+  }
+
   function handleSubmit(formData: FormData) {
+    // 반복 일정 수정 → 적용 범위 먼저 선택
+    if (isRecurringEdit) {
+      pendingFormData.current = formData
+      setScopeOpen(true)
+      return
+    }
     startTransition(async () => {
-      const result = isEdit
-        ? await updateEvent(event!.id, formData)
-        : await createEvent(formData)
-      if (result?.error) toast.error(result.error)
-      // 성공 시 server action 이 redirect 처리.
+      if (isEdit) {
+        const result = await updateEvent(event!.id, formData, "one")
+        if (result?.error) return toast.error(result.error)
+        goSuccess("일정을 수정했어요.")
+      } else {
+        const result = await createEvent(formData)
+        if (result?.error) return toast.error(result.error)
+        goSuccess(
+          result.count && result.count > 1
+            ? `${result.count}건 일정을 등록했어요.`
+            : "일정을 등록했어요."
+        )
+      }
+    })
+  }
+
+  function runScopedUpdate(scope: RecurrenceScope) {
+    const fd = pendingFormData.current
+    if (!fd) return
+    startTransition(async () => {
+      const result = await updateEvent(event!.id, fd, scope)
+      if (result?.error) {
+        toast.error(result.error)
+        setScopeOpen(false)
+        return
+      }
+      goSuccess(
+        result.count && result.count > 1
+          ? `${result.count}건 일정을 수정했어요.`
+          : "일정을 수정했어요."
+      )
     })
   }
 
   return (
+    <>
     <form action={handleSubmit} className="space-y-5">
       {fromApplication && (
         <>
@@ -661,5 +707,17 @@ export function EventForm({ event, defaultDate, fromApplication }: Props) {
         onCancel={() => router.back()}
       />
     </form>
+    {isRecurringEdit && event && (
+      <RecurringScopeDialog
+        open={scopeOpen}
+        mode="edit"
+        currentStartsAt={event.starts_at}
+        groupDates={groupDates}
+        pending={pending}
+        onConfirm={runScopedUpdate}
+        onCancel={() => setScopeOpen(false)}
+      />
+    )}
+    </>
   )
 }

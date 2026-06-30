@@ -9,6 +9,7 @@ import {
   getEventTitle,
   getEventWithMySignup,
   listEventSignups,
+  listRecurrenceGroupDates,
 } from "@/features/events"
 import { DeleteEventButton } from "@/features/events/components/delete-event-button"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
@@ -27,6 +28,11 @@ export default async function AdminEventDetailPage({
     listEventSignups(id),
   ])
   if (!event) notFound()
+
+  // 반복 그룹이면 같은 그룹 일정들 (삭제 범위 선택용)
+  const groupDates = event.recurrence_group_id
+    ? await listRecurrenceGroupDates(event.recurrence_group_id)
+    : []
 
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
@@ -55,6 +61,11 @@ export default async function AdminEventDetailPage({
           >
             {eventDisplayLabel(event)}
           </span>
+          {groupDates.length > 1 && (
+            <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              🔁 반복 일정 ({groupDates.length}회)
+            </span>
+          )}
           <h1 className="mt-2 text-2xl font-bold text-foreground md:text-3xl">
             {getEventTitle(event)}
           </h1>
@@ -66,7 +77,11 @@ export default async function AdminEventDetailPage({
           >
             수정
           </Link>
-          <DeleteEventButton id={id} />
+          <DeleteEventButton
+            id={id}
+            groupDates={groupDates}
+            currentStartsAt={event.starts_at}
+          />
         </div>
       </header>
 
