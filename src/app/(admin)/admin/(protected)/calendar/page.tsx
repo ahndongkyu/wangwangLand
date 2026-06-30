@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic"
 
 const VALID_CATS: EventCategory[] = [
   "volunteer",
+  "regular_volunteer",
   "event",
   "closed",
   "adoption_consult",

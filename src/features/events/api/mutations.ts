@@ -37,6 +37,7 @@ interface EventInput {
 
 const VALID_CATEGORIES: EventCategory[] = [
   "volunteer",
+  "regular_volunteer",
   "event",
   "closed",
   "custom",
