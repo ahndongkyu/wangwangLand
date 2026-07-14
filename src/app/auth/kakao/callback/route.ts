@@ -5,6 +5,40 @@ import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies"
 
 const KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 const KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me"
+const MAX_NICKNAME_LENGTH = 20
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
+async function findUserIdByEmail(admin: AdminClient, email: string): Promise<string | null> {
+  let page = 1
+
+  while (true) {
+    const { data: { users }, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) throw error
+
+    const match = users.find((user) => user.email === email)
+    if (match) return match.id
+    if (users.length < 1000) return null
+
+    page++
+  }
+}
+
+async function getAvailableNickname(admin: AdminClient, requestedNickname: string): Promise<string> {
+  const baseNickname = requestedNickname.trim() || "카카오회원"
+  const { data, error } = await admin.from("profiles").select("nickname")
+  if (error) throw error
+
+  const usedNicknames = new Set((data ?? []).map(({ nickname }) => nickname))
+  const firstCandidate = baseNickname.slice(0, MAX_NICKNAME_LENGTH)
+  if (!usedNicknames.has(firstCandidate)) return firstCandidate
+
+  for (let suffix = 2; ; suffix++) {
+    const suffixText = String(suffix)
+    const candidate = `${baseNickname.slice(0, MAX_NICKNAME_LENGTH - suffixText.length)}${suffixText}`
+    if (!usedNicknames.has(candidate)) return candidate
+  }
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
@@ -57,38 +91,49 @@ export async function GET(request: Request) {
 
     let userId: string
     let isNewUser = false
+    let onboardingNickname = kakaoNickname
 
-    // 먼저 생성 시도 → 이미 있으면 에러 → listUsers로 찾기
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email: fakeEmail,
-      email_confirm: true,
-      user_metadata: {
-        kakao_id: kakaoId,
-        full_name: kakaoNickname,
-        avatar_url: kakaoAvatar,
-      },
-    })
+    const existingUserId = await findUserIdByEmail(admin, fakeEmail)
 
-    if (!createErr && created.user) {
-      // 신규 유저
-      isNewUser = true
-      userId = created.user.id
+    if (existingUserId) {
+      userId = existingUserId
     } else {
-      // 이미 존재하는 유저 — 이메일로 탐색 (perPage 최대값으로 한 번에 조회)
-      let found: string | null = null
-      let page = 1
-      while (!found) {
-        const { data: { users } } = await admin.auth.admin.listUsers({ page, perPage: 1000 })
-        const match = users.find((u) => u.email === fakeEmail)
-        if (match) { found = match.id; break }
-        if (users.length < 1000) break
-        page++
+      let createdUserId: string | null = null
+
+      // 동명이인은 이름2, 이름3 순으로 배정한다. 동시 가입 충돌 시 다시 계산해 재시도한다.
+      for (let attempt = 0; attempt < 5 && !createdUserId; attempt++) {
+        const availableNickname = await getAvailableNickname(admin, kakaoNickname)
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email: fakeEmail,
+          email_confirm: true,
+          user_metadata: {
+            kakao_id: kakaoId,
+            full_name: availableNickname,
+            avatar_url: kakaoAvatar,
+          },
+        })
+
+        if (!createErr && created.user) {
+          createdUserId = created.user.id
+          onboardingNickname = availableNickname
+          break
+        }
+
+        // 생성 응답이 실패해도 계정이 만들어졌을 가능성을 먼저 확인한다.
+        const userIdAfterCreate = await findUserIdByEmail(admin, fakeEmail)
+        if (userIdAfterCreate) {
+          createdUserId = userIdAfterCreate
+          onboardingNickname = availableNickname
+        }
       }
-      if (!found) {
-        console.error("기존 사용자 탐색 실패", createErr)
+
+      if (!createdUserId) {
+        console.error("카카오 사용자 생성 실패")
         return NextResponse.redirect(new URL("/login?error=1", origin))
       }
-      userId = found
+
+      isNewUser = true
+      userId = createdUserId
     }
 
     // 4. 매직링크로 세션 토큰 발급
@@ -151,8 +196,8 @@ export async function GET(request: Request) {
     if (profile?.is_banned) {
       redirectPath = "/login?error=banned"
     } else if (isNewUser) {
-      redirectPath = kakaoNickname
-        ? `/onboarding?name=${encodeURIComponent(kakaoNickname)}`
+      redirectPath = onboardingNickname
+        ? `/onboarding?name=${encodeURIComponent(onboardingNickname)}`
         : "/onboarding"
     } else if (!profile || profile.status === "pending") {
       redirectPath = "/pending"
