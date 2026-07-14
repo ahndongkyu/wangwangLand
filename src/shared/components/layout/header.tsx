@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
@@ -48,9 +48,26 @@ interface HeaderProps {
   unreadNotificationCount?: number
 }
 
+function getMobileBackHref(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean)
+  if (segments.length < 2) return null
+
+  // 상세 경로가 별도 페이지로 존재하지 않는 신청 수정 화면은 신청 목록으로 이동한다.
+  if (
+    segments[0] === "my" &&
+    segments[1] === "applications" &&
+    segments[2] === "volunteer"
+  ) {
+    return "/my/applications"
+  }
+
+  return `/${segments.slice(0, -1).join("/")}`
+}
+
 export function Header({ recentNotices = [], profile, pendingCounts, userNotifications = [], unreadNotificationCount = 0 }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const mobileBackHref = getMobileBackHref(pathname)
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
@@ -63,7 +80,23 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
       )}
     >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:grid md:h-20 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-6 lg:gap-8">
-        <Link href="/" className="flex items-center gap-3 justify-self-start">
+        {mobileBackHref && (
+          <Link
+            href={mobileBackHref}
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-foreground md:hidden"
+            aria-label="이전 화면으로"
+          >
+            <ChevronLeft className="size-6" aria-hidden />
+            <span>뒤로</span>
+          </Link>
+        )}
+        <Link
+          href="/"
+          className={cn(
+            "items-center gap-3 justify-self-start",
+            mobileBackHref ? "hidden md:flex" : "flex"
+          )}
+        >
           <Image
             src={SITE.logo}
             alt={`${SITE.name} 로고`}

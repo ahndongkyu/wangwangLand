@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { ChevronDown, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
 import { useState } from "react"
 
 import { useTheme } from "@/shared/components/theme-provider"
@@ -90,6 +90,24 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
         ]
       : []),
   ]
+}
+
+function getAdminMobileBackHref(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean)
+  if (segments[0] !== "admin" || segments.length < 3) return null
+
+  // 신청 상세 URL 중간 경로는 실제 페이지가 아니므로 신청 목록으로 이동한다.
+  if (segments[1] === "applications") return "/admin/applications"
+
+  // 게시물 관리 수정 화면은 별도 상세 페이지가 없으므로 각 목록으로 이동한다.
+  if (
+    segments.at(-1) === "edit" &&
+    ["dogs", "cats", "notices", "daily", "stories", "thanks"].includes(segments[1])
+  ) {
+    return `/admin/${segments[1]}`
+  }
+
+  return `/${segments.slice(0, -1).join("/")}`
 }
 
 function AdminThemeToggle({ sidebar }: { sidebar?: boolean }) {
@@ -305,6 +323,7 @@ export function AdminMobileHeader({
   const { resolvedTheme, setTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
+  const mobileBackHref = getAdminMobileBackHref(pathname)
   const isActive = (href: string) => {
     const [path, query] = href.split("?")
     if (!pathname.startsWith(path)) return false
@@ -319,11 +338,22 @@ export function AdminMobileHeader({
   return (
     <header className="border-b border-border bg-card md:hidden">
       <div className="flex h-14 items-center justify-between px-4">
-        {/* 로고 */}
-        <Link href="/admin" className="flex items-center gap-2 text-base font-bold text-foreground whitespace-nowrap">
-          <Image src={SITE.logo} alt={SITE.name} width={28} height={28} className="size-7 rounded-full" />
-          {siteName} 관리자
-        </Link>
+        {/* 3단계부터 뒤로가기, 그 외에는 로고 */}
+        {mobileBackHref ? (
+          <Link
+            href={mobileBackHref}
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-foreground"
+            aria-label="이전 화면으로"
+          >
+            <ChevronLeft className="size-6" aria-hidden />
+            <span>뒤로</span>
+          </Link>
+        ) : (
+          <Link href="/admin" className="flex items-center gap-2 text-base font-bold text-foreground whitespace-nowrap">
+            <Image src={SITE.logo} alt={SITE.name} width={28} height={28} className="size-7 rounded-full" />
+            {siteName} 관리자
+          </Link>
+        )}
 
         {/* 알림벨 + 햄버거 */}
         <div className="flex items-center gap-1">
