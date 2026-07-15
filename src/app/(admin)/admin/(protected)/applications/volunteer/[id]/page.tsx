@@ -304,17 +304,20 @@ export default async function VolunteerApplicationDetailPage({
           <h2 className="text-sm font-semibold text-foreground">
             등록된 캘린더 일정 ({linkedEvents.length})
           </h2>
-          <Link
-            href={`/admin/calendar/new?from=${app.id}`}
-            className="rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
-          >
-            + 일정 추가
-          </Link>
+          {app.status === "승인" && (
+            <Link
+              href={`/admin/calendar/new?from=${app.id}`}
+              className="rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+            >
+              + 일정 추가
+            </Link>
+          )}
         </div>
         {linkedEvents.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            아직 캘린더에 등록된 일정이 없습니다. 신청한 날짜가 여러 개라면
-            <strong className="text-foreground"> 일정 추가</strong> 버튼으로 각각 등록하세요.
+            {app.status === "승인"
+              ? "아직 캘린더에 등록된 일정이 없습니다. 일정 추가 버튼으로 등록할 수 있습니다."
+              : "승인 처리 후 확정한 일정을 캘린더에 등록할 수 있습니다."}
           </p>
         ) : (
           <ul className="divide-y divide-border">

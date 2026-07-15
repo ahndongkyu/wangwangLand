@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { requireAdmin } from "@/shared/lib/auth"
 import { dispatchEventNotification } from "../notify"
 import { localKstToIso, dateKey, KST_OFFSET_MS } from "../lib/date"
 import { generateOccurrenceDates } from "../lib/recurrence"
@@ -127,19 +128,19 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   // 종료 시간 입력 제거됨 — 미입력 시 시작 시간과 동일.
   const endTime = String(formData.get("end_time") ?? "").trim() || startTime
 
-  if (approveAppId && selectedDates.length > 0 && startTime) {
-    const supabase = await createClient()
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session?.user) return { error: "로그인이 필요합니다." }
+  if (approveAppId && startTime) {
+    if (selectedDates.length === 0) {
+      return { error: "등록할 날짜를 1개 이상 선택해주세요." }
+    }
+    const auth = await requireAdmin()
+    if (!auth.ok) return { error: auth.error }
     return createMultiDateEvents({
       formData,
       approveAppId,
       selectedDates,
       startTime,
       endTime,
-      userId: session.user.id,
+      userId: auth.userId,
     })
   }
 
@@ -252,24 +253,35 @@ async function createMultiDateEvents(opts: {
 
   const admin = createAdminClient()
 
-  // 날짜별로 INSERT 시도. unique 제약(같은 시작 시각)에 걸리면 자동 skip → 메시지로 안내.
-  let insertedCount = 0
-  let skippedCount = 0
-  for (const date of selectedDates) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
+  const { data: application, error: applicationError } = await admin
+    .from("volunteer_applications")
+    .select("status")
+    .eq("id", approveAppId)
+    .maybeSingle()
+  if (applicationError || !application) {
+    return { error: "봉사 신청 정보를 찾을 수 없습니다." }
+  }
+  if (application.status !== "승인") {
+    return { error: "승인된 봉사 신청에만 일정을 추가할 수 있습니다." }
+  }
+
+  const rows = []
+  for (const date of [...new Set(selectedDates)]) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return { error: "일정 날짜 형식이 올바르지 않습니다." }
+    }
     const startsIso = localKstToIso(`${date}T${startTime}`)
     const endsIso = localKstToIso(`${date}T${endTime}`)
-    if (!startsIso || !endsIso) continue
-    const starts = new Date(startsIso)
-    const ends = new Date(endsIso)
-
-    const { error } = await admin.from("events").insert({
+    if (!startsIso || !endsIso) {
+      return { error: "일정 날짜와 시간을 확인해주세요." }
+    }
+    rows.push({
       category: "volunteer",
       title,
       description,
       location,
-      starts_at: starts.toISOString(),
-      ends_at: ends.toISOString(),
+      starts_at: startsIso,
+      ends_at: endsIso,
       all_day: false,
       signup_enabled: false,
       visibility: "public",
@@ -277,42 +289,20 @@ async function createMultiDateEvents(opts: {
       source_application_id: approveAppId,
       created_by: userId,
     })
+  }
 
-    if (!error) {
-      insertedCount++
-    } else if (error.code === "23505" || /duplicate key/i.test(error.message)) {
-      // 같은 (신청, 시작시각) 조합 중복 — 스킵
-      skippedCount++
-    } else {
-      console.error("[createMultiDateEvents] insert failed", error)
-      return { error: error.message }
+  if (rows.length === 0) {
+    return { error: "등록할 날짜를 1개 이상 선택해주세요." }
+  }
+
+  // 한 번의 INSERT 문으로 처리해 일부 날짜만 저장되는 상태를 막는다.
+  const { error } = await admin.from("events").insert(rows)
+  if (error) {
+    if (error.code === "23505" || /duplicate key/i.test(error.message)) {
+      return { error: "이미 등록된 일정이 포함되어 있습니다. 새로고침 후 다시 선택해주세요." }
     }
-  }
-
-  if (insertedCount === 0 && skippedCount === 0) {
-    return { error: "등록된 일정이 없습니다. 날짜를 다시 확인해주세요." }
-  }
-
-  // 신청 status 승인 + 알림 (한 번만)
-  const { data: app } = await admin
-    .from("volunteer_applications")
-    .select("created_by, status")
-    .eq("id", approveAppId)
-    .maybeSingle()
-
-  await admin
-    .from("volunteer_applications")
-    .update({ status: "승인" })
-    .eq("id", approveAppId)
-
-  if (app?.created_by && app.status !== "승인") {
-    await admin.from("notifications").insert({
-      user_id: app.created_by,
-      type: "application_approved",
-      post_type: "volunteer",
-      post_id: approveAppId,
-      actor_id: null,
-    })
+    console.error("[createMultiDateEvents]", error)
+    return { error: error.message }
   }
 
   revalidatePath("/admin", "layout")
@@ -320,7 +310,7 @@ async function createMultiDateEvents(opts: {
   revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: insertedCount }
+  return { count: rows.length }
 }
 
 async function createSingleEvent(formData: FormData): Promise<ActionResult> {
@@ -343,27 +333,24 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
     created_by: session.user.id,
   }
   if (approveAppId) {
+    const auth = await requireAdmin()
+    if (!auth.ok) return { error: auth.error }
+
+    const admin0 = createAdminClient()
+    const { data: application } = await admin0
+      .from("volunteer_applications")
+      .select("status")
+      .eq("id", approveAppId)
+      .maybeSingle()
+    if (!application) return { error: "봉사 신청 정보를 찾을 수 없습니다." }
+    if (application.status !== "승인") {
+      return { error: "승인된 봉사 신청에만 일정을 추가할 수 있습니다." }
+    }
+
     insertPayload.source_application_type = "volunteer"
     insertPayload.source_application_id = approveAppId
     insertPayload.visibility = "public"
     insertPayload.signup_enabled = false
-
-    // 다른 어드민이 이미 등록한 경우(중복) 방지.
-    // 1) 명시적 사전 체크 — 정상 케이스의 메시지를 명확하게.
-    const admin0 = createAdminClient()
-    const { data: dup } = await admin0
-      .from("events")
-      .select("id")
-      .eq("source_application_type", "volunteer")
-      .eq("source_application_id", approveAppId)
-      .maybeSingle()
-    if (dup) {
-      return {
-        error:
-          "이미 다른 운영진이 이 신청을 캘린더에 등록했습니다. 새로고침 후 확인해주세요.",
-        id: dup.id,
-      }
-    }
   }
 
   const { data, error } = await supabase
@@ -373,43 +360,19 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
     .single()
 
   if (error) {
-    // 2) DB 유니크 제약(uniq_events_source_application) — race 마지막 방어선.
+    // 같은 신청·시작시각의 중복은 DB 제약으로 차단한다.
     if (approveAppId && (error.code === "23505" || /duplicate key/i.test(error.message))) {
       return {
         error:
-          "이미 다른 운영진이 이 신청을 캘린더에 등록했습니다. 새로고침 후 확인해주세요.",
+          "같은 날짜와 시간의 일정이 이미 등록되어 있습니다. 새로고침 후 확인해주세요.",
       }
     }
     console.error("[createEvent]", error)
     return { error: error.message }
   }
 
-  // 봉사 신청 자동 승인 + 알림
+  // 승인된 신청에 일정을 추가한 경우 신청 상세도 갱신한다.
   if (approveAppId) {
-    const admin = createAdminClient()
-    const { data: app } = await admin
-      .from("volunteer_applications")
-      .select("created_by, status")
-      .eq("id", approveAppId)
-      .maybeSingle()
-
-    await admin
-      .from("volunteer_applications")
-      .update({ status: "승인" })
-      .eq("id", approveAppId)
-
-    if (app?.created_by && app.status !== "승인") {
-      await admin.from("notifications").insert({
-        user_id: app.created_by,
-        type: "application_approved",
-        post_type: "volunteer",
-        post_id: approveAppId,
-        actor_id: null,
-      })
-    }
-
-    revalidatePath("/admin", "layout")
-    revalidatePath("/admin/applications")
     revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   }
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { requireAdmin } from "@/shared/lib/auth"
 import { localKstToIso, dateKey } from "@/features/events/lib/date"
 import {
   GROUP_BLOCK_THRESHOLD,
@@ -288,47 +289,6 @@ function revalidateAdminApplications() {
   revalidatePath("/admin/applications")
 }
 
-/**
- * 봉사 신청 승인 시 캘린더 이벤트를 upsert.
- * - 해당 신청에 연결된 기존 이벤트가 없으면 INSERT, 있으면 스킵(다중 등록은 상세 페이지에서).
- * - startsAt / endsAt 이 null 이면 아무것도 하지 않음.
- */
-async function upsertVolunteerEventForApplication(
-  applicationId: string,
-  applicantName: string,
-  partySize: number,
-  startsAt: string | null,
-) {
-  if (!startsAt) return
-  const admin = createAdminClient()
-
-  // 이미 연결된 이벤트가 있으면 중복 생성 방지
-  const { count } = await admin
-    .from("events")
-    .select("id", { count: "exact", head: true })
-    .eq("source_application_type", "volunteer")
-    .eq("source_application_id", applicationId)
-  if ((count ?? 0) > 0) return
-
-  const title =
-    partySize > 1
-      ? `${applicantName} (${partySize}명)`
-      : applicantName
-
-  const { error } = await admin.from("events").insert({
-    category: "volunteer",
-    title,
-    starts_at: startsAt,
-    ends_at: startsAt,
-    all_day: false,
-    signup_enabled: false,
-    visibility: "public",
-    source_application_type: "volunteer",
-    source_application_id: applicationId,
-  })
-  if (error) console.error("[upsertVolunteerEvent]", error)
-}
-
 export async function updateAdoptionApplication(
   id: string,
   formData: FormData
@@ -453,7 +413,7 @@ function pushBodyForStatus(status: ApplicationStatus): string {
   }
 }
 
-function buildVolunteerSmsText(applicantName: string, availableDates: string[]): string {
+function buildVolunteerSmsText(applicantName: string): string {
   return `왕왕랜드\n${applicantName}님, 봉사 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
 }
 
@@ -496,20 +456,35 @@ export async function updateVolunteerApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
   const rejectReschedule = formData.get("reject_reschedule") === "true"
+  const scheduleMode = String(formData.get("schedule_mode") ?? "approval_only")
+  const scheduleDates = [...new Set(formData.getAll("selected_dates").map(String))]
+  const scheduleTime = String(formData.get("schedule_time") ?? "").trim()
 
-  // 일정 등록 필드 (Step 3 — 승인 시만 채워짐)
-  const scheduledStartRaw = String(formData.get("scheduled_starts_at") ?? "").trim()
-  const scheduledStart = localKstToIso(scheduledStartRaw)
+  const validStatuses: ApplicationStatus[] = [
+    "접수",
+    "검토중",
+    "승인",
+    "반려",
+    "취소",
+  ]
+  if (!validStatuses.includes(status)) {
+    return { error: "처리 상태가 올바르지 않습니다." }
+  }
 
   if (status === "취소" && !cancelReason) {
     return { error: "취소 사유를 입력해주세요." }
   }
+  if (status === "반려" && !adminNote) {
+    return { error: "반려 사유를 입력해주세요." }
+  }
 
-  const supabase = await createClient()
   const admin = createAdminClient()
 
   // 상태 변경 전 신청 정보 조회 (RLS 우회 위해 admin client 사용)
@@ -520,89 +495,68 @@ export async function updateVolunteerApplication(
     )
     .eq("id", id)
     .maybeSingle()
+  if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
 
-  const updatePayload: Record<string, unknown> = {
-    status,
-    admin_note: adminNote || null,
+  const isRescheduleRequest = prev.status === "일정변경요청"
+  const rescheduleAccepted =
+    isRescheduleRequest && status === "승인" && !rejectReschedule
+  const rescheduleRejected =
+    isRescheduleRequest && (status !== "승인" || rejectReschedule)
+  const shouldCreateSchedule =
+    status === "승인" && !rejectReschedule &&
+    (isRescheduleRequest || scheduleMode === "with_schedule")
+
+  if (shouldCreateSchedule && scheduleDates.length === 0) {
+    return { error: "확정할 날짜를 1개 이상 선택해주세요." }
   }
-  if (status === "취소") updatePayload.cancel_reason = cancelReason
+  if (shouldCreateSchedule && !/^\d{2}:\d{2}$/.test(scheduleTime)) {
+    return { error: "일정 시간을 확인해주세요." }
+  }
 
-  const { error } = await supabase
-    .from("volunteer_applications")
-    .update(updatePayload)
-    .eq("id", id)
+  const scheduleStarts: string[] = []
+  if (shouldCreateSchedule) {
+    for (const date of scheduleDates) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return { error: "일정 날짜 형식이 올바르지 않습니다." }
+      }
+      const startsAt = localKstToIso(`${date}T${scheduleTime}`)
+      if (!startsAt) return { error: "일정 날짜와 시간을 확인해주세요." }
+      scheduleStarts.push(startsAt)
+    }
+  }
+
+  const scheduleAction = rescheduleAccepted
+    ? "replace"
+    : shouldCreateSchedule
+      ? "append"
+      : "keep"
+
+  const { error } = await admin.rpc("process_volunteer_application", {
+    p_application_id: id,
+    p_status: status,
+    p_admin_note: adminNote || null,
+    p_cancel_reason: cancelReason || null,
+    p_schedule_action: scheduleAction,
+    p_schedule_starts: scheduleStarts,
+    p_clear_reschedule: isRescheduleRequest,
+    p_created_by: auth.userId,
+  })
 
   if (error) {
     console.error("[updateVolunteerApplication]", error)
-    return { error: error.message }
+    return { error: "처리 중 오류가 발생했습니다. 상태와 일정은 변경되지 않았습니다." }
   }
 
-  // 일정변경요청 → 승인: available_dates/time을 reschedule로 덮어씌우고 이벤트 upsert
-  if (prev?.status === "일정변경요청" && status === "승인" && !rejectReschedule) {
-    const newDates = (prev.reschedule_dates as string[] | null) ?? prev.available_dates ?? []
-    const newTime = (prev.reschedule_time as string | null) ?? prev.available_time ?? null
-    await admin
-      .from("volunteer_applications")
-      .update({
-        available_dates: newDates,
-        available_time: newTime,
-        reschedule_dates: null,
-        reschedule_time: null,
-      })
-      .eq("id", id)
-    // 기존 이벤트 삭제 후 새로 upsert
-    await admin
-      .from("events")
-      .delete()
-      .eq("source_application_type", "volunteer")
-      .eq("source_application_id", id)
-    const newStartsAt = newDates[0]
-      ? localKstToIso(`${newDates[0]}T${newTime ?? "10:00"}`)
-      : null
-    await upsertVolunteerEventForApplication(
-      id,
-      prev.applicant_name ?? "",
-      prev.party_size ?? 1,
-      newStartsAt,
-    )
-  } else if (prev?.status === "일정변경요청" && status === "승인" && rejectReschedule) {
-    // 일정변경요청 거절 → reschedule 클리어, 원래 승인 상태 유지
-    await admin
-      .from("volunteer_applications")
-      .update({ reschedule_dates: null, reschedule_time: null })
-      .eq("id", id)
-  } else if (status === "승인" && prev) {
-    // 일반 승인 → 일정 등록 (폼에서 날짜가 입력된 경우에만)
-    await upsertVolunteerEventForApplication(
-      id,
-      prev.applicant_name ?? "",
-      prev.party_size ?? 1,
-      scheduledStart,
-    )
-  }
-
-  // 일정변경요청 → 거절(승인 외): reschedule 클리어
-  if (prev?.status === "일정변경요청" && status !== "승인") {
-    await admin
-      .from("volunteer_applications")
-      .update({ reschedule_dates: null, reschedule_time: null })
-      .eq("id", id)
-  }
-
-  // 취소·반려 → 연결 캘린더 이벤트 삭제
-  if (status === "취소" || status === "반려") {
-    await admin
-      .from("events")
-      .delete()
-      .eq("source_application_type", "volunteer")
-      .eq("source_application_id", id)
-  }
-
-  // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
-  if (prev?.created_by && prev.status !== status) {
+  // DB 처리가 모두 끝난 뒤 신청자 알림을 한 번만 발송한다.
+  if (prev.created_by && prev.status !== status) {
+    const notificationType = isRescheduleRequest
+      ? rescheduleRejected
+        ? "volunteer_reschedule_rejected"
+        : "volunteer_reschedule_approved"
+      : notificationTypeForStatus(status)
     await admin.from("notifications").insert({
       user_id: prev.created_by,
-      type: notificationTypeForStatus(status),
+      type: notificationType,
       post_type: "volunteer",
       post_id: id,
       actor_id: null,
@@ -612,10 +566,18 @@ export async function updateVolunteerApplication(
       const { sendPushToUser } = await import("@/features/push")
       await sendPushToUser(
         {
-          title: pushTitleForStatus(status, "봉사"),
-          body: status === "취소" && cancelReason
-            ? `취소 사유: ${cancelReason}`
-            : pushBodyForStatus(status),
+          title: isRescheduleRequest
+            ? rescheduleRejected
+              ? "🐾 봉사 일정변경 거절"
+              : "🐾 봉사 일정변경 승인"
+            : pushTitleForStatus(status, "봉사"),
+          body: isRescheduleRequest
+            ? rescheduleRejected
+              ? "기존 일정이 유지됩니다. 신청 내역에서 확인해주세요."
+              : "변경된 일정을 신청 내역에서 확인해주세요."
+            : status === "취소" && cancelReason
+              ? `취소 사유: ${cancelReason}`
+              : pushBodyForStatus(status),
           url: "/my/applications",
           tag: `volunteer-status-${id}`,
         },
@@ -633,7 +595,7 @@ export async function updateVolunteerApplication(
       } else if (status === "승인" && prev.status === "일정변경요청") {
         smsText = buildRescheduleSmsText(prev.applicant_name ?? "")
       } else if (status === "승인" && prev.status !== "일정변경요청") {
-        smsText = buildVolunteerSmsText(prev.applicant_name ?? "", prev.available_dates ?? [])
+        smsText = buildVolunteerSmsText(prev.applicant_name ?? "")
       } else if (prev.status === "일정변경요청" && status !== "승인") {
         smsText = buildRescheduleRejectedSmsText(prev.applicant_name ?? "")
       } else if (status === "검토중" && prev.status !== "검토중") {
@@ -655,6 +617,7 @@ export async function updateVolunteerApplication(
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/volunteer/${id}`)
   revalidatePath("/admin/calendar")
+  revalidatePath("/calendar")
   return { id }
 }
 

@@ -7,6 +7,8 @@ export type NotificationType =
   | "application_approved"
   | "application_rejected"
   | "application_under_review"
+  | "volunteer_reschedule_approved"
+  | "volunteer_reschedule_rejected"
 
 export interface UserNotification {
   id: string

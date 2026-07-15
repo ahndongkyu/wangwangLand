@@ -24,11 +24,11 @@ async function loadApplication(id: string): Promise<FromApp | null> {
   const { data } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_dates, available_time, message"
+      "id, applicant_name, party_size, activities, available_dates, available_time, message, status"
     )
     .eq("id", id)
     .maybeSingle()
-  if (!data) return null
+  if (!data || data.status !== "승인") return null
   return {
     id: data.id,
     applicantName: data.applicant_name,

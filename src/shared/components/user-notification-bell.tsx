@@ -20,6 +20,8 @@ function notifLabel(n: UserNotification): string {
   if (n.type === "application_approved") return `${t} 신청이 승인되었습니다 🎉`
   if (n.type === "application_rejected") return `${t} 신청이 반려되었습니다. 사유는 신청 내역에서 확인하세요.`
   if (n.type === "application_under_review") return `${t} 신청이 검토 중입니다`
+  if (n.type === "volunteer_reschedule_approved") return "봉사 일정변경이 승인되었습니다 🗓️"
+  if (n.type === "volunteer_reschedule_rejected") return "봉사 일정변경이 거절되어 기존 일정이 유지됩니다"
   if (n.type === "application_status_changed") {
     return `${t} 신청 상태가 변경됐어요. 신청 내역에서 확인해보세요!`
   }
@@ -33,6 +35,8 @@ const APPLICATION_STATUS_TYPES = new Set([
   "application_approved",
   "application_rejected",
   "application_under_review",
+  "volunteer_reschedule_approved",
+  "volunteer_reschedule_rejected",
 ])
 
 function notifPath(n: UserNotification): string {

@@ -157,7 +157,7 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
   const isMultiDateMode =
     !!fromApplication && fromApplication.availableDates.length > 0
   const [selectedDates, setSelectedDates] = useState<Set<string>>(
-    () => new Set(fromApplication?.availableDates ?? [])
+    () => new Set()
   )
 
   function toggleDate(d: string) {
@@ -274,8 +274,7 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
                 ` · ${fromApplication.availableTime}`}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground/80">
-              일정 등록 시 이 신청은 자동으로 <strong>승인</strong> 처리되고
-              회원에게 알림이 갑니다.
+              승인된 신청에 일정을 추가합니다. 신청자의 가능 날짜 중 실제 방문 날짜만 선택해주세요.
             </p>
           </div>
         </>
@@ -376,7 +375,7 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
               등록할 날짜 <span className="text-destructive">*</span>
             </Label>
             <p className="text-[11px] text-muted-foreground">
-              신청자가 가능하다고 선택한 날짜들. 체크된 날짜마다 일정이 한 개씩 등록됩니다.
+              신청자가 가능하다고 선택한 후보 날짜입니다. 체크된 날짜마다 일정이 한 개씩 등록됩니다.
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {fromApplication!.availableDates.map((d) => {
