@@ -32,7 +32,46 @@ export function MonthNav({ yearMonth, basePath, searchParams = {} }: Props) {
   }
 
   return (
-    <div className="mb-4 flex items-center justify-between gap-2">
+    <>
+      <div className="mb-4 sm:hidden">
+        <div className="grid grid-cols-[2.75rem_1fr_2.75rem] items-center gap-2">
+          <Link
+            href={buildHref(prev)}
+            className="flex size-11 items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-sm transition-colors active:bg-secondary"
+            aria-label="이전 달"
+          >
+            <ChevronLeft className="size-5" />
+          </Link>
+
+          <h2 className="text-center text-xl font-bold tracking-tight text-foreground">
+            {y}년 {m}월
+          </h2>
+
+          <Link
+            href={buildHref(next)}
+            className="flex size-11 items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-sm transition-colors active:bg-secondary"
+            aria-label="다음 달"
+          >
+            <ChevronRight className="size-5" />
+          </Link>
+        </div>
+
+        <div className="mt-2 flex justify-center">
+          <Link
+            href={buildHref(todayYm)}
+            className={cn(
+              "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+              onToday
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground active:bg-secondary"
+            )}
+          >
+            오늘
+          </Link>
+        </div>
+      </div>
+
+      <div className="mb-4 hidden items-center justify-between gap-2 sm:flex">
       <div className="flex items-center gap-1">
         <Link
           href={buildHref(prev)}
@@ -66,6 +105,7 @@ export function MonthNav({ yearMonth, basePath, searchParams = {} }: Props) {
       </h2>
 
       <div className="w-[120px]" aria-hidden />
-    </div>
+      </div>
+    </>
   )
 }

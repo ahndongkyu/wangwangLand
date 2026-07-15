@@ -16,7 +16,6 @@ import {
 import {
   dateKey,
   formatTimeKst,
-  formatKoreanDayLabel,
   isSameMonth,
   isToday,
   monthGridDays,
@@ -79,14 +78,14 @@ export function MonthGrid({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-lg sm:shadow-none">
       {/* 요일 헤더 */}
-      <div className="grid grid-cols-7 border-b border-border bg-secondary/40 text-center text-xs font-semibold text-muted-foreground">
+      <div className="grid grid-cols-7 border-b border-border bg-secondary/50 text-center text-sm font-semibold text-muted-foreground sm:bg-secondary/40 sm:text-xs">
         {WEEKDAYS.map((w, i) => (
           <div
             key={w}
             className={cn(
-              "py-2",
+              "py-2.5 sm:py-2",
               i === 0 && "text-destructive/80",
               i === 6 && "text-sky-600/80"
             )}
@@ -133,12 +132,12 @@ export function MonthGrid({
                 "group border-r border-t border-border outline-none transition-colors",
                 // 데스크톱: 기존 높이 유지
                 "sm:min-h-[110px] sm:p-1.5",
-                // 모바일: 컴팩트
-                "min-h-[44px] p-1 cursor-pointer",
+                // 모바일: 날짜와 일정 표시가 읽히고 터치하기 쉬운 크기
+                "min-h-[66px] cursor-pointer p-1.5",
                 (i + 1) % 7 === 0 && "border-r-0",
                 i < 7 && "border-t-0",
                 !inMonth && "bg-muted/30",
-                isSelected && "bg-primary/5",
+                isSelected && "bg-primary/10 ring-2 ring-inset ring-primary/35",
                 addHrefBase && "sm:hover:bg-secondary/40 sm:focus-visible:bg-secondary/60"
               )}
             >
@@ -147,7 +146,7 @@ export function MonthGrid({
                 <div className="flex min-w-0 items-center gap-1">
                   <span
                     className={cn(
-                      "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
+                      "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold sm:size-5 sm:text-[11px] sm:font-medium",
                       today && "bg-foreground text-background",
                       !today && inMonth && (dow === 0 || isHolidayCell) && "text-destructive/80",
                       !today && inMonth && dow === 6 && !isHolidayCell && "text-sky-600/80",
@@ -160,7 +159,7 @@ export function MonthGrid({
                   {/* 공휴일 라벨 (날짜 바로 옆) */}
                   {isHolidayCell && inMonth && (
                     <span
-                      className="truncate text-[9px] font-semibold text-destructive/80 sm:text-[10px]"
+                      className="hidden truncate text-[10px] font-semibold text-destructive/80 sm:inline"
                       title={holidayName ?? undefined}
                     >
                       {holidayName}
@@ -178,7 +177,7 @@ export function MonthGrid({
               </div>
 
               {/* 모바일: 컬러 도트 */}
-              <div className="mt-0.5 flex flex-wrap gap-0.5 sm:hidden">
+              <div className="mt-1 flex min-h-2 items-center gap-1 sm:hidden">
                 {dayEvents.slice(0, 3).map((ev) => {
                   const isCustom = ev.category === "custom"
                   const color = CATEGORY_COLOR[ev.category]
@@ -189,15 +188,20 @@ export function MonthGrid({
                       aria-hidden
                       style={customStyle?.dot}
                       className={cn(
-                        "size-1.5 rounded-full",
+                        "size-2 rounded-full ring-1 ring-background",
                         !isCustom && color.dot
                       )}
                     />
                   )
                 })}
                 {dayEvents.length > 3 && (
-                  <span className="text-[9px] leading-none text-muted-foreground">
+                  <span className="text-[10px] font-medium leading-none text-muted-foreground">
                     +{dayEvents.length - 3}
+                  </span>
+                )}
+                {dayEvents.length > 0 && dayEvents.length <= 3 && (
+                  <span className="ml-auto text-[10px] font-semibold leading-none text-muted-foreground/80">
+                    {dayEvents.length}
                   </span>
                 )}
               </div>
@@ -234,7 +238,7 @@ export function MonthGrid({
       {/* 선택일 패널 — 모든 화면에서 표시 */}
       {selectedKey && selectedEvents.length > 0 && (
         <div className="border-t border-border">
-          <div className="flex items-center justify-between bg-secondary/40 px-4 py-2.5">
+          <div className="flex items-center justify-between bg-secondary/40 px-3 py-2.5 sm:px-4">
             <span className="text-sm font-semibold text-foreground">
               {fullDayLabel(selectedKey)}
               <span className="ml-2 text-xs font-normal text-muted-foreground">
@@ -258,7 +262,7 @@ export function MonthGrid({
               const displayTitle = maskNames ? publicEventTitle(ev) : getEventTitle(ev)
 
               const content = (
-                <div className="flex items-start gap-3 px-4 py-3">
+                <div className="flex min-h-[60px] items-start gap-2.5 px-3 py-3 sm:gap-3 sm:px-4">
                   <span
                     style={customStyle?.soft}
                     className={cn(

@@ -47,11 +47,11 @@ export function CategoryFilter({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
+    <div className="-mx-3 mb-4 flex items-center gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
       <Link
         href={buildHref([])}
         className={cn(
-          "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+          "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:py-1",
           isAll
             ? "bg-foreground text-background"
             : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -67,7 +67,7 @@ export function CategoryFilter({
             key={c}
             href={buildHref(toggle(c))}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors sm:py-1",
               isActive
                 ? cn(color.soft, color.softText)
                 : "bg-secondary text-muted-foreground hover:text-foreground"

@@ -67,23 +67,24 @@ export default async function CalendarGridPage({
   })
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-12 md:py-16">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto w-full max-w-5xl px-3 py-7 sm:px-4 sm:py-12 md:py-16">
+      <header className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:flex-wrap">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground md:text-4xl">
-            <CalendarDays className="size-7 text-primary" aria-hidden />
-            일정 (캘린더)
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+            <CalendarDays className="size-6 text-primary sm:size-7" aria-hidden />
+            <span className="sm:hidden">일정</span>
+            <span className="hidden sm:inline">일정 (캘린더)</span>
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            월별로 일정을 한눈에 확인하세요.
+          <p className="mt-1.5 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            월별 봉사·행사 일정을 확인하세요.
           </p>
         </div>
         <Link
           href="/calendar"
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:gap-1.5 sm:px-3 sm:text-xs"
         >
           <List className="size-3.5" aria-hidden />
-          리스트로 보기
+          목록 보기
         </Link>
       </header>
 
