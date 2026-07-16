@@ -464,8 +464,6 @@ export async function updateVolunteerApplication(
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
   const rejectReschedule = formData.get("reject_reschedule") === "true"
   const scheduleMode = String(formData.get("schedule_mode") ?? "approval_only")
-  const scheduleDates = [...new Set(formData.getAll("selected_dates").map(String))]
-  const scheduleTime = String(formData.get("schedule_time") ?? "").trim()
 
   const validStatuses: ApplicationStatus[] = [
     "접수",
@@ -505,22 +503,31 @@ export async function updateVolunteerApplication(
   const shouldCreateSchedule =
     status === "승인" && !rejectReschedule &&
     (isRescheduleRequest || scheduleMode === "with_schedule")
+  const requestedDates = isRescheduleRequest
+    ? ((prev.reschedule_dates as string[] | null) ?? [])
+    : ((prev.available_dates as string[] | null) ?? [])
+  const requestedTime = isRescheduleRequest
+    ? (prev.reschedule_time as string | null)
+    : (prev.available_time as string | null)
 
-  if (shouldCreateSchedule && scheduleDates.length === 0) {
-    return { error: "확정할 날짜를 1개 이상 선택해주세요." }
+  if (shouldCreateSchedule && requestedDates.length === 0) {
+    return { error: "신청자가 입력한 날짜가 없어 일정을 자동 등록할 수 없습니다." }
   }
-  if (shouldCreateSchedule && !/^\d{2}:\d{2}$/.test(scheduleTime)) {
-    return { error: "일정 시간을 확인해주세요." }
+  if (shouldCreateSchedule && !requestedTime) {
+    return { error: "신청자가 입력한 시간이 없어 일정을 자동 등록할 수 없습니다." }
+  }
+  if (shouldCreateSchedule && !/^\d{2}:\d{2}$/.test(requestedTime ?? "")) {
+    return { error: "신청자의 방문 시간 형식이 올바르지 않습니다." }
   }
 
   const scheduleStarts: string[] = []
   if (shouldCreateSchedule) {
-    for (const date of scheduleDates) {
+    for (const date of [...new Set(requestedDates)]) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return { error: "일정 날짜 형식이 올바르지 않습니다." }
+        return { error: "신청자의 방문 날짜 형식이 올바르지 않습니다." }
       }
-      const startsAt = localKstToIso(`${date}T${scheduleTime}`)
-      if (!startsAt) return { error: "일정 날짜와 시간을 확인해주세요." }
+      const startsAt = localKstToIso(`${date}T${requestedTime}`)
+      if (!startsAt) return { error: "신청자의 방문 날짜와 시간을 확인해주세요." }
       scheduleStarts.push(startsAt)
     }
   }

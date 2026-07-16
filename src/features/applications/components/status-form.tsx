@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
-import { CalendarDays, ChevronLeft, ChevronRight, Lock, Plus, RotateCcw, X } from "lucide-react"
+import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
 
 import {
   deleteAdoptionApplication,
@@ -11,12 +11,10 @@ import {
   updateVolunteerApplication,
 } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import { useToast } from "@/shared/components/toast"
 import { cn } from "@/shared/lib/utils"
-import { todayKstDate } from "@/features/events/lib/date"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 const STATUS_OPTIONS: ApplicationStatus[] = [
@@ -100,9 +98,6 @@ export function ApplicationStatusForm({
   const [approvalMode, setApprovalMode] = useState<"with_schedule" | "approval_only">(
     linkedEventCount > 0 ? "approval_only" : "with_schedule"
   )
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
-  const [scheduleTime, setScheduleTime] = useState(hint?.availableTime ?? "10:00")
-  const [customDate, setCustomDate] = useState(todayKstDate())
 
   function handleStatusChange(nextStatus: ApplicationStatus) {
     setStatus(nextStatus)
@@ -115,27 +110,19 @@ export function ApplicationStatusForm({
     setAdminNote(nextDraft ?? (nextStatus === "승인" ? VOLUNTEER_DEFAULT_NOTE : ""))
   }
 
-  function toggleScheduleDate(date: string) {
-    setSelectedDates((prev) => {
-      const next = new Set(prev)
-      if (next.has(date)) next.delete(date)
-      else next.add(date)
-      return next
-    })
-  }
-
   function appendScheduleFields(formData: FormData) {
     formData.set("schedule_mode", approvalMode)
-    if (approvalMode !== "with_schedule") return
-    for (const date of selectedDates) formData.append("selected_dates", date)
-    formData.set("schedule_time", scheduleTime)
   }
 
   // form 없이 state에서 FormData 직접 구성해서 저장
   function handleSave() {
     setError(null)
-    if (status === "승인" && approvalMode === "with_schedule" && selectedDates.size === 0) {
-      setError("확정할 날짜를 1개 이상 선택해주세요.")
+    if (
+      status === "승인" &&
+      approvalMode === "with_schedule" &&
+      ((hint?.availableDates?.length ?? 0) === 0 || !hint?.availableTime)
+    ) {
+      setError("신청자의 날짜 또는 시간이 없어 일정을 자동 등록할 수 없습니다. 승인만 선택해주세요.")
       return
     }
     if (status === "반려" && !adminNote.trim()) {
@@ -192,42 +179,27 @@ export function ApplicationStatusForm({
           {isRescheduleRequest && rescheduleInfo && rescheduleInfo.dates.length > 0 && (
             <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-800/40 dark:bg-blue-950/20">
               <p className="mb-1.5 text-xs font-semibold text-blue-800 dark:text-blue-300">
-                확정할 날짜를 선택해주세요
+                신청자가 요청한 변경 일정
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {rescheduleInfo.dates.map((date) => {
                   const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
-                  const checked = selectedDates.has(date)
                   return (
-                    <button
+                    <span
                       key={date}
-                      type="button"
-                      aria-pressed={checked}
-                      onClick={() => toggleScheduleDate(date)}
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
-                        checked
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-blue-200 bg-white text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-300"
-                      )}
+                      className="rounded-full border border-blue-200 bg-white px-2.5 py-1 text-xs font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-300"
                     >
                       {date.slice(5).replace("-", "/")} ({wd})
-                    </button>
+                    </span>
                   )
                 })}
               </div>
-              <div className="mt-2 max-w-40">
-                <Label htmlFor="reschedule_time" className="text-[11px] text-muted-foreground">
-                  확정 시간
-                </Label>
-                <Input
-                  id="reschedule_time"
-                  type="time"
-                  value={scheduleTime}
-                  onChange={(e) => setScheduleTime(e.target.value)}
-                  className="mt-1 h-8 text-xs"
-                />
-              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                방문 시간: <span className="font-semibold text-foreground">{rescheduleInfo.time ?? "미입력"}</span>
+              </p>
+              <p className="mt-1 text-[11px] text-blue-700/80 dark:text-blue-300/80">
+                승인하면 위 날짜와 시간으로 기존 캘린더 일정이 바로 교체됩니다.
+              </p>
               {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
               {/* 승인 / 거절 빠른 버튼 */}
               <div className="mt-3 flex gap-2">
@@ -235,16 +207,14 @@ export function ApplicationStatusForm({
                   type="button"
                   disabled={pending}
                   onClick={() => {
-                    if (selectedDates.size === 0) {
-                      setError("확정할 날짜를 1개 이상 선택해주세요.")
+                    if (rescheduleInfo.dates.length === 0 || !rescheduleInfo.time) {
+                      setError("신청자의 변경 날짜 또는 시간이 없어 승인할 수 없습니다.")
                       return
                     }
                     const formData = new FormData()
                     formData.set("status", "승인")
                     formData.set("admin_note", adminNote)
                     formData.set("schedule_mode", "with_schedule")
-                    for (const date of selectedDates) formData.append("selected_dates", date)
-                    formData.set("schedule_time", scheduleTime)
                     startTransition(async () => {
                       const result = await updateVolunteerApplication(id, formData)
                       if (result.error) { toast.error(`실패: ${result.error}`) }
@@ -439,7 +409,7 @@ export function ApplicationStatusForm({
                 />
                 <span className="font-semibold">승인 + 일정 확정</span>
                 <span className="mt-1 block pl-5 text-[11px] text-muted-foreground">
-                  선택한 날짜를 캘린더에 함께 등록합니다.
+                  신청자가 입력한 날짜와 시간으로 바로 등록합니다.
                 </span>
               </label>
               <label className={cn(
@@ -462,89 +432,35 @@ export function ApplicationStatusForm({
             </div>
 
             {approvalMode === "with_schedule" && (
-              <div className="mt-4 space-y-4 rounded-lg border border-border bg-secondary/20 p-3">
+              <div className="mt-4 space-y-3 rounded-lg border border-primary/25 bg-primary/5 p-3">
                 <div>
-                  <p className="text-xs font-semibold text-foreground">확정할 날짜</p>
+                  <p className="text-xs font-semibold text-foreground">자동 등록될 신청 일정</p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    신청자가 선택한 날짜는 후보입니다. 실제 방문 날짜만 선택해주세요.
+                    승인하면 아래 신청 날짜 전체가 캘린더에 바로 등록됩니다.
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {(hint?.availableDates ?? []).map((date) => {
-                      const checked = selectedDates.has(date)
+                      const wd = ["일", "월", "화", "수", "목", "금", "토"][new Date(date).getDay()]
                       return (
-                        <button
+                        <span
                           key={date}
-                          type="button"
-                          aria-pressed={checked}
-                          onClick={() => toggleScheduleDate(date)}
-                          className={cn(
-                            "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            checked
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background text-foreground hover:border-primary/50"
-                          )}
+                          className="rounded-full border border-primary/30 bg-background px-3 py-1.5 text-xs font-medium text-foreground"
                         >
-                          {checked ? "✓ " : ""}{date}
-                        </button>
+                          {date} ({wd})
+                        </span>
                       )
                     })}
                     {(hint?.availableDates ?? []).length === 0 && (
-                      <span className="text-xs text-muted-foreground">신청자가 선택한 날짜가 없습니다.</span>
+                      <span className="text-xs font-medium text-destructive">신청자가 입력한 날짜가 없습니다.</span>
                     )}
                   </div>
                 </div>
-
-                <div>
-                  <Label htmlFor="custom_schedule_date" className="text-xs">다른 날짜 추가</Label>
-                  <div className="mt-1 flex gap-2">
-                    <Input
-                      id="custom_schedule_date"
-                      type="date"
-                      value={customDate}
-                      onChange={(e) => setCustomDate(e.target.value)}
-                      className="max-w-48 text-sm"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (!customDate) return
-                        setSelectedDates((prev) => new Set(prev).add(customDate))
-                      }}
-                    >
-                      <Plus className="size-3.5" /> 추가
-                    </Button>
-                  </div>
-                </div>
-
-                {selectedDates.size > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {[...selectedDates].sort().map((date) => (
-                      <span key={date} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                        {date}
-                        <button
-                          type="button"
-                          aria-label={`${date} 제거`}
-                          onClick={() => toggleScheduleDate(date)}
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="max-w-48">
-                  <Label htmlFor="schedule_time" className="text-xs">방문 시간</Label>
-                  <Input
-                    id="schedule_time"
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                    className="mt-1 text-sm"
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  방문 시간: <span className={cn(
+                    "font-semibold",
+                    hint?.availableTime ? "text-foreground" : "text-destructive"
+                  )}>{hint?.availableTime ?? "미입력"}</span>
+                </p>
               </div>
             )}
 
