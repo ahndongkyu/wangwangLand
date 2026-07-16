@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import Image, { getImageProps } from "next/image"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -16,6 +16,7 @@ export interface HeroSlideCTA {
 
 export interface HeroSlide {
   image: string
+  mobileImage?: string
   badge?: string
   title: string
   description: string
@@ -47,6 +48,7 @@ export function HeroCarousel({
   const [animated, setAnimated] = useState(true)
   const [playing, setPlaying] = useState(autoPlayInitial)
   const [slideW, setSlideW] = useState(0)
+  const [slideH, setSlideH] = useState(0)
   const [leftPad, setLeftPad] = useState(0)
   const sectionRef = useRef<HTMLElement>(null)
   const touchStartX = useRef<number | null>(null)
@@ -63,6 +65,7 @@ export function HeroCarousel({
       const sw = Math.round(w * (w < 768 ? 0.80 : 0.78))
       setLeftPad(Math.round((w - sw) / 2))
       setSlideW(sw)
+      setSlideH(Math.round(sw / (w < 768 ? 4 / 3 : 2)))
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -152,9 +155,10 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex h-[260px] sm:h-[320px] md:h-[480px] lg:h-[560px] xl:h-[640px] 2xl:h-[720px]"
+        className="flex h-[60vw] md:h-[39vw]"
         style={{
           gap: `${GAP}px`,
+          height: slideH > 0 ? `${slideH}px` : undefined,
           paddingLeft: `${leftPad}px`,
           transform: `translateX(${translateX}px)`,
           transition: animated ? "transform 500ms ease-out" : "none",
@@ -176,18 +180,7 @@ export function HeroCarousel({
                 transformOrigin: "center center",
               }}
             >
-              <Image
-                src={slide.image}
-                alt=""
-                fill
-                priority={i === 1}
-                loading={i === 1 ? "eager" : "lazy"}
-                sizes="(max-width: 640px) 100vw, 90vw"
-                className={cn(
-                  "object-center",
-                  slide.imageOnly ? "object-contain" : "object-cover"
-                )}
-              />
+              <SlideImage slide={slide} eager={i === 1} />
               {slide.imageOnly ? (
                 <Link
                   href={slide.primary.href}
@@ -280,6 +273,63 @@ export function HeroCarousel({
         </>
       )}
     </section>
+  )
+}
+
+function SlideImage({
+  slide,
+  eager,
+}: {
+  slide: HeroSlide
+  eager: boolean
+}) {
+  const sizes = "(max-width: 767px) 80vw, 78vw"
+
+  if (!slide.mobileImage) {
+    return (
+      <Image
+        src={slide.image}
+        alt=""
+        fill
+        priority={eager}
+        loading={eager ? "eager" : "lazy"}
+        sizes={sizes}
+        className="object-cover object-center"
+      />
+    )
+  }
+
+  const common = {
+    alt: "",
+    sizes,
+    loading: eager ? ("eager" as const) : ("lazy" as const),
+  }
+  const {
+    props: { srcSet: desktopSrcSet },
+  } = getImageProps({
+    ...common,
+    src: slide.image,
+    width: 2000,
+    height: 1000,
+  })
+  const {
+    props: { srcSet: mobileSrcSet, ...mobileProps },
+  } = getImageProps({
+    ...common,
+    src: slide.mobileImage,
+    width: 1200,
+    height: 900,
+  })
+
+  return (
+    <picture>
+      <source media="(min-width: 768px)" srcSet={desktopSrcSet} />
+      <source media="(max-width: 767px)" srcSet={mobileSrcSet} />
+      <img
+        {...mobileProps}
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
+    </picture>
   )
 }
 

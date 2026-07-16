@@ -23,7 +23,8 @@ import { cn } from "@/shared/lib/utils"
 
 const HERO_SLIDES: HeroSlide[] = [
   {
-    image: "/images/banner3.png",
+    image: "/images/banner3-desktop.png",
+    mobileImage: "/images/banner3-mobile.png",
     title: "왕왕랜드 원데이 클래스",
     description: "",
     primary: {
