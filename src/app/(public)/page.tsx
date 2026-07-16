@@ -23,6 +23,16 @@ import { cn } from "@/shared/lib/utils"
 
 const HERO_SLIDES: HeroSlide[] = [
   {
+    image: "/images/banner3.png",
+    title: "왕왕랜드 원데이 클래스",
+    description: "",
+    primary: {
+      label: "왕왕랜드 원데이 클래스 게시글 보기",
+      href: "/notice/424dbdae-9993-4977-9c07-130c9255bc0f",
+    },
+    imageOnly: true,
+  },
+  {
     image: "/images/banner.jpeg",
     badge: SITE.subtitle,
     title: SITE.tagline,

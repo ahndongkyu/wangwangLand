@@ -21,6 +21,7 @@ export interface HeroSlide {
   description: string
   primary: HeroSlideCTA
   secondary?: HeroSlideCTA
+  imageOnly?: boolean
 }
 
 interface Props {
@@ -182,30 +183,43 @@ export function HeroCarousel({
                 priority={i === 1}
                 loading={i === 1 ? "eager" : "lazy"}
                 sizes="(max-width: 640px) 100vw, 90vw"
-                className="object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
-
-              {/* 텍스트 + CTA */}
-              <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
-                {slide.badge && (
-                  <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
-                    {slide.badge}
-                  </span>
+                className={cn(
+                  "object-center",
+                  slide.imageOnly ? "object-contain" : "object-cover"
                 )}
-                <h1 className="mt-4 text-xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_12px_rgb(0_0_0_/_60%)]">
-                  {slide.title}
-                </h1>
-                <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
-                  {slide.description}
-                </p>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <CTALink cta={slide.primary} variant="primary" />
-                  {slide.secondary && (
-                    <CTALink cta={slide.secondary} variant="outline" />
-                  )}
-                </div>
-              </div>
+              />
+              {slide.imageOnly ? (
+                <Link
+                  href={slide.primary.href}
+                  aria-label={slide.primary.label}
+                  className="absolute inset-0 z-10"
+                />
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
+
+                  {/* 텍스트 + CTA */}
+                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
+                    {slide.badge && (
+                      <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+                        {slide.badge}
+                      </span>
+                    )}
+                    <h1 className="mt-4 text-xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_12px_rgb(0_0_0_/_60%)]">
+                      {slide.title}
+                    </h1>
+                    <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
+                      {slide.description}
+                    </p>
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                      <CTALink cta={slide.primary} variant="primary" />
+                      {slide.secondary && (
+                        <CTALink cta={slide.secondary} variant="outline" />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* 인디케이터 도트 — 활성 슬라이드 내부 */}
               {count > 1 && isActive && (
