@@ -309,10 +309,6 @@ export function ApplicationStatusForm({
                   </div>
                 </div>
               )}
-              <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-                <Lock className="size-3" aria-hidden />
-                관리자 페이지에서만 표시됩니다
-              </p>
             </div>
           )}
 
