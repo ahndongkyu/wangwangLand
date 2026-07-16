@@ -162,6 +162,8 @@ export interface VolunteerApplication {
   submitted_at: string
   updated_at: string
   created_by: string | null
+  approved_by?: string | null
+  approved_at?: string | null
   reschedule_dates?: string[] | null
   reschedule_time?: string | null
 }

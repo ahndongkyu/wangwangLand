@@ -161,7 +161,13 @@ export async function getAdoptionApplication(
 
 export async function getVolunteerApplication(
   id: string
-): Promise<(VolunteerApplication & { signup_provider: string | null }) | null> {
+): Promise<
+  | (VolunteerApplication & {
+      signup_provider: string | null
+      approved_by_profile: { nickname: string; role: string } | null
+    })
+  | null
+> {
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -180,7 +186,20 @@ export async function getVolunteerApplication(
   const signup_provider = await getSignupProvider(
     (data as VolunteerApplication).created_by
   )
-  return { ...(data as VolunteerApplication), signup_provider }
+  const application = data as VolunteerApplication
+  let approved_by_profile: { nickname: string; role: string } | null = null
+  if (application.approved_by) {
+    const { data: approver } = await supabase
+      .from("profiles")
+      .select("nickname, role")
+      .eq("id", application.approved_by)
+      .maybeSingle()
+    approved_by_profile = approver
+      ? { nickname: approver.nickname, role: approver.role }
+      : null
+  }
+
+  return { ...application, signup_provider, approved_by_profile }
 }
 
 /** 회원이 본인 봉사 신청 1건을 가져옴 (수정 페이지용). 본인 소유 + 미처리 상태만 반환. */

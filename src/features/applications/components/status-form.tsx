@@ -2,7 +2,15 @@
 
 import { useRouter } from "next/navigation"
 import { useRef, useState, useTransition } from "react"
-import { CalendarDays, ChevronLeft, ChevronRight, Lock, RotateCcw } from "lucide-react"
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Lock,
+  RotateCcw,
+  UserCheck,
+  UserRoundX,
+} from "lucide-react"
 
 import {
   deleteAdoptionApplication,
@@ -40,6 +48,8 @@ interface Props {
   linkedEventCount?: number
   /** 일정변경요청 상태일 때 신청자가 요청한 날짜/시간 */
   rescheduleInfo?: { dates: string[]; time: string | null }
+  /** 관리자 화면에서만 표시하는 승인 담당자 감사 정보 */
+  approvalInfo?: { nickname: string; role: string; approvedAt: string } | null
 }
 
 /** 처리 완료 상태 — 기본 뷰모드로 시작 */
@@ -61,6 +71,7 @@ export function ApplicationStatusForm({
   hint,
   linkedEventCount = 0,
   rescheduleInfo,
+  approvalInfo,
 }: Props) {
   const router = useRouter()
   const toast = useToast()
@@ -262,6 +273,46 @@ export function ApplicationStatusForm({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CalendarDays className="size-4 text-primary" />
               <span>캘린더 일정 <strong className="text-foreground">{linkedEventCount}개</strong> 등록됨</span>
+            </div>
+          )}
+
+          {kind === "volunteer" && currentStatus === "승인" && (
+            <div className="border-t border-border pt-4">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">승인 처리 정보</p>
+              {approvalInfo ? (
+                <div className="flex items-start gap-2.5">
+                  <UserCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-sm font-semibold text-foreground">{approvalInfo.nickname}</span>
+                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {approvalInfo.role === "admin" ? "최고 관리자" : "운영진"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(approvalInfo.approvedAt).toLocaleString("ko-KR", {
+                        timeZone: "Asia/Seoul",
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })} 승인
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5">
+                  <UserRoundX className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">처리자 기록 없음</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      기능 적용 이전에 승인된 신청입니다.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <p className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                <Lock className="size-3" aria-hidden />
+                관리자 페이지에서만 표시됩니다
+              </p>
             </div>
           )}
 

@@ -370,6 +370,15 @@ export default async function VolunteerApplicationDetailPage({
             ? { dates: app.reschedule_dates, time: app.reschedule_time ?? null }
             : undefined
         }
+        approvalInfo={
+          app.approved_by_profile && app.approved_at
+            ? {
+                nickname: app.approved_by_profile.nickname,
+                role: app.approved_by_profile.role,
+                approvedAt: app.approved_at,
+              }
+            : null
+        }
       />
     </div>
   )
