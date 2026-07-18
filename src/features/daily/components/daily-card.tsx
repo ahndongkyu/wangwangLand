@@ -23,7 +23,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
   return (
     <Link
       href={`/daily/${post.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {cover ? (
@@ -45,7 +45,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
           </span>
         )}
       </div>
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-col p-4">
         <p
           className={`mb-1.5 h-4 truncate text-xs font-semibold text-primary/80 ${
             post.category ? "" : "invisible"
@@ -54,7 +54,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
         >
           {post.category ?? "카테고리"}
         </p>
-        <h3 className="line-clamp-2 h-12 text-base font-semibold leading-6 text-foreground">
+        <h3 className="h-6 truncate text-base font-semibold leading-6 text-foreground">
           {title}
         </h3>
         <p
@@ -65,7 +65,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
         >
           {preview || "미리보기 내용 없음"}
         </p>
-        <div className="mt-auto flex flex-col gap-1 pt-3">
+        <div className="mt-3 flex flex-col gap-1">
           <div className="h-5 overflow-hidden">
             {post.author ? (
               <UserName
