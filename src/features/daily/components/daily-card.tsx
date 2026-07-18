@@ -66,7 +66,7 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
           {preview || "미리보기 내용 없음"}
         </p>
         <div className="mt-3 flex flex-col gap-1">
-          <div className="h-5 overflow-hidden">
+          <div className="flex h-5 items-center">
             {post.author ? (
               <UserName
                 nickname={authorNickname}
