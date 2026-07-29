@@ -62,10 +62,11 @@ export function HeroCarousel({
     function measure() {
       if (!sectionRef.current) return
       const w = sectionRef.current.offsetWidth
-      const sw = Math.round(w * (w < 768 ? 0.80 : 0.78))
+      const isMobile = w < 768
+      const sw = Math.round(w * (isMobile ? 0.92 : 0.78))
       setLeftPad(Math.round((w - sw) / 2))
       setSlideW(sw)
-      setSlideH(Math.round(sw / (w < 768 ? 4 / 3 : 2)))
+      setSlideH(Math.round(sw / 2))
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -155,7 +156,7 @@ export function HeroCarousel({
     >
       {/* 슬라이드 트랙 */}
       <div
-        className="flex h-[60vw] md:h-[39vw]"
+        className="flex h-[46vw] md:h-[39vw]"
         style={{
           gap: `${GAP}px`,
           height: slideH > 0 ? `${slideH}px` : undefined,
@@ -174,7 +175,7 @@ export function HeroCarousel({
               aria-roledescription="slide"
               className="relative flex-shrink-0 overflow-hidden rounded-2xl"
               style={{
-                width: slideW > 0 ? `${slideW}px` : "80%",
+                width: slideW > 0 ? `${slideW}px` : "92%",
                 transform: isActive ? "scale(1)" : "scale(0.88)",
                 transition: animated ? "transform 500ms ease-out" : "none",
                 transformOrigin: "center center",
@@ -192,22 +193,24 @@ export function HeroCarousel({
                   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/25 to-black/60" />
 
                   {/* 텍스트 + CTA */}
-                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 pb-10 text-center">
+                  <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 pb-8 pt-3 text-center md:px-6 md:pb-10 md:pt-0">
                     {slide.badge && (
-                      <span className="rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm">
+                      <span className="hidden rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-foreground backdrop-blur-sm md:inline-flex">
                         {slide.badge}
                       </span>
                     )}
-                    <h1 className="mt-4 text-xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl [text-shadow:_0_2px_12px_rgb(0_0_0_/_60%)]">
+                    <h1 className="text-lg font-bold leading-tight tracking-tight text-white md:mt-4 md:text-4xl lg:text-5xl [text-shadow:_0_2px_12px_rgb(0_0_0_/_60%)]">
                       {slide.title}
                     </h1>
-                    <p className="mt-3 max-w-xl whitespace-pre-line text-sm font-medium text-white/90 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
+                    <p className="mt-1.5 line-clamp-2 max-w-xl whitespace-pre-line text-[11px] font-medium text-white/90 md:mt-3 md:text-base [text-shadow:_0_1px_4px_rgb(0_0_0_/_30%)]">
                       {slide.description}
                     </p>
-                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <div className="mt-3 flex gap-3 md:mt-6">
                       <CTALink cta={slide.primary} variant="primary" />
                       {slide.secondary && (
-                        <CTALink cta={slide.secondary} variant="outline" />
+                        <span className="hidden md:contents">
+                          <CTALink cta={slide.secondary} variant="outline" />
+                        </span>
                       )}
                     </div>
                   </div>
@@ -283,7 +286,7 @@ function SlideImage({
   slide: HeroSlide
   eager: boolean
 }) {
-  const sizes = "(max-width: 767px) 80vw, 78vw"
+  const sizes = "(max-width: 767px) 92vw, 78vw"
 
   if (!slide.mobileImage) {
     return (
@@ -327,7 +330,10 @@ function SlideImage({
       <source media="(max-width: 767px)" srcSet={mobileSrcSet} />
       <img
         {...mobileProps}
-        className="absolute inset-0 h-full w-full object-cover object-center"
+        className={cn(
+          "absolute inset-0 h-full w-full object-center",
+          slide.imageOnly ? "object-contain md:object-cover" : "object-cover"
+        )}
       />
     </picture>
   )
@@ -345,7 +351,7 @@ function CTALink({
       size: "lg",
       variant: variant === "outline" ? "outline" : "default",
     }),
-    "h-11 px-6 text-base font-semibold",
+    "h-9 px-4 text-sm font-semibold md:h-11 md:px-6 md:text-base",
     variant === "primary" &&
       "shadow-lg shadow-primary/30 transition-transform hover:-translate-y-0.5",
     variant === "outline" &&

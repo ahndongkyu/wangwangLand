@@ -76,15 +76,16 @@ export default async function HomePage() {
   return (
     <>
       <HeroCarousel slides={HERO_SLIDES} interval={5000} autoPlayInitial />
+      <MobileQuickActions />
 
       {/* 1. 미션 블록 */}
       <section
         className="border-t border-border/60 bg-card
           dark:bg-[radial-gradient(ellipse_at_top,#3F2818_0%,#221710_70%)]"
       >
-        <div className="mx-auto w-full max-w-4xl px-4 py-16 md:px-6 md:py-20">
+        <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-20">
           {/* 헤더 */}
-          <div className="mb-10 text-center">
+          <div className="text-center md:mb-10">
             <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               우리의 약속
             </span>
@@ -100,7 +101,7 @@ export default async function HomePage() {
           </div>
 
           {/* 액션 영역: 항상 5열 (후원하기 2열 + 버튼 3열) */}
-          <div className="grid grid-cols-5 gap-3">
+          <div className="hidden grid-cols-5 gap-3 md:grid">
             {/* 후원하기 CTA */}
             <Link
               href="/donate"
@@ -348,6 +349,19 @@ function MissionActionButton({
       <BrandIcon name={icon} size={22} decorative className="md:size-7" />
       {label}
     </Link>
+  )
+}
+
+function MobileQuickActions() {
+  return (
+    <section className="border-t border-border/60 bg-card px-4 py-4 md:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
+        <MissionActionButton href="/adopt" label="입양 신청" icon="adopted" />
+        <MissionActionButton href="/adopt" label="임보 신청" icon="home-shelter" />
+        <MissionActionButton href="/volunteer" label="봉사 신청" icon="volunteer" />
+        <MissionActionButton href="/donate" label="후원하기" icon="heart" />
+      </div>
+    </section>
   )
 }
 

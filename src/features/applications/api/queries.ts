@@ -10,6 +10,11 @@ export interface AdoptionRow extends AdoptionApplication {
   cat?: { id: string; name: string } | null
 }
 
+export interface MyApplicationSummary {
+  approved: number
+  pending: number
+}
+
 interface ListOptions {
   status?: ApplicationStatus | "전체"
   /** 신청자 이름·전화 통합 검색 (ilike) */
@@ -222,6 +227,43 @@ export async function getMyEditableVolunteerApplication(
   // 취소 또는 반려된 신청은 수정 불가
   if (app.status === "취소" || app.status === "반려") return null
   return app
+}
+
+/** 모바일 회원 메뉴에 표시할 본인 신청 상태 요약. */
+export async function getMyApplicationSummary(
+  userId: string
+): Promise<MyApplicationSummary> {
+  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const admin = createAdminClient()
+
+  const [adoptionRes, volunteerRes] = await Promise.all([
+    admin
+      .from("adoption_applications")
+      .select("status")
+      .eq("created_by", userId)
+      .neq("status", "반려")
+      .neq("status", "취소"),
+    admin
+      .from("volunteer_applications")
+      .select("status")
+      .eq("created_by", userId)
+      .neq("status", "반려")
+      .neq("status", "취소"),
+  ])
+
+  const statuses = [
+    ...(adoptionRes.data ?? []),
+    ...(volunteerRes.data ?? []),
+  ].map(({ status }) => status as ApplicationStatus)
+
+  return statuses.reduce<MyApplicationSummary>(
+    (summary, status) => {
+      if (status === "승인") summary.approved += 1
+      else summary.pending += 1
+      return summary
+    },
+    { approved: 0, pending: 0 }
+  )
 }
 
 /** 어드민 회원 상세에서 사용: 이메일 매칭으로 회원의 신청 내역 조회 */

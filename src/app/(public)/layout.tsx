@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 
 import { listRecentPublishedNotices } from "@/features/notices"
 import { getCurrentProfile } from "@/features/members"
+import { getMyApplicationSummary } from "@/features/applications"
+import { getEventTitle, listMyUpcomingEvents } from "@/features/events"
 import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
 import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { listMyNotifications, getUnreadCount } from "@/features/notifications/api/queries"
@@ -75,11 +77,36 @@ export default async function PublicLayout({
   const isStaff = profile?.role === "staff" || profile?.role === "admin"
   const isApproved = profile?.status === "approved"
 
-  const [pendingCounts, userNotifications, unreadNotificationCount] = await Promise.all([
+  const [
+    pendingCounts,
+    userNotifications,
+    unreadNotificationCount,
+    upcomingEvents,
+    applicationSummary,
+  ] = await Promise.all([
     isStaff ? getPendingCounts() : Promise.resolve(null),
     isApproved ? listMyNotifications() : Promise.resolve([]),
     isApproved ? getUnreadCount() : Promise.resolve(0),
+    isApproved ? listMyUpcomingEvents() : Promise.resolve([]),
+    isApproved && profile
+      ? getMyApplicationSummary(profile.id)
+      : Promise.resolve({ approved: 0, pending: 0 }),
   ])
+
+  const nextEvent = upcomingEvents[0]
+  const mobileMemberSummary = isApproved
+    ? {
+        nextEvent: nextEvent
+          ? {
+              href: `/calendar/${nextEvent.id}`,
+              startsAt: nextEvent.starts_at,
+              title: getEventTitle(nextEvent),
+            }
+          : null,
+        approvedApplications: applicationSummary.approved,
+        pendingApplications: applicationSummary.pending,
+      }
+    : null
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -89,6 +116,7 @@ export default async function PublicLayout({
         pendingCounts={pendingCounts}
         userNotifications={userNotifications}
         unreadNotificationCount={unreadNotificationCount}
+        mobileMemberSummary={mobileMemberSummary}
       />
       {/* 모바일 하단 CTA 바와 겹치지 않도록 main 하단에 padding */}
       <main className="flex-1 pb-24 md:pb-0">{children}</main>

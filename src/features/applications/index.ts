@@ -20,6 +20,7 @@ export {
   getAdoptionApplication,
   getVolunteerApplication,
   getMyEditableVolunteerApplication,
+  getMyApplicationSummary,
   countPendingApplications,
   getApplicationStats,
   listRecentApplications,
@@ -30,4 +31,5 @@ export type {
   RecentApplication,
   ApplicationStatusCounts,
   MonthlyVolunteerStat,
+  MyApplicationSummary,
 } from "./api/queries"

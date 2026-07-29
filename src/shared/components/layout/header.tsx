@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
@@ -46,6 +46,15 @@ interface HeaderProps {
   pendingCounts?: PendingCounts | null
   userNotifications?: UserNotification[]
   unreadNotificationCount?: number
+  mobileMemberSummary?: {
+    nextEvent: {
+      href: string
+      startsAt: string
+      title: string
+    } | null
+    approvedApplications: number
+    pendingApplications: number
+  } | null
 }
 
 function getMobileBackHref(pathname: string): string | null {
@@ -64,7 +73,14 @@ function getMobileBackHref(pathname: string): string | null {
   return `/${segments.slice(0, -1).join("/")}`
 }
 
-export function Header({ recentNotices = [], profile, pendingCounts, userNotifications = [], unreadNotificationCount = 0 }: HeaderProps) {
+export function Header({
+  recentNotices = [],
+  profile,
+  pendingCounts,
+  userNotifications = [],
+  unreadNotificationCount = 0,
+  mobileMemberSummary,
+}: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileBackHref = getMobileBackHref(pathname)
@@ -93,7 +109,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
         <Link
           href="/"
           className={cn(
-            "items-center gap-3 justify-self-start",
+            "min-w-0 items-center gap-3 justify-self-start",
             mobileBackHref ? "hidden md:flex" : "flex"
           )}
         >
@@ -105,7 +121,7 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             className="size-10 rounded-full md:size-13"
             priority
           />
-          <div className="flex flex-col leading-tight">
+          <div className="hidden flex-col leading-tight sm:flex">
             <span className="text-lg font-bold tracking-tight text-foreground md:text-xl">
               {SITE.name}
             </span>
@@ -154,7 +170,15 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
         </nav>
 
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
-        <div className="flex items-center justify-end gap-2 justify-self-end">
+        <div className="flex min-w-0 items-center justify-end gap-1.5 justify-self-end md:gap-2">
+          {profile && (
+            <span
+              className="max-w-[76px] truncate text-xs font-semibold text-foreground sm:max-w-[104px] md:hidden"
+              title={`${profile.nickname}님`}
+            >
+              {profile.nickname}님
+            </span>
+          )}
           {pendingCounts && <AdminNotificationBell counts={pendingCounts} />}
           {!pendingCounts && profile && (
             <UserNotificationBell
@@ -163,7 +187,9 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             />
           )}
           {profile ? (
-            <UserMenu profile={profile} />
+            <span className="hidden md:inline-flex">
+              <UserMenu profile={profile} />
+            </span>
           ) : (
             <>
               <span className="hidden md:inline-flex">
@@ -183,9 +209,9 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
             <SheetTrigger
               render={
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
-                  className="md:hidden"
+                  className="size-9 rounded-lg p-0 shadow-sm md:hidden"
                   aria-label="메뉴 열기"
                 />
               }
@@ -232,7 +258,11 @@ export function Header({ recentNotices = [], profile, pendingCounts, userNotific
               </div>
 
               {/* ── 로그인 / 프로필 영역 ── */}
-              <MobileProfileSection profile={profile} onClose={() => setMobileOpen(false)} />
+              <MobileProfileSection
+                profile={profile}
+                summary={mobileMemberSummary}
+                onClose={() => setMobileOpen(false)}
+              />
 
               {/* ── 메뉴 그룹 ── */}
               <nav className="flex-1 overflow-y-auto py-2">
@@ -412,9 +442,11 @@ function InstaIcon() {
 
 function MobileProfileSection({
   profile,
+  summary,
   onClose,
 }: {
   profile?: Profile | null
+  summary?: HeaderProps["mobileMemberSummary"]
   onClose: () => void
 }) {
   const { resolvedTheme, setTheme } = useTheme()
@@ -462,6 +494,39 @@ function MobileProfileSection({
         </span>
       </Link>
 
+      {summary && (
+        <div className="grid grid-cols-2 border-t border-[#E5DDD0] dark:border-[#3A3229]">
+          <Link
+            href={summary.nextEvent?.href ?? "/calendar"}
+            onClick={onClose}
+            className="min-w-0 border-r border-[#E5DDD0] px-4 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:border-[#3A3229] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          >
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+              <CalendarDays className="size-3.5" />
+              다음 일정
+            </span>
+            <span className="mt-1 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+              {summary.nextEvent
+                ? `${formatMobileHeaderDate(summary.nextEvent.startsAt)} · ${summary.nextEvent.title}`
+                : "예정된 일정 없음"}
+            </span>
+          </Link>
+          <Link
+            href="/my/applications"
+            onClick={onClose}
+            className="min-w-0 px-4 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          >
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+              <ClipboardList className="size-3.5" />
+              신청 현황
+            </span>
+            <span className="mt-1 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+              승인 {summary.approvedApplications} · 진행 {summary.pendingApplications}
+            </span>
+          </Link>
+        </div>
+      )}
+
       {/* 빠른 링크 — divide-x로 border 자동 처리 */}
       <div className="flex divide-x divide-[#E5DDD0] border-t border-[#E5DDD0] dark:divide-[#3A3229] dark:border-[#3A3229]">
         {isStaff && (
@@ -495,6 +560,15 @@ function MobileProfileSection({
       </div>
     </div>
   )
+}
+
+function formatMobileHeaderDate(iso: string): string {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date(iso))
 }
 
 /** 데스크톱 드롭다운 그룹 */
