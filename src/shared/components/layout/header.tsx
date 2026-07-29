@@ -13,7 +13,6 @@ import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
 import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
-import { UserName } from "@/shared/components/user-name"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { UserNotificationBell } from "@/shared/components/user-notification-bell"
@@ -26,7 +25,6 @@ import { ThemeToggle } from "@/shared/components/theme-toggle"
 import {
   HEADER_NAV_GROUPS,
   type HeaderNavItem,
-  MAIN_NAV,
   SITE,
 } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
@@ -55,6 +53,13 @@ interface HeaderProps {
     approvedApplications: number
     pendingApplications: number
   } | null
+}
+
+const MOBILE_ROLE_LABEL: Record<Profile["role"], string> = {
+  admin: "관리자",
+  staff: "운영진",
+  full_member: "정회원",
+  member: "회원",
 }
 
 function getMobileBackHref(pathname: string): string | null {
@@ -109,7 +114,7 @@ export function Header({
         <Link
           href="/"
           className={cn(
-            "min-w-0 items-center gap-3 justify-self-start",
+            "min-w-0 items-center gap-2 justify-self-start md:gap-3",
             mobileBackHref ? "hidden md:flex" : "flex"
           )}
         >
@@ -118,14 +123,14 @@ export function Header({
             alt={`${SITE.name} 로고`}
             width={52}
             height={52}
-            className="size-10 rounded-full md:size-13"
+            className="size-9 shrink-0 rounded-full md:size-13"
             priority
           />
-          <div className="hidden flex-col leading-tight sm:flex">
-            <span className="text-lg font-bold tracking-tight text-foreground md:text-xl">
+          <div className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-sm font-bold tracking-tight text-foreground md:text-xl">
               {SITE.name}
             </span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
+            <span className="hidden text-xs text-muted-foreground md:inline">
               {SITE.subtitle}
             </span>
           </div>
@@ -173,7 +178,7 @@ export function Header({
         <div className="flex min-w-0 items-center justify-end gap-1.5 justify-self-end md:gap-2">
           {profile && (
             <span
-              className="max-w-[76px] truncate text-xs font-semibold text-foreground sm:max-w-[104px] md:hidden"
+              className="max-w-[52px] truncate text-xs font-semibold text-foreground sm:max-w-[88px] md:hidden"
               title={`${profile.nickname}님`}
             >
               {profile.nickname}님
@@ -227,20 +232,50 @@ export function Header({
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
 
-              {/* ── 드로어 헤더 ── */}
-              <div className="flex items-center justify-between border-b border-[#E5DDD0] px-4 py-3.5 dark:border-[#3A3229]">
-                <div className="flex items-center gap-2">
-                  <Image
-                    src={SITE.logo}
-                    alt={`${SITE.name} 로고`}
-                    width={28}
-                    height={28}
-                    className="size-7 rounded-full"
-                  />
+              {/* ── 드로어 회원 헤더 ── */}
+              <div className="flex items-center justify-between gap-3 border-b border-[#E5DDD0] px-4 py-3.5 dark:border-[#3A3229]">
+                {profile ? (
+                  <Link
+                    href="/my"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-w-0 items-center gap-3"
+                    aria-label="마이페이지로 이동"
+                  >
+                    <div className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
+                      {profile.avatar_url ? (
+                        <Image
+                          src={profile.avatar_url}
+                          alt={profile.nickname}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <User className="size-full p-2 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-col items-start gap-1">
+                      <span
+                        className={cn(
+                          "rounded-full border px-2 py-0.5 text-[9px] font-semibold leading-none",
+                          profile.role === "admin"
+                            ? "border-red-500/60 text-red-700 dark:text-red-400"
+                            : profile.role === "staff"
+                              ? "border-amber-500/60 text-amber-700 dark:text-amber-400"
+                              : "border-primary/40 text-primary"
+                        )}
+                      >
+                        {MOBILE_ROLE_LABEL[profile.role]}
+                      </span>
+                      <span className="max-w-[116px] truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                        {profile.nickname}님
+                      </span>
+                    </div>
+                  </Link>
+                ) : (
                   <span className="text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
-                    {SITE.name}
+                    메뉴
                   </span>
-                </div>
+                )}
                 <div className="flex items-center gap-1.5">
                   <MobileThemeToggle />
                   <SheetClose
@@ -290,6 +325,22 @@ export function Header({
                   <MobileNavItem href="/contact" icon={null} label="오시는 길" isActive={isActive("/contact")} onClose={() => setMobileOpen(false)} isLocation />
                 </MobileNavGroup>
               </nav>
+
+              {profile && (
+                <form
+                  action={signOut}
+                  className="border-t border-[#E5DDD0] px-4 py-2 dark:border-[#3A3229]"
+                >
+                  <button
+                    type="submit"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex w-full items-center justify-end gap-1.5 rounded-lg px-2 py-2 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/5"
+                  >
+                    <LogOut className="size-3.5" />
+                    로그아웃
+                  </button>
+                </form>
+              )}
 
               {/* ── 하단 SNS ── */}
               {(SITE.sns.naverCafe || SITE.sns.instagram) && (
@@ -449,9 +500,6 @@ function MobileProfileSection({
   summary?: HeaderProps["mobileMemberSummary"]
   onClose: () => void
 }) {
-  const { resolvedTheme, setTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-
   if (!profile) {
     return (
       <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FCE9D9] to-[#F5E1C8] px-4 py-3.5 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.12)] dark:to-[rgba(192,107,42,0.08)]">
@@ -472,92 +520,66 @@ function MobileProfileSection({
   const isStaff = profile.role === "staff" || profile.role === "admin"
 
   return (
-    <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
-      {/* 프로필 영역 */}
-      <Link
-        href="/my"
-        onClick={onClose}
-        className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
-      >
-        <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
-          {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
-          ) : (
-            <User className="size-full p-2 text-muted-foreground" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <UserName nickname={profile.nickname} role={profile.role} showTier={false} size="md" />
-        </div>
-        <span className="text-[11px] font-medium text-[#C06B2A] dark:text-[#FFD4A1]">
-          마이페이지 →
-        </span>
-      </Link>
-
+    <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] px-4 py-3 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
       {summary && (
-        <div className="grid grid-cols-2 border-t border-[#E5DDD0] dark:border-[#3A3229]">
+        <div className="overflow-hidden rounded-xl border border-[#E5DDD0] bg-[#FFFDF9]/80 dark:border-[#3A3229] dark:bg-white/[0.03]">
           <Link
             href={summary.nextEvent?.href ?? "/calendar"}
             onClick={onClose}
-            className="min-w-0 border-r border-[#E5DDD0] px-4 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:border-[#3A3229] dark:hover:bg-[rgba(255,212,161,0.04)]"
+            className="flex min-w-0 items-center gap-2.5 px-3 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
           >
-            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
-              <CalendarDays className="size-3.5" />
-              다음 일정
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#FAF3E8] text-[#6B5D4F] dark:bg-white/[0.06] dark:text-[#B8A78F]">
+              <CalendarDays className="size-4" />
             </span>
-            <span className="mt-1 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
-              {summary.nextEvent
-                ? `${formatMobileHeaderDate(summary.nextEvent.startsAt)} · ${summary.nextEvent.title}`
-                : "예정된 일정 없음"}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+                다음 일정
+              </span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                {summary.nextEvent
+                  ? `${formatMobileHeaderDate(summary.nextEvent.startsAt)} · ${summary.nextEvent.title}`
+                  : "예정된 일정 없음"}
+              </span>
             </span>
+            <ChevronRight className="size-4 shrink-0 text-[#9B8F80]" />
           </Link>
           <Link
             href="/my/applications"
             onClick={onClose}
-            className="min-w-0 px-4 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
+            className="flex min-w-0 items-center gap-2.5 border-t border-[#E5DDD0] px-3 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:border-[#3A3229] dark:hover:bg-[rgba(255,212,161,0.04)]"
           >
-            <span className="flex items-center gap-1.5 text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
-              <ClipboardList className="size-3.5" />
-              신청 현황
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#FAF3E8] text-[#6B5D4F] dark:bg-white/[0.06] dark:text-[#B8A78F]">
+              <ClipboardList className="size-4" />
             </span>
-            <span className="mt-1 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
-              승인 {summary.approvedApplications} · 진행 {summary.pendingApplications}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+                신청 현황
+              </span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                승인 {summary.approvedApplications} · 진행 {summary.pendingApplications}
+              </span>
             </span>
+            <ChevronRight className="size-4 shrink-0 text-[#9B8F80]" />
           </Link>
         </div>
       )}
 
-      {/* 빠른 링크 — divide-x로 border 자동 처리 */}
-      <div className="flex divide-x divide-[#E5DDD0] border-t border-[#E5DDD0] dark:divide-[#3A3229] dark:border-[#3A3229]">
-        {isStaff && (
-          <Link
-            href="/admin"
-            onClick={onClose}
-            className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-primary hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
-          >
-            <Settings className="size-3.5" />
-            어드민
-          </Link>
-        )}
+      {isStaff && (
         <Link
-          href="/my/applications"
+          href="/admin"
           onClick={onClose}
-          className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-[#5F5048] hover:bg-[rgba(192,107,42,0.06)] dark:text-[#B8A78F] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          className={cn(
+            "flex items-center justify-between rounded-xl border border-[#E2D6C8] bg-[#F7F2EA] px-3 py-2.5 text-[11px] font-semibold text-primary transition-colors hover:bg-[rgba(192,107,42,0.08)] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)]",
+            summary && "mt-2.5"
+          )}
         >
-          <ClipboardList className="size-3.5" />
-          신청 내역
+          <span className="flex items-center gap-2">
+            <Settings className="size-4" />
+            관리자 페이지
+          </span>
+          <ChevronRight className="size-4" />
         </Link>
-        <form action={signOut} className="flex flex-1">
-          <button
-            type="submit"
-            onClick={onClose}
-            className="flex w-full items-center justify-center gap-1.5 py-2.5 text-[11px] font-medium text-destructive hover:bg-destructive/5"
-          >
-            <LogOut className="size-3.5" />
-            로그아웃
-          </button>
-        </form>
-      </div>
+      )}
     </div>
   )
 }
