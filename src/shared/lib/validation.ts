@@ -23,6 +23,10 @@ export const NICKNAME_PATTERN = new RegExp(`^${NICKNAME_PATTERN_RAW}$`)
 
 export const KOREAN_PHONE_PATTERN_RAW = "0\\d{1,2}-?\\d{3,4}-?\\d{4}"
 export const KOREAN_PHONE_PATTERN = new RegExp(`^${KOREAN_PHONE_PATTERN_RAW}$`)
+export const MOBILE_PHONE_PATTERN_RAW = "010-?\\d{4}-?\\d{4}"
+export const MOBILE_PHONE_PATTERN = new RegExp(
+  `^${MOBILE_PHONE_PATTERN_RAW}$`
+)
 
 // ─── 안내 문구 (input title 속성 등에 재사용) ────────────────────────────────
 export const NAME_HINT = "한글·영문만 사용 가능합니다 (2~20자)"
@@ -30,6 +34,7 @@ export const ORG_OR_PERSON_HINT =
   "한글·영문·숫자·공백·하이픈만 사용 가능합니다 (2~30자)"
 export const NICKNAME_HINT = "한글·영문·숫자·_ 만 사용 가능합니다 (2~20자)"
 export const PHONE_HINT = "예: 010-1234-5678"
+export const MOBILE_PHONE_HINT = "010으로 시작하는 11자리 번호를 입력해주세요."
 
 // ─── 함수 ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +79,18 @@ export function validateKoreanPhone(phone: string): FieldValidation {
     return {
       valid: false,
       error: "올바른 연락처 형식이 아닙니다. (예: 010-1234-5678)",
+    }
+  }
+  return { valid: true }
+}
+
+/** 회원 정보용 휴대폰 번호: 010으로 시작하는 숫자 11자리. */
+export function validateKoreanMobilePhone(phone: string): FieldValidation {
+  const digits = phone.replace(/\D/g, "")
+  if (digits.length !== 11 || !digits.startsWith("010")) {
+    return {
+      valid: false,
+      error: MOBILE_PHONE_HINT,
     }
   }
   return { valid: true }

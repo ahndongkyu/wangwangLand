@@ -8,6 +8,8 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import {
+  MOBILE_PHONE_HINT,
+  MOBILE_PHONE_PATTERN_RAW,
   NICKNAME_HINT,
   NICKNAME_PATTERN_RAW,
 } from "@/shared/lib/validation"
@@ -162,6 +164,10 @@ export function ProfileForm({ profile }: Props) {
                 id="phone"
                 name="phone"
                 defaultValue={profile.phone ?? ""}
+                pattern={MOBILE_PHONE_PATTERN_RAW}
+                title={MOBILE_PHONE_HINT}
+                maxLength={13}
+                required
                 placeholder="010-0000-0000"
               />
             ) : (

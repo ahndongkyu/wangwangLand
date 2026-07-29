@@ -3,6 +3,9 @@ import Link from "next/link"
 import { listCats } from "@/features/cats"
 import { DailyCard, listDailyPosts } from "@/features/daily"
 import { DogGrid, listDogsForHome } from "@/features/dogs"
+import { getMyApplicationSummary } from "@/features/applications"
+import { getEventTitle, listMyUpcomingEvents } from "@/features/events"
+import { getCurrentProfile } from "@/features/members"
 import { listNotices, RecentNewsSection } from "@/features/notices"
 import { StoryCard, listAdoptionStories } from "@/features/stories"
 import { listRecentApprovedDonations, DonationTicker } from "@/features/donations"
@@ -12,10 +15,8 @@ import {
   type BrandIconName,
 } from "@/shared/components/brand-icon"
 import { CountUp } from "@/shared/components/count-up"
-import {
-  HeroCarousel,
-  type HeroSlide,
-} from "@/shared/components/hero-carousel"
+import type { HeroSlide } from "@/shared/components/hero-carousel"
+import { HomeHeroSection } from "@/shared/components/home-hero-section"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 import { getSiteStats } from "@/shared/lib/stats"
@@ -59,7 +60,7 @@ const HERO_SLIDES: HeroSlide[] = [
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult, recentThanks] =
+  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult, recentThanks, profile] =
     await Promise.all([
       listDogsForHome(10),
       listCats({ status: "보호중", limit: 4 }),
@@ -68,14 +69,40 @@ export default async function HomePage() {
       getSiteStats(),
       listNotices({ limit: 4 }),
       listRecentApprovedDonations(8),
+      getCurrentProfile(),
     ])
   const recentDaily = dailyResult.posts
   const recentStories = storiesResult.stories
   const recentNotices = noticesResult.notices
+  const isApproved = profile?.status === "approved" && !profile.is_banned
+  const [upcomingEvents, applicationSummary] = await Promise.all([
+    isApproved ? listMyUpcomingEvents() : Promise.resolve([]),
+    isApproved && profile
+      ? getMyApplicationSummary(profile.id)
+      : Promise.resolve({ approved: 0, pending: 0 }),
+  ])
+  const nextEvent = upcomingEvents[0]
+  const desktopMemberSummary = isApproved
+    ? {
+        nextEvent: nextEvent
+          ? {
+              href: `/calendar/${nextEvent.id}`,
+              startsAt: nextEvent.starts_at,
+              title: getEventTitle(nextEvent),
+            }
+          : null,
+        approvedApplications: applicationSummary.approved,
+        pendingApplications: applicationSummary.pending,
+      }
+    : null
 
   return (
     <>
-      <HeroCarousel slides={HERO_SLIDES} interval={5000} autoPlayInitial />
+      <HomeHeroSection
+        slides={HERO_SLIDES}
+        profile={profile}
+        memberSummary={desktopMemberSummary}
+      />
       <MobileQuickActions />
 
       {/* 1. 미션 블록 */}

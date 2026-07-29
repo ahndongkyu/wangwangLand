@@ -9,6 +9,8 @@ import {
   TermsContent,
 } from "@/features/legal"
 import {
+  MOBILE_PHONE_HINT,
+  MOBILE_PHONE_PATTERN_RAW,
   NICKNAME_HINT,
   NICKNAME_PATTERN_RAW,
 } from "@/shared/lib/validation"
@@ -90,6 +92,9 @@ export function OnboardingForm({
         <PhoneInput
           id="phone"
           name="phone"
+          pattern={MOBILE_PHONE_PATTERN_RAW}
+          title={MOBILE_PHONE_HINT}
+          maxLength={13}
           required
           className="mt-1.5 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus-visible:ring-0 focus-visible:ring-offset-0"
         />

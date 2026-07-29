@@ -6,8 +6,8 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createServiceClient } from "@/shared/lib/supabase/service"
 import {
-  validateKoreanPhone,
   formatKoreanPhone,
+  validateKoreanMobilePhone,
   validateNickname,
 } from "@/shared/lib/validation"
 
@@ -76,7 +76,7 @@ export async function updateNickname(
 
   const nicknameCheck = validateNickname(nickname)
   if (!nicknameCheck.valid) return { error: nicknameCheck.error! }
-  const phoneCheck = validateKoreanPhone(phone)
+  const phoneCheck = validateKoreanMobilePhone(phone)
   if (!phoneCheck.valid) return { error: phoneCheck.error! }
   const phoneFormatted = formatKoreanPhone(phone)
   if (!ageOk) return { error: "만 14세 이상 동의가 필요합니다." }
@@ -132,7 +132,7 @@ export async function updateProfile(
 
   // 핸드폰번호: 필수
   if (!phoneRaw) return { error: "핸드폰번호를 입력해 주세요." }
-  const phoneCheck = validateKoreanPhone(phoneRaw)
+  const phoneCheck = validateKoreanMobilePhone(phoneRaw)
   if (!phoneCheck.valid) return { error: phoneCheck.error! }
   const phone = formatKoreanPhone(phoneRaw)
 

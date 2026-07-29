@@ -29,6 +29,9 @@ interface Props {
   slides: HeroSlide[]
   interval?: number
   autoPlayInitial?: boolean
+  className?: string
+  desktopSlideRatio?: number
+  desktopSlideRatioBreakpoint?: number
 }
 
 const GAP = 12 // px between slides
@@ -37,6 +40,9 @@ export function HeroCarousel({
   slides,
   interval = 5000,
   autoPlayInitial = true,
+  className,
+  desktopSlideRatio = 0.78,
+  desktopSlideRatioBreakpoint = 768,
 }: Props) {
   const count = slides.length
 
@@ -63,7 +69,11 @@ export function HeroCarousel({
       if (!sectionRef.current) return
       const w = sectionRef.current.offsetWidth
       const isMobile = w < 768
-      const sw = Math.round(w * (isMobile ? 0.92 : 0.78))
+      const desktopRatio =
+        window.innerWidth >= desktopSlideRatioBreakpoint
+          ? desktopSlideRatio
+          : 0.78
+      const sw = Math.round(w * (isMobile ? 0.92 : desktopRatio))
       setLeftPad(Math.round((w - sw) / 2))
       setSlideW(sw)
       setSlideH(Math.round(sw / 2))
@@ -72,7 +82,7 @@ export function HeroCarousel({
     const ro = new ResizeObserver(measure)
     if (sectionRef.current) ro.observe(sectionRef.current)
     return () => ro.disconnect()
-  }, [])
+  }, [desktopSlideRatio, desktopSlideRatioBreakpoint])
 
   // 클론 끝에 닿으면 애니메이션 없이 진짜 슬라이드로 점프
   useEffect(() => {
@@ -135,7 +145,10 @@ export function HeroCarousel({
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return
     const dx = e.changedTouches[0].clientX - touchStartX.current
-    if (Math.abs(dx) > 40) dx < 0 ? next() : prev()
+    if (Math.abs(dx) > 40) {
+      if (dx < 0) next()
+      else prev()
+    }
     touchStartX.current = null
   }
 
@@ -146,7 +159,7 @@ export function HeroCarousel({
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden pb-4"
+      className={cn("relative overflow-hidden pb-4", className)}
       aria-roledescription="carousel"
       aria-label="메인 배너"
       onMouseEnter={() => setPlaying(false)}
@@ -330,6 +343,7 @@ function SlideImage({
       <source media="(max-width: 767px)" srcSet={mobileSrcSet} />
       <img
         {...mobileProps}
+        alt=""
         className={cn(
           "absolute inset-0 h-full w-full object-center",
           slide.imageOnly ? "object-contain md:object-cover" : "object-cover"
