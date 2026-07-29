@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, LogOut, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
 import { useTheme } from "@/shared/components/theme-provider"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
@@ -11,7 +11,6 @@ import { useState } from "react"
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
 import { UserMenu } from "@/features/members/components/user-menu"
-import { signOut } from "@/features/members/api/actions"
 import type { Profile } from "@/features/members/api/queries"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
@@ -325,22 +324,6 @@ export function Header({
                   <MobileNavItem href="/contact" icon={null} label="오시는 길" isActive={isActive("/contact")} onClose={() => setMobileOpen(false)} isLocation />
                 </MobileNavGroup>
               </nav>
-
-              {profile && (
-                <form
-                  action={signOut}
-                  className="border-t border-[#E5DDD0] px-4 py-2 dark:border-[#3A3229]"
-                >
-                  <button
-                    type="submit"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex w-full items-center justify-end gap-1.5 rounded-lg px-2 py-2 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/5"
-                  >
-                    <LogOut className="size-3.5" />
-                    로그아웃
-                  </button>
-                </form>
-              )}
 
               {/* ── 하단 SNS ── */}
               {(SITE.sns.naverCafe || SITE.sns.instagram) && (
