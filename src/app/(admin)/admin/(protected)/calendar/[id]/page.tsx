@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Calendar, MapPin, Phone, Users } from "lucide-react"
+import { Calendar, History, MapPin, Users } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
@@ -8,11 +8,11 @@ import {
   eventDisplayLabel,
   getEventTitle,
   getEventWithMySignup,
-  listEventSignups,
   listRecurrenceGroupDates,
 } from "@/features/events"
 import { DeleteEventButton } from "@/features/events/components/delete-event-button"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -23,11 +23,12 @@ export default async function AdminEventDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const [event, signups] = await Promise.all([
-    getEventWithMySignup(id),
-    listEventSignups(id),
-  ])
+  const event = await getEventWithMySignup(id)
   if (!event) notFound()
+
+  const creator = event.created_by
+    ? await getEventCreator(event.created_by)
+    : null
 
   // 반복 그룹이면 같은 그룹 일정들 (삭제 범위 선택용)
   const groupDates = event.recurrence_group_id
@@ -37,10 +38,6 @@ export default async function AdminEventDetailPage({
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
-  const totalParty = signups
-    .filter((s) => s.status === "접수")
-    .reduce((sum, s) => sum + s.party_size, 0)
-
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-6">
       <nav className="mb-4 text-sm text-muted-foreground">
@@ -94,13 +91,6 @@ export default async function AdminEventDetailPage({
             <span>{event.location}</span>
           </Row>
         )}
-        {event.signup_enabled && (
-          <Row icon={Users} label="신청">
-            <span>
-              {signups.filter((s) => s.status === "접수").length}건 · 총 {totalParty}명
-            </span>
-          </Row>
-        )}
         {event.source_application_id && event.source_application_type && (
           <Row icon={Users} label="원본">
             <Link
@@ -111,6 +101,11 @@ export default async function AdminEventDetailPage({
             </Link>
           </Row>
         )}
+        <Row icon={History} label="기록">
+          <span className="text-[11px] text-muted-foreground/65">
+            기록자 {creator?.nickname ?? "기록 없음"} · 등록 {formatCreatedAt(event.created_at)}
+          </span>
+        </Row>
       </section>
 
       {event.description && (
@@ -121,60 +116,28 @@ export default async function AdminEventDetailPage({
           </p>
         </section>
       )}
-
-      {/* 신청자 명단 */}
-      {event.signup_enabled && (
-        <section className="rounded-lg border border-border bg-card">
-          <h2 className="border-b border-border px-5 py-3 text-sm font-semibold text-foreground">
-            신청자 ({signups.length})
-          </h2>
-          {signups.length === 0 ? (
-            <p className="px-5 py-6 text-center text-xs text-muted-foreground">
-              아직 신청자가 없습니다.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {signups.map((s) => (
-                <li
-                  key={s.id}
-                  className={cn(
-                    "flex flex-wrap items-center gap-3 px-5 py-3 text-sm",
-                    s.status === "취소" && "opacity-50"
-                  )}
-                >
-                  <span className="font-medium text-foreground">
-                    {s.user.nickname}
-                  </span>
-                  {s.user.phone && (
-                    <a
-                      href={`tel:${s.user.phone}`}
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                    >
-                      <Phone className="size-3" aria-hidden />
-                      {s.user.phone}
-                    </a>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {s.party_size}명
-                  </span>
-                  {s.status === "취소" && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                      취소
-                    </span>
-                  )}
-                  {s.message && (
-                    <span className="w-full text-xs text-muted-foreground">
-                      메모: {s.message}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
     </div>
   )
+}
+
+async function getEventCreator(profileId: string) {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from("profiles")
+    .select("nickname")
+    .eq("id", profileId)
+    .maybeSingle()
+
+  return data as { nickname: string } | null
+}
+
+function formatCreatedAt(iso: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: false,
+  }).format(new Date(iso))
 }
 
 function Row({

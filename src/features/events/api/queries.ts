@@ -136,36 +136,6 @@ export async function getEventWithMySignup(
   return { ...(event as CalendarEvent), my_signup }
 }
 
-/** 어드민: 이벤트 신청자 명단 */
-export async function listEventSignups(eventId: string): Promise<
-  Array<EventSignup & { user: { nickname: string; phone: string | null } }>
-> {
-  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
-  const admin = createAdminClient()
-  const { data: signups } = await admin
-    .from("event_signups")
-    .select("*")
-    .eq("event_id", eventId)
-    .order("created_at", { ascending: true })
-  if (!signups) return []
-
-  const userIds = [...new Set((signups as EventSignup[]).map((s) => s.user_id))]
-  const { data: users } = await admin
-    .from("profiles")
-    .select("id, nickname, phone")
-    .in("id", userIds)
-
-  const userMap = new Map<string, { nickname: string; phone: string | null }>()
-  for (const u of (users ?? []) as Array<{ id: string; nickname: string; phone: string | null }>) {
-    userMap.set(u.id, { nickname: u.nickname, phone: u.phone })
-  }
-
-  return (signups as EventSignup[]).map((s) => ({
-    ...s,
-    user: userMap.get(s.user_id) ?? { nickname: "알 수 없음", phone: null },
-  }))
-}
-
 /** 본인이 신청한 이벤트 목록 (마이페이지용) — event_signups 직접 신청만 */
 export async function listMyUpcomingSignups(): Promise<
   Array<EventSignup & { event: CalendarEvent }>

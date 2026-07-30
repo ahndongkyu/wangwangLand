@@ -18,7 +18,6 @@ export {
 export {
   getEventWithMySignup,
   listEventsInRange,
-  listEventSignups,
   listMyUpcomingEvents,
   listMyUpcomingSignups,
   listRecurrenceGroupDates,
