@@ -37,6 +37,8 @@ export async function submitAdoptionApplication(
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const address = String(formData.get("address") ?? "").trim()
   const reason = String(formData.get("reason") ?? "").trim()
+  const currentPets = String(formData.get("current_pets") ?? "").trim()
+  const pastPetExperience = String(formData.get("past_pet_experience") ?? "").trim()
   const privacy_agreed = formData.get("privacy_agreed") === "on"
 
   const nameCheck = validateName(applicant_name)
@@ -51,6 +53,12 @@ export async function submitAdoptionApplication(
   if (reason.length < 10) {
     return { error: "입양을 결심하신 이유를 10자 이상 적어주세요." }
   }
+  if (!currentPets) {
+    return { error: "현재 반려동물 정보를 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요." }
+  }
+  if (!pastPetExperience) {
+    return { error: "과거 양육 경험을 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요." }
+  }
   if (!privacy_agreed) {
     return { error: "개인정보 수집·이용 동의가 필요합니다." }
   }
@@ -58,6 +66,29 @@ export async function submitAdoptionApplication(
   const familySizeStr = String(formData.get("family_size") ?? "")
   const housingType = String(formData.get("housing_type") ?? "") as HousingType | ""
   const ownershipType = String(formData.get("ownership_type") ?? "") as OwnershipType | ""
+  const hasChildren = String(formData.get("has_children") ?? "")
+  const visitAvailableDates = [...new Set(formData.getAll("visit_available_dates").map(String))]
+  const visitAvailableTime = String(formData.get("visit_available_time") ?? "").trim()
+
+  const familySize = Number(familySizeStr)
+  if (!Number.isInteger(familySize) || familySize < 1) {
+    return { error: "가족 구성원 수를 1명 이상 입력해 주세요." }
+  }
+  if (hasChildren !== "true" && hasChildren !== "false") {
+    return { error: "어린이 동거 여부를 선택해 주세요." }
+  }
+  if (!(["아파트", "주택", "빌라", "오피스텔", "기타"] as HousingType[]).some((type) => type === housingType)) {
+    return { error: "주거 형태를 선택해 주세요." }
+  }
+  if (!(["자가", "전세", "월세"] as OwnershipType[]).some((type) => type === ownershipType)) {
+    return { error: "소유 형태를 선택해 주세요." }
+  }
+  if (visitAvailableDates.length === 0 || visitAvailableDates.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
+    return { error: "방문 가능한 날짜를 하나 이상 선택해 주세요." }
+  }
+  if (!/^\d{2}:\d{2}$/.test(visitAvailableTime)) {
+    return { error: "방문 가능한 시간을 선택해 주세요." }
+  }
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -78,13 +109,14 @@ export async function submitAdoptionApplication(
       email: user?.email ?? null,
       address,
       reason,
-      family_size: familySizeStr ? Number(familySizeStr) : null,
-      has_children: formData.get("has_children") === "on",
-      housing_type: housingType || null,
-      ownership_type: ownershipType || null,
-      current_pets: String(formData.get("current_pets") ?? "").trim() || null,
-      past_pet_experience:
-        String(formData.get("past_pet_experience") ?? "").trim() || null,
+      family_size: familySize,
+      has_children: hasChildren === "true",
+      housing_type: housingType,
+      ownership_type: ownershipType,
+      current_pets: currentPets,
+      past_pet_experience: pastPetExperience,
+      visit_available_dates: visitAvailableDates,
+      visit_available_time: visitAvailableTime,
       privacy_agreed: true,
       created_by: user?.id ?? null,
     })

@@ -107,7 +107,9 @@ export function ApplicationStatusForm({
     [currentStatus]: initialAdminNote,
   })
   const [approvalMode, setApprovalMode] = useState<"with_schedule" | "approval_only">(
-    linkedEventCount > 0 ? "approval_only" : "with_schedule"
+    kind === "volunteer" && linkedEventCount === 0
+      ? "with_schedule"
+      : "approval_only"
   )
 
   function handleStatusChange(nextStatus: ApplicationStatus) {
@@ -129,6 +131,7 @@ export function ApplicationStatusForm({
   function handleSave() {
     setError(null)
     if (
+      kind === "volunteer" &&
       status === "승인" &&
       approvalMode === "with_schedule" &&
       ((hint?.availableDates?.length ?? 0) === 0 || !hint?.availableTime)

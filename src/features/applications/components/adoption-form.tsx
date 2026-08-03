@@ -7,14 +7,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { submitAdoptionApplication } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
 import { AddressSearchInput } from "@/shared/components/address-search-input"
+import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { FormFooter } from "@/shared/components/form-footer"
 import { PhoneInput } from "@/shared/components/phone-input"
-import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import {
-  KOREAN_PHONE_PATTERN_RAW,
   NAME_HINT,
   NAME_PATTERN_RAW,
   PHONE_HINT,
@@ -52,6 +51,10 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
   const [ownershipType, setOwnershipType] = useState("")
   const needsLandlord = ownershipType === "전세" || ownershipType === "월세"
   const [landlordConsent, setLandlordConsent] = useState(false)
+  const [visitHour, setVisitHour] = useState("")
+  const [visitMinute, setVisitMinute] = useState("00")
+  const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
+  const [visitDates, setVisitDates] = useState<string[]>([])
   // 동의
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
@@ -68,10 +71,19 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
       if (!address) { setError("주소를 입력해 주세요."); return }
     }
     if (step === 2) {
+      const fd = new FormData(formRef.current!)
       if (!adult) { setError("만 19세 이상 동의가 필요합니다."); return }
       if (!familyConsent) { setError("동거 가족 전원의 동의 확인이 필요합니다."); return }
       if (!readiness) { setError("양육 여건 확인 동의가 필요합니다."); return }
       if (needsLandlord && !landlordConsent) { setError("전세·월세인 경우 임대인 동의 확인이 필요합니다."); return }
+      if (!String(fd.get("family_size") ?? "").trim()) { setError("가족 구성원 수를 입력해 주세요."); return }
+      if (!String(fd.get("has_children") ?? "").trim()) { setError("어린이 동거 여부를 선택해 주세요."); return }
+      if (!String(fd.get("housing_type") ?? "").trim()) { setError("주거 형태를 선택해 주세요."); return }
+      if (!String(fd.get("ownership_type") ?? "").trim()) { setError("소유 형태를 선택해 주세요."); return }
+      if (!String(fd.get("current_pets") ?? "").trim()) { setError("현재 반려동물 정보를 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요."); return }
+      if (!String(fd.get("past_pet_experience") ?? "").trim()) { setError("과거 양육 경험을 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요."); return }
+      if (visitDates.length === 0) { setError("방문 가능한 날짜를 하나 이상 선택해 주세요."); return }
+      if (!visitTime) { setError("방문 가능한 시간을 선택해 주세요."); return }
     }
     setStep(s => s + 1)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -87,6 +99,14 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
     if (!nameCheck.valid) return setError(nameCheck.error!)
     const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
     if (!phoneCheck.valid) return setError(phoneCheck.error!)
+    if (!String(formData.get("family_size") ?? "").trim()) return setError("가족 구성원 수를 입력해 주세요.")
+    if (!String(formData.get("has_children") ?? "").trim()) return setError("어린이 동거 여부를 선택해 주세요.")
+    if (!String(formData.get("housing_type") ?? "").trim()) return setError("주거 형태를 선택해 주세요.")
+    if (!String(formData.get("ownership_type") ?? "").trim()) return setError("소유 형태를 선택해 주세요.")
+    if (!String(formData.get("current_pets") ?? "").trim()) return setError("현재 반려동물 정보를 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요.")
+    if (!String(formData.get("past_pet_experience") ?? "").trim()) return setError("과거 양육 경험을 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요.")
+    if (visitDates.length === 0) return setError("방문 가능한 날짜를 하나 이상 선택해 주세요.")
+    if (!visitTime) return setError("방문 가능한 시간을 선택해 주세요.")
 
     if (!adult) return setError("만 19세 이상 동의가 필요합니다.")
     if (!familyConsent) return setError("동거 가족 전원의 동의 확인이 필요합니다.")
@@ -130,7 +150,7 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* Mobile step indicator */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
         <div className="flex items-center gap-2">
@@ -227,27 +247,35 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
         </Card>
 
         {/* 3. 가족·주거 정보 */}
-        <Card title="가족 · 주거 정보 (선택)">
+        <Card title="가족 · 주거 정보" required>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field id="family_size" label="가족 구성원 수">
+            <Field id="family_size" label="가족 구성원 수" required>
               <Input
                 id="family_size"
                 name="family_size"
                 type="number"
                 min={1}
+                required
                 placeholder="본인 포함"
               />
             </Field>
-            <div className="flex items-center gap-2 pt-7">
-              <Checkbox id="has_children" name="has_children" />
-              <Label htmlFor="has_children" className="cursor-pointer">
-                어린이가 있어요
-              </Label>
-            </div>
-            <Field id="housing_type" label="주거 형태">
+            <Field id="has_children" label="어린이 동거 여부" required>
+              <select
+                id="has_children"
+                name="has_children"
+                required
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
+              >
+                <option value="">선택</option>
+                <option value="true">있음</option>
+                <option value="false">없음</option>
+              </select>
+            </Field>
+            <Field id="housing_type" label="주거 형태" required>
               <select
                 id="housing_type"
                 name="housing_type"
+                required
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
               >
                 <option value="">선택</option>
@@ -258,12 +286,13 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
                 ))}
               </select>
             </Field>
-            <Field id="ownership_type" label="소유 형태">
+            <Field id="ownership_type" label="소유 형태" required>
               <select
                 id="ownership_type"
                 name="ownership_type"
                 value={ownershipType}
                 onChange={(e) => setOwnershipType(e.target.value)}
+                required
                 className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring"
               >
                 <option value="">선택</option>
@@ -288,21 +317,69 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
         </Card>
 
         {/* 4. 반려 경험 */}
-        <Card title="반려 경험 (선택)">
-          <Field id="current_pets" label="현재 다른 반려동물">
+        <Card title="반려 경험" required>
+          <Field id="current_pets" label="현재 다른 반려동물" required>
             <Textarea
               id="current_pets"
               name="current_pets"
               rows={2}
-              placeholder="종류·성별·나이 등"
+              required
+              placeholder="종류·성별·나이 등 (없으면 ‘없음’ 입력)"
             />
           </Field>
-          <Field id="past_pet_experience" label="과거 사육 경험" className="mt-3">
+          <Field id="past_pet_experience" label="과거 양육 경험" required className="mt-3">
             <Textarea
               id="past_pet_experience"
               name="past_pet_experience"
               rows={2}
+              required
+              placeholder="양육 경험이 없으면 ‘없음’ 입력"
             />
+          </Field>
+        </Card>
+
+        <Card title="왕왕랜드 방문 가능 일정" required>
+          <div className="space-y-2">
+            <Label className="text-xs font-medium text-muted-foreground">
+              방문 가능한 날짜 <span className="text-destructive">*</span>
+            </Label>
+            <DateMultiPicker
+              name="visit_available_dates"
+              onChange={setVisitDates}
+            />
+            <p className="text-[11px] text-muted-foreground/80">
+              여러 날짜를 선택할 수 있어요. 운영진이 상담·만남 일정을 조율할 때 참고합니다.
+            </p>
+          </div>
+
+          <Field id="visit_available_time" label="방문 가능한 시간" required className="mt-4">
+            <div className="flex items-center gap-1.5">
+              <select
+                value={visitHour}
+                onChange={(e) => setVisitHour(e.target.value)}
+                required
+                className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              >
+                <option value="">시</option>
+                {Array.from({ length: 8 }, (_, i) => i + 10)
+                  .filter((hour) => hour !== 12)
+                  .map((hour) => {
+                    const value = String(hour).padStart(2, "0")
+                    return <option key={value} value={value}>{hour}시</option>
+                  })}
+              </select>
+              <select
+                value={visitMinute}
+                onChange={(e) => setVisitMinute(e.target.value)}
+                disabled={!visitHour}
+                className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 dark:bg-input/30"
+              >
+                {["00", "10", "20", "30", "40", "50"].map((minute) => (
+                  <option key={minute} value={minute}>{minute}분</option>
+                ))}
+              </select>
+            </div>
+            <input type="hidden" name="visit_available_time" value={visitTime} />
           </Field>
         </Card>
       </div>
@@ -326,7 +403,7 @@ export function AdoptionForm({ dogId, dogName, termsAlreadyAgreed = false }: Pro
         <ConsentSection
           privacy={{
             purpose: "입양 상담 및 사후 모니터링",
-            items: "이름, 연락처, 주소, 가족/주거 정보, 반려 경험, 입양 결심 이유",
+            items: "이름, 연락처, 주소, 가족/주거 정보, 반려 경험, 방문 가능 일정, 입양 결심 이유",
             retention: "입양 완료 또는 상담 종료 후 1년",
           }}
           privacyAgreed={privacyAgreed}

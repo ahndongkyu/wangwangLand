@@ -136,6 +136,9 @@ export interface AdoptionApplication {
   ownership_type: OwnershipType | null
   current_pets: string | null
   past_pet_experience: string | null
+  /** 입양 상담·보호소 방문을 위해 신청자가 선택한 가능 날짜. */
+  visit_available_dates: string[]
+  visit_available_time: string | null
   privacy_agreed: boolean
   status: ApplicationStatus
   admin_note: string | null

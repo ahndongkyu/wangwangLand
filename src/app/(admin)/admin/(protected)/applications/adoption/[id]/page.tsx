@@ -189,6 +189,19 @@ export default async function AdoptionApplicationDetailPage({
           <Row label="현재 반려동물" value={app.current_pets ?? "—"} multi />
           <Row label="과거 경험" value={app.past_pet_experience ?? "—"} multi />
         </Card>
+
+        <Card title="왕왕랜드 방문 가능 일정" className="md:col-span-2">
+          <Row
+            label="가능 날짜"
+            value={
+              app.visit_available_dates.length > 0
+                ? app.visit_available_dates.join(", ")
+                : "—"
+            }
+            multi
+          />
+          <Row label="가능 시간" value={app.visit_available_time ?? "—"} />
+        </Card>
       </section>
 
       {/* 입양 결심 이유 */}
