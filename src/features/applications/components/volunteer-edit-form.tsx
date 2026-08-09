@@ -56,12 +56,18 @@ export function VolunteerEditForm({
   const defaultTime = isReschedule
     ? (application.reschedule_time ?? application.available_time ?? "")
     : (application.available_time ?? "")
-  const [visitTime, setVisitTime] = useState(defaultTime)
+  const [visitHour, setVisitHour] = useState(defaultTime ? defaultTime.split(":")[0] : "")
+  const [visitMinute, setVisitMinute] = useState(defaultTime ? (defaultTime.split(":")[1] ?? "") : "")
+  const visitTime = visitHour && visitMinute ? `${visitHour}:${visitMinute}` : ""
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    if (visitTime && !getVolunteerTimeOptions(dates).includes(visitTime)) {
-      setVisitTime("")
+    const nextOptions = getVolunteerTimeOptions(dates)
+    if (visitHour && !nextOptions.some((time) => time.startsWith(`${visitHour}:`))) {
+      setVisitHour("")
+      setVisitMinute("")
+    } else if (visitTime && !nextOptions.includes(visitTime)) {
+      setVisitMinute("")
     }
   }
 
@@ -173,8 +179,10 @@ export function VolunteerEditForm({
 
       <VolunteerTimeField
         selectedDates={selectedDates}
-        value={visitTime}
-        onChange={setVisitTime}
+        hour={visitHour}
+        minute={visitMinute}
+        onHourChange={setVisitHour}
+        onMinuteChange={setVisitMinute}
         required
       />
 

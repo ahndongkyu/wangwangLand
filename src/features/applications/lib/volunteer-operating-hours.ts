@@ -11,7 +11,7 @@ interface TimeWindow {
   end: string
 }
 
-const AUGUST_TIME_WINDOWS: TimeWindow[] = [
+const AUGUST_APPLICATION_TIME_WINDOWS: TimeWindow[] = [
   { start: "08:00", end: "11:00" },
   { start: "15:00", end: "17:30" },
 ]
@@ -46,7 +46,7 @@ function buildTimeOptions(windows: TimeWindow[]): string[] {
   })
 }
 
-const AUGUST_TIME_OPTIONS = buildTimeOptions(AUGUST_TIME_WINDOWS)
+const AUGUST_TIME_OPTIONS = buildTimeOptions(AUGUST_APPLICATION_TIME_WINDOWS)
 const REGULAR_TIME_OPTIONS = buildTimeOptions(REGULAR_TIME_WINDOWS)
 
 export function isValidVolunteerDate(date: string): boolean {

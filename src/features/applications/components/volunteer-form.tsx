@@ -85,7 +85,9 @@ export function VolunteerForm({
   const [step, setStep] = useState(1)
   const formRef = useRef<HTMLFormElement>(null)
 
-  const [visitTime, setVisitTime] = useState("")
+  const [visitHour, setVisitHour] = useState("")
+  const [visitMinute, setVisitMinute] = useState("")
+  const visitTime = visitHour && visitMinute ? `${visitHour}:${visitMinute}` : ""
 
   const [partyType, setPartyType] = useState<"individual" | "group">("individual")
   const [partySize, setPartySize] = useState(2)
@@ -103,8 +105,12 @@ export function VolunteerForm({
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
-    if (visitTime && !getVolunteerTimeOptions(dates).includes(visitTime)) {
-      setVisitTime("")
+    const nextOptions = getVolunteerTimeOptions(dates)
+    if (visitHour && !nextOptions.some((time) => time.startsWith(`${visitHour}:`))) {
+      setVisitHour("")
+      setVisitMinute("")
+    } else if (visitTime && !nextOptions.includes(visitTime)) {
+      setVisitMinute("")
     }
   }
 
@@ -456,8 +462,10 @@ export function VolunteerForm({
           <div className="mt-3">
             <VolunteerTimeField
               selectedDates={selectedDates}
-              value={visitTime}
-              onChange={setVisitTime}
+              hour={visitHour}
+              minute={visitMinute}
+              onHourChange={setVisitHour}
+              onMinuteChange={setVisitMinute}
               required
             />
           </div>
