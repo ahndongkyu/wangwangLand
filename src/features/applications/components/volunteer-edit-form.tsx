@@ -5,6 +5,14 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 
 import { updateMyVolunteerApplication, requestReschedule } from "../api/mutations"
+import {
+  getVolunteerTimeOptions,
+  validateVolunteerSchedule,
+} from "../lib/volunteer-operating-hours"
+import {
+  AugustVolunteerHoursNotice,
+  VolunteerTimeField,
+} from "./volunteer-time-field"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
@@ -26,9 +34,14 @@ const ACTIVITIES: VolunteerActivity[] = ["산책", "목욕·미용", "청소·�
 interface Props {
   application: VolunteerApplication
   isReschedule?: boolean
+  currentPeriodIsAugust?: boolean
 }
 
-export function VolunteerEditForm({ application, isReschedule = false }: Props) {
+export function VolunteerEditForm({
+  application,
+  isReschedule = false,
+  currentPeriodIsAugust = false,
+}: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -43,9 +56,14 @@ export function VolunteerEditForm({ application, isReschedule = false }: Props) 
   const defaultTime = isReschedule
     ? (application.reschedule_time ?? application.available_time ?? "")
     : (application.available_time ?? "")
-  const [visitHour, setVisitHour] = useState(defaultTime ? defaultTime.split(":")[0] : "")
-  const [visitMinute, setVisitMinute] = useState(defaultTime ? (defaultTime.split(":")[1] ?? "00") : "00")
-  const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
+  const [visitTime, setVisitTime] = useState(defaultTime)
+
+  function handleDatesChange(dates: string[]) {
+    setSelectedDates(dates)
+    if (visitTime && !getVolunteerTimeOptions(dates).includes(visitTime)) {
+      setVisitTime("")
+    }
+  }
 
   function toggleActivity(name: string) {
     setActivities((prev) =>
@@ -58,7 +76,8 @@ export function VolunteerEditForm({ application, isReschedule = false }: Props) 
     setError(null)
     const fd = new FormData(e.currentTarget)
 
-    if (selectedDates.length === 0) return setError("봉사 가능 날짜를 1개 이상 선택해주세요.")
+    const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
+    if (scheduleError) return setError(scheduleError)
 
     if (isReschedule) {
       // 일정변경 요청 모드: dates를 JSON으로 직렬화
@@ -97,6 +116,11 @@ export function VolunteerEditForm({ application, isReschedule = false }: Props) 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <AugustVolunteerHoursNotice
+        currentPeriodIsAugust={currentPeriodIsAugust}
+        selectedDates={selectedDates}
+      />
+
       {isReschedule && (
         <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
           희망 날짜와 시간을 선택해 일정변경을 요청하세요. 운영진 확인 후 확정됩니다.
@@ -143,37 +167,16 @@ export function VolunteerEditForm({ application, isReschedule = false }: Props) 
         <DateMultiPicker
           name="available_dates"
           defaultValue={initialDates}
-          onChange={setSelectedDates}
+          onChange={handleDatesChange}
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label>방문 예정 시간</Label>
-        <div className="flex items-center gap-1.5">
-          <select
-            value={visitHour}
-            onChange={(e) => setVisitHour(e.target.value)}
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-          >
-            <option value="">시</option>
-            {Array.from({ length: 10 }, (_, i) => {
-              const h = String(i + 9).padStart(2, "0")
-              return <option key={h} value={h}>{i + 9}시</option>
-            })}
-          </select>
-          <select
-            value={visitMinute}
-            onChange={(e) => setVisitMinute(e.target.value)}
-            disabled={!visitHour}
-            className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 dark:bg-input/30"
-          >
-            {["00", "10", "20", "30", "40", "50"].map((m) => (
-              <option key={m} value={m}>{m}분</option>
-            ))}
-          </select>
-        </div>
-        {!isReschedule && <input type="hidden" name="available_time" value={visitTime} />}
-      </div>
+      <VolunteerTimeField
+        selectedDates={selectedDates}
+        value={visitTime}
+        onChange={setVisitTime}
+        required
+      />
 
       {!isReschedule && (
         <>

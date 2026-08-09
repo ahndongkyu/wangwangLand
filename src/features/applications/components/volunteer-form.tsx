@@ -5,6 +5,14 @@ import React, { useRef, useState, useTransition } from "react"
 import { ChevronLeft, User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
+import {
+  getVolunteerTimeOptions,
+  validateVolunteerSchedule,
+} from "../lib/volunteer-operating-hours"
+import {
+  AugustVolunteerHoursNotice,
+  VolunteerTimeField,
+} from "./volunteer-time-field"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { FormFooter } from "@/shared/components/form-footer"
@@ -14,7 +22,6 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
 import {
-  KOREAN_PHONE_PATTERN_RAW,
   NAME_HINT,
   NAME_PATTERN_RAW,
   ORG_OR_PERSON_HINT,
@@ -54,6 +61,8 @@ interface Props {
   regularVolunteerDates?: string[]
   /** 단체 차단 기준 인원 (이 인원 이상이면 정기봉사 날 신청 불가) */
   groupBlockThreshold?: number
+  /** 현재 한국시간이 2026년 8월인지 여부 — 안내 카드 자동 노출용 */
+  currentPeriodIsAugust?: boolean
 }
 
 function formatTime(t: string | null): string | null {
@@ -67,6 +76,7 @@ export function VolunteerForm({
   profilePhone = "",
   regularVolunteerDates = [],
   groupBlockThreshold = 5,
+  currentPeriodIsAugust = false,
 }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -75,9 +85,7 @@ export function VolunteerForm({
   const [step, setStep] = useState(1)
   const formRef = useRef<HTMLFormElement>(null)
 
-  const [visitHour, setVisitHour] = useState("")
-  const [visitMinute, setVisitMinute] = useState("00")
-  const visitTime = visitHour ? `${visitHour}:${visitMinute}` : ""
+  const [visitTime, setVisitTime] = useState("")
 
   const [partyType, setPartyType] = useState<"individual" | "group">("individual")
   const [partySize, setPartySize] = useState(2)
@@ -92,6 +100,13 @@ export function VolunteerForm({
   const groupBlocking =
     partyType === "group" && partySize >= groupBlockThreshold
   const blockedDates = groupBlocking ? regularVolunteerDates : []
+
+  function handleDatesChange(dates: string[]) {
+    setSelectedDates(dates)
+    if (visitTime && !getVolunteerTimeOptions(dates).includes(visitTime)) {
+      setVisitTime("")
+    }
+  }
 
   function handleNext() {
     setError(null)
@@ -108,8 +123,8 @@ export function VolunteerForm({
       if (hasMinor && !minorGuardian) { setError("미성년자 참여 시 보호자 동의가 필요합니다."); return }
     }
     if (step === 2) {
-      if (selectedDates.length === 0) { setError("가능한 날짜를 하나 이상 선택해주세요."); return }
-      if (!visitTime) { setError("방문 예정 시간을 선택해주세요."); return }
+      const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
+      if (scheduleError) { setError(scheduleError); return }
     }
     setStep(s => s + 1)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -134,8 +149,8 @@ export function VolunteerForm({
       if (!partyCheck.valid) return setError(partyCheck.error!)
     }
 
-    if (selectedDates.length === 0) return setError("가능한 날짜를 하나 이상 선택해주세요.")
-    if (!visitTime) return setError("방문 예정 시간을 선택해주세요.")
+    const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
+    if (scheduleError) return setError(scheduleError)
     if (!safetyAcknowledged) return setError("안전 사항 인지 동의가 필요합니다.")
     if (hasMinor && !minorGuardian) {
       return setError("미성년자 참여 시 보호자 동의가 필요합니다.")
@@ -223,12 +238,18 @@ export function VolunteerForm({
           승인 처리가 완료되면 홈페이지에서 봉사 안내 및 준비물 등을 확인하실 수 있으니 꼭 확인해 주세요.
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          봉사 신청 가능 시간은 <span className="font-semibold">오전 10시 ~ 오후 5시</span>입니다.
+          기본 봉사 신청 가능 시간은 <span className="font-semibold">오전 10시 ~ 오후 5시</span>입니다.
+          (8월 제외)
         </p>
         <p className="mt-2 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-          평일 12:00 – 13:00는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
+          기본 운영 시 평일 12:00~13:00는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
         </p>
       </div>
+
+      <AugustVolunteerHoursNotice
+        currentPeriodIsAugust={currentPeriodIsAugust}
+        selectedDates={selectedDates}
+      />
 
       {/* Mobile step indicator */}
       <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
@@ -378,7 +399,7 @@ export function VolunteerForm({
             </Label>
             <DateMultiPicker
               name="available_dates"
-              onChange={setSelectedDates}
+              onChange={handleDatesChange}
               disabledDates={blockedDates}
               disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`}
             />
@@ -432,34 +453,14 @@ export function VolunteerForm({
             )}
           </div>
 
-          <Field id="available_time" label="방문 예정 시간" required className="mt-3">
-            <div className="flex items-center gap-1.5">
-              <select
-                value={visitHour}
-                onChange={(e) => setVisitHour(e.target.value)}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              >
-                <option value="">시</option>
-                {Array.from({ length: 8 }, (_, i) => i + 10)
-                  .filter((h) => h !== 12)
-                  .map((h) => {
-                    const hStr = String(h).padStart(2, "0")
-                    return <option key={hStr} value={hStr}>{h}시</option>
-                  })}
-              </select>
-              <select
-                value={visitMinute}
-                onChange={(e) => setVisitMinute(e.target.value)}
-                disabled={!visitHour}
-                className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 dark:bg-input/30"
-              >
-                {["00", "10", "20", "30", "40", "50"].map((m) => (
-                  <option key={m} value={m}>{m}분</option>
-                ))}
-              </select>
-            </div>
-            <input type="hidden" name="available_time" value={visitTime} />
-          </Field>
+          <div className="mt-3">
+            <VolunteerTimeField
+              selectedDates={selectedDates}
+              value={visitTime}
+              onChange={setVisitTime}
+              required
+            />
+          </div>
 
           <fieldset className="mt-3 space-y-2">
             <legend className="text-xs font-medium text-muted-foreground">

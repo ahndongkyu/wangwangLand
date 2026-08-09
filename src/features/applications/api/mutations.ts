@@ -11,6 +11,7 @@ import {
   GROUP_BLOCK_THRESHOLD,
   GROUP_BLOCKING_CATEGORIES,
 } from "@/features/events/types"
+import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
 import {
   formatKoreanPhone,
   validateKoreanPhone,
@@ -167,6 +168,10 @@ export async function submitVolunteerApplication(
   }
 
   const availableDates = formData.getAll("available_dates").map(String)
+  const availableTime = String(formData.get("available_time") ?? "").trim()
+  const scheduleError = validateVolunteerSchedule(availableDates, availableTime)
+  if (scheduleError) return { error: scheduleError }
+
   // available_days(요일) 는 폼에서 제거됐지만 컬럼은 유지(legacy). 빈 배열로 저장.
   const availableDays: string[] = []
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
@@ -221,7 +226,7 @@ export async function submitVolunteerApplication(
       party_size: partyCheck.partySize!,
       available_days: availableDays,
       available_dates: availableDates,
-      available_time: String(formData.get("available_time") ?? "").trim() || null,
+      available_time: availableTime,
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
       privacy_agreed: true,
@@ -287,6 +292,10 @@ export async function updateMyVolunteerApplication(
   if (prev.status === "취소") return { error: "취소된 신청은 수정할 수 없습니다." }
 
   const availableDates = formData.getAll("available_dates").map(String)
+  const availableTime = String(formData.get("available_time") ?? "").trim()
+  const scheduleError = validateVolunteerSchedule(availableDates, availableTime)
+  if (scheduleError) return { error: scheduleError }
+
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
 
   const { error } = await admin
@@ -296,7 +305,7 @@ export async function updateMyVolunteerApplication(
       phone,
       party_size: partyCheck.partySize!,
       available_dates: availableDates,
-      available_time: String(formData.get("available_time") ?? "").trim() || null,
+      available_time: availableTime,
       activities,
       message: String(formData.get("message") ?? "").trim() || null,
       updated_at: new Date().toISOString(),
@@ -797,7 +806,7 @@ export async function requestReschedule(
   }
 
   const datesRaw = String(formData.get("available_dates") ?? "").trim()
-  const time = String(formData.get("available_time") ?? "").trim() || null
+  const time = String(formData.get("available_time") ?? "").trim()
 
   let dates: string[]
   try {
@@ -807,7 +816,8 @@ export async function requestReschedule(
     return { error: "날짜 형식이 올바르지 않습니다." }
   }
 
-  if (dates.length === 0) return { error: "봉사 가능 날짜를 1개 이상 선택해주세요." }
+  const scheduleError = validateVolunteerSchedule(dates, time)
+  if (scheduleError) return { error: scheduleError }
 
   const { error } = await admin
     .from("volunteer_applications")

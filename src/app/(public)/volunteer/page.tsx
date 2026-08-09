@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { VolunteerForm } from "@/features/applications"
+import {
+  isAugustVolunteerPeriodActive,
+  VolunteerForm,
+} from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 import { TERMS_VERSION } from "@/features/legal"
 import { listEventsInRange } from "@/features/events"
@@ -147,6 +150,7 @@ export default async function VolunteerPage() {
         profilePhone={profile.phone ?? ""}
         regularVolunteerDates={regularVolunteerDates}
         groupBlockThreshold={GROUP_BLOCK_THRESHOLD}
+        currentPeriodIsAugust={isAugustVolunteerPeriodActive()}
       />
     </div>
   )

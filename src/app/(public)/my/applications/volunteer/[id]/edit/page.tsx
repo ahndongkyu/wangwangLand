@@ -2,7 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
-import { VolunteerEditForm, getMyEditableVolunteerApplication } from "@/features/applications"
+import {
+  getMyEditableVolunteerApplication,
+  isAugustVolunteerPeriodActive,
+  VolunteerEditForm,
+} from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 
 export const dynamic = "force-dynamic"
@@ -45,7 +49,11 @@ export default async function VolunteerApplicationEditPage({
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">{title}</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
       </header>
-      <VolunteerEditForm application={application} isReschedule={isReschedule} />
+      <VolunteerEditForm
+        application={application}
+        isReschedule={isReschedule}
+        currentPeriodIsAugust={isAugustVolunteerPeriodActive()}
+      />
     </div>
   )
 }
