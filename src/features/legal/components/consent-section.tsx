@@ -24,6 +24,8 @@ interface Props {
   /** 약관 동의 여부 (controlled) */
   termsAgreed: boolean
   onTermsChange: (v: boolean) => void
+  privacyError?: string
+  termsError?: string
   /**
    * 회원가입 시 이미 약관에 동의한 경우 true.
    * 약관 체크박스 자동 체크 + disabled 상태로 노출.
@@ -43,6 +45,8 @@ export function ConsentSection({
   termsAgreed,
   onTermsChange,
   termsAlreadyAgreed = false,
+  privacyError,
+  termsError,
 }: Props) {
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null)
 
@@ -55,9 +59,12 @@ export function ConsentSection({
       {/* 개인정보 수집·이용 동의 */}
       <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
         <input
+          id="privacy_agreed"
           type="checkbox"
           checked={privacyAgreed}
           onChange={(e) => onPrivacyChange(e.target.checked)}
+          aria-invalid={Boolean(privacyError)}
+          aria-describedby={privacyError ? "privacy_agreed-error" : undefined}
           className="mt-0.5 size-4 shrink-0 accent-primary"
         />
         {/* 서버 액션이 form data 에서 확실히 읽을 수 있도록 hidden 으로 분리 */}
@@ -98,15 +105,23 @@ export function ConsentSection({
           <p className="mt-1 text-[10px] text-muted-foreground/80">
             동의 거부 가능. 단, 거부 시 신청이 어렵습니다.
           </p>
+          {privacyError && (
+            <p id="privacy_agreed-error" className="mt-1 text-xs font-medium text-destructive" role="alert">
+              {privacyError}
+            </p>
+          )}
         </span>
       </label>
 
       {/* 이용약관 동의 — 개인정보 row 와 동일 패딩으로 좌측 정렬 통일 */}
-      <label className={`flex items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm ${termsAlreadyAgreed ? "cursor-default" : "cursor-pointer"}`}>
+      <label className={`flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm ${termsAlreadyAgreed ? "cursor-default" : "cursor-pointer"}`}>
         <input
+          id="terms_agreed"
           type="checkbox"
           checked={termsAgreed}
           onChange={(e) => { if (!termsAlreadyAgreed) onTermsChange(e.target.checked) }}
+          aria-invalid={Boolean(termsError)}
+          aria-describedby={termsError ? "terms_agreed-error" : undefined}
           className="size-4 shrink-0 accent-primary"
         />
         {/* hidden 으로 form data 보장 (controlled + disabled 케이스 모두 처리) */}
@@ -135,6 +150,11 @@ export function ConsentSection({
         >
           보기
         </button>
+        {termsError && (
+          <span id="terms_agreed-error" className="w-full pl-6 text-xs font-medium text-destructive" role="alert">
+            {termsError}
+          </span>
+        )}
       </label>
 
       {/* 모달 */}

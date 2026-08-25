@@ -14,8 +14,10 @@ import {
 import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
 import {
   formatKoreanPhone,
+  validateGroupPartySize,
   validateKoreanPhone,
   validateName,
+  validateOrgOrPersonName,
   validatePartySize,
 } from "@/shared/lib/validation"
 import type {
@@ -27,6 +29,7 @@ import type {
 
 export interface SubmitResult {
   error?: string
+  field?: string
   id?: string
 }
 
@@ -148,29 +151,51 @@ export async function submitAdoptionApplication(
 export async function submitVolunteerApplication(
   formData: FormData
 ): Promise<SubmitResult> {
-  const applicant_name = String(formData.get("applicant_name") ?? "").trim()
+  const applicantName = String(formData.get("applicant_name") ?? "").trim()
+  const groupName = String(formData.get("group_name") ?? "").trim()
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const privacy_agreed = formData.get("privacy_agreed") === "on"
+  const partyType = String(formData.get("party_type") ?? "")
 
-  const nameCheck = validateName(applicant_name)
-  if (!nameCheck.valid) return { error: nameCheck.error }
+  if (partyType !== "individual" && partyType !== "group") {
+    return { error: "신청 종류를 다시 선택해주세요." }
+  }
+  const nameCheck = validateName(applicantName)
+  if (!nameCheck.valid) return { error: nameCheck.error, field: "applicant_name" }
+  if (partyType === "group") {
+    const groupNameCheck = validateOrgOrPersonName(groupName)
+    if (!groupNameCheck.valid) {
+      return { error: groupNameCheck.error, field: "group_name" }
+    }
+  }
 
   const phoneCheck = validateKoreanPhone(phone)
-  if (!phoneCheck.valid) return { error: phoneCheck.error }
+  if (!phoneCheck.valid) return { error: phoneCheck.error, field: "phone" }
 
-  const partyCheck = validatePartySize(
-    String(formData.get("party_size") ?? "1")
-  )
-  if (!partyCheck.valid) return { error: partyCheck.error }
+  const partyCheck = partyType === "group"
+    ? validateGroupPartySize(String(formData.get("party_size") ?? "1"))
+    : validatePartySize(String(formData.get("party_size") ?? "1"))
+  if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
+  if (partyType === "individual" && partyCheck.partySize !== 1) {
+    return { error: "개인 신청 인원수는 1명이어야 합니다.", field: "party_size" }
+  }
+
+  const storedApplicantName =
+    partyType === "group" ? `${groupName} / ${applicantName}` : applicantName
 
   if (!privacy_agreed) {
-    return { error: "개인정보 수집·이용 동의가 필요합니다." }
+    return { error: "개인정보 수집·이용 동의가 필요합니다.", field: "privacy_agreed" }
   }
 
   const availableDates = formData.getAll("available_dates").map(String)
   const availableTime = String(formData.get("available_time") ?? "").trim()
   const scheduleError = validateVolunteerSchedule(availableDates, availableTime)
-  if (scheduleError) return { error: scheduleError }
+  if (scheduleError) {
+    return {
+      error: scheduleError,
+      field: availableDates.length === 0 ? "available_dates" : "available_time",
+    }
+  }
 
   // available_days(요일) 는 폼에서 제거됐지만 컬럼은 유지(legacy). 빈 배열로 저장.
   const availableDays: string[] = []
@@ -213,6 +238,7 @@ export async function submitVolunteerApplication(
     if (conflicts.length > 0) {
       return {
         error: `정기봉사가 있는 날(${conflicts.join(", ")})은 ${GROUP_BLOCK_THRESHOLD}명 이상 단체 신청이 어려워요. 날짜를 변경하거나 인원을 조정해주세요.`,
+        field: "available_dates",
       }
     }
   }
@@ -220,7 +246,7 @@ export async function submitVolunteerApplication(
   const { data, error } = await admin
     .from("volunteer_applications")
     .insert({
-      applicant_name,
+      applicant_name: storedApplicantName,
       phone,
       email: user.email ?? null,
       party_size: partyCheck.partySize!,
@@ -245,7 +271,7 @@ export async function submitVolunteerApplication(
     const { sendPushToStaff } = await import("@/features/push")
     await sendPushToStaff({
       title: "🐾 새 봉사 신청",
-      body: `${applicant_name}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
+      body: `${storedApplicantName}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
       url: `/admin/applications/volunteer/${data.id}`,
       tag: `volunteer-app-${data.id}`,
     })
@@ -264,15 +290,30 @@ export async function updateMyVolunteerApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
-  const applicant_name = String(formData.get("applicant_name") ?? "").trim()
+  const applicantName = String(formData.get("applicant_name") ?? "").trim()
+  const groupName = String(formData.get("group_name") ?? "").trim()
+  const partyType = String(formData.get("party_type") ?? "")
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
 
-  const nameCheck = validateName(applicant_name)
-  if (!nameCheck.valid) return { error: nameCheck.error }
+  if (partyType !== "individual" && partyType !== "group") {
+    return { error: "신청 종류를 다시 확인해주세요." }
+  }
+  const nameCheck = validateName(applicantName)
+  if (!nameCheck.valid) return { error: nameCheck.error, field: "applicant_name" }
+  if (partyType === "group") {
+    const groupNameCheck = validateOrgOrPersonName(groupName)
+    if (!groupNameCheck.valid) {
+      return { error: groupNameCheck.error, field: "group_name" }
+    }
+  }
   const phoneCheck = validateKoreanPhone(phone)
-  if (!phoneCheck.valid) return { error: phoneCheck.error }
-  const partyCheck = validatePartySize(String(formData.get("party_size") ?? "1"))
-  if (!partyCheck.valid) return { error: partyCheck.error }
+  if (!phoneCheck.valid) return { error: phoneCheck.error, field: "phone" }
+  const partyCheck = partyType === "group"
+    ? validateGroupPartySize(String(formData.get("party_size") ?? "1"))
+    : validatePartySize(String(formData.get("party_size") ?? "1"))
+  if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
+  const storedApplicantName =
+    partyType === "group" ? `${groupName} / ${applicantName}` : applicantName
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -294,14 +335,19 @@ export async function updateMyVolunteerApplication(
   const availableDates = formData.getAll("available_dates").map(String)
   const availableTime = String(formData.get("available_time") ?? "").trim()
   const scheduleError = validateVolunteerSchedule(availableDates, availableTime)
-  if (scheduleError) return { error: scheduleError }
+  if (scheduleError) {
+    return {
+      error: scheduleError,
+      field: availableDates.length === 0 ? "available_dates" : "available_time",
+    }
+  }
 
   const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
 
   const { error } = await admin
     .from("volunteer_applications")
     .update({
-      applicant_name,
+      applicant_name: storedApplicantName,
       phone,
       party_size: partyCheck.partySize!,
       available_dates: availableDates,

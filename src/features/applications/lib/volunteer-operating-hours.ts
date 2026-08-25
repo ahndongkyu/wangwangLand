@@ -1,20 +1,9 @@
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000
 const TIME_STEP_MINUTES = 10
-
-export const AUGUST_VOLUNTEER_PERIOD = {
-  start: "2026-08-01",
-  end: "2026-08-31",
-} as const
 
 interface TimeWindow {
   start: string
   end: string
 }
-
-const AUGUST_APPLICATION_TIME_WINDOWS: TimeWindow[] = [
-  { start: "08:00", end: "11:00" },
-  { start: "15:00", end: "17:30" },
-]
 
 const REGULAR_TIME_WINDOWS: TimeWindow[] = [
   { start: "10:00", end: "11:50" },
@@ -46,7 +35,6 @@ function buildTimeOptions(windows: TimeWindow[]): string[] {
   })
 }
 
-const AUGUST_TIME_OPTIONS = buildTimeOptions(AUGUST_APPLICATION_TIME_WINDOWS)
 const REGULAR_TIME_OPTIONS = buildTimeOptions(REGULAR_TIME_WINDOWS)
 
 export function isValidVolunteerDate(date: string): boolean {
@@ -62,34 +50,13 @@ export function isValidVolunteerDate(date: string): boolean {
   )
 }
 
-export function isAugustVolunteerDate(date: string): boolean {
-  return date >= AUGUST_VOLUNTEER_PERIOD.start && date <= AUGUST_VOLUNTEER_PERIOD.end
-}
-
-export function getKstDateKey(now = new Date()): string {
-  const kst = new Date(now.getTime() + KST_OFFSET_MS)
-  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}-${String(kst.getUTCDate()).padStart(2, "0")}`
-}
-
-export function isAugustVolunteerPeriodActive(now = new Date()): boolean {
-  return isAugustVolunteerDate(getKstDateKey(now))
-}
-
-function getTimeOptionsForDate(date: string): string[] {
-  return isAugustVolunteerDate(date) ? AUGUST_TIME_OPTIONS : REGULAR_TIME_OPTIONS
-}
-
-/** 선택된 모든 날짜에 공통으로 가능한 방문 시간을 반환합니다. */
+/** 유효한 날짜를 선택했을 때 가능한 방문 시간을 반환합니다. */
 export function getVolunteerTimeOptions(dates: string[]): string[] {
   const uniqueDates = [...new Set(dates)]
   if (uniqueDates.length === 0 || uniqueDates.some((date) => !isValidVolunteerDate(date))) {
     return []
   }
-
-  const [firstDate, ...restDates] = uniqueDates
-  return getTimeOptionsForDate(firstDate).filter((time) =>
-    restDates.every((date) => getTimeOptionsForDate(date).includes(time))
-  )
+  return REGULAR_TIME_OPTIONS
 }
 
 export function validateVolunteerSchedule(dates: string[], time: string): string | null {

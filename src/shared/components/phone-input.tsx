@@ -6,14 +6,23 @@ import { cn } from "@/shared/lib/utils"
 
 interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "inputMode" | "value" | "onChange"> {
   defaultValue?: string
+  onValueChange?: (value: string) => void
 }
 
-export function PhoneInput({ defaultValue = "", className, readOnly, ...props }: Props & { readOnly?: boolean }) {
+export function PhoneInput({
+  defaultValue = "",
+  className,
+  readOnly,
+  onValueChange,
+  ...props
+}: Props & { readOnly?: boolean }) {
   const [value, setValue] = useState(() => formatKoreanPhone(defaultValue))
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (readOnly) return
-    setValue(formatKoreanPhone(e.target.value))
+    const nextValue = formatKoreanPhone(e.target.value)
+    setValue(nextValue)
+    onValueChange?.(nextValue)
   }
 
   return (

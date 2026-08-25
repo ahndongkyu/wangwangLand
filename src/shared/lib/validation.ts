@@ -3,7 +3,8 @@
 // - validateOrgOrPersonName: 단체명/회사명까지 허용 (한·영·숫자·공백·· · - · _, 2~30자)
 // - validateNickname: 닉네임 (한·영·숫자·_, 2~20자)
 // - validateKoreanPhone: 한국 전화번호
-// - validatePartySize: 인원수 1~20
+// - validatePartySize: 인원수 1~30
+// - validateGroupPartySize: 단체 봉사 인원수 2~30
 
 export interface FieldValidation {
   valid: boolean
@@ -156,16 +157,31 @@ export function validateNickname(name: string): FieldValidation {
   return { valid: true }
 }
 
-/** 인원수: 1~20 사이 정수. 파싱 결과 동봉. */
+/** 봉사 신청 인원수: 1~30 사이 정수. 파싱 결과 동봉. */
 export function validatePartySize(value: string | number): FieldValidation & {
   partySize?: number
 } {
   const n = typeof value === "string" ? Number(value) : value
-  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 20) {
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n < 1 || n > 30) {
     return {
       valid: false,
-      error: "인원수는 1~20 사이의 숫자로 입력해주세요.",
+      error: "인원수는 1~30 사이의 숫자로 입력해주세요.",
     }
   }
   return { valid: true, partySize: n }
+}
+
+/** 단체 봉사 신청 인원수: 2~30 사이 정수. */
+export function validateGroupPartySize(value: string | number): FieldValidation & {
+  partySize?: number
+} {
+  const result = validatePartySize(value)
+  if (!result.valid) return result
+  if ((result.partySize ?? 0) < 2) {
+    return {
+      valid: false,
+      error: "단체 인원수는 2~30 사이의 숫자로 입력해주세요.",
+    }
+  }
+  return result
 }

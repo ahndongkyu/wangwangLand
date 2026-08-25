@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import {
-  isAugustVolunteerPeriodActive,
+  VolunteerApplicationGuide,
   VolunteerForm,
 } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
@@ -26,7 +26,7 @@ export default async function VolunteerPage() {
   // 비로그인이면 가입 안내
   if (!profile) {
     return (
-      <div className="mx-auto w-full max-w-md px-4 py-16 md:py-24 text-center">
+      <div className="mx-auto w-full max-w-xl px-4 py-12 text-center md:py-20">
         <div className="mb-3 text-4xl">🐾</div>
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
@@ -34,10 +34,11 @@ export default async function VolunteerPage() {
           <br />
           왕왕랜드 가족이 되어 아이들과 함께해 주세요.
         </p>
-        <div className="mt-6 flex flex-col gap-2">
+        <VolunteerApplicationGuide className="mt-6 text-left" />
+        <div className="mt-5 flex flex-col gap-2">
           <Link
             href="/login?next=/volunteer"
-            className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             회원가입 / 로그인
           </Link>
@@ -150,7 +151,6 @@ export default async function VolunteerPage() {
         profilePhone={profile.phone ?? ""}
         regularVolunteerDates={regularVolunteerDates}
         groupBlockThreshold={GROUP_BLOCK_THRESHOLD}
-        currentPeriodIsAugust={isAugustVolunteerPeriodActive()}
       />
     </div>
   )

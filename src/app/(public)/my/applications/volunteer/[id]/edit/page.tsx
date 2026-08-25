@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation"
 
 import {
   getMyEditableVolunteerApplication,
-  isAugustVolunteerPeriodActive,
   VolunteerEditForm,
 } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
@@ -52,7 +51,6 @@ export default async function VolunteerApplicationEditPage({
       <VolunteerEditForm
         application={application}
         isReschedule={isReschedule}
-        currentPeriodIsAugust={isAugustVolunteerPeriodActive()}
       />
     </div>
   )

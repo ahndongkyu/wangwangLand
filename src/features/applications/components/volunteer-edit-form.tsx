@@ -9,10 +9,8 @@ import {
   getVolunteerTimeOptions,
   validateVolunteerSchedule,
 } from "../lib/volunteer-operating-hours"
-import {
-  AugustVolunteerHoursNotice,
-  VolunteerTimeField,
-} from "./volunteer-time-field"
+import { VolunteerTimeField } from "./volunteer-time-field"
+import { LargeGroupInquiry } from "./volunteer-application-guide"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
@@ -23,8 +21,12 @@ import { Textarea } from "@/shared/components/ui/textarea"
 import {
   NAME_HINT,
   NAME_PATTERN_RAW,
+  ORG_OR_PERSON_HINT,
+  ORG_OR_PERSON_PATTERN_RAW,
+  validateGroupPartySize,
   validateKoreanPhone,
   validateName,
+  validateOrgOrPersonName,
   validatePartySize,
 } from "@/shared/lib/validation"
 import type { VolunteerActivity, VolunteerApplication } from "@/shared/types/database"
@@ -34,17 +36,26 @@ const ACTIVITIES: VolunteerActivity[] = ["산책", "목욕·미용", "청소·�
 interface Props {
   application: VolunteerApplication
   isReschedule?: boolean
-  currentPeriodIsAugust?: boolean
 }
 
 export function VolunteerEditForm({
   application,
   isReschedule = false,
-  currentPeriodIsAugust = false,
 }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const isGroup = application.party_size > 1
+  const groupSeparator = " / "
+  const separatorIndex = isGroup
+    ? application.applicant_name.indexOf(groupSeparator)
+    : -1
+  const defaultGroupName = separatorIndex >= 0
+    ? application.applicant_name.slice(0, separatorIndex)
+    : ""
+  const defaultApplicantName = separatorIndex >= 0
+    ? application.applicant_name.slice(separatorIndex + groupSeparator.length)
+    : application.applicant_name
 
   // 일정변경요청 모드면 reschedule_dates를 초기값으로
   const initialDates = isReschedule
@@ -102,12 +113,19 @@ export function VolunteerEditForm({
     }
 
     // 일반 수정 모드
+    if (isGroup) {
+      const groupNameCheck = validateOrgOrPersonName(String(fd.get("group_name") ?? ""))
+      if (!groupNameCheck.valid) return setError(`단체명: ${groupNameCheck.error}`)
+    }
     const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
     if (!nameCheck.valid) return setError(nameCheck.error!)
     const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
     if (!phoneCheck.valid) return setError(phoneCheck.error!)
-    const partyCheck = validatePartySize(String(fd.get("party_size") ?? "1"))
+    const partyCheck = isGroup
+      ? validateGroupPartySize(String(fd.get("party_size") ?? "1"))
+      : validatePartySize(String(fd.get("party_size") ?? "1"))
     if (!partyCheck.valid) return setError(partyCheck.error!)
+    fd.set("party_type", isGroup ? "group" : "individual")
 
     startTransition(async () => {
       const result = await updateMyVolunteerApplication(application.id, fd)
@@ -122,11 +140,6 @@ export function VolunteerEditForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <AugustVolunteerHoursNotice
-        currentPeriodIsAugust={currentPeriodIsAugust}
-        selectedDates={selectedDates}
-      />
-
       {isReschedule && (
         <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
           희망 날짜와 시간을 선택해 일정변경을 요청하세요. 운영진 확인 후 확정됩니다.
@@ -135,8 +148,26 @@ export function VolunteerEditForm({
 
       {!isReschedule && (
         <>
+          {isGroup && (
+            <div className="space-y-1.5">
+              <Label htmlFor="group_name">단체명 *</Label>
+              <Input
+                id="group_name"
+                name="group_name"
+                required
+                minLength={2}
+                maxLength={30}
+                pattern={ORG_OR_PERSON_PATTERN_RAW}
+                title={ORG_OR_PERSON_HINT}
+                defaultValue={defaultGroupName}
+                placeholder="예: 왕왕대학교 봉사동아리"
+              />
+              <p className="text-xs text-muted-foreground">{ORG_OR_PERSON_HINT}</p>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <Label htmlFor="applicant_name">신청자 이름 *</Label>
+            <Label htmlFor="applicant_name">{isGroup ? "인솔자 이름" : "신청자 이름"} *</Label>
             <Input
               id="applicant_name"
               name="applicant_name"
@@ -144,7 +175,7 @@ export function VolunteerEditForm({
               maxLength={20}
               pattern={NAME_PATTERN_RAW}
               title={NAME_HINT}
-              defaultValue={application.applicant_name}
+              defaultValue={defaultApplicantName}
             />
           </div>
 
@@ -159,11 +190,15 @@ export function VolunteerEditForm({
               id="party_size"
               name="party_size"
               type="number"
-              min={1}
-              max={20}
+              min={isGroup ? 2 : 1}
+              max={30}
               required
               defaultValue={application.party_size ?? 1}
             />
+            <p className="text-xs text-muted-foreground">
+              {isGroup ? "인솔자 포함, 최대 30명" : "본인 포함 1명"}
+            </p>
+            {isGroup && <LargeGroupInquiry />}
           </div>
         </>
       )}

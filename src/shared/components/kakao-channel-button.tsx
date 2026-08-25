@@ -3,6 +3,8 @@
 import { Share2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
+import { SITE } from "@/shared/constants/site"
+
 function FloatBtn({
   href,
   label,
@@ -94,7 +96,7 @@ export function KakaoChannelButton() {
       >
           {/* 카카오 */}
           <FloatBtn
-            href="http://pf.kakao.com/_iTmxbX/chat"
+            href={SITE.sns.kakaoChannel}
             label="카카오톡 문의하기"
             className="kakao-float-btn flex size-11 items-center justify-center rounded-full bg-[#FEE500] shadow-[0_2px_8px_rgba(0,0,0,0.12)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.16)]"
           >

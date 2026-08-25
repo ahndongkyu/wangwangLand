@@ -9,10 +9,11 @@ import {
   getVolunteerTimeOptions,
   validateVolunteerSchedule,
 } from "../lib/volunteer-operating-hours"
+import { VolunteerTimeField } from "./volunteer-time-field"
 import {
-  AugustVolunteerHoursNotice,
-  VolunteerTimeField,
-} from "./volunteer-time-field"
+  LargeGroupInquiry,
+  VolunteerApplicationGuide,
+} from "./volunteer-application-guide"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { FormFooter } from "@/shared/components/form-footer"
@@ -27,10 +28,10 @@ import {
   ORG_OR_PERSON_HINT,
   ORG_OR_PERSON_PATTERN_RAW,
   PHONE_HINT,
+  validateGroupPartySize,
   validateKoreanPhone,
   validateName,
   validateOrgOrPersonName,
-  validatePartySize,
 } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
 import type { VolunteerActivity } from "@/shared/types/database"
@@ -43,6 +44,20 @@ const ACTIVITIES: VolunteerActivity[] = [
 ]
 
 const stepLabels = ["신청자 정보", "활동 일정", "동의 및 제출"]
+
+type VolunteerFieldErrorKey =
+  | "group_name"
+  | "applicant_name"
+  | "phone"
+  | "party_size"
+  | "minor_guardian"
+  | "available_dates"
+  | "available_time"
+  | "safety_acknowledged"
+  | "privacy_agreed"
+  | "terms_agreed"
+
+type VolunteerFieldErrors = Partial<Record<VolunteerFieldErrorKey, string>>
 
 interface StaffEntry {
   user_nickname: string
@@ -61,8 +76,6 @@ interface Props {
   regularVolunteerDates?: string[]
   /** 단체 차단 기준 인원 (이 인원 이상이면 정기봉사 날 신청 불가) */
   groupBlockThreshold?: number
-  /** 현재 한국시간이 2026년 8월인지 여부 — 안내 카드 자동 노출용 */
-  currentPeriodIsAugust?: boolean
 }
 
 function formatTime(t: string | null): string | null {
@@ -76,21 +89,22 @@ export function VolunteerForm({
   profilePhone = "",
   regularVolunteerDates = [],
   groupBlockThreshold = 5,
-  currentPeriodIsAugust = false,
 }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<VolunteerFieldErrors>({})
   const [success, setSuccess] = useState(false)
   const [step, setStep] = useState(1)
   const formRef = useRef<HTMLFormElement>(null)
+  const stepAnchorRef = useRef<HTMLDivElement>(null)
 
   const [visitHour, setVisitHour] = useState("")
   const [visitMinute, setVisitMinute] = useState("")
   const visitTime = visitHour && visitMinute ? `${visitHour}:${visitMinute}` : ""
 
   const [partyType, setPartyType] = useState<"individual" | "group">("individual")
-  const [partySize, setPartySize] = useState(2)
+  const [partySize, setPartySize] = useState("2")
   const [hasMinor, setHasMinor] = useState(false)
   const [minorGuardian, setMinorGuardian] = useState(false)
   const [safetyAcknowledged, setSafetyAcknowledged] = useState(false)
@@ -100,11 +114,63 @@ export function VolunteerForm({
 
   // 단체(기준 인원 이상)면 정기봉사 날짜 선택 차단
   const groupBlocking =
-    partyType === "group" && partySize >= groupBlockThreshold
+    partyType === "group" && Number(partySize) >= groupBlockThreshold
   const blockedDates = groupBlocking ? regularVolunteerDates : []
+
+  function clearFieldError(field: VolunteerFieldErrorKey) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
+
+  function showFieldError(
+    field: VolunteerFieldErrorKey,
+    message: string,
+    focusId?: string
+  ) {
+    setError(null)
+    const targetStep =
+      field === "available_dates" || field === "available_time"
+        ? 2
+        : field === "safety_acknowledged" || field === "privacy_agreed" || field === "terms_agreed"
+          ? 3
+          : 1
+    setStep(targetStep)
+    setFieldErrors((current) => ({ ...current, [field]: message }))
+    requestAnimationFrame(() => {
+      const target = document.getElementById(
+        focusId ?? (field === "available_time" ? "available_hour" : field)
+      )
+      target?.scrollIntoView({ behavior: "smooth", block: "center" })
+      target?.focus({ preventScroll: true })
+    })
+  }
+
+  function moveToStep(nextStep: number) {
+    setError(null)
+    setStep(nextStep)
+    requestAnimationFrame(() => {
+      stepAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }
+
+  function handlePartyTypeChange(nextType: "individual" | "group") {
+    setPartyType(nextType)
+    setError(null)
+    setFieldErrors({})
+    if (nextType === "individual") {
+      setHasMinor(false)
+      setMinorGuardian(false)
+    }
+  }
 
   function handleDatesChange(dates: string[]) {
     setSelectedDates(dates)
+    clearFieldError("available_dates")
+    clearFieldError("available_time")
     const nextOptions = getVolunteerTimeOptions(dates)
     if (visitHour && !nextOptions.some((time) => time.startsWith(`${visitHour}:`))) {
       setVisitHour("")
@@ -116,57 +182,95 @@ export function VolunteerForm({
 
   function handleNext() {
     setError(null)
+    setFieldErrors({})
     if (step === 1) {
       const fd = new FormData(formRef.current!)
-      const nameCheck = partyType === "group" ? validateOrgOrPersonName(String(fd.get("applicant_name") ?? "")) : validateName(String(fd.get("applicant_name") ?? ""))
-      if (!nameCheck.valid) { setError(nameCheck.error!); return }
-      const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
-      if (!phoneCheck.valid) { setError(phoneCheck.error!); return }
       if (partyType === "group") {
-        const partySizeCheck = validatePartySize(String(fd.get("party_size") ?? "1"))
-        if (!partySizeCheck.valid) { setError(partySizeCheck.error!); return }
+        const groupNameCheck = validateOrgOrPersonName(String(fd.get("group_name") ?? ""))
+        if (!groupNameCheck.valid) {
+          showFieldError("group_name", groupNameCheck.error!)
+          return
+        }
       }
-      if (hasMinor && !minorGuardian) { setError("미성년자 참여 시 보호자 동의가 필요합니다."); return }
+      const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
+      if (!nameCheck.valid) {
+        showFieldError("applicant_name", nameCheck.error!)
+        return
+      }
+      const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
+      if (!phoneCheck.valid) {
+        showFieldError("phone", phoneCheck.error!)
+        return
+      }
+      if (partyType === "group") {
+        const partySizeCheck = validateGroupPartySize(String(fd.get("party_size") ?? "1"))
+        if (!partySizeCheck.valid) {
+          showFieldError("party_size", partySizeCheck.error!)
+          return
+        }
+      }
+      if (partyType === "group" && hasMinor && !minorGuardian) {
+        showFieldError("minor_guardian", "미성년자 참여 시 보호자 동의가 필요합니다.")
+        return
+      }
     }
     if (step === 2) {
       const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
-      if (scheduleError) { setError(scheduleError); return }
+      if (scheduleError) {
+        const field = selectedDates.length === 0 ? "available_dates" : "available_time"
+        showFieldError(field, scheduleError)
+        return
+      }
     }
-    setStep(s => s + 1)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    moveToStep(step + 1)
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
+    setFieldErrors({})
 
     const formData = new FormData(e.currentTarget)
 
-    const rawName = String(formData.get("applicant_name") ?? "")
-    const nameCheck =
-      partyType === "group"
-        ? validateOrgOrPersonName(rawName)
-        : validateName(rawName)
-    if (!nameCheck.valid) return setError(nameCheck.error!)
-    const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
-    if (!phoneCheck.valid) return setError(phoneCheck.error!)
     if (partyType === "group") {
-      const partyCheck = validatePartySize(String(formData.get("party_size") ?? "1"))
-      if (!partyCheck.valid) return setError(partyCheck.error!)
+      const groupNameCheck = validateOrgOrPersonName(String(formData.get("group_name") ?? ""))
+      if (!groupNameCheck.valid) {
+        return showFieldError("group_name", groupNameCheck.error!)
+      }
     }
+    const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
+    if (!nameCheck.valid) return showFieldError("applicant_name", nameCheck.error!)
+    const phoneCheck = validateKoreanPhone(String(formData.get("phone") ?? ""))
+    if (!phoneCheck.valid) return showFieldError("phone", phoneCheck.error!)
+    if (partyType === "group") {
+      const partyCheck = validateGroupPartySize(String(formData.get("party_size") ?? "1"))
+      if (!partyCheck.valid) return showFieldError("party_size", partyCheck.error!)
+    }
+    formData.set("party_type", partyType)
 
     const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
-    if (scheduleError) return setError(scheduleError)
-    if (!safetyAcknowledged) return setError("안전 사항 인지 동의가 필요합니다.")
-    if (hasMinor && !minorGuardian) {
-      return setError("미성년자 참여 시 보호자 동의가 필요합니다.")
+    if (scheduleError) {
+      const field = selectedDates.length === 0 ? "available_dates" : "available_time"
+      return showFieldError(field, scheduleError)
     }
-    if (!privacyAgreed) return setError("개인정보 수집·이용 동의가 필요합니다.")
-    if (!termsAgreed) return setError("이용약관 동의가 필요합니다.")
+    if (!safetyAcknowledged) {
+      return showFieldError("safety_acknowledged", "안전 사항 인지 동의가 필요합니다.")
+    }
+    if (partyType === "group" && hasMinor && !minorGuardian) {
+      return showFieldError("minor_guardian", "미성년자 참여 시 보호자 동의가 필요합니다.")
+    }
+    if (!privacyAgreed) {
+      return showFieldError("privacy_agreed", "개인정보 수집·이용 동의가 필요합니다.")
+    }
+    if (!termsAgreed) return showFieldError("terms_agreed", "이용약관 동의가 필요합니다.")
 
     startTransition(async () => {
       const result = await submitVolunteerApplication(formData)
-      if (result.error) setError(result.error)
+      if (result.error) {
+        const field = result.field as VolunteerFieldErrorKey | undefined
+        if (field) showFieldError(field, result.error)
+        else setError(result.error)
+      }
       else setSuccess(true)
     })
   }
@@ -234,31 +338,13 @@ export function VolunteerForm({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-8">
-      {/* 신청 전 안내 — 항상 최상단 */}
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700/50 dark:bg-amber-950/20">
-        <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">신청 전 안내</p>
-        <p className="mt-2 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          봉사 신청 후 승인 내역은 <span className="font-semibold">문자</span>를 통해 안내드리고 있습니다.
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          승인 처리가 완료되면 홈페이지에서 봉사 안내 및 준비물 등을 확인하실 수 있으니 꼭 확인해 주세요.
-        </p>
-        <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90 dark:text-amber-300/90">
-          기본 봉사 신청 가능 시간은 <span className="font-semibold">오전 10시 ~ 오후 5시</span>입니다.
-          (8월 제외)
-        </p>
-        <p className="mt-2 rounded-md bg-orange-100 px-3 py-1.5 text-xs font-medium leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-          기본 운영 시 평일 12:00~13:00는 점심시간으로 현장 안내가 어려울 수 있으니 참고해 주세요.
-        </p>
-      </div>
-
-      <AugustVolunteerHoursNotice
-        currentPeriodIsAugust={currentPeriodIsAugust}
-        selectedDates={selectedDates}
-      />
+      <VolunteerApplicationGuide />
 
       {/* Mobile step indicator */}
-      <div className="sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-4 py-2.5 -mx-5 -mt-5 mb-5 rounded-t-xl">
+      <div
+        ref={stepAnchorRef}
+        className="scroll-mt-20 sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-3 py-2.5 -mx-4 -mt-5 mb-5 rounded-t-xl"
+      >
         <div className="flex items-center gap-2">
           {stepLabels.map((label, i) => {
             const n = i + 1
@@ -274,7 +360,10 @@ export function VolunteerForm({
                 )}>
                   {done ? "✓" : n}
                 </span>
-                <span className={cn("text-[11px] font-medium", active ? "text-foreground" : "text-muted-foreground")}>
+                <span
+                  aria-current={active ? "step" : undefined}
+                  className={cn("text-[11px] font-medium", active ? "text-foreground" : "text-muted-foreground")}
+                >
                   {label}
                 </span>
               </div>
@@ -288,19 +377,19 @@ export function VolunteerForm({
       <div className={step === 1 ? "contents" : "hidden sm:contents"}>
         {/* 1. 신청 종류 */}
         <Card title="신청 종류" required>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="신청 종류">
             <TypeOption
               active={partyType === "individual"}
               Icon={User}
               label="개인 신청"
-              onClick={() => setPartyType("individual")}
+              onClick={() => handlePartyTypeChange("individual")}
             />
             <TypeOption
               active={partyType === "group"}
               Icon={Users}
               label="단체 신청"
               desc="학교/기업/종교단체 등"
-              onClick={() => setPartyType("group")}
+              onClick={() => handlePartyTypeChange("group")}
             />
           </div>
         </Card>
@@ -308,48 +397,74 @@ export function VolunteerForm({
         {/* 2. 신청자 정보 */}
         <Card title={partyType === "group" ? "단체 정보" : "신청자 정보"} required>
           <div className="grid gap-4 md:grid-cols-2">
+            {partyType === "group" && (
+              <Field
+                id="group_name"
+                label="단체명"
+                required
+                className="md:col-span-2"
+              >
+                <Input
+                  id="group_name"
+                  name="group_name"
+                  required
+                  minLength={2}
+                  maxLength={30}
+                  pattern={ORG_OR_PERSON_PATTERN_RAW}
+                  title={ORG_OR_PERSON_HINT}
+                  placeholder="예: 왕왕대학교 봉사동아리"
+                  aria-invalid={Boolean(fieldErrors.group_name)}
+                  aria-describedby={fieldErrors.group_name ? "group_name-error" : "group_name-hint"}
+                  onChange={() => clearFieldError("group_name")}
+                />
+                <p id="group_name-hint" className="text-xs text-muted-foreground">
+                  {ORG_OR_PERSON_HINT}
+                </p>
+                <FieldError id="group_name-error" message={fieldErrors.group_name} />
+              </Field>
+            )}
             <Field
               id="applicant_name"
-              label={partyType === "group" ? "단체명 / 인솔자 이름" : "이름"}
+              label={partyType === "group" ? "인솔자 이름" : "이름"}
               required
-              className="md:col-span-2"
             >
               <Input
                 id="applicant_name"
                 name="applicant_name"
                 required
                 minLength={2}
-                maxLength={partyType === "group" ? 30 : 20}
-                pattern={
-                  partyType === "group"
-                    ? ORG_OR_PERSON_PATTERN_RAW
-                    : NAME_PATTERN_RAW
-                }
-                title={partyType === "group" ? ORG_OR_PERSON_HINT : NAME_HINT}
-                placeholder={
-                  partyType === "group"
-                    ? "예: ○○대학교 봉사동아리 / 인솔자 홍길동"
-                    : "홍길동"
-                }
+                maxLength={20}
+                pattern={NAME_PATTERN_RAW}
+                title={NAME_HINT}
+                placeholder="홍길동"
+                aria-invalid={Boolean(fieldErrors.applicant_name)}
+                aria-describedby={fieldErrors.applicant_name ? "applicant_name-error" : "applicant_name-hint"}
+                onChange={() => clearFieldError("applicant_name")}
               />
-              <p className="text-[11px] text-muted-foreground/80">
-                {partyType === "group" ? ORG_OR_PERSON_HINT : NAME_HINT}
+              <p id="applicant_name-hint" className="text-xs text-muted-foreground">
+                {NAME_HINT}
               </p>
+              <FieldError id="applicant_name-error" message={fieldErrors.applicant_name} />
             </Field>
             <Field id="phone" label={partyType === "group" ? "인솔자 연락처" : "연락처"} required>
               <PhoneInput
+                key={partyType}
                 id="phone"
                 name="phone"
                 required
                 defaultValue={profilePhone}
                 readOnly={partyType === "individual" && !!profilePhone}
+                aria-invalid={Boolean(fieldErrors.phone)}
+                aria-describedby={fieldErrors.phone ? "phone-error" : "phone-hint"}
+                onValueChange={() => clearFieldError("phone")}
                 className={partyType === "individual" && !!profilePhone ? "cursor-default bg-secondary/50" : ""}
               />
               {partyType === "individual" && profilePhone ? (
-                <p className="text-[11px] text-muted-foreground/80">프로필에 등록된 번호입니다.</p>
+                <p id="phone-hint" className="text-xs text-muted-foreground">프로필에 등록된 번호입니다.</p>
               ) : (
-                <p className="text-[11px] text-muted-foreground/80">{PHONE_HINT}</p>
+                <p id="phone-hint" className="text-xs text-muted-foreground">{PHONE_HINT}</p>
               )}
+              <FieldError id="phone-error" message={fieldErrors.phone} />
             </Field>
             {/* 인원수 — 단체일 때만 표시, 개인은 hidden으로 1 전송 */}
             {partyType === "group" ? (
@@ -359,36 +474,54 @@ export function VolunteerForm({
                   name="party_size"
                   type="number"
                   min={2}
-                  max={20}
+                  max={30}
                   value={partySize}
-                  onChange={(e) =>
-                    setPartySize(Math.max(2, Math.min(20, Number(e.target.value) || 2)))
-                  }
+                  onChange={(e) => {
+                    setPartySize(e.target.value)
+                    clearFieldError("party_size")
+                  }}
                   required
+                  aria-invalid={Boolean(fieldErrors.party_size)}
+                  aria-describedby={fieldErrors.party_size ? "party_size-error" : "party_size-hint"}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  인솔자 포함, 최대 20명
+                <p id="party_size-hint" className="text-xs text-muted-foreground">
+                  인솔자 포함, 최대 30명
                 </p>
+                <FieldError id="party_size-error" message={fieldErrors.party_size} />
+                <LargeGroupInquiry className="mt-2" />
               </Field>
             ) : (
               <input type="hidden" name="party_size" value="1" />
             )}
             {partyType === "group" && (
               <CheckRow
+                id="has_minor"
                 checked={hasMinor}
-                onChange={setHasMinor}
+                onChange={(checked) => {
+                  setHasMinor(checked)
+                  if (!checked) {
+                    setMinorGuardian(false)
+                    clearFieldError("minor_guardian")
+                  }
+                }}
                 label="만 14세 미만이 포함됩니다"
                 className="md:col-span-2"
               />
             )}
-            {hasMinor && (
+            {partyType === "group" && hasMinor && (
               <div className="rounded-md border border-amber-200 bg-amber-50 p-3 md:col-span-2 dark:border-amber-900/50 dark:bg-amber-900/20">
                 <CheckRow
+                  id="minor_guardian"
                   checked={minorGuardian}
-                  onChange={setMinorGuardian}
+                  onChange={(checked) => {
+                    setMinorGuardian(checked)
+                    clearFieldError("minor_guardian")
+                  }}
                   label="미성년자 보호자(법정대리인 또는 학교·기관 담당자)의 동의·인솔 하에 참여합니다"
                   required
+                  invalid={Boolean(fieldErrors.minor_guardian)}
                 />
+                <FieldError id="minor_guardian-error" message={fieldErrors.minor_guardian} />
               </div>
             )}
           </div>
@@ -404,14 +537,17 @@ export function VolunteerForm({
               가능한 날짜 <span className="text-destructive">*</span>
             </Label>
             <DateMultiPicker
+              id="available_dates"
               name="available_dates"
               onChange={handleDatesChange}
+              invalid={Boolean(fieldErrors.available_dates)}
               disabledDates={blockedDates}
               disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`}
             />
             <p className="text-[11px] text-muted-foreground/80">
               여러 날짜 선택 가능. 운영진이 확인 후 가능한 날짜로 일정을 조율합니다.
             </p>
+            <FieldError id="available_dates-error" message={fieldErrors.available_dates} />
             {groupBlocking && blockedDates.length > 0 && (
               <p className="rounded-md bg-rose-50 px-3 py-2 text-[11px] font-medium leading-relaxed text-rose-700 dark:bg-rose-950/20 dark:text-rose-300">
                 정기봉사가 있는 날(분홍색·취소선)은 {groupBlockThreshold}명 이상 단체 신청이
@@ -464,8 +600,15 @@ export function VolunteerForm({
               selectedDates={selectedDates}
               hour={visitHour}
               minute={visitMinute}
-              onHourChange={setVisitHour}
-              onMinuteChange={setVisitMinute}
+              onHourChange={(value) => {
+                setVisitHour(value)
+                clearFieldError("available_time")
+              }}
+              onMinuteChange={(value) => {
+                setVisitMinute(value)
+                clearFieldError("available_time")
+              }}
+              error={fieldErrors.available_time}
               required
             />
           </div>
@@ -515,11 +658,17 @@ export function VolunteerForm({
             알레르기 등)이 수반될 수 있습니다.
           </p>
           <CheckRow
+            id="safety_acknowledged"
             checked={safetyAcknowledged}
-            onChange={setSafetyAcknowledged}
+            onChange={(checked) => {
+              setSafetyAcknowledged(checked)
+              clearFieldError("safety_acknowledged")
+            }}
             label="위 위험 가능성을 인지하고 단체의 안전 수칙을 준수하겠습니다"
             required
+            invalid={Boolean(fieldErrors.safety_acknowledged)}
           />
+          <FieldError id="safety_acknowledged-error" message={fieldErrors.safety_acknowledged} />
         </Card>
 
         {/* 6. 동의 */}
@@ -533,16 +682,24 @@ export function VolunteerForm({
             retention: "봉사 활동 종료 후 1년",
           }}
           privacyAgreed={privacyAgreed}
-          onPrivacyChange={setPrivacyAgreed}
+          onPrivacyChange={(checked) => {
+            setPrivacyAgreed(checked)
+            clearFieldError("privacy_agreed")
+          }}
           termsAgreed={termsAgreed}
-          onTermsChange={setTermsAgreed}
+          onTermsChange={(checked) => {
+            setTermsAgreed(checked)
+            clearFieldError("terms_agreed")
+          }}
           termsAlreadyAgreed={termsAlreadyAgreed}
+          privacyError={fieldErrors.privacy_agreed}
+          termsError={fieldErrors.terms_agreed}
         />
       </div>
 
       {/* Error: always visible on desktop; on mobile only shown on current step */}
       {error && (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
           {error}
         </p>
       )}
@@ -550,18 +707,18 @@ export function VolunteerForm({
       {/* Mobile step navigation */}
       <div className="sm:hidden flex items-center justify-between gap-2">
         {step > 1 ? (
-          <button type="button" onClick={() => { setError(null); setStep(s => s - 1) }} className="flex items-center gap-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground">
+          <button type="button" onClick={() => moveToStep(step - 1)} className="flex min-h-11 items-center gap-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground">
             <ChevronLeft className="size-4" /> 이전
           </button>
         ) : (
-          <button type="button" onClick={() => router.back()} className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground">취소</button>
+          <button type="button" onClick={() => router.back()} className="min-h-11 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground">취소</button>
         )}
         {step < 3 ? (
-          <button type="button" onClick={handleNext} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+          <button type="button" onClick={handleNext} className="min-h-11 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
             다음
           </button>
         ) : (
-          <button type="submit" disabled={pending} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          <button type="submit" disabled={pending} className="min-h-11 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
             {pending ? "접수 중..." : "봉사 신청하기"}
           </button>
         )}
@@ -629,16 +786,20 @@ function Field({
 }
 
 function CheckRow({
+  id,
   checked,
   onChange,
   label,
   required,
+  invalid,
   className,
 }: {
+  id?: string
   checked: boolean
   onChange: (v: boolean) => void
   label: string
   required?: boolean
+  invalid?: boolean
   className?: string
 }) {
   return (
@@ -646,9 +807,12 @@ function CheckRow({
       className={`flex cursor-pointer items-start gap-2 py-1 text-sm ${className ?? ""}`}
     >
       <input
+        id={id}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-invalid={invalid}
+        aria-describedby={invalid && id ? `${id}-error` : undefined}
         className="mt-0.5 size-4 accent-primary"
       />
       <span className="flex-1 leading-relaxed text-foreground">
@@ -680,6 +844,8 @@ function TypeOption({
     <button
       type="button"
       onClick={onClick}
+      role="radio"
+      aria-checked={active}
       className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all ${
         active
           ? "-translate-y-0.5 border-primary bg-primary/10 text-foreground shadow-sm"
@@ -695,5 +861,14 @@ function TypeOption({
       </span>
       {desc && <span className="text-xs">{desc}</span>}
     </button>
+  )
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null
+  return (
+    <p id={id} className="text-xs font-medium leading-relaxed text-destructive" role="alert">
+      {message}
+    </p>
   )
 }

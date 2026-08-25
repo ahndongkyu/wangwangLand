@@ -30,6 +30,7 @@ export const SITE = {
     kakaoTalk: "",
   },
   sns: {
+    kakaoChannel: "http://pf.kakao.com/_iTmxbX/chat",
     instagram: "https://www.instagram.com/wangwangland_?igsh=aWIycTZwcHZsMDhj",
     naverCafe: "https://cafe.naver.com/wangwangland",
     youtube: "",

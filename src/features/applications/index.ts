@@ -1,7 +1,10 @@
 export { AdoptionForm } from "./components/adoption-form"
 export { VolunteerForm } from "./components/volunteer-form"
 export { VolunteerEditForm } from "./components/volunteer-edit-form"
-export { isAugustVolunteerPeriodActive } from "./lib/volunteer-operating-hours"
+export {
+  LargeGroupInquiry,
+  VolunteerApplicationGuide,
+} from "./components/volunteer-application-guide"
 export { ApplicationStatusForm } from "./components/status-form"
 export {
   submitAdoptionApplication,

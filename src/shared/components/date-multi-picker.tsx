@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
+  /** 오류 발생 시 포커스·접근성 연결에 사용할 id. */
+  id?: string
   /** form data 의 name. 다중 hidden input 으로 직렬화. */
   name: string
   /** 초기 선택 날짜 (YYYY-MM-DD). */
@@ -22,6 +24,8 @@ interface Props {
   disabledDates?: string[]
   /** 차단 날짜에 마우스 올렸을 때 안내 문구. */
   disabledTitle?: string
+  /** 외부 폼 검증에서 오류 상태인지 여부. */
+  invalid?: boolean
 }
 
 const KST_OFFSET = 9 * 60 * 60 * 1000
@@ -51,7 +55,6 @@ function shiftYm(ym: string, delta: number): string {
 
 /** 7×6 칸 (해당 월) — KST 기준 일요일 시작. */
 function gridForMonth(ym: string): Date[] {
-  const [y, m] = ym.split("-").map(Number)
   // KST 1일 자정의 UTC ISO
   const firstUtc = new Date(`${ym}-01T00:00:00+09:00`)
   const firstKst = new Date(firstUtc.getTime() + KST_OFFSET)
@@ -71,6 +74,7 @@ function gridForMonth(ym: string): Date[] {
  * - 선택된 날짜는 hidden input 으로 폼 데이터에 직렬화
  */
 export function DateMultiPicker({
+  id,
   name,
   defaultValue = [],
   allowPast = false,
@@ -79,9 +83,10 @@ export function DateMultiPicker({
   onChange,
   disabledDates = [],
   disabledTitle = "선택할 수 없는 날짜예요.",
+  invalid = false,
 }: Props) {
   const today = todayKey()
-  const blockedSet = useMemo(() => new Set(disabledDates), [disabledDates])
+  const blockedSet = new Set(disabledDates)
   const initialYm = today.slice(0, 7)
   const maxYm = useMemo(
     () => shiftYm(initialYm, Math.max(0, monthsAhead - 1)),
@@ -119,7 +124,15 @@ export function DateMultiPicker({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div
+      id={id}
+      tabIndex={-1}
+      aria-invalid={invalid}
+      className={cn(
+        "rounded-lg border border-border bg-card outline-none",
+        invalid && "border-destructive ring-3 ring-destructive/20"
+      )}
+    >
       {/* 헤더 */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <button
@@ -179,6 +192,8 @@ export function DateMultiPicker({
               onClick={() => toggle(key, isPast, isOtherMonth)}
               disabled={disabled}
               title={isBlocked ? disabledTitle : undefined}
+              aria-label={`${key}${isBlocked ? `, ${disabledTitle}` : ""}`}
+              aria-pressed={isSelected}
               className={cn(
                 "relative flex aspect-square items-center justify-center rounded-md text-xs font-medium transition-colors",
                 isOtherMonth && "text-muted-foreground/30",
