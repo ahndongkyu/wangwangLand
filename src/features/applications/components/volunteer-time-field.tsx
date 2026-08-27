@@ -1,4 +1,7 @@
-import { getVolunteerTimeOptions } from "../lib/volunteer-operating-hours"
+import {
+  getVolunteerTimeOptions,
+  VOLUNTEER_APPLICATION_TIME_LABEL,
+} from "../lib/volunteer-operating-hours"
 import { Label } from "@/shared/components/ui/label"
 
 interface TimeFieldProps {
@@ -100,7 +103,7 @@ export function VolunteerTimeField({
       <input type="hidden" name="available_time" value={value} />
       {selectedDates.length > 0 ? (
         <p id="available_time-hint" className="text-xs leading-relaxed text-muted-foreground">
-          신청 가능 시간: 10:00~11:50 / 13:00~17:00
+          신청 가능 시간: {VOLUNTEER_APPLICATION_TIME_LABEL}
           {selectedDates.length > 1 && (
             <span className="mt-0.5 block font-medium text-foreground/80">
               선택한 모든 날짜에 같은 방문 시간이 적용됩니다.

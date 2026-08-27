@@ -2,6 +2,7 @@ import { Clock3, MessageCircle, Users } from "lucide-react"
 
 import { SITE } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
+import { VOLUNTEER_APPLICATION_TIME_LABEL } from "../lib/volunteer-operating-hours"
 
 export function VolunteerApplicationGuide({ className }: { className?: string }) {
   return (
@@ -25,7 +26,7 @@ export function VolunteerApplicationGuide({ className }: { className?: string })
           <div>
             <p className="font-semibold">봉사 신청 가능 시간</p>
             <p className="mt-0.5 text-xs leading-relaxed">
-              10:00~11:50 / 13:00~17:00
+              {VOLUNTEER_APPLICATION_TIME_LABEL}
             </p>
             <p className="mt-1 text-xs leading-relaxed">
               12:00~13:00는 점심시간으로 현장 안내가 어렵습니다.

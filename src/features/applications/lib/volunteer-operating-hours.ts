@@ -1,13 +1,15 @@
 const TIME_STEP_MINUTES = 10
 
+export const VOLUNTEER_APPLICATION_TIME_LABEL = "10:00~11:00 / 13:00~17:50"
+
 interface TimeWindow {
   start: string
   end: string
 }
 
 const REGULAR_TIME_WINDOWS: TimeWindow[] = [
-  { start: "10:00", end: "11:50" },
-  { start: "13:00", end: "17:00" },
+  { start: "10:00", end: "11:00" },
+  { start: "13:00", end: "17:50" },
 ]
 
 function timeToMinutes(time: string): number {
