@@ -17,6 +17,7 @@ interface Props {
   inline?: boolean
   trigger?: React.ReactNode
   triggerClassName?: string
+  surface?: "default" | "admin-dark"
 }
 
 export function AdminNotificationBell({
@@ -25,6 +26,7 @@ export function AdminNotificationBell({
   inline = false,
   trigger,
   triggerClassName,
+  surface = "default",
 }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -102,7 +104,10 @@ export function AdminNotificationBell({
       {open && hasItems && (
         <div
           className={cn(
-            "z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
+            "z-50 overflow-hidden rounded-xl border shadow-lg",
+            surface === "admin-dark"
+              ? "border-white/10 bg-[#203229] shadow-[0_14px_30px_rgba(5,14,9,0.28)] dark:bg-[#1b2821]"
+              : "border-border bg-popover",
             inline
               ? "mt-3 w-full"
               : "absolute w-64",
@@ -111,8 +116,20 @@ export function AdminNotificationBell({
               : !inline && "right-0 top-11"
           )}
         >
-          <div className="border-b border-border px-4 py-2.5">
-            <p className="text-xs font-semibold text-muted-foreground">처리 대기 알림</p>
+          <div
+            className={cn(
+              "border-b px-4 py-2.5",
+              surface === "admin-dark" ? "border-white/10" : "border-border"
+            )}
+          >
+            <p
+              className={cn(
+                "text-xs font-semibold",
+                surface === "admin-dark" ? "text-[#a9c0b1]" : "text-muted-foreground"
+              )}
+            >
+              처리 대기 알림
+            </p>
           </div>
           <ul className="p-1">
             {items.map((item) => (
@@ -120,10 +137,20 @@ export function AdminNotificationBell({
                 <Link
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-secondary"
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                    surface === "admin-dark" ? "hover:bg-white/[0.07]" : "hover:bg-secondary"
+                  )}
                 >
                   {item.icon}
-                  <span className="flex-1 text-sm text-foreground">{item.label}</span>
+                  <span
+                    className={cn(
+                      "flex-1 text-sm",
+                      surface === "admin-dark" ? "text-[#e7ece8]" : "text-foreground"
+                    )}
+                  >
+                    {item.label}
+                  </span>
                   <span className={`text-sm font-bold ${item.color}`}>
                     {item.count}건
                   </span>

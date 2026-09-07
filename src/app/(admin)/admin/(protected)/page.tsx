@@ -18,8 +18,12 @@ import { getMonthlyMemberStats } from "@/features/members"
 import { listNotices } from "@/features/notices"
 import { listDailyPosts } from "@/features/daily"
 import { listAdoptionStories } from "@/features/stories"
-import { listUpcomingEvents } from "@/features/events"
-import { UpcomingEvents } from "./_components/upcoming-events"
+import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
+import {
+  monthRange as eventMonthRange,
+  todayKst,
+  yearMonthKst,
+} from "@/features/events/lib/date"
 import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
@@ -29,7 +33,9 @@ import type { ApplicationStatus } from "@/shared/types/database"
 
 export const dynamic = "force-dynamic"
 
-function monthRange(d: Date) {
+const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
+
+function statsMonthRange(d: Date) {
   const start = new Date(d.getFullYear(), d.getMonth(), 1)
   const end = new Date(d.getFullYear(), d.getMonth() + 1, 0)
   const fmt = (x: Date) =>
@@ -78,13 +84,25 @@ function deltaBadge(current: number, prev: number) {
   )
 }
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ym?: string }>
+}) {
+  const params = await searchParams
   const now = new Date()
-  const thisMonth = monthRange(now)
-  const prevMonth = monthRange(new Date(now.getFullYear(), now.getMonth() - 1, 15))
+  const thisMonth = statsMonthRange(now)
+  const prevMonth = statsMonthRange(
+    new Date(now.getFullYear(), now.getMonth() - 1, 15)
+  )
+  const calendarYearMonth =
+    params.ym && YM_RE.test(params.ym)
+      ? params.ym
+      : yearMonthKst(todayKst())
+  const calendarRange = eventMonthRange(calendarYearMonth)
 
   const [
-    upcomingEvents,
+    calendarEvents,
     pendingCounts,
     appStats,
     recentApps,
@@ -94,9 +112,11 @@ export default async function AdminDashboardPage() {
     dailyCount,
     storiesCount,
   ] = await Promise.all([
-    // 다가오는 일정 — 운영진은 internal 까지 포함해야 하지만 앞단 admin 가드라 RLS 통과.
-    // listUpcomingEvents 는 visibility=public 만 보지만, 자동 등록 이벤트도 public 이라 포함됨.
-    listUpcomingEvents(30),
+    listEventsInRange({
+      from: calendarRange.from,
+      to: calendarRange.to,
+      includeInternal: true,
+    }),
     countPendingApplications(),
     getApplicationStats({
       monthFrom: thisMonth.from,
@@ -165,37 +185,31 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* 2. 다가오는 일정 — 운영진이 매일 확인하는 핵심 */}
+      {/* 2. 월간 일정 캘린더 */}
       <section className="mb-8">
-        <div className="mb-3 flex items-end justify-between">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
             <CalendarDays className="size-4" aria-hidden />
-            다가오는 일정
+            일정 캘린더
           </h2>
-          <Link
-            href="/admin/calendar"
-            className="text-xs font-semibold text-primary hover:underline"
-          >
-            캘린더 전체 보기 →
-          </Link>
-        </div>
-        {upcomingEvents.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-10 text-center">
-            <CalendarDays className="size-8 text-muted-foreground/40" aria-hidden />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                예정된 일정이 없어요
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                <Link href="/admin/calendar/new" className="text-primary hover:underline">
-                  새 일정 등록 →
-                </Link>
-              </p>
-            </div>
+          <div className="flex items-center gap-3 text-xs font-semibold">
+            <Link href="/admin/calendar/new" className="text-primary hover:underline">
+              새 일정 등록
+            </Link>
+            <Link href="/admin/calendar" className="text-primary hover:underline">
+              전체 캘린더 →
+            </Link>
           </div>
-        ) : (
-          <UpcomingEvents events={upcomingEvents} />
-        )}
+        </div>
+        <div className="rounded-xl border border-border bg-secondary/30 p-3 shadow-sm sm:p-5">
+          <MonthNav yearMonth={calendarYearMonth} basePath="/admin" />
+          <MonthGrid
+            yearMonth={calendarYearMonth}
+            events={calendarEvents}
+            hrefBase="/admin/calendar"
+            addHrefBase="/admin/calendar/new"
+          />
+        </div>
       </section>
 
       {/* 3. 처리 대기 + 최근 신청 — 운영진이 즉시 액션해야 하는 항목 */}

@@ -35,7 +35,7 @@ export function PublicShell({
   return (
     <main
       data-public-scope
-      className="flex-1 bg-background pb-24 md:pb-0"
+      className="flex-1 bg-background"
     >
       {focused ? (
         <div className="min-h-full">{children}</div>

@@ -113,17 +113,17 @@ export default async function RankingPage() {
 /* ── 포디엄 카드 ── */
 const PODIUM_STYLE = {
   1: {
-    card: "bg-gradient-to-b from-amber-50 to-white border-amber-200",
+    card: "bg-gradient-to-b from-amber-50 to-white border-amber-200 dark:from-amber-950/45 dark:to-card dark:border-amber-700/55",
     badge: "bg-amber-400 text-amber-900",
     icon: <Crown className="size-3.5" />,
   },
   2: {
-    card: "bg-gradient-to-b from-slate-50 to-white border-slate-200",
+    card: "bg-gradient-to-b from-slate-50 to-white border-slate-200 dark:from-slate-700/35 dark:to-card dark:border-slate-500/50",
     badge: "bg-slate-400 text-white",
     icon: <Medal className="size-3.5" />,
   },
   3: {
-    card: "bg-gradient-to-b from-orange-50 to-white border-orange-200",
+    card: "bg-gradient-to-b from-orange-50 to-white border-orange-200 dark:from-orange-950/40 dark:to-card dark:border-orange-700/50",
     badge: "bg-orange-400 text-white",
     icon: <Medal className="size-3.5" />,
   },
@@ -169,7 +169,7 @@ function PodiumCard({
       )}>
         <User className={cn("text-muted-foreground", tall ? "size-7" : "size-5")} />
         {isMe && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground border-2 border-white">
+          <span className="absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-primary text-[9px] font-bold text-primary-foreground dark:border-card">
             나
           </span>
         )}

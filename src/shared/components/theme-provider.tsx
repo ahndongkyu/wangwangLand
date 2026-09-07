@@ -18,28 +18,34 @@ const ThemeContext = createContext<ThemeContextValue>({
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system")
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system"
+    const stored = localStorage.getItem("theme")
+    return stored === "light" || stored === "dark" ? stored : "system"
+  })
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light")
-
-  // 마운트 시 저장된 테마 읽기
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null
-    if (stored === "light" || stored === "dark") {
-      setThemeState(stored)
-    } else {
-      setThemeState("system")
-    }
-  }, [])
 
   // 테마 변경 시 html 클래스 + resolvedTheme 업데이트
   useEffect(() => {
-    const apply = (t: Theme) => {
-      const dark = t === "dark"
+    const stored = localStorage.getItem("theme")
+    const effectiveTheme =
+      theme === "system" && (stored === "light" || stored === "dark")
+        ? stored
+        : theme
+    const media = window.matchMedia("(prefers-color-scheme: dark)")
+    const apply = () => {
+      const dark =
+        effectiveTheme === "dark" ||
+        (effectiveTheme === "system" && media.matches)
       document.documentElement.classList.toggle("dark", dark)
       setResolvedTheme(dark ? "dark" : "light")
     }
 
-    apply(theme)
+    apply()
+    if (effectiveTheme !== "system") return
+
+    media.addEventListener("change", apply)
+    return () => media.removeEventListener("change", apply)
   }, [theme])
 
   const setTheme = (t: Theme) => {

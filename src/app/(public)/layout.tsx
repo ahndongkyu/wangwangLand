@@ -3,8 +3,6 @@ import { redirect } from "next/navigation"
 
 import { listRecentPublishedNotices } from "@/features/notices"
 import { getCurrentProfile, listMyHomeFavorites } from "@/features/members"
-import { getMyApplicationSummary } from "@/features/applications"
-import { getEventTitle, listMyUpcomingEvents } from "@/features/events"
 import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
 import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { listMyNotifications, getUnreadCount } from "@/features/notifications/api/queries"
@@ -84,51 +82,38 @@ export default async function PublicLayout({
     pendingCounts,
     userNotifications,
     unreadNotificationCount,
-    upcomingEvents,
-    applicationSummary,
   ] = await Promise.all([
     isStaff ? getPendingCounts() : Promise.resolve(null),
     isApproved ? listMyNotifications() : Promise.resolve([]),
     isApproved ? getUnreadCount() : Promise.resolve(0),
-    isApproved ? listMyUpcomingEvents() : Promise.resolve([]),
-    isApproved && profile
-      ? getMyApplicationSummary(profile.id)
-      : Promise.resolve({ approved: 0, pending: 0 }),
   ])
 
-  const nextEvent = upcomingEvents[0]
-  const mobileMemberSummary = isApproved
-    ? {
-        nextEvent: nextEvent
-          ? {
-              href: `/calendar/${nextEvent.id}`,
-              startsAt: nextEvent.starts_at,
-              title: getEventTitle(nextEvent),
-            }
-          : null,
-        approvedApplications: applicationSummary.approved,
-        pendingApplications: applicationSummary.pending,
-      }
-    : null
+  const sidebarProps = {
+    profile,
+    initialFavorites: homeFavorites,
+    pendingCounts,
+    userNotifications,
+    unreadNotificationCount,
+  }
 
   return (
     <div data-public-scope className="flex min-h-screen flex-col bg-background">
       <Header
         recentNotices={recentNotices}
         profile={profile}
-        pendingCounts={pendingCounts}
-        userNotifications={userNotifications}
-        unreadNotificationCount={unreadNotificationCount}
-        mobileMemberSummary={mobileMemberSummary}
+        mobileSidebar={
+          <HomeSidebar
+            key={`mobile-${homeFavorites.join("-")}`}
+            {...sidebarProps}
+            variant="mobile"
+          />
+        }
       />
       <PublicShell
         sidebar={
           <HomeSidebar
-            profile={profile}
-            initialFavorites={homeFavorites}
-            pendingCounts={pendingCounts}
-            userNotifications={userNotifications}
-            unreadNotificationCount={unreadNotificationCount}
+            key={`desktop-${homeFavorites.join("-")}`}
+            {...sidebarProps}
           />
         }
       >

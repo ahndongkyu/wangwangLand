@@ -18,14 +18,33 @@ const REST: CtaItem[] = [
   { label: "봉사 신청", icon: "volunteer", href: "/volunteer" },
   { label: "후원하기", icon: "heart", href: "/donate" },
 ]
+
+const FOCUSED_ROUTES = [
+  "/agreement",
+  "/login",
+  "/onboarding",
+  "/pending",
+  "/privacy",
+  "/profile",
+  "/rejected",
+  "/terms",
+]
+
+function shouldHide(pathname: string): boolean {
+  const isFocused = FOCUSED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
+  const isAnimalDetail = /^\/(dogs|cats)\/[^/]+\/?$/.test(pathname)
+  return pathname.startsWith("/admin") || isFocused || isAnimalDetail
+}
 /**
  * 모바일에서만 노출되는 하단 고정 내비게이션.
- * - 모든 경로: 4탭 (홈/입양/봉사/후원)
- * 어드민 경로에서는 숨김.
+ * - 일반 화면: 4탭 (홈/입양/봉사/후원)
+ * - 집중형 화면·동물 상세·어드민 경로에서는 숨김.
  */
 export function MobileCtaBar() {
   const pathname = usePathname()
-  if (pathname.startsWith("/admin")) return null
+  if (shouldHide(pathname)) return null
 
   return (
     <nav

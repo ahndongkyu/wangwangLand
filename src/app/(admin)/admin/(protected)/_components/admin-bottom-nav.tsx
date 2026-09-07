@@ -2,7 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ClipboardList, CalendarDays, Bell } from "lucide-react"
+import {
+  CalendarDays,
+  ClipboardList,
+  LayoutDashboard,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 
@@ -14,13 +20,13 @@ const HOME_TAB = { label: "대시보드", icon: LayoutDashboard, href: "/admin",
 const REST_TABS = [
   { label: "신청", icon: ClipboardList, href: "/admin/applications", exact: false },
   { label: "일정", icon: CalendarDays, href: "/admin/calendar", exact: false },
-  { label: "알림", icon: Bell, href: "/admin/members", exact: false },
+  { label: "회원", icon: Users, href: "/admin/members", exact: false },
 ] as const
 
 export function AdminBottomNav({ counts }: Props) {
   const pathname = usePathname()
 
-  function renderTabLink<T extends { label: string; icon: typeof Bell; href: string }>(
+  function renderTabLink<T extends { label: string; icon: LucideIcon; href: string }>(
     tab: T,
     isActive: boolean,
     badge = 0
@@ -50,7 +56,7 @@ export function AdminBottomNav({ counts }: Props) {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#3c5145] bg-[#26382f]/95 px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_16px_rgba(10,24,16,0.22)] backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#3c5145] bg-[#26382f]/95 px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_16px_rgba(10,24,16,0.22)] backdrop-blur md:hidden dark:border-[#32463a] dark:bg-[#17241d]/95">
       <ul className="grid grid-cols-4 gap-1">
         {/* 대시보드 (항상 첫 칸) */}
         <li>{renderTabLink(HOME_TAB, pathname === HOME_TAB.href)}</li>
@@ -58,7 +64,7 @@ export function AdminBottomNav({ counts }: Props) {
         {/* 나머지 메인 탭들 */}
         {REST_TABS.map((tab) => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + "/")
-          const badge = tab.href === "/admin/members" ? counts.total : 0
+          const badge = tab.href === "/admin/applications" ? counts.total : 0
           return <li key={tab.href}>{renderTabLink(tab, isActive, badge)}</li>
         })}
       </ul>

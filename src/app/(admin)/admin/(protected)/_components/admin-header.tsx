@@ -166,7 +166,7 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="fixed bottom-5 left-5 top-5 z-30 hidden w-[252px] flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#34433a] dark:bg-[#1d2722]">
+    <aside className="fixed bottom-5 left-5 top-5 z-30 hidden w-[252px] flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#32463a] dark:bg-[#17241d]">
       <div
         className={cn(
           "rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
@@ -186,6 +186,7 @@ export function AdminSidebar({
               />
             }
             triggerClassName="p-1 hover:bg-white/[0.08]"
+            surface="admin-dark"
           />
         ) : (
           <AdminSidebarProfileIdentity
@@ -205,6 +206,29 @@ export function AdminSidebar({
           </span>
           <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
         </Link>
+        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
+          <button
+            type="button"
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#d8e3dc] transition-colors hover:bg-white/[0.10]"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="size-4 text-[#efa085]" aria-hidden />
+            ) : (
+              <Moon className="size-4 text-[#efa085]" aria-hidden />
+            )}
+            {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
+          </button>
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#ffaaa2] transition-colors hover:bg-white/[0.10]"
+            >
+              <LogOut className="size-4" aria-hidden />
+              로그아웃
+            </button>
+          </form>
+        </div>
       </div>
 
       <nav className="admin-sidebar-scroll mt-5 min-h-0 flex-1 overflow-y-auto" aria-label="관리자 메뉴">
@@ -255,26 +279,6 @@ export function AdminSidebar({
           </section>
         ))}
       </nav>
-
-      <div className="mt-4 grid grid-cols-2 gap-1 rounded-[20px] border border-white/10 bg-white/[0.05] p-2">
-          <button
-            type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#d8e3dc] transition-colors hover:bg-white/[0.08]"
-          >
-            {resolvedTheme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-            테마
-          </button>
-          <form action={logoutAction} className="contents">
-            <button
-              type="submit"
-              className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#ffaaa2] transition-colors hover:bg-white/[0.08]"
-            >
-              <LogOut className="size-3.5" />
-              로그아웃
-            </button>
-          </form>
-      </div>
     </aside>
   )
 }
@@ -341,7 +345,7 @@ export function AdminMobileHeader({
   }
 
   return (
-    <header className="border-b border-[#3c5145] bg-[#26382f] text-white md:hidden">
+    <header className="border-b border-[#3c5145] bg-[#26382f] text-white md:hidden dark:border-[#32463a] dark:bg-[#17241d]">
       <div className="flex h-14 items-center justify-between px-4">
         {/* 3단계부터 뒤로가기, 그 외에는 로고 */}
         {mobileBackHref ? (
@@ -360,10 +364,8 @@ export function AdminMobileHeader({
           </Link>
         )}
 
-        {/* 알림벨 + 햄버거 */}
+        {/* 햄버거 메뉴 */}
         <div className="flex items-center gap-1 [&_button]:text-white/80 [&_button:hover]:bg-white/10 [&_button:hover]:text-white">
-          <AdminNotificationBell counts={pendingCounts} />
-
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
@@ -376,7 +378,7 @@ export function AdminMobileHeader({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="flex w-[min(300px,85vw)] flex-col gap-0 bg-[#1f3028] p-0 text-[#e7ece8] data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="flex w-[min(340px,90vw)] flex-col gap-0 bg-[#1f3028] p-0 text-[#e7ece8] data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full dark:bg-[#17241d]"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{siteName} 관리자</SheetTitle>
@@ -403,105 +405,126 @@ export function AdminMobileHeader({
                 </SheetClose>
               </div>
 
-              {/* 관리자 프로필 + 3열 액션 그리드 (상단, 한 세트) */}
-              <div className="border-b border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.03] px-4 py-3.5">
-                {/* 프로필 */}
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="relative size-10 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/10">
-                    {adminAvatarUrl ? (
-                      <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
-                    ) : (
-                      <User className="size-full p-2 text-white/65" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="inline-block rounded-full bg-[#c96849]/20 px-1.5 py-0.5 text-[10px] font-bold text-[#efa085]">
-                      {ROLE_LABEL[adminRole] ?? adminRole}
-                    </span>
-                    <p className="truncate text-sm font-semibold text-white">
-                      {adminName}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 액션 버튼 3열 그리드 */}
-                <div className="grid grid-cols-3 gap-1">
+              {/* PC 사이드바와 동일한 관리자 프로필 카드 */}
+              <div className="border-b border-white/10 p-3">
+                <div
+                  className={cn(
+                    "rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
+                    pendingCounts.total > 0 &&
+                      "animate-profile-notification-glow border-[#e89273]/80"
+                  )}
+                >
+                  {pendingCounts.total > 0 ? (
+                    <AdminNotificationBell
+                      counts={pendingCounts}
+                      inline
+                      trigger={
+                        <AdminSidebarProfileIdentity
+                          adminName={adminName}
+                          adminRole={adminRole}
+                          adminAvatarUrl={adminAvatarUrl}
+                        />
+                      }
+                      triggerClassName="p-1 hover:bg-white/[0.08]"
+                      surface="admin-dark"
+                    />
+                  ) : (
+                    <AdminSidebarProfileIdentity
+                      adminName={adminName}
+                      adminRole={adminRole}
+                      adminAvatarUrl={adminAvatarUrl}
+                    />
+                  )}
                   <Link
                     href="/"
                     target="_blank"
                     onClick={() => setMobileOpen(false)}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                    className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-[#e4ebe5] transition-colors hover:bg-white/[0.08]"
                   >
-                    <ExternalLink className="size-4" />
-                    메인사이트
+                    <span className="flex items-center gap-2">
+                      <ExternalLink className="size-4 text-[#efa085]" aria-hidden />
+                      메인 페이지
+                    </span>
+                    <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                    className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-                    테마
-                  </button>
-                  <form action={logoutAction} className="contents">
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
                     <button
-                      type="submit"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] font-medium text-[#ffaaa2] transition-colors hover:bg-white/10"
+                      type="button"
+                      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                      className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#d8e3dc] transition-colors hover:bg-white/[0.10]"
                     >
-                      <LogOut className="size-4" />
-                      로그아웃
+                      {resolvedTheme === "dark" ? (
+                        <Sun className="size-4 text-[#efa085]" aria-hidden />
+                      ) : (
+                        <Moon className="size-4 text-[#efa085]" aria-hidden />
+                      )}
+                      {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
                     </button>
-                  </form>
+                    <form action={logoutAction}>
+                      <button
+                        type="submit"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#ffaaa2] transition-colors hover:bg-white/[0.10]"
+                      >
+                        <LogOut className="size-4" aria-hidden />
+                        로그아웃
+                      </button>
+                    </form>
+                  </div>
                 </div>
               </div>
 
-              {/* 메뉴 (그룹 모두 펼친 상태, 토글 없음) */}
-              <nav className="flex-1 overflow-y-auto py-2">
-                <div className="px-4 py-1">
+              {/* PC 사이드바와 동일한 메뉴 그룹 */}
+              <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3">
+                <div>
                   <Link
                     href="/admin"
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center justify-between rounded-lg px-1 py-2.5 text-[13px] font-medium transition-colors",
+                      "group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all",
                       pathname === "/admin"
-                        ? "bg-white/10 text-[#efa085]"
-                        : "text-white/80 hover:bg-white/[0.07] hover:text-white"
+                        ? "bg-[#c96849] font-semibold text-white"
+                        : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
                     )}
                   >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.08]">
+                      <LayoutDashboard className="size-4" aria-hidden />
+                    </span>
                     대시보드
-                    <ChevronRight className="size-3.5 text-white/40" />
                   </Link>
                 </div>
 
-                {NAV_GROUPS.map((group, gi) => (
-                  <div key={group.label}>
-                    {gi > 0 && <div className="mx-4 my-1.5 h-px bg-white/10" />}
-                    <div className="px-4 py-1">
-                      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-[#91aa9a]">
-                        {group.label}
-                      </p>
-                      {group.items.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileOpen(false)}
-                          className={cn(
-                            "flex items-center justify-between rounded-lg px-1 py-2.5 text-[13px] transition-colors",
-                            isActive(item.href)
-                              ? "bg-white/10 font-medium text-[#efa085]"
-                              : "text-white/80 hover:bg-white/[0.07] hover:text-white"
-                          )}
-                        >
-                          {item.label}
-                          <ChevronRight className="size-3.5 text-white/40" />
-                        </Link>
-                      ))}
+                {NAV_GROUPS.map((group) => (
+                  <section key={group.label} className="mt-5">
+                    <h2 className="px-2 text-[11px] font-semibold tracking-wide text-[#9db1a4]">
+                      {group.label}
+                    </h2>
+                    <div className="mt-2 grid gap-1">
+                      {group.items.map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => setMobileOpen(false)}
+                            className={cn(
+                              "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all",
+                              isActive(item.href)
+                                ? "bg-[#c96849] font-semibold text-white"
+                                : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                            )}
+                          >
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-[#b8cbbf] group-hover:text-white">
+                              <Icon className="size-4" aria-hidden />
+                            </span>
+                            {item.label}
+                          </Link>
+                        )
+                      })}
                     </div>
-                  </div>
+                  </section>
                 ))}
               </nav>
-
             </SheetContent>
           </Sheet>
         </div>

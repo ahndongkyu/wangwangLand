@@ -16,7 +16,7 @@ export function MobileFooter() {
   const phones = SITE.contact.phones.filter((p) => p.number)
 
   return (
-    <footer className="border-t border-border bg-[linear-gradient(110deg,var(--secondary)_0%,var(--accent)_100%)] px-5 py-6">
+    <footer className="border-t border-border bg-[linear-gradient(110deg,var(--secondary)_0%,var(--accent)_100%)] px-5 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-6">
 
       {/* 로고 + 브랜드 */}
       <div className="mb-4 flex items-center gap-2.5">

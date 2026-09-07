@@ -10,7 +10,7 @@ import { ServiceWorkerRegister } from "@/features/push"
 import "./globals.css"
 
 // 페이지 로드 시 깜빡임 없이 올바른 테마 적용 (hydration 전에 실행)
-const themeScript = `(function(){try{if(localStorage.getItem('theme')==='dark'){document.documentElement.classList.add('dark')}}catch(e){}})()`
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",

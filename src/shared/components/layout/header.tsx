@@ -3,24 +3,17 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, MapPin, Menu as MenuIcon, Moon, Settings, Sun, User, X } from "lucide-react"
-import { useTheme } from "@/shared/components/theme-provider"
+import { ChevronDown, ChevronLeft, Menu as MenuIcon, X } from "lucide-react"
 import { Menu } from "@base-ui/react/menu"
 import { useState } from "react"
 
 import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
-import { UserMenu } from "@/features/members/components/user-menu"
 import type { Profile } from "@/features/members/api/queries"
-import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
-import type { PendingCounts } from "@/shared/lib/pending-counts"
-import { UserNotificationBell } from "@/shared/components/user-notification-bell"
-import type { UserNotification } from "@/features/notifications/api/queries"
 import {
   BrandIcon,
   type BrandIconName,
 } from "@/shared/components/brand-icon"
-import { ThemeToggle } from "@/shared/components/theme-toggle"
 import {
   HEADER_NAV_GROUPS,
   type HeaderNavItem,
@@ -40,25 +33,7 @@ import {
 interface HeaderProps {
   recentNotices?: RecentNoticeMeta[]
   profile?: Profile | null
-  pendingCounts?: PendingCounts | null
-  userNotifications?: UserNotification[]
-  unreadNotificationCount?: number
-  mobileMemberSummary?: {
-    nextEvent: {
-      href: string
-      startsAt: string
-      title: string
-    } | null
-    approvedApplications: number
-    pendingApplications: number
-  } | null
-}
-
-const MOBILE_ROLE_LABEL: Record<Profile["role"], string> = {
-  admin: "관리자",
-  staff: "운영진",
-  full_member: "정회원",
-  member: "회원",
+  mobileSidebar?: React.ReactNode
 }
 
 function getMobileBackHref(pathname: string): string | null {
@@ -80,10 +55,7 @@ function getMobileBackHref(pathname: string): string | null {
 export function Header({
   recentNotices = [],
   profile,
-  pendingCounts,
-  userNotifications = [],
-  unreadNotificationCount = 0,
-  mobileMemberSummary,
+  mobileSidebar,
 }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -208,33 +180,16 @@ export function Header({
         <div
           className="ml-auto flex min-w-0 items-center justify-end gap-1.5 lg:hidden"
         >
-          {pendingCounts && <AdminNotificationBell counts={pendingCounts} />}
-          {!pendingCounts && profile && (
-            <UserNotificationBell
-              notifications={userNotifications}
-              unreadCount={unreadNotificationCount}
-            />
-          )}
-          {profile ? (
-            <span className="hidden">
-              <UserMenu profile={profile} />
-            </span>
-          ) : (
-            <>
-              <span className="hidden">
-                <ThemeToggle />
-              </span>
-              <Link
-                href="/login"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "sm" }),
-                  "whitespace-nowrap",
-                  "hidden sm:inline-flex lg:hidden"
-                )}
-              >
-                로그인
-              </Link>
-            </>
+          {!profile && (
+            <Link
+              href="/login"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "hidden whitespace-nowrap sm:inline-flex lg:hidden"
+              )}
+            >
+              로그인
+            </Link>
           )}
 
           {/* 모바일 햄버거 */}
@@ -254,107 +209,51 @@ export function Header({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="flex w-[min(320px,85vw)] flex-col gap-0 bg-popover p-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="flex w-[min(340px,90vw)] flex-col gap-0 bg-sidebar p-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
 
-              {/* ── 드로어 회원 헤더 ── */}
+              {/* 드로어 브랜드 헤더 */}
               <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5">
-                {profile ? (
-                  <Link
-                    href="/my"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex min-w-0 items-center gap-3"
-                    aria-label="마이페이지로 이동"
-                  >
-                    <div className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-primary/30 bg-muted">
-                      {profile.avatar_url ? (
-                        <Image
-                          src={profile.avatar_url}
-                          alt={profile.nickname}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <User className="size-full p-2 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex min-w-0 flex-col items-start gap-1">
-                      <span
-                        className={cn(
-                          "rounded-full border px-2 py-0.5 text-[9px] font-semibold leading-none",
-                          profile.role === "admin"
-                            ? "border-red-500/60 text-red-700 dark:text-red-400"
-                            : profile.role === "staff"
-                              ? "border-amber-500/60 text-amber-700 dark:text-amber-400"
-                              : "border-primary/40 text-primary"
-                        )}
-                      >
-                        {MOBILE_ROLE_LABEL[profile.role]}
-                      </span>
-                      <span className="max-w-[116px] truncate text-sm font-semibold text-foreground">
-                        {profile.nickname}님
-                      </span>
-                    </div>
-                  </Link>
-                ) : (
-                  <span className="text-sm font-semibold text-foreground">
-                    메뉴
-                  </span>
-                )}
-                <div className="flex items-center gap-1.5">
-                  <MobileThemeToggle />
-                  <SheetClose
-                    render={
-                      <button
-                        type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground"
-                        aria-label="메뉴 닫기"
-                      />
-                    }
-                  >
-                    <X className="size-4" />
-                  </SheetClose>
-                </div>
+                <Link
+                  href="/"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex min-w-0 items-center gap-2.5"
+                >
+                  <Image
+                    src={SITE.logo}
+                    alt={`${SITE.name} 로고`}
+                    width={32}
+                    height={32}
+                    className="size-8 rounded-full"
+                  />
+                  <span className="text-sm font-bold text-foreground">{SITE.name}</span>
+                </Link>
+                <SheetClose
+                  render={
+                    <button
+                      type="button"
+                      className="flex size-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label="메뉴 닫기"
+                    />
+                  }
+                >
+                  <X className="size-4" />
+                </SheetClose>
               </div>
 
-              {/* ── 로그인 / 프로필 영역 ── */}
-              <MobileProfileSection
-                profile={profile}
-                summary={mobileMemberSummary}
-                onClose={() => setMobileOpen(false)}
-              />
-
-              {/* ── 메뉴 그룹 ── */}
-              <nav className="flex-1 overflow-y-auto py-2">
-                <MobileNavGroup label="아이들 만나기">
-                  <MobileNavItem href="/dogs" icon="dog" label="강아지" isActive={isActive("/dogs")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/cats" icon="paw" label="고양이" isActive={isActive("/cats")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/stories" icon="heart" label="입양 후기" isActive={isActive("/stories")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/daily" icon="camera" label="일상" isActive={isActive("/daily")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/daily?category=자유게시판" icon="chat" label="자유게시판" isActive={false} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/daily?category=질문 및 답변" icon="mail" label="질문 및 답변" isActive={false} onClose={() => setMobileOpen(false)} />
-                </MobileNavGroup>
-
-                <MobileDivider />
-
-                <MobileNavGroup label="참여하기">
-                  <MobileNavItem href="/calendar" icon="calendar" label="일정" isActive={isActive("/calendar")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/volunteer" icon="volunteer" label="봉사 신청" isActive={isActive("/volunteer")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/donate" icon="heart" label="후원하기" isActive={isActive("/donate")} onClose={() => setMobileOpen(false)} highlighted />
-                  <MobileNavItem href="/thanks" icon="heart" label="후원 감사글" isActive={isActive("/thanks")} onClose={() => setMobileOpen(false)} />
-                </MobileNavGroup>
-
-                <MobileDivider />
-
-                <MobileNavGroup label="정보">
-                  <MobileNavItem href="/about" icon="home-shelter" label="센터 소개" isActive={isActive("/about")} onClose={() => setMobileOpen(false)} />
-                  <MobileNavItem href="/notice" icon="notification" label="공지사항" isActive={isActive("/notice")} onClose={() => setMobileOpen(false)} noticeBadge={recentNotices} noticeDbLastSeenAt={profile?.notices_last_seen_at} />
-                  <MobileNavItem href="/contact" icon={null} label="오시는 길" isActive={isActive("/contact")} onClose={() => setMobileOpen(false)} isLocation />
-                </MobileNavGroup>
-              </nav>
+              <div
+                className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto"
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest("a")) {
+                    setMobileOpen(false)
+                  }
+                }}
+              >
+                {mobileSidebar}
+              </div>
 
               {/* ── 하단 SNS ── */}
               {(SITE.sns.kakaoChannel || SITE.sns.naverCafe || SITE.sns.instagram) && (
@@ -405,101 +304,6 @@ export function Header({
       </div>
     </header>
   )
-}
-
-/* ─── 모바일 드로어 헬퍼 컴포넌트 ─── */
-
-function MobileThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground"
-      aria-label="테마 변경"
-    >
-      {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-    </button>
-  )
-}
-
-function MobileNavGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="px-4 py-1">
-      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-muted-foreground">{label}</p>
-      {children}
-    </div>
-  )
-}
-
-function MobileNavItem({
-  href,
-  icon,
-  label,
-  isActive,
-  onClose,
-  highlighted,
-  badge,
-  noticeBadge,
-  noticeDbLastSeenAt,
-  isLocation,
-}: {
-  href: string
-  icon: BrandIconName | null
-  label: string
-  isActive: boolean
-  onClose: () => void
-  highlighted?: boolean
-  badge?: string
-  noticeBadge?: RecentNoticeMeta[]
-  noticeDbLastSeenAt?: string | null
-  isLocation?: boolean
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClose}
-      className={cn(
-        "flex items-center gap-2.5 rounded-lg px-1 py-2.5 transition-colors",
-        isActive && "bg-primary/8",
-        highlighted
-          ? "bg-primary/10"
-          : !isActive && "hover:bg-secondary"
-      )}
-    >
-      <span className={cn(
-        "flex h-4 w-4 shrink-0 items-center justify-center",
-        "text-primary"
-      )}>
-        {isLocation
-          ? <MapPin className="size-4" />
-          : icon && <BrandIcon name={icon} size={16} decorative />
-        }
-      </span>
-      <span className={cn(
-        "flex-1 text-[13px]",
-        highlighted
-          ? "font-medium text-primary"
-          : isActive
-            ? "font-medium text-primary"
-            : "text-foreground"
-      )}>
-        {label}
-      </span>
-      {badge && (
-        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">
-          {badge}
-        </span>
-      )}
-      {noticeBadge && <NoticeBadge notices={noticeBadge} dbLastSeenAt={noticeDbLastSeenAt} />}
-      <ChevronRight className="size-3.5 text-muted-foreground" />
-    </Link>
-  )
-}
-
-function MobileDivider() {
-  return <div className="mx-4 my-1.5 h-px bg-border" />
 }
 
 function InstaIcon() {
@@ -556,108 +360,6 @@ function HeaderChannelLink({
       {children}
     </a>
   )
-}
-
-function MobileProfileSection({
-  profile,
-  summary,
-  onClose,
-}: {
-  profile?: Profile | null
-  summary?: HeaderProps["mobileMemberSummary"]
-  onClose: () => void
-}) {
-  if (!profile) {
-    return (
-      <div className="border-b border-border bg-gradient-to-br from-primary/15 to-secondary px-4 py-3.5">
-        <p className="mb-2 text-[11px] text-muted-foreground">
-          로그인하고 관심 아이를 저장해 보세요
-        </p>
-        <Link
-          href="/login"
-          onClick={onClose}
-          className="block w-full rounded-lg bg-[#FEE500] py-2.5 text-center text-xs font-semibold text-[#3C1E1E]"
-        >
-          카카오로 로그인 / 시작하기
-        </Link>
-      </div>
-    )
-  }
-
-  const isStaff = profile.role === "staff" || profile.role === "admin"
-
-  return (
-    <div className="border-b border-border bg-gradient-to-br from-secondary to-muted px-4 py-3">
-      {summary && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card/80">
-          <Link
-            href={summary.nextEvent?.href ?? "/calendar"}
-            onClick={onClose}
-            className="flex min-w-0 items-center gap-2.5 px-3 py-3 transition-colors hover:bg-primary/5"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <CalendarDays className="size-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-medium text-muted-foreground">
-                다음 일정
-              </span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-foreground">
-                {summary.nextEvent
-                  ? `${formatMobileHeaderDate(summary.nextEvent.startsAt)} · ${summary.nextEvent.title}`
-                  : "예정된 일정 없음"}
-              </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-          </Link>
-          <Link
-            href="/my/applications"
-            onClick={onClose}
-            className="flex min-w-0 items-center gap-2.5 border-t border-border px-3 py-3 transition-colors hover:bg-primary/5"
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <ClipboardList className="size-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-medium text-muted-foreground">
-                신청 현황
-              </span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-foreground">
-                승인 {summary.approvedApplications} · 진행 {summary.pendingApplications}
-              </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-          </Link>
-        </div>
-      )}
-
-      {isStaff && (
-        <Link
-          href="/admin"
-          onClick={onClose}
-          className={cn(
-            "flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10",
-            summary && "mt-2.5"
-          )}
-        >
-          <span className="flex items-center gap-2">
-            <Settings className="size-4" />
-            관리자 페이지
-          </span>
-          <ChevronRight className="size-4" />
-        </Link>
-      )}
-    </div>
-  )
-}
-
-function formatMobileHeaderDate(iso: string): string {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "numeric",
-    day: "numeric",
-    weekday: "short",
-  }).format(new Date(iso))
 }
 
 /** 데스크톱 드롭다운 그룹 */

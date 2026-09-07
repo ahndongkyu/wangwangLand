@@ -31,11 +31,10 @@ export default async function HomePage({
       : yearMonthKst(todayKst())
   const scheduleRange = monthRange(scheduleYearMonth)
 
-  const [dogs, noticeResult, dailyResult, freeResult, scheduleEvents] = await Promise.all([
+  const [dogs, noticeResult, dailyResult, scheduleEvents] = await Promise.all([
     listDogsForHome(4),
     listNotices({ limit: RECENT_POST_COUNT }),
     listDailyPosts({ board: "daily", limit: RECENT_POST_COUNT }),
-    listDailyPosts({ board: "free", limit: RECENT_POST_COUNT }),
     listEventsInRange({
       from: scheduleRange.from,
       to: scheduleRange.to,
@@ -43,9 +42,7 @@ export default async function HomePage({
     }),
   ])
 
-  const dailyPostIds = [...dailyResult.posts, ...freeResult.posts].map(
-    (post) => post.id
-  )
+  const dailyPostIds = dailyResult.posts.map((post) => post.id)
   const [dailyCommentCounts, noticeCommentCounts] = await Promise.all([
     fetchCommentCounts("daily", dailyPostIds),
     fetchCommentCounts(
@@ -65,7 +62,7 @@ export default async function HomePage({
                 className="object-cover object-center"
                 priority
               />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.97)_0%,rgba(250,242,233,0.87)_45%,rgba(246,239,229,0.18)_76%)] dark:bg-[linear-gradient(90deg,rgba(29,33,30,0.96)_0%,rgba(37,43,39,0.84)_45%,rgba(37,43,39,0.18)_76%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.97)_0%,rgba(250,242,233,0.87)_45%,rgba(246,239,229,0.18)_76%)] dark:bg-[linear-gradient(90deg,rgba(35,39,34,0.96)_0%,rgba(46,52,46,0.84)_45%,rgba(46,52,46,0.18)_76%)]" />
               <div className="relative flex min-h-[210px] max-w-xl flex-col items-start justify-center px-6 py-8 sm:min-h-[230px] sm:px-9 lg:px-10">
                 <h1 className="max-w-md text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
                   기다림이 가족을 만나는 순간까지
@@ -112,9 +109,14 @@ export default async function HomePage({
                   후원금은 구조 동물의 치료비와 생활비로 사용됩니다.
                 </p>
               </div>
-              <div className="flex items-center gap-2 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm text-foreground/80 sm:text-base">
-                <span className="whitespace-nowrap font-semibold">
-                  {SITE.donation.bankName} {SITE.donation.accountNumber}
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm text-foreground/80 sm:min-w-64 sm:text-base">
+                <span className="min-w-0">
+                  <span className="block whitespace-nowrap font-semibold">
+                    {SITE.donation.bankName} {SITE.donation.accountNumber}
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground sm:text-sm">
+                    예금주: {SITE.donation.accountHolder}
+                  </span>
                 </span>
                 <CopyButton
                   value={SITE.donation.accountNumber}
@@ -145,7 +147,7 @@ export default async function HomePage({
                   글쓰기
                 </Link>
               </div>
-              <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid items-stretch gap-4 md:grid-cols-2">
                 <RecentBoard
                   title="공지사항"
                   href="/notice"
@@ -166,20 +168,6 @@ export default async function HomePage({
                   icon="camera"
                   tone="sage"
                   posts={dailyResult.posts.map((post) => ({
-                    id: post.id,
-                    title: post.title,
-                    href: `/daily/${post.id}`,
-                    author: post.author?.nickname ?? "왕왕랜드",
-                    viewCount: post.view_count ?? 0,
-                    commentCount: dailyCommentCounts[post.id] ?? 0,
-                  }))}
-                />
-                <RecentBoard
-                  title="자유게시판"
-                  href="/daily?category=자유게시판"
-                  icon="chat"
-                  tone="yellow"
-                  posts={freeResult.posts.map((post) => ({
                     id: post.id,
                     title: post.title,
                     href: `/daily/${post.id}`,
