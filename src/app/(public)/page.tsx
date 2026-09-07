@@ -102,7 +102,7 @@ export default async function HomePage({
               aria-label="후원 계좌 안내"
             >
               <span className="flex size-14 items-center justify-center rounded-2xl bg-accent">
-                <BrandIcon name="piggy-bank" size={32} decorative />
+                <BrandIcon name="heart" size={32} decorative />
               </span>
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-foreground">

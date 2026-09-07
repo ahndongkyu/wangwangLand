@@ -142,7 +142,6 @@ function getAdminMobileBackHref(pathname: string): string | null {
 // PC 전용 사이드바
 // ────────────────────────────────────────────────────────────
 export function AdminSidebar({
-  siteName,
   adminName,
   adminRole,
   adminAvatarUrl,
@@ -168,29 +167,44 @@ export function AdminSidebar({
 
   return (
     <aside className="fixed bottom-5 left-5 top-5 z-30 hidden w-[252px] flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#34433a] dark:bg-[#1d2722]">
-      <div className="rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]">
-        <div className="flex items-center justify-between gap-2">
-          <Link href="/admin" className="flex min-w-0 items-center gap-3">
-            <Image
-              src={SITE.logo}
-              alt={SITE.name}
-              width={40}
-              height={40}
-              className="size-10 rounded-full"
-            />
-            <span className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate text-[15px] font-bold text-white">
-                {siteName}
-              </span>
-              <span className="mt-0.5 text-[10px] font-semibold tracking-[1px] text-[#a9c0b1]">
-                관리자
-              </span>
-            </span>
-          </Link>
-          <span className="shrink-0 [&_button]:text-[#d2ded6] [&_button:hover]:bg-white/[0.08]">
-            <AdminNotificationBell counts={pendingCounts} align="side" />
+      <div
+        className={cn(
+          "rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
+          pendingCounts.total > 0 &&
+            "animate-profile-notification-glow border-[#e89273]/80"
+        )}
+      >
+        {pendingCounts.total > 0 ? (
+          <AdminNotificationBell
+            counts={pendingCounts}
+            inline
+            trigger={
+              <AdminSidebarProfileIdentity
+                adminName={adminName}
+                adminRole={adminRole}
+                adminAvatarUrl={adminAvatarUrl}
+              />
+            }
+            triggerClassName="p-1 hover:bg-white/[0.08]"
+          />
+        ) : (
+          <AdminSidebarProfileIdentity
+            adminName={adminName}
+            adminRole={adminRole}
+            adminAvatarUrl={adminAvatarUrl}
+          />
+        )}
+        <Link
+          href="/"
+          target="_blank"
+          className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-[#e4ebe5] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
+        >
+          <span className="flex items-center gap-2">
+            <ExternalLink className="size-4 text-[#efa085]" aria-hidden />
+            메인 페이지
           </span>
-        </div>
+          <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
+        </Link>
       </div>
 
       <nav className="admin-sidebar-scroll mt-5 min-h-0 flex-1 overflow-y-auto" aria-label="관리자 메뉴">
@@ -242,34 +256,7 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      <div className="mt-4 rounded-[20px] border border-white/10 bg-white/[0.05] p-3">
-        <div className="mb-3 flex items-center gap-3">
-          <div className="relative size-10 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">
-            {adminAvatarUrl ? (
-              <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
-            ) : (
-              <User className="size-full p-2 text-[#d2ded6]" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="inline-block rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-[#d2ded6]">
-              {ROLE_LABEL[adminRole] ?? adminRole}
-            </span>
-            <p className="mt-1 break-all text-[13px] font-semibold leading-snug text-white">
-              {adminName}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-1">
-          <Link
-            href="/"
-            target="_blank"
-            className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#d8e3dc] transition-colors hover:bg-white/[0.08]"
-          >
-            <ExternalLink className="size-3.5" />
-            메인사이트
-          </Link>
+      <div className="mt-4 grid grid-cols-2 gap-1 rounded-[20px] border border-white/10 bg-white/[0.05] p-2">
           <button
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
@@ -287,9 +274,40 @@ export function AdminSidebar({
               로그아웃
             </button>
           </form>
-        </div>
       </div>
     </aside>
+  )
+}
+
+function AdminSidebarProfileIdentity({
+  adminName,
+  adminRole,
+  adminAvatarUrl,
+}: Pick<AdminHeaderProps, "adminName" | "adminRole" | "adminAvatarUrl">) {
+  return (
+    <span className="flex w-full min-w-0 items-center gap-3">
+      <span className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/10">
+        {adminAvatarUrl ? (
+          <Image
+            src={adminAvatarUrl}
+            alt={adminName}
+            fill
+            sizes="48px"
+            className="object-cover"
+          />
+        ) : (
+          <User className="size-full p-2.5 text-[#d2ded6]" aria-hidden />
+        )}
+      </span>
+      <span className="min-w-0 flex-1 text-left">
+        <span className="block break-all text-sm font-semibold leading-snug text-white">
+          {adminName}님
+        </span>
+        <span className="mt-1 block text-xs text-[#a9c0b1]">
+          {ROLE_LABEL[adminRole] ?? adminRole}
+        </span>
+      </span>
+    </span>
   )
 }
 
