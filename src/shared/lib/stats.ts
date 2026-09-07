@@ -1,4 +1,4 @@
-import { createClient } from "@/shared/lib/supabase/server"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 
 export interface SiteStats {
   /** 보호소를 거쳐간 전체 동물 수 (구조) */
@@ -12,11 +12,13 @@ export interface SiteStats {
 }
 
 /**
- * 푸터 · 메인 실적 카운터 공용.
- * head:true 로 데이터 row 없이 count 만 수신 — 전체 스캔 없음.
+ * 공개 센터 현황 카운터.
+ * 동물 수는 count만 받고, 봉사자는 승인된 신청의 인원수 필드만 합산한다.
  */
 export async function getSiteStats(): Promise<SiteStats> {
-  const supabase = await createClient()
+  // 신청서는 개인정보 보호를 위해 공개 SELECT가 차단되어 있으므로,
+  // 서버 전용 클라이언트로 집계 결과만 계산해 공개한다.
+  const supabase = createAdminClient()
 
   const [
     dogTotalRes,
