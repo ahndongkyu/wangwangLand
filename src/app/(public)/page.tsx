@@ -73,27 +73,6 @@ export default async function HomePage({
               </div>
       </section>
 
-            <section className="mt-10" aria-labelledby="waiting-dogs-heading">
-              <SectionHeading
-                id="waiting-dogs-heading"
-                title="가족을 기다리는 아이들"
-                description="아이의 사진을 눌러 자세한 이야기를 확인하세요."
-                href="/dogs"
-                linkLabel="전체 보기"
-              />
-              {dogs.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {dogs.map((dog) => (
-                    <HomeDogCard key={dog.id} dog={dog} />
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center text-sm text-muted-foreground">
-                  등록된 입양 대기 아이가 없습니다.
-                </div>
-              )}
-            </section>
-
             <section
               className="mt-8 grid min-h-24 gap-4 rounded-2xl border border-border border-l-[5px] border-l-brand-sage bg-accent/60 p-5 shadow-[0_10px_28px_rgba(88,76,68,0.07)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:p-6"
               aria-label="후원 계좌 안내"
@@ -124,6 +103,27 @@ export default async function HomePage({
                   className="border-border bg-card text-primary hover:bg-primary/5"
                 />
               </div>
+            </section>
+
+            <section className="mt-10" aria-labelledby="waiting-dogs-heading">
+              <SectionHeading
+                id="waiting-dogs-heading"
+                title="가족을 기다리는 아이들"
+                description="아이의 사진을 눌러 자세한 이야기를 확인하세요."
+                href="/dogs"
+                linkLabel="전체 보기"
+              />
+              {dogs.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {dogs.map((dog) => (
+                    <HomeDogCard key={dog.id} dog={dog} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center text-sm text-muted-foreground">
+                  등록된 입양 대기 아이가 없습니다.
+                </div>
+              )}
             </section>
 
             <section className="mt-10" aria-labelledby="recent-community-heading">

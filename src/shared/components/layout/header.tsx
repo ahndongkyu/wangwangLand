@@ -83,7 +83,7 @@ export function Header({
         <Link
           href="/"
           className={cn(
-            "absolute left-1/2 min-w-0 -translate-x-1/2 items-center gap-2 md:gap-3",
+            "min-w-0 items-center gap-2 md:gap-3 lg:absolute lg:left-1/2 lg:-translate-x-1/2",
             mobileBackHref ? "hidden lg:flex" : "flex"
           )}
         >
