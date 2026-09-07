@@ -14,9 +14,18 @@ interface Props {
    * - "side": 벨 옆(오른쪽)으로 펼침 — PC 사이드바처럼 좌측에 위치할 때
    */
   align?: "right" | "side"
+  inline?: boolean
+  trigger?: React.ReactNode
+  triggerClassName?: string
 }
 
-export function AdminNotificationBell({ counts, align = "right" }: Props) {
+export function AdminNotificationBell({
+  counts,
+  align = "right",
+  inline = false,
+  trigger,
+  triggerClassName,
+}: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const hasItems = counts.total > 0
@@ -63,28 +72,43 @@ export function AdminNotificationBell({ counts, align = "right" }: Props) {
         type="button"
         onClick={() => hasItems && setOpen((v) => !v)}
         className={cn(
-          "relative flex size-9 items-center justify-center rounded-full transition-colors",
+          trigger
+            ? "block w-full rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+            : "relative flex size-9 items-center justify-center rounded-full transition-colors",
           hasItems
-            ? "text-foreground/70 hover:bg-secondary hover:text-foreground"
-            : "text-foreground/40 cursor-default"
+            ? trigger
+              ? "hover:bg-secondary/60"
+              : "text-foreground/70 hover:bg-secondary hover:text-foreground"
+            : trigger
+              ? "cursor-default"
+              : "cursor-default text-foreground/40",
+          triggerClassName
         )}
         aria-label={hasItems ? `처리 대기 알림 ${counts.total}건` : "대기 알림 없음"}
+        aria-expanded={open}
       >
-        <Bell className={cn("size-5", hasItems && "animate-bell-ring")} />
-        {hasItems && (
-          <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
-            {counts.total > 99 ? "99+" : counts.total}
-          </span>
+        {trigger ?? (
+          <>
+            <Bell className={cn("size-5", hasItems && "animate-bell-ring")} />
+            {hasItems && (
+              <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
+                {counts.total > 99 ? "99+" : counts.total}
+              </span>
+            )}
+          </>
         )}
       </button>
 
       {open && hasItems && (
         <div
           className={cn(
-            "absolute z-50 w-64 overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
-            align === "side"
+            "z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
+            inline
+              ? "mt-3 w-full"
+              : "absolute w-64",
+            !inline && align === "side"
               ? "left-full top-0 ml-2"
-              : "right-0 top-11"
+              : !inline && "right-0 top-11"
           )}
         >
           <div className="border-b border-border px-4 py-2.5">

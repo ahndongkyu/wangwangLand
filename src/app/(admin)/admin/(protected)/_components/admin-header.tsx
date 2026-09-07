@@ -3,7 +3,33 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { ChevronDown, ChevronLeft, ChevronRight, ExternalLink, LogOut, Menu as MenuIcon, Moon, Sun, User, X } from "lucide-react"
+import {
+  BadgeDollarSign,
+  CalendarDays,
+  Camera,
+  Cat,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Clock3,
+  Dog,
+  ExternalLink,
+  Gift,
+  HandHeart,
+  Heart,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  Menu as MenuIcon,
+  Moon,
+  Settings,
+  ShieldCheck,
+  Sun,
+  User,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react"
 import { useState } from "react"
 
 import { useTheme } from "@/shared/components/theme-provider"
@@ -23,7 +49,7 @@ import { Button } from "@/shared/components/ui/button"
 
 type NavGroup = {
   label: string
-  items: { label: string; href: string }[]
+  items: { label: string; href: string; icon: LucideIcon }[]
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -46,46 +72,48 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
     {
       label: "아이들 관리",
       items: [
-        { label: "강아지", href: "/admin/dogs" },
-        { label: "고양이", href: "/admin/cats" },
+        { label: "강아지", href: "/admin/dogs", icon: Dog },
+        { label: "고양이", href: "/admin/cats", icon: Cat },
       ],
     },
     {
       label: "게시글 관리",
       items: [
-        { label: "공지사항", href: "/admin/notices" },
-        { label: "일상", href: "/admin/daily" },
-        { label: "입양후기", href: "/admin/stories" },
-        { label: "후원 감사글", href: "/admin/thanks" },
+        { label: "공지사항", href: "/admin/notices", icon: Megaphone },
+        { label: "일상", href: "/admin/daily", icon: Camera },
+        { label: "입양후기", href: "/admin/stories", icon: Heart },
+        { label: "후원 감사글", href: "/admin/thanks", icon: Gift },
       ],
     },
     {
       label: "신청 관리",
       items: [
-        { label: "봉사 신청", href: "/admin/applications?type=volunteer" },
-        { label: "입양 신청", href: "/admin/applications?type=adoption" },
-        { label: "후원 내역", href: "/admin/donations" },
+        { label: "봉사 신청", href: "/admin/applications?type=volunteer", icon: HandHeart },
+        { label: "입양 신청", href: "/admin/applications?type=adoption", icon: ClipboardCheck },
+        { label: "후원 내역", href: "/admin/donations", icon: BadgeDollarSign },
       ],
     },
     {
       label: "일정",
       items: [
-        { label: "전체 일정", href: "/admin/calendar" },
-        { label: "운영진 일정", href: "/admin/schedule" },
+        { label: "전체 일정", href: "/admin/calendar", icon: CalendarDays },
+        { label: "운영진 일정", href: "/admin/schedule", icon: Clock3 },
       ],
     },
     {
       label: "회원",
       items: [
-        { label: "일반 회원", href: "/admin/members" },
-        ...(isTopAdmin ? [{ label: "운영진", href: "/admin/admins" }] : []),
+        { label: "일반 회원", href: "/admin/members", icon: Users },
+        ...(isTopAdmin
+          ? [{ label: "운영진", href: "/admin/admins", icon: ShieldCheck }]
+          : []),
       ],
     },
     ...(isTopAdmin
       ? [
           {
             label: "시스템",
-            items: [{ label: "사이트 설정", href: "/admin/settings" }],
+            items: [{ label: "사이트 설정", href: "/admin/settings", icon: Settings }],
           },
         ]
       : []),
@@ -111,7 +139,7 @@ function getAdminMobileBackHref(pathname: string): string | null {
 }
 
 // ────────────────────────────────────────────────────────────
-// PC 전용 사이드바 (다크 그린 플랫 메뉴)
+// PC 전용 사이드바
 // ────────────────────────────────────────────────────────────
 export function AdminSidebar({
   siteName,
@@ -138,107 +166,85 @@ export function AdminSidebar({
     return true
   }
 
-  // 활성 그룹은 기본 열림
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(
-      NAV_GROUPS.map((g) => [
-        g.label,
-        g.items.some((i) => pathname.startsWith(i.href.split("?")[0])),
-      ])
-    )
-  )
-
-  function toggleGroup(label: string) {
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
-  }
-
   return (
-    <aside className="fixed left-0 top-0 z-30 hidden h-screen w-[240px] flex-col bg-[#26382F] dark:bg-[#141a17] md:flex">
-      {/* 로고 + 알림벨 */}
-      <div className="flex items-center justify-between gap-2 px-5 py-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Image src={SITE.logo} alt={SITE.name} width={40} height={40} className="size-10 rounded-full" />
-          <div className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-[16px] font-bold text-white">{siteName}</span>
-            <span className="text-[10px] font-semibold uppercase tracking-[1px] text-[#91aa9a]">Admin</span>
-          </div>
-        </div>
-        <div className="shrink-0 [&_button]:text-[#d2ded6] [&_button:hover]:bg-white/[0.08]">
-          <AdminNotificationBell counts={pendingCounts} align="side" />
+    <aside className="fixed bottom-5 left-5 top-5 z-30 hidden w-[252px] flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#34433a] dark:bg-[#1d2722]">
+      <div className="rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]">
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/admin" className="flex min-w-0 items-center gap-3">
+            <Image
+              src={SITE.logo}
+              alt={SITE.name}
+              width={40}
+              height={40}
+              className="size-10 rounded-full"
+            />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate text-[15px] font-bold text-white">
+                {siteName}
+              </span>
+              <span className="mt-0.5 text-[10px] font-semibold tracking-[1px] text-[#a9c0b1]">
+                관리자
+              </span>
+            </span>
+          </Link>
+          <span className="shrink-0 [&_button]:text-[#d2ded6] [&_button:hover]:bg-white/[0.08]">
+            <AdminNotificationBell counts={pendingCounts} align="side" />
+          </span>
         </div>
       </div>
 
-      {/* 네비게이션 (스크롤 가능, 스크롤바 숨김) */}
-      <nav className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-3 pb-2">
-        {/* 대시보드 */}
-        <div className="mb-1">
+      <nav className="admin-sidebar-scroll mt-5 min-h-0 flex-1 overflow-y-auto" aria-label="관리자 메뉴">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/admin"
             className={cn(
-              "flex items-center rounded-lg px-3 py-2.5 text-[14px] font-medium transition-colors",
+              "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5",
               pathname === "/admin"
-                ? "bg-[#C96849] font-semibold text-white shadow-sm"
-                : "text-[#d8e3dc] hover:bg-white/[0.08]"
+                ? "bg-[#c96849] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
             )}
           >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] transition-transform duration-200 group-hover:scale-105">
+              <LayoutDashboard className="size-4" aria-hidden />
+            </span>
             대시보드
           </Link>
         </div>
 
-        {/* 그룹별 토글 메뉴 */}
-        {NAV_GROUPS.map((group) => {
-          const isOpen = !!openGroups[group.label]
-          return (
-            <div key={group.label} className="mt-4">
-              {/* 그룹 헤더 (캡션 스타일 — 클릭 시 토글) */}
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                className={cn(
-                  "flex w-full items-center justify-between border-b border-white/[0.06] px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[1px] transition-colors",
-                  isOpen
-                    ? "text-[#a9c0b1] hover:text-[#c7d6cc]"
-                    : "text-[#718a79] hover:text-[#9bb2a3]"
-                )}
-              >
-                {group.label}
-                <ChevronDown
-                  className={cn(
-                    "size-3 transition-transform duration-200",
-                    isOpen && "rotate-180"
-                  )}
-                />
-              </button>
-
-              {/* 메뉴 아이템 (들여쓰기 + 밝은 색) */}
-              {isOpen && (
-                <div className="mt-1 ml-2">
-                  {group.items.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center rounded-lg px-3 py-2.5 text-[14.5px] font-medium transition-colors",
-                        isActive(item.href)
-                          ? "bg-[#C96849] font-semibold text-white shadow-sm"
-                          : "text-[#e4ebe5] hover:bg-white/[0.07]"
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
+        {NAV_GROUPS.map((group) => (
+          <section key={group.label} className="mt-5">
+            <h2 className="px-2 text-[11px] font-semibold tracking-wide text-[#9db1a4]">
+              {group.label}
+            </h2>
+            <div className="mt-2 grid gap-1">
+              {group.items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all duration-200 hover:-translate-y-0.5",
+                      isActive(item.href)
+                        ? "bg-[#c96849] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                        : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                    )}
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-[#b8cbbf] transition-all duration-200 group-hover:scale-105 group-hover:text-white">
+                      <Icon className="size-4" aria-hidden />
+                    </span>
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
             </div>
-          )
-        })}
+          </section>
+        ))}
       </nav>
 
-      {/* 하단: 프로필 + 액션 버튼 */}
-      <div className="border-t border-white/[0.08] px-4 py-4">
-        {/* 프로필 */}
+      <div className="mt-4 rounded-[20px] border border-white/10 bg-white/[0.05] p-3">
         <div className="mb-3 flex items-center gap-3">
-          <div className="relative size-9 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">
+          <div className="relative size-10 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">
             {adminAvatarUrl ? (
               <Image src={adminAvatarUrl} alt={adminName} fill className="object-cover" />
             ) : (
@@ -249,16 +255,17 @@ export function AdminSidebar({
             <span className="inline-block rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold text-[#d2ded6]">
               {ROLE_LABEL[adminRole] ?? adminRole}
             </span>
-            <p className="truncate text-[13px] font-semibold text-white">{adminName}</p>
+            <p className="mt-1 break-all text-[13px] font-semibold leading-snug text-white">
+              {adminName}
+            </p>
           </div>
         </div>
 
-        {/* 액션 버튼 3열 그리드 */}
         <div className="grid grid-cols-3 gap-1">
           <Link
             href="/"
             target="_blank"
-            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#d8e3dc] hover:bg-white/[0.08] transition-colors"
+            className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#d8e3dc] transition-colors hover:bg-white/[0.08]"
           >
             <ExternalLink className="size-3.5" />
             메인사이트
@@ -266,7 +273,7 @@ export function AdminSidebar({
           <button
             type="button"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#d8e3dc] hover:bg-white/[0.08] transition-colors"
+            className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#d8e3dc] transition-colors hover:bg-white/[0.08]"
           >
             {resolvedTheme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             테마
@@ -274,7 +281,7 @@ export function AdminSidebar({
           <form action={logoutAction} className="contents">
             <button
               type="submit"
-              className="flex flex-col items-center gap-1 rounded-lg py-2 text-[10px] text-[#ff9b9b] hover:bg-white/[0.06] transition-colors"
+              className="flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-[#ffaaa2] transition-colors hover:bg-white/[0.08]"
             >
               <LogOut className="size-3.5" />
               로그아웃

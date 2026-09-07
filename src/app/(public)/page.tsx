@@ -1,10 +1,12 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowRight, ChevronRight, Eye, PenLine } from "lucide-react"
+import { ChevronRight, Eye, PenLine } from "lucide-react"
 
 import { fetchCommentCounts } from "@/features/comments"
 import { listDailyPosts } from "@/features/daily"
 import { listDogsForHome } from "@/features/dogs"
+import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
+import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
 import { listNotices } from "@/features/notices"
 import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
@@ -15,13 +17,30 @@ import type { Dog } from "@/shared/types/database"
 export const revalidate = 60
 
 const RECENT_POST_COUNT = 5
+const YM_RE = /^\d{4}-\d{2}$/
 
-export default async function HomePage() {
-  const [dogs, noticeResult, dailyResult, freeResult] = await Promise.all([
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ym?: string }>
+}) {
+  const params = await searchParams
+  const scheduleYearMonth =
+    params.ym && YM_RE.test(params.ym)
+      ? params.ym
+      : yearMonthKst(todayKst())
+  const scheduleRange = monthRange(scheduleYearMonth)
+
+  const [dogs, noticeResult, dailyResult, freeResult, scheduleEvents] = await Promise.all([
     listDogsForHome(4),
     listNotices({ limit: RECENT_POST_COUNT }),
     listDailyPosts({ board: "daily", limit: RECENT_POST_COUNT }),
     listDailyPosts({ board: "free", limit: RECENT_POST_COUNT }),
+    listEventsInRange({
+      from: scheduleRange.from,
+      to: scheduleRange.to,
+      categories: ["volunteer", "regular_volunteer", "closed"],
+    }),
   ])
 
   const dailyPostIds = [...dailyResult.posts, ...freeResult.posts].map(
@@ -48,23 +67,12 @@ export default async function HomePage() {
               />
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.97)_0%,rgba(250,242,233,0.87)_45%,rgba(246,239,229,0.18)_76%)] dark:bg-[linear-gradient(90deg,rgba(29,33,30,0.96)_0%,rgba(37,43,39,0.84)_45%,rgba(37,43,39,0.18)_76%)]" />
               <div className="relative flex min-h-[210px] max-w-xl flex-col items-start justify-center px-6 py-8 sm:min-h-[230px] sm:px-9 lg:px-10">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-card/85 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
-                  <BrandIcon name="heart" size={15} decorative />
-                  함께 만드는 새로운 시작
-                </span>
-                <h1 className="mt-4 max-w-md text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
+                <h1 className="max-w-md text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
                   기다림이 가족을 만나는 순간까지
                 </h1>
                 <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
                   왕왕랜드 아이들의 오늘을 가까이에서 만나보세요.
                 </p>
-                <Link
-                  href="/dogs"
-                  className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(201,112,82,0.22)] transition-all hover:-translate-y-0.5 hover:bg-brand-coral-hover"
-                >
-                  아이들 만나기
-                  <ArrowRight className="size-4" aria-hidden />
-                </Link>
               </div>
       </section>
 
@@ -181,6 +189,30 @@ export default async function HomePage() {
                   }))}
                 />
               </div>
+      </section>
+
+      <section
+        id="volunteer-calendar"
+        className="mt-10"
+        aria-labelledby="volunteer-calendar-heading"
+      >
+        <SectionHeading
+          id="volunteer-calendar-heading"
+          title="봉사 일정"
+          description="월별 봉사 일정과 휴무일을 확인하세요."
+          href="/calendar"
+          linkLabel="전체 일정"
+        />
+        <div className="rounded-2xl border border-border bg-secondary/35 p-3 shadow-[0_10px_28px_rgba(88,76,68,0.06)] sm:p-5">
+          <MonthNav yearMonth={scheduleYearMonth} basePath="/" />
+          <MonthGrid
+            yearMonth={scheduleYearMonth}
+            events={scheduleEvents}
+            hrefBase="/calendar"
+            maskNames
+            readOnly
+          />
+        </div>
       </section>
     </div>
   )

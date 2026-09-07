@@ -52,7 +52,7 @@ export default async function EventDetailPage({
     <div className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/calendar" className="hover:text-foreground">
-          ← 일정 목록
+          ← 캘린더
         </Link>
       </nav>
 

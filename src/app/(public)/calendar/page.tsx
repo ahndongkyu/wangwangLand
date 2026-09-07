@@ -1,87 +1,115 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { CalendarDays, LayoutGrid } from "lucide-react"
+import { CalendarDays, List } from "lucide-react"
 
 import {
-  EventCard,
-  listMyUpcomingEvents,
-  type EventWithSignupCount,
+  CategoryFilter,
+  listEventsInRange,
+  MonthGrid,
+  MonthNav,
+  type EventCategory,
 } from "@/features/events"
+import { monthRange, yearMonthKst, todayKst } from "@/features/events/lib/date"
 import { createClient } from "@/shared/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "일정",
-  description: "왕왕랜드의 봉사·행사 일정을 확인하고 신청해보세요.",
+  description: "왕왕랜드의 월별 봉사·행사 일정을 확인하세요.",
 }
 export const dynamic = "force-dynamic"
 
-export default async function CalendarPage() {
+const VALID_CATS: EventCategory[] = [
+  "volunteer",
+  "regular_volunteer",
+  "event",
+  "closed",
+  "custom",
+]
+const YM_RE = /^\d{4}-\d{2}$/
+
+function parseCategories(raw: string | undefined): EventCategory[] {
+  if (!raw) return []
+  return raw
+    .split(",")
+    .map((value) => value.trim() as EventCategory)
+    .filter((category) => VALID_CATS.includes(category))
+}
+
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ym?: string; cat?: string }>
+}) {
+  const params = await searchParams
+  const yearMonth =
+    params.ym && YM_RE.test(params.ym) ? params.ym : yearMonthKst(todayKst())
+  const categories = parseCategories(params.cat)
+
   const supabase = await createClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // 로그인하지 않은 사용자는 일정 페이지 접근 불가.
   if (!session?.user) redirect("/login")
 
-  // 본인이 신청한 일정만 (마스킹 안 함, 본인 일정이라 OK)
-  const isMember = true
-  const myEvents = await listMyUpcomingEvents()
-  const events: EventWithSignupCount[] = myEvents.map((e) => ({
-    ...e,
-    signup_count: 0,
-  }))
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .maybeSingle()
+  const isStaff = profile?.role === "admin" || profile?.role === "staff"
+
+  const { from, to } = monthRange(yearMonth)
+  const events = await listEventsInRange({
+    from,
+    to,
+    categories: categories.length > 0 ? categories : undefined,
+    includeInternal: isStaff,
+  })
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:py-16">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
+    <div className="mx-auto w-full max-w-5xl px-3 py-7 sm:px-4 sm:py-12 md:py-16">
+      <header className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:flex-wrap">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold text-foreground md:text-4xl">
-            <CalendarDays className="size-7 text-primary" aria-hidden />
-            {isMember ? "내 일정" : "일정"}
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground sm:text-3xl md:text-4xl">
+            <CalendarDays className="size-6 text-primary sm:size-7" aria-hidden />
+            일정
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isMember
-              ? "내가 신청한 봉사·행사 일정입니다. 전체 일정은 캘린더에서 확인하세요."
-              : "다가오는 봉사·행사를 확인하고 참여를 신청해 주세요."}
+          <p className="mt-1.5 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+            월별 봉사·행사 일정을 확인하세요.
           </p>
         </div>
         <Link
-          href="/calendar/grid"
-          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          href="/calendar/list"
+          className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:gap-1.5 sm:px-3 sm:text-xs"
         >
-          <LayoutGrid className="size-3.5" aria-hidden />
-          캘린더로 보기
+          <List className="size-3.5" aria-hidden />
+          내 일정
         </Link>
       </header>
 
-      {events.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            {isMember
-              ? "아직 신청한 일정이 없습니다."
-              : "예정된 일정이 없습니다."}
-          </p>
-          {isMember && (
-            <Link
-              href="/calendar/grid"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
-            >
-              <LayoutGrid className="size-3.5" aria-hidden />
-              전체 일정 보러가기
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {events.map((ev) => (
-            // 본인 신청 일정은 마스킹 안 함 (본인 정보 본인이 보는 거라 OK).
-            // 게스트일 때만 마스킹.
-            <EventCard key={ev.id} event={ev} maskNames={!isMember} />
-          ))}
-        </div>
-      )}
+      <MonthNav
+        yearMonth={yearMonth}
+        basePath="/calendar"
+        searchParams={{
+          cat: categories.length > 0 ? categories.join(",") : undefined,
+        }}
+      />
+
+      <CategoryFilter
+        active={categories}
+        basePath="/calendar"
+        searchParams={{ ym: yearMonth }}
+      />
+
+      <MonthGrid
+        yearMonth={yearMonth}
+        events={events}
+        hrefBase={isStaff ? "/admin/calendar" : "/calendar"}
+        maskNames={false}
+        readOnly={!isStaff}
+      />
     </div>
   )
 }

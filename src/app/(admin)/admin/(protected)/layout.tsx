@@ -31,7 +31,7 @@ export default async function AdminProtectedLayout({
       <AdminSidebar {...sharedProps} pendingCounts={pendingCounts} />
 
       {/* 콘텐츠 영역 */}
-      <div className="flex min-w-0 flex-1 flex-col bg-background md:pl-[240px]">
+      <div className="flex min-w-0 flex-1 flex-col bg-background md:pl-[284px]">
         {/* 모바일 헤더 — md 이상에서 숨김 */}
         <AdminMobileHeader {...sharedProps} pendingCounts={pendingCounts} />
 

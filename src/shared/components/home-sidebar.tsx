@@ -58,6 +58,9 @@ export function HomeSidebar({
   const selectedItems = favorites
     .map((key) => HOME_FAVORITE_OPTIONS.find((item) => item.key === key))
     .filter((item): item is (typeof HOME_FAVORITE_OPTIONS)[number] => !!item)
+  const hasSidebarNotification = pendingCounts
+    ? pendingCounts.total > 0
+    : unreadNotificationCount > 0
 
   function openEditor() {
     setDraft(favorites)
@@ -145,42 +148,35 @@ export function HomeSidebar({
         aria-label="회원 및 게시판 메뉴"
       >
         <div className="space-y-5">
-          <section className="rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)]">
+          <section
+            className={cn(
+              "rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)]",
+              hasSidebarNotification &&
+                "animate-profile-notification-glow border-primary/70"
+            )}
+          >
             {profile ? (
               <>
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted">
-                    {profile.avatar_url ? (
-                      <Image
-                        src={profile.avatar_url}
-                        alt={profile.nickname}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <User className="size-full p-2.5 text-primary" aria-hidden />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-foreground">
-                      {profile.nickname}님
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {ROLE_LABEL[profile.role]}
-                    </p>
-                  </div>
-                  <div className="ml-auto shrink-0">
-                    {pendingCounts ? (
-                      <AdminNotificationBell counts={pendingCounts} align="side" />
-                    ) : (
-                      <UserNotificationBell
-                        notifications={userNotifications}
-                        unreadCount={unreadNotificationCount}
-                      />
-                    )}
-                  </div>
-                </div>
+                {pendingCounts ? (
+                  pendingCounts.total > 0 ? (
+                    <AdminNotificationBell
+                      counts={pendingCounts}
+                      inline
+                      trigger={<SidebarProfileIdentity profile={profile} />}
+                      triggerClassName="p-1"
+                    />
+                  ) : (
+                    <SidebarProfileIdentity profile={profile} />
+                  )
+                ) : (
+                  <UserNotificationBell
+                    notifications={userNotifications}
+                    unreadCount={unreadNotificationCount}
+                    inline
+                    trigger={<SidebarProfileIdentity profile={profile} />}
+                    triggerClassName="p-1"
+                  />
+                )}
                 <Link
                   href="/my"
                   className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-border bg-background/70 px-3 text-sm font-semibold text-foreground/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_7px_16px_rgba(88,76,68,0.10)]"
@@ -299,6 +295,34 @@ export function HomeSidebar({
       </section>
       )}
     </>
+  )
+}
+
+function SidebarProfileIdentity({ profile }: { profile: Profile }) {
+  return (
+    <span className="flex w-full min-w-0 items-center gap-3">
+      <span className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted">
+        {profile.avatar_url ? (
+          <Image
+            src={profile.avatar_url}
+            alt={profile.nickname}
+            fill
+            sizes="48px"
+            className="object-cover"
+          />
+        ) : (
+          <User className="size-full p-2.5 text-primary" aria-hidden />
+        )}
+      </span>
+      <span className="min-w-0 flex-1 text-left">
+        <span className="block break-all font-semibold leading-snug text-foreground">
+          {profile.nickname}님
+        </span>
+        <span className="mt-1 block text-xs text-muted-foreground">
+          {ROLE_LABEL[profile.role]}
+        </span>
+      </span>
+    </span>
   )
 }
 

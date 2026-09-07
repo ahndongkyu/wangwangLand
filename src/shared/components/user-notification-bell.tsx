@@ -47,9 +47,20 @@ function notifPath(n: UserNotification): string {
 interface Props {
   notifications: UserNotification[]
   unreadCount: number
+  align?: "right" | "side"
+  inline?: boolean
+  trigger?: React.ReactNode
+  triggerClassName?: string
 }
 
-export function UserNotificationBell({ notifications, unreadCount }: Props) {
+export function UserNotificationBell({
+  notifications,
+  unreadCount,
+  align = "right",
+  inline = false,
+  trigger,
+  triggerClassName,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
@@ -79,6 +90,8 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
   function handleMarkAll() {
     startTransition(async () => {
       await markAllNotificationsRead()
+      setOpen(false)
+      router.refresh()
     })
   }
 
@@ -87,21 +100,40 @@ export function UserNotificationBell({ notifications, unreadCount }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
+        className={cn(
+          trigger
+            ? "block w-full rounded-xl text-left outline-none transition-colors hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring"
+            : "relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground",
+          triggerClassName
+        )}
         aria-label={unreadCount > 0 ? `알림 ${unreadCount}개` : "알림"}
+        aria-expanded={open}
       >
-        <Bell
-          className={cn("size-5", unreadCount > 0 && "animate-bell-ring")}
-        />
-        {unreadCount > 0 && (
-          <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+        {trigger ?? (
+          <>
+            <Bell
+              className={cn("size-5", unreadCount > 0 && "animate-bell-ring")}
+            />
+            {unreadCount > 0 && (
+              <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-72 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+        <div
+          className={cn(
+            "z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg",
+            inline
+              ? "mt-3 w-full"
+              : "absolute top-11 w-72",
+            !inline && align === "right" && "right-0",
+            !inline && align === "side" && "left-full top-0 ml-2"
+          )}
+        >
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
             <p className="text-xs font-semibold text-muted-foreground">알림</p>
             {unreadCount > 0 && (
