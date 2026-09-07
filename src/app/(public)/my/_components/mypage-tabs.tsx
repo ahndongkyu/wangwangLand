@@ -31,11 +31,21 @@ interface LikedAnimal {
   kind: "dog" | "cat"
 }
 
+export interface MyPostItem {
+  id: string
+  title: string
+  date: string
+  label: string
+  href: string
+  kind: "daily" | "story"
+}
+
 interface Props {
   volunteers: VolunteerApp[]
   adoptions: AdoptionApp[]
   donations: Donation[]
   likedAnimals: LikedAnimal[]
+  myPosts: MyPostItem[]
 }
 
 const STATUS_STYLE: Record<ApplicationStatus, string> = {
@@ -55,12 +65,13 @@ function formatDate(iso: string) {
   })
 }
 
-export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals }: Props) {
-  const [active, setActive] = useState<"apps" | "donations" | "likes">("apps")
+export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myPosts }: Props) {
+  const [active, setActive] = useState<"apps" | "posts" | "donations" | "likes">("apps")
 
   const totalApps = volunteers.length + adoptions.length
   const tabs = [
     { key: "apps" as const, label: "신청 내역", count: totalApps },
+    { key: "posts" as const, label: "내가 쓴 글", count: myPosts.length },
     { key: "donations" as const, label: "후원 내역", count: donations.length },
     { key: "likes" as const, label: "찜한 아이들", count: likedAnimals.length },
   ]
@@ -135,6 +146,38 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals }: P
                   <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold", STATUS_STYLE[a.status])}>
                     {a.status}
                   </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 내가 쓴 글 */}
+      {active === "posts" && (
+        <div>
+          {myPosts.length === 0 ? (
+            <EmptyState icon="📝" message="아직 작성한 글이 없습니다." href="/daily/new" cta="첫 글 쓰기" />
+          ) : (
+            <div className="divide-y divide-border">
+              {myPosts.map((post) => (
+                <Link
+                  key={`${post.kind}:${post.id}`}
+                  href={post.href}
+                  className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40"
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-base">
+                    {post.kind === "story" ? "🏠" : "📝"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {post.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {post.label} · {formatDate(post.date)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-primary">보기</span>
                 </Link>
               ))}
             </div>

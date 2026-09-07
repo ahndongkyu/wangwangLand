@@ -42,7 +42,7 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Wangwangland brand palette (warm · earthy) */
+  /* Wangwangland brand palette (warm · clear · lively) */
   --color-brand-cream: var(--brand-cream);
   --color-brand-ivory: var(--brand-ivory);
   --color-brand-coral: var(--brand-coral);
@@ -62,13 +62,13 @@
 
 :root {
   /* Brand palette (source of truth) */
-  --brand-cream: oklch(0.956 0.018 85);       /* #F5EFE4 — page bg */
-  --brand-ivory: oklch(0.975 0.012 85);       /* #FAF7F0 — card bg */
-  --brand-coral: oklch(0.745 0.12 50);        /* #E89B6C — CTA */
-  --brand-coral-hover: oklch(0.69 0.135 48);  /* 살짝 진한 코랄 */
-  --brand-sage: oklch(0.745 0.032 130);       /* #A8B89A — accent */
-  --brand-brown: oklch(0.27 0.03 45);         /* #3D2E25 — text */
-  --brand-warm-gray: oklch(0.705 0.025 70);   /* #B8A99A — muted */
+  --brand-cream: #fff9f3;       /* page bg */
+  --brand-ivory: #ffffff;       /* card bg */
+  --brand-coral: #e89273;       /* CTA */
+  --brand-coral-hover: #db8263;
+  --brand-sage: #a9c7b5;        /* accent */
+  --brand-brown: #46534d;       /* text */
+  --brand-warm-gray: #7e8b84;   /* muted */
 
   /* Shadcn semantic tokens mapped to brand */
   --background: var(--brand-cream);
@@ -78,68 +78,68 @@
   --popover: var(--brand-ivory);
   --popover-foreground: var(--brand-brown);
   --primary: var(--brand-coral);
-  --primary-foreground: oklch(0.99 0.005 85);
-  --secondary: oklch(0.92 0.018 82);          /* cream 변형 (더 어두움) */
+  --primary-foreground: #ffffff;
+  --secondary: #f7f2e9;
   --secondary-foreground: var(--brand-brown);
-  --muted: oklch(0.93 0.014 82);
+  --muted: #f5f1ec;
   --muted-foreground: var(--brand-warm-gray);
-  --accent: var(--brand-sage);
+  --accent: #edf3ee;
   --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.9 0.02 82);
+  --border: #eadfd5;
+  --input: #ded3ca;
   --ring: var(--brand-coral);
   --chart-1: var(--brand-coral);
-  --chart-2: var(--brand-sage);
+  --chart-2: #84ac94;
   --chart-3: var(--brand-warm-gray);
   --chart-4: oklch(0.6 0.1 50);
   --chart-5: oklch(0.45 0.04 45);
   --radius: 0.75rem;
-  --sidebar: var(--brand-ivory);
+  --sidebar: #edf2ea;
   --sidebar-foreground: var(--brand-brown);
   --sidebar-primary: var(--brand-coral);
-  --sidebar-primary-foreground: oklch(0.99 0.005 85);
-  --sidebar-accent: oklch(0.93 0.014 82);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: oklch(0.88 0.02 80);
+  --sidebar-border: #dedfd4;
   --sidebar-ring: var(--brand-coral);
 }
 
 .dark {
-  /* Brand palette — warm dark (#1A1410 base) */
-  --brand-cream: oklch(0.134 0.022 55);      /* #1A1410 — page bg     */
-  --brand-ivory: oklch(0.180 0.025 55);      /* #241C15 — card        */
-  --brand-coral: oklch(0.762 0.120 48);      /* #F0A078 — CTA (밝게)  */
-  --brand-coral-hover: oklch(0.800 0.128 46);
-  --brand-sage: oklch(0.820 0.055 145);      /* #B8D4A8 — accent      */
-  --brand-brown: oklch(0.930 0.032 82);      /* #F5E8D0 — 제목        */
-  --brand-warm-gray: oklch(0.624 0.042 68);  /* #A89078 — 설명 라벨   */
+  /* Brand palette — warm forest dark */
+  --brand-cream: #1d211e;
+  --brand-ivory: #252b27;
+  --brand-coral: #e8a086;
+  --brand-coral-hover: #f0ad93;
+  --brand-sage: #9fbea9;
+  --brand-brown: #f2eee9;
+  --brand-warm-gray: #a8b1aa;
 
   --background: var(--brand-cream);
   --foreground: var(--brand-brown);
   --card: var(--brand-ivory);
-  --card-foreground: oklch(0.882 0.035 80);  /* #E8D9C0 — 본문        */
-  --popover: oklch(0.220 0.027 55);          /* #2D221A — 드롭다운    */
+  --card-foreground: #e5e9e5;
+  --popover: #2a312c;
   --popover-foreground: var(--brand-brown);
   --primary: var(--brand-coral);
-  --primary-foreground: oklch(0.134 0.022 55);
-  --secondary: oklch(0.220 0.027 55);        /* #2D221A — hover bg    */
-  --secondary-foreground: oklch(0.763 0.042 76); /* #C9B89A            */
-  --muted: oklch(0.220 0.027 55);
+  --primary-foreground: #1d211e;
+  --secondary: #303832;
+  --secondary-foreground: #d4ddd6;
+  --muted: #303832;
   --muted-foreground: var(--brand-warm-gray);
-  --accent: var(--brand-sage);
+  --accent: #35423a;
   --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.270 0.030 55);           /* #3A2E23 — 구분선      */
-  --input: oklch(0.300 0.030 55);
+  --border: #3c463f;
+  --input: #465149;
   --ring: var(--brand-coral);
   --sidebar: var(--brand-ivory);
   --sidebar-foreground: var(--brand-brown);
   --sidebar-primary: var(--brand-coral);
-  --sidebar-primary-foreground: oklch(0.134 0.022 55);
-  --sidebar-accent: oklch(0.220 0.027 55);
+  --sidebar-primary-foreground: #1d211e;
+  --sidebar-accent: #303832;
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: oklch(0.270 0.030 55);
+  --sidebar-border: #3c463f;
   --sidebar-ring: var(--brand-coral);
 }
 
@@ -343,25 +343,57 @@
 }
 
 /* ────────────────────────────────────────────────────────────
- * 관리자 페이지 전용 다크모드 색상 (중성 다크 톤)
- * 메인사이트는 기존 따뜻한 다크 유지, 관리자만 차분한 중성 다크
+ * 관리자 페이지 전용 색상
+ * 공개 화면보다 진한 포레스트·코랄로 운영 영역을 명확히 구분한다.
  * ──────────────────────────────────────────────────────────── */
-.dark [data-admin-scope] {
-  --background: oklch(0.156 0.008 245);          /* #13161a — 컨텐츠 배경 */
-  --foreground: oklch(0.922 0.005 245);          /* #e4e6e9 — 본문 텍스트 */
-  --card: oklch(0.192 0.008 245);                /* #1e2226 — 카드 배경 */
-  --card-foreground: oklch(0.922 0.005 245);     /* #e4e6e9 */
-  --popover: oklch(0.192 0.008 245);             /* #1e2226 */
-  --popover-foreground: oklch(0.922 0.005 245);
-  --primary: oklch(0.745 0.110 50);              /* #F89968 — 살짝 톤다운 오렌지 */
-  --primary-foreground: oklch(0.156 0.008 245);
-  --secondary: oklch(0.220 0.010 245);           /* #262a30 — hover bg */
-  --secondary-foreground: oklch(0.795 0.008 245);
-  --muted: oklch(0.220 0.010 245);
-  --muted-foreground: oklch(0.620 0.012 245);    /* #8b9099 — 보조 텍스트 */
-  --accent: oklch(0.745 0.110 50);
-  --accent-foreground: oklch(0.156 0.008 245);
-  --border: oklch(0.260 0.010 245);              /* #2a2f35 — 카드 보더 */
-  --input: oklch(0.290 0.010 245);
-  --ring: oklch(0.745 0.110 50);
+[data-admin-scope],
+body:has([data-admin-scope]) {
+  --background: #eef1ec;
+  --foreground: #2b3630;
+  --card: #fbfcfa;
+  --card-foreground: #2b3630;
+  --popover: #ffffff;
+  --popover-foreground: #2b3630;
+  --primary: #c96849;
+  --primary-foreground: #ffffff;
+  --secondary: #dde7df;
+  --secondary-foreground: #2b3630;
+  --muted: #e5ebe6;
+  --muted-foreground: #66756d;
+  --accent: #d5e2d8;
+  --accent-foreground: #26382f;
+  --border: #cdd7d0;
+  --input: #becbc2;
+  --ring: #c96849;
+  --chart-1: #c96849;
+  --chart-2: #78927f;
+  --chart-3: #d6a95e;
+  --chart-4: #697f9e;
+  --chart-5: #9b765f;
+}
+
+.dark [data-admin-scope],
+.dark body:has([data-admin-scope]) {
+  --background: #141a17;
+  --foreground: #e7ece8;
+  --card: #1d2722;
+  --card-foreground: #e7ece8;
+  --popover: #222e27;
+  --popover-foreground: #e7ece8;
+  --primary: #df805e;
+  --primary-foreground: #171d19;
+  --secondary: #29362f;
+  --secondary-foreground: #d0dad3;
+  --muted: #29362f;
+  --muted-foreground: #95a69b;
+  --accent: #34463b;
+  --accent-foreground: #edf2ee;
+  --border: #34433a;
+  --input: #405148;
+  --ring: #df805e;
+  --chart-1: #df805e;
+  --chart-2: #91b09b;
+  --chart-3: #e0b56b;
+  --chart-4: #8ea4c1;
+  --chart-5: #c3987e;
 }

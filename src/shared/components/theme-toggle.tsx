@@ -18,7 +18,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         "inline-flex size-9 items-center justify-center rounded-full border transition-all duration-200 hover:scale-105",
         isDark
           ? "border-border bg-foreground text-background hover:bg-foreground/90"
-          : "border-[#D5C9B5] bg-transparent text-foreground/70 hover:border-[#E89B5E] hover:bg-[#FCE9D9] hover:text-foreground",
+          : "border-border bg-transparent text-foreground/70 hover:border-primary hover:bg-primary/10 hover:text-foreground",
         className
       )}
     >

@@ -65,7 +65,17 @@ export interface Notice {
   view_count: number
 }
 
-export type DailyCategory = "구조 소식" | "봉사 현장" | "시설 안내" | "일상" | "입소" | "임시보호" | "후원 소식" | "봉사 후기"
+export type DailyCategory =
+  | "구조 소식"
+  | "봉사 현장"
+  | "시설 안내"
+  | "일상"
+  | "입소"
+  | "임시보호"
+  | "후원 소식"
+  | "봉사 후기"
+  | "자유게시판"
+  | "질문 및 답변"
 
 export interface DailyPost {
   id: string

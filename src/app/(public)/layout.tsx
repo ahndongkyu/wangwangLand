@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { listRecentPublishedNotices } from "@/features/notices"
-import { getCurrentProfile } from "@/features/members"
+import { getCurrentProfile, listMyHomeFavorites } from "@/features/members"
 import { getMyApplicationSummary } from "@/features/applications"
 import { getEventTitle, listMyUpcomingEvents } from "@/features/events"
 import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
@@ -11,8 +11,10 @@ import { listMyNotifications, getUnreadCount } from "@/features/notifications/ap
 import { Footer } from "@/shared/components/layout/footer"
 import { MobileFooter } from "@/shared/components/layout/footer-mobile"
 import { Header } from "@/shared/components/layout/header"
+import { PublicShell } from "@/shared/components/layout/public-shell"
 import { MobileCtaBar } from "@/shared/components/mobile-cta-bar"
-import { KakaoChannelButton } from "@/shared/components/kakao-channel-button"
+import { ScrollToTopButton } from "@/shared/components/kakao-channel-button"
+import { HomeSidebar } from "@/shared/components/home-sidebar"
 import { AutoPushPrompt } from "@/features/push"
 
 // 헤더의 NEW 뱃지·알림 등은 1분 캐시 허용 — 첫 페이지 로드 빨라짐.
@@ -48,9 +50,10 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [recentNotices, profile] = await Promise.all([
+  const [recentNotices, profile, homeFavorites] = await Promise.all([
     listRecentPublishedNotices(20),
     getCurrentProfile(),
+    listMyHomeFavorites(),
   ])
 
   if (profile && profile.status === "approved" && !profile.is_banned) {
@@ -109,7 +112,7 @@ export default async function PublicLayout({
     : null
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div data-public-scope className="flex min-h-screen flex-col bg-background">
       <Header
         recentNotices={recentNotices}
         profile={profile}
@@ -118,11 +121,22 @@ export default async function PublicLayout({
         unreadNotificationCount={unreadNotificationCount}
         mobileMemberSummary={mobileMemberSummary}
       />
-      {/* 모바일 하단 CTA 바와 겹치지 않도록 main 하단에 padding */}
-      <main className="flex-1 pb-24 md:pb-0">{children}</main>
+      <PublicShell
+        sidebar={
+          <HomeSidebar
+            profile={profile}
+            initialFavorites={homeFavorites}
+            pendingCounts={pendingCounts}
+            userNotifications={userNotifications}
+            unreadNotificationCount={unreadNotificationCount}
+          />
+        }
+      >
+        {children}
+      </PublicShell>
       <div className="md:hidden"><MobileFooter /></div>
       <div className="hidden md:block"><Footer /></div>
-      <KakaoChannelButton />
+      <ScrollToTopButton />
       <MobileCtaBar />
       {/* 마케팅 동의자에게 자동 푸시 권한 요청 (UI 없음) */}
       <AutoPushPrompt marketingAgreed={!!profile?.marketing_agreed_at} />

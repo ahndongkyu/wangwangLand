@@ -13,11 +13,10 @@ const MOBILE_LINKS = [
 
 export function MobileFooter() {
   const year = new Date().getFullYear()
-  const d = SITE.donation
   const phones = SITE.contact.phones.filter((p) => p.number)
 
   return (
-    <footer className="bg-[#F5EFE4] px-5 py-6 dark:border-t dark:border-[#3A3229] dark:bg-[#2B2520]">
+    <footer className="border-t border-border bg-[linear-gradient(110deg,var(--secondary)_0%,var(--accent)_100%)] px-5 py-6">
 
       {/* 로고 + 브랜드 */}
       <div className="mb-4 flex items-center gap-2.5">
@@ -29,48 +28,27 @@ export function MobileFooter() {
           className="size-8 rounded-full"
         />
         <div>
-          <div className="text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+          <div className="text-sm font-semibold text-foreground">
             {SITE.name}
           </div>
-          <div className="text-[10px] text-[#6B5D4F] dark:text-[#B8A78F]">
+          <div className="text-[10px] text-muted-foreground">
             {SITE.subtitle}
           </div>
         </div>
       </div>
 
       {/* 주소 박스 */}
-      <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
+      <div className="mb-3 rounded-xl border border-border bg-card/75 p-3.5">
         <div className="flex items-start gap-2">
           <PinIcon />
           <div className="text-xs leading-relaxed">
-            <div className="text-[#3D3A35] dark:text-[#F5EDE0]">
+            <div className="text-foreground/80">
               {SITE.contact.addressShort}
             </div>
-            <div className="text-[#6B5D4F] dark:text-[#B8A78F]">
+            <div className="text-muted-foreground">
               유기견보호소 {SITE.name}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* 계좌 후원 */}
-      <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
-            계좌 후원
-          </span>
-          <span className="text-[10px] text-[#9B8F80] dark:text-[#B8A78F]">
-            예금주 · {d.accountHolder}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="shrink-0 rounded-md bg-[#FAF3E8] px-2 py-0.5 text-[10px] font-medium text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.1)] dark:text-[#FFD4A1]">
-            {d.bankName}
-          </span>
-          <span className="min-w-0 flex-1 truncate font-mono text-[13px] font-semibold tracking-wide text-[#2C2C2A] dark:text-[#F5EDE0]">
-            {d.accountNumber}
-          </span>
-          <CopyButton value={d.accountNumber} label="계좌번호" />
         </div>
       </div>
 
@@ -80,7 +58,7 @@ export function MobileFooter() {
           <Link
             key={link.href}
             href={link.href}
-            className="flex items-center justify-center rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#5F5048] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+            className="flex items-center justify-center rounded-lg border border-border bg-card/70 py-2.5 text-[11px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-card"
           >
             {link.label} →
           </Link>
@@ -89,19 +67,19 @@ export function MobileFooter() {
 
       {/* 연락처 (번호 있을 때만) */}
       {phones.length > 0 && (
-        <div className="mb-3 rounded-[10px] border-[0.5px] border-[#E8DDCF] bg-[#FDFAF5] p-3.5 dark:border-[rgba(255,212,161,0.08)] dark:bg-black/25">
-          <p className="mb-1.5 text-[10px] font-semibold tracking-wide text-[#9B8F80] dark:text-[#B8A78F]">
+        <div className="mb-3 rounded-xl border border-border bg-card/75 p-3.5">
+          <p className="mb-1.5 text-[10px] font-semibold tracking-wide text-muted-foreground">
             연락처
           </p>
           <ul className="flex flex-col gap-1.5">
             {phones.map((p) => (
               <li key={p.label} className="flex items-center gap-2 text-xs">
-                <span className="w-14 shrink-0 text-[10px] text-[#9B8F80] dark:text-[#B8A78F]">
+                <span className="w-14 shrink-0 text-[10px] text-muted-foreground">
                   {p.label}
                 </span>
                 <a
                   href={`tel:${p.number}`}
-                  className="text-[#2C2C2A] hover:text-[#C06B2A] dark:text-[#F5EDE0]"
+                  className="text-foreground/80 hover:text-primary"
                 >
                   {p.number}
                 </a>
@@ -113,14 +91,25 @@ export function MobileFooter() {
       )}
 
       {/* SNS */}
-      {(SITE.sns.naverCafe || SITE.sns.instagram || SITE.sns.youtube) && (
-        <div className="mb-3 grid grid-cols-2 gap-2.5">
+      {(SITE.sns.kakaoChannel || SITE.sns.naverCafe || SITE.sns.instagram || SITE.sns.youtube) && (
+        <div className="mb-3 grid grid-cols-3 gap-2">
+          {SITE.sns.kakaoChannel && (
+            <a
+              href={SITE.sns.kakaoChannel}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 rounded-lg border border-[#F0D900] bg-[#FEE500] py-2.5 text-[10px] font-medium text-[#3C1E1E] transition-colors hover:bg-[#FFEA32]"
+            >
+              <KakaoIcon />
+              카카오톡
+            </a>
+          )}
           {SITE.sns.naverCafe && (
             <a
               href={SITE.sns.naverCafe}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+              className="flex items-center justify-center gap-1 rounded-lg border border-border bg-card/70 py-2.5 text-[10px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-card"
             >
               <NaverIcon />
               네이버 카페
@@ -131,7 +120,7 @@ export function MobileFooter() {
               href={SITE.sns.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+              className="flex items-center justify-center gap-1 rounded-lg border border-border bg-card/70 py-2.5 text-[10px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-card"
             >
               <InstagramIcon />
               인스타그램
@@ -142,7 +131,7 @@ export function MobileFooter() {
               href={SITE.sns.youtube}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 rounded-lg border-[0.5px] border-[#E2D6C8] bg-[#F7F2EA] py-2.5 text-[11px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.15)] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#F5EDE0]"
+              className="flex items-center justify-center gap-1 rounded-lg border border-border bg-card/70 py-2.5 text-[10px] font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:bg-card"
             >
               <YouTubeIcon />
               유튜브
@@ -152,14 +141,14 @@ export function MobileFooter() {
       )}
 
       {/* 구분선 */}
-      <div className="my-3.5 h-px bg-[#D5C9B5] dark:bg-[#3A3229]" />
+      <div className="my-3.5 h-px bg-border" />
 
       {/* 저작권 */}
       <div className="text-center">
-        <p className="mb-1.5 text-[10px] text-[#6B5D4F] dark:text-[#B8A78F]">
+        <p className="mb-1.5 text-[10px] text-muted-foreground">
           © {year} {SITE.name}. All rights reserved.
         </p>
-        <div className="flex items-center justify-center gap-3 text-[10px] text-[#9B8F80]">
+        <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
           {FOOTER_LEGAL.map((item, i) => (
             <span key={item.href} className="flex items-center gap-3">
               {i > 0 && <span aria-hidden>·</span>}
@@ -186,7 +175,7 @@ function PinIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-0.5 shrink-0 stroke-[#C06B2A] dark:stroke-[#FFD4A1]"
+      className="mt-0.5 shrink-0 stroke-primary"
       aria-hidden
     >
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -203,6 +192,17 @@ function NaverIcon() {
     >
       N
     </span>
+  )
+}
+
+function KakaoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 3C6.48 3 2 6.45 2 10.7c0 2.75 1.88 5.16 4.7 6.52l-1.2 3.53a.45.45 0 0 0 .68.51l4.15-2.74c.54.08 1.1.12 1.67.12 5.52 0 10-3.45 10-7.94S17.52 3 12 3Z"
+        fill="currentColor"
+      />
+    </svg>
   )
 }
 

@@ -10,6 +10,11 @@ import {
   validateKoreanMobilePhone,
   validateNickname,
 } from "@/shared/lib/validation"
+import {
+  HOME_FAVORITE_OPTIONS,
+  isHomeFavoriteKey,
+  type HomeFavoriteKey,
+} from "@/shared/constants/home-navigation"
 
 /** 카카오 OAuth URL 반환 — Supabase를 거치지 않고 카카오 직접 연동 */
 export async function getKakaoLoginUrl(): Promise<string | null> {
@@ -207,6 +212,38 @@ export async function updateMarketingConsent(agree: boolean): Promise<{ error?: 
 
   revalidatePath("/", "layout")
   return {}
+}
+
+export async function updateHomeFavorites(
+  items: string[]
+): Promise<{ error?: string; items?: HomeFavoriteKey[] }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
+
+  const uniqueItems = [...new Set(items)]
+  if (
+    uniqueItems.length === 0 ||
+    uniqueItems.length > HOME_FAVORITE_OPTIONS.length ||
+    !uniqueItems.every(isHomeFavoriteKey)
+  ) {
+    return { error: "즐겨찾기는 한 개 이상 선택해주세요." }
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      favorite_menu_items: uniqueItems,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id)
+
+  if (error) return { error: "즐겨찾기 저장에 실패했습니다." }
+
+  revalidatePath("/")
+  return { items: uniqueItems }
 }
 
 /** 약관 재동의 — 기존 회원이 약관 미동의 또는 버전 불일치 시 동의 시각/버전 갱신 */

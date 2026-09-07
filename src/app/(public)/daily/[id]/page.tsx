@@ -28,7 +28,7 @@ export async function generateMetadata({
     title: post.title,
     description: desc,
     openGraph: {
-      title: `${post.title} · 왕왕랜드 일상`,
+      title: `${post.title} · 일상`,
       description: desc,
       type: "article",
       publishedTime: post.posted_at,
@@ -36,7 +36,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${post.title} · 왕왕랜드 일상`,
+      title: `${post.title} · 일상`,
       description: desc,
       images: cover ? [cover] : undefined,
     },
@@ -124,7 +124,7 @@ export default async function DailyDetailPage({
       <div className="mt-8 flex justify-center">
         <ShareButton
           title={post.title}
-          text={`${post.title} - 왕왕랜드 일상`}
+          text={`${post.title} - 일상`}
           path={`/daily/${post.id}`}
           label="공유하기"
         />

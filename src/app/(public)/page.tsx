@@ -1,474 +1,357 @@
+import Image from "next/image"
 import Link from "next/link"
+import { ArrowRight, ChevronRight, Eye, PenLine } from "lucide-react"
 
-import { listCats } from "@/features/cats"
-import { DailyCard, listDailyPosts } from "@/features/daily"
-import { DogGrid, listDogsForHome } from "@/features/dogs"
-import { getMyApplicationSummary } from "@/features/applications"
-import { getEventTitle, listMyUpcomingEvents } from "@/features/events"
-import { getCurrentProfile } from "@/features/members"
-import { listNotices, RecentNewsSection } from "@/features/notices"
-import { StoryCard, listAdoptionStories } from "@/features/stories"
-import { listRecentApprovedDonations, DonationTicker } from "@/features/donations"
-import { Heart } from "lucide-react"
-import {
-  BrandIcon,
-  type BrandIconName,
-} from "@/shared/components/brand-icon"
-import { CountUp } from "@/shared/components/count-up"
-import type { HeroSlide } from "@/shared/components/hero-carousel"
-import { HomeHeroSection } from "@/shared/components/home-hero-section"
-import { buttonVariants } from "@/shared/components/ui/button"
+import { fetchCommentCounts } from "@/features/comments"
+import { listDailyPosts } from "@/features/daily"
+import { listDogsForHome } from "@/features/dogs"
+import { listNotices } from "@/features/notices"
+import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
+import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
-import { getSiteStats } from "@/shared/lib/stats"
-import { cn } from "@/shared/lib/utils"
-
-const HERO_SLIDES: HeroSlide[] = [
-  {
-    image: "/images/banner3-desktop.png",
-    mobileImage: "/images/banner3-mobile.png",
-    title: "왕왕랜드 원데이 클래스",
-    description: "",
-    primary: {
-      label: "왕왕랜드 원데이 클래스 게시글 보기",
-      href: "/notice/424dbdae-9993-4977-9c07-130c9255bc0f",
-    },
-    imageOnly: true,
-  },
-  {
-    image: "/images/banner.jpeg",
-    badge: SITE.subtitle,
-    title: SITE.tagline,
-    description: `${SITE.name}는 어떤 이유로도 아이들의 생명을 포기하지 않습니다.\n새로운 가족을 만날 때까지 사랑으로 돌봅니다.`,
-    primary: { label: "입양 대기 아이들 보기", href: "/dogs" },
-    secondary: { label: `${SITE.name} 소개`, href: "/about" },
-  },
-  {
-    image: "/images/banner_2.jpg",
-    badge: "🤝 펫발란스 · 사료 공구 이벤트",
-    title: "펫발란스 × 왕왕랜드",
-    description:
-      "펫발란스와 함께하는 프리미엄 사료 이벤트.\n한 봉지 구매가 왕왕랜드 아이들의 한 끼가 됩니다.",
-    primary: {
-      label: "펫발란스 바로가기",
-      href: SITE.partners.barunPuppyLab.url,
-      external: true,
-    },
-    secondary: { label: "후원 안내", href: "/donate" },
-  },
-]
+import { formatAge } from "@/shared/lib/age"
+import type { Dog } from "@/shared/types/database"
 
 export const revalidate = 60
 
+const RECENT_POST_COUNT = 5
+
 export default async function HomePage() {
-  const [dogs, cats, dailyResult, storiesResult, stats, noticesResult, recentThanks, profile] =
-    await Promise.all([
-      listDogsForHome(10),
-      listCats({ status: "보호중", limit: 4 }),
-      listDailyPosts({ limit: 4 }),
-      listAdoptionStories({ limit: 4 }),
-      getSiteStats(),
-      listNotices({ limit: 4 }),
-      listRecentApprovedDonations(8),
-      getCurrentProfile(),
-    ])
-  const recentDaily = dailyResult.posts
-  const recentStories = storiesResult.stories
-  const recentNotices = noticesResult.notices
-  const isApproved = profile?.status === "approved" && !profile.is_banned
-  const [upcomingEvents, applicationSummary] = await Promise.all([
-    isApproved ? listMyUpcomingEvents() : Promise.resolve([]),
-    isApproved && profile
-      ? getMyApplicationSummary(profile.id)
-      : Promise.resolve({ approved: 0, pending: 0 }),
+  const [dogs, noticeResult, dailyResult, freeResult] = await Promise.all([
+    listDogsForHome(4),
+    listNotices({ limit: RECENT_POST_COUNT }),
+    listDailyPosts({ board: "daily", limit: RECENT_POST_COUNT }),
+    listDailyPosts({ board: "free", limit: RECENT_POST_COUNT }),
   ])
-  const nextEvent = upcomingEvents[0]
-  const desktopMemberSummary = isApproved
-    ? {
-        nextEvent: nextEvent
-          ? {
-              href: `/calendar/${nextEvent.id}`,
-              startsAt: nextEvent.starts_at,
-              title: getEventTitle(nextEvent),
-            }
-          : null,
-        approvedApplications: applicationSummary.approved,
-        pendingApplications: applicationSummary.pending,
-      }
-    : null
+
+  const dailyPostIds = [...dailyResult.posts, ...freeResult.posts].map(
+    (post) => post.id
+  )
+  const [dailyCommentCounts, noticeCommentCounts] = await Promise.all([
+    fetchCommentCounts("daily", dailyPostIds),
+    fetchCommentCounts(
+      "notice",
+      noticeResult.notices.map((notice) => notice.id)
+    ),
+  ])
 
   return (
-    <>
-      <HomeHeroSection
-        slides={HERO_SLIDES}
-        profile={profile}
-        memberSummary={desktopMemberSummary}
-      />
-      <MobileQuickActions />
-
-      {/* 1. 미션 블록 */}
-      <section
-        className="border-t border-border/60 bg-card
-          dark:bg-[radial-gradient(ellipse_at_top,#3F2818_0%,#221710_70%)]"
-      >
-        <div className="mx-auto w-full max-w-4xl px-4 py-12 md:px-6 md:py-20">
-          {/* 헤더 */}
-          <div className="text-center md:mb-10">
-            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              우리의 약속
-            </span>
-            <h2 className="mt-4 text-3xl font-bold leading-snug text-foreground md:text-4xl">
-              어떤 이유로도 아이들의 생명을
-              <br />
-              <span className="text-primary">포기하지 않습니다</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              {SITE.name}는 100% 안락사 없는 보호소입니다.<br />
-              모든 아이가 새로운 가족을 만날 때까지 사랑으로 끝까지 책임집니다.
-            </p>
-          </div>
-
-          {/* 액션 영역: 항상 5열 (후원하기 2열 + 버튼 3열) */}
-          <div className="hidden grid-cols-5 gap-3 md:grid">
-            {/* 후원하기 CTA */}
-            <Link
-              href="/donate"
-              className="animate-attention-once relative col-span-2 flex flex-col items-center justify-center overflow-hidden rounded-2xl px-2 py-5 text-center text-white shadow-lg transition-transform hover:-translate-y-0.5 md:py-8
-                bg-[linear-gradient(135deg,#E89B6C_0%,#D4855A_100%)]
-                dark:bg-[linear-gradient(135deg,#C4784A_0%,#A8623A_100%)]"
-            >
-              <span className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
-              <span className="pointer-events-none absolute -bottom-4 -left-4 h-16 w-16 rounded-full bg-white/10" />
-              <Heart
-                className="relative z-10 size-9 fill-white/95 stroke-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.18)] md:size-11"
-                strokeWidth={1.5}
-                aria-hidden
+    <div className="min-w-0 p-3 text-foreground sm:p-4 lg:p-5">
+      <section className="relative isolate min-h-[210px] overflow-hidden rounded-[26px] border border-border bg-muted shadow-[0_16px_42px_rgba(88,76,68,0.10)] sm:min-h-[230px]">
+              <Image
+                src="/images/banner.jpeg"
+                alt="왕왕랜드 아이들"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1050px"
+                className="object-cover object-center"
+                priority
               />
-              <span className="relative z-10 mt-2 text-sm font-bold leading-tight md:mt-3 md:text-lg">후원하기</span>
-              <span className="relative z-10 mt-1 text-[10px] text-white/80 md:text-xs">소중한 생명을 지켜주세요</span>
-            </Link>
-
-            {/* 2×2 버튼 그리드 */}
-            <div className="col-span-3 grid grid-cols-2 gap-2 md:gap-4">
-              <MissionActionButton href="/adopt" label="입양 신청" icon="adopted" />
-              <MissionActionButton href="/adopt" label="임보 신청" icon="home-shelter" />
-              <MissionActionButton href="/volunteer" label="봉사 신청" icon="volunteer" />
-              <MissionActionButton href="/donate" label="물품 후원" icon="heart" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. 실적 카운터 */}
-      <section className="border-t border-primary/10 bg-primary/5">
-        <div className="mx-auto w-full max-w-6xl px-4 py-14 md:px-6 md:py-16 2xl:max-w-7xl">
-          <div className="mb-10 text-center">
-            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              우리의 기록
-            </span>
-            <h2 className="mt-3 text-2xl font-bold text-foreground md:text-3xl">
-              지금까지의 기록
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              운영 현황을 투명하게 공개합니다.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <CounterCard
-              icon="heart"
-              label="누적 구조"
-              value={stats.rescued}
-              suffix="마리"
-              href="/dogs?status=전체"
-              accent="orange"
-            />
-            <CounterCard
-              icon="home-shelter"
-              label="현재 보호 중"
-              value={stats.sheltered}
-              suffix="마리"
-              href="/dogs?status=보호중"
-              accent="green"
-            />
-            <CounterCard
-              icon="adopted"
-              label="입양 완료"
-              value={stats.adopted}
-              suffix="마리"
-              href="/dogs?status=입양완료"
-              accent="deepGreen"
-            />
-            <CounterCard
-              icon="volunteer"
-              label="누적 봉사자"
-              value={stats.volunteers}
-              suffix="명"
-              href="/volunteer"
-              fallbackText="모집 중"
-              accent="yellow"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. 후원자 티커 — 실적 카운터 바로 아래 */}
-      {recentThanks.length > 0 && (
-        <DonationTicker items={recentThanks} />
-      )}
-
-      {/* 5. 새 가족을 기다려요 (강아지) */}
-      <section className="border-t border-border/60 bg-background">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
-          <div className="mb-10 flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                새 가족을 기다려요
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {SITE.name}에서 따뜻한 손길을 기다리고 있는 친구들입니다.
-              </p>
-            </div>
-            <Link
-              href="/dogs"
-              className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
-            >
-              전체 보기 →
-            </Link>
-          </div>
-
-          <DogGrid
-            dogs={dogs}
-            tieredLimits={{ mobile: 4, md: 6, lg: 8 }}
-            emptyMessage="아직 등록된 아이가 없어요. 곧 만나게 될 친구들을 준비 중입니다."
-          />
-
-          <div className="mt-8 text-center sm:hidden">
-            <Link
-              href="/dogs"
-              className={cn(buttonVariants({ variant: "outline" }))}
-            >
-              전체 아이들 보기
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. 입양 후기 — 강아지 섹션 바로 밑으로 승격 */}
-      {recentStories.length > 0 && (
-        <section className="border-t border-border/60 bg-card">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
-            <div className="mb-10 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  새 가족이 생겼어요
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  따뜻한 사랑을 받고 있는 아이들의 이야기.
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.97)_0%,rgba(250,242,233,0.87)_45%,rgba(246,239,229,0.18)_76%)] dark:bg-[linear-gradient(90deg,rgba(29,33,30,0.96)_0%,rgba(37,43,39,0.84)_45%,rgba(37,43,39,0.18)_76%)]" />
+              <div className="relative flex min-h-[210px] max-w-xl flex-col items-start justify-center px-6 py-8 sm:min-h-[230px] sm:px-9 lg:px-10">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-card/85 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm backdrop-blur">
+                  <BrandIcon name="heart" size={15} decorative />
+                  함께 만드는 새로운 시작
+                </span>
+                <h1 className="mt-4 max-w-md text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
+                  기다림이 가족을 만나는 순간까지
+                </h1>
+                <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+                  왕왕랜드 아이들의 오늘을 가까이에서 만나보세요.
                 </p>
-              </div>
-              <Link
-                href="/stories"
-                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
-              >
-                전체 후기 →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-              {recentStories.map((story) => (
-                <StoryCard key={story.id} story={story} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 5. 최근 소식 — 카테고리 카드 그리드 */}
-      <RecentNewsSection notices={recentNotices} />
-      {/* 6. 왕왕랜드 일상 */}
-      {recentDaily.length > 0 && (
-        <section className="border-t border-border/60 bg-card">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
-            <div className="mb-10 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  왕왕랜드 일상
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  봉사 활동과 아이들의 평범한 하루를 기록합니다.
-                </p>
-              </div>
-              <Link
-                href="/daily"
-                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
-              >
-                전체 보기 →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
-              {recentDaily.map((post) => (
-                <DailyCard key={post.id} post={post} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 7. 고양이 친구들 (보호 중일 때만) */}
-      {cats.length > 0 && (
-        <section className="border-t border-border/60 bg-background">
-          <div className="mx-auto w-full max-w-6xl px-4 py-16 md:px-6 2xl:max-w-7xl">
-            <div className="mb-10 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                  고양이 친구들
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {SITE.name}의 냥이들입니다.
-                </p>
-              </div>
-              <Link
-                href="/cats"
-                className="hidden text-sm font-semibold text-[#2A3D2F] hover:underline dark:text-[#9ab09e] sm:inline"
-              >
-                전체 보기 →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {cats.map((cat) => (
                 <Link
-                  key={cat.id}
-                  href={`/cats/${cat.id}`}
-                  className="group block overflow-hidden rounded-lg border border-border bg-card"
+                  href="/dogs"
+                  className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(201,112,82,0.22)] transition-all hover:-translate-y-0.5 hover:bg-brand-coral-hover"
                 >
-                  <div className="flex aspect-square items-center justify-center bg-muted text-4xl">
-                    🐱
-                  </div>
-                  <div className="p-4">
-                    <p className="font-semibold text-foreground">{cat.name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {cat.breed ?? "고양이"}
-                    </p>
-                  </div>
+                  아이들 만나기
+                  <ArrowRight className="size-4" aria-hidden />
                 </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-    </>
+              </div>
+      </section>
+
+            <section className="mt-10" aria-labelledby="waiting-dogs-heading">
+              <SectionHeading
+                id="waiting-dogs-heading"
+                title="가족을 기다리는 아이들"
+                description="아이의 사진을 눌러 자세한 이야기를 확인하세요."
+                href="/dogs"
+                linkLabel="전체 보기"
+              />
+              {dogs.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {dogs.map((dog) => (
+                    <HomeDogCard key={dog.id} dog={dog} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center text-sm text-muted-foreground">
+                  등록된 입양 대기 아이가 없습니다.
+                </div>
+              )}
+            </section>
+
+            <section
+              className="mt-8 grid min-h-24 gap-4 rounded-2xl border border-border border-l-[5px] border-l-brand-sage bg-accent/60 p-5 shadow-[0_10px_28px_rgba(88,76,68,0.07)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:p-6"
+              aria-label="후원 계좌 안내"
+            >
+              <span className="flex size-14 items-center justify-center rounded-2xl bg-accent">
+                <BrandIcon name="piggy-bank" size={32} decorative />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-foreground">
+                  작은 마음이 아이들의 하루를 바꿉니다
+                </h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  후원금은 구조 동물의 치료비와 생활비로 사용됩니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm text-foreground/80 sm:text-base">
+                <span className="whitespace-nowrap font-semibold">
+                  {SITE.donation.bankName} {SITE.donation.accountNumber}
+                </span>
+                <CopyButton
+                  value={SITE.donation.accountNumber}
+                  label="후원 계좌번호"
+                  className="border-border bg-card text-primary hover:bg-primary/5"
+                />
+              </div>
+            </section>
+
+            <section className="mt-10" aria-labelledby="recent-community-heading">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2
+                    id="recent-community-heading"
+                    className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+                  >
+                    최근 소식
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    회원들과 나누는 새로운 이야기입니다.
+                  </p>
+                </div>
+                <Link
+                  href="/daily/new"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary/10 px-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
+                >
+                  <PenLine className="size-4" aria-hidden />
+                  글쓰기
+                </Link>
+              </div>
+              <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <RecentBoard
+                  title="공지사항"
+                  href="/notice"
+                  icon="notification"
+                  tone="coral"
+                  posts={noticeResult.notices.map((notice) => ({
+                    id: notice.id,
+                    title: notice.title,
+                    href: `/notice/${notice.id}`,
+                    author: notice.author?.nickname ?? "왕왕랜드",
+                    viewCount: notice.view_count ?? 0,
+                    commentCount: noticeCommentCounts[notice.id] ?? 0,
+                  }))}
+                />
+                <RecentBoard
+                  title="일상"
+                  href="/daily?category=일상"
+                  icon="camera"
+                  tone="sage"
+                  posts={dailyResult.posts.map((post) => ({
+                    id: post.id,
+                    title: post.title,
+                    href: `/daily/${post.id}`,
+                    author: post.author?.nickname ?? "왕왕랜드",
+                    viewCount: post.view_count ?? 0,
+                    commentCount: dailyCommentCounts[post.id] ?? 0,
+                  }))}
+                />
+                <RecentBoard
+                  title="자유게시판"
+                  href="/daily?category=자유게시판"
+                  icon="chat"
+                  tone="yellow"
+                  posts={freeResult.posts.map((post) => ({
+                    id: post.id,
+                    title: post.title,
+                    href: `/daily/${post.id}`,
+                    author: post.author?.nickname ?? "왕왕랜드",
+                    viewCount: post.view_count ?? 0,
+                    commentCount: dailyCommentCounts[post.id] ?? 0,
+                  }))}
+                />
+              </div>
+      </section>
+    </div>
   )
 }
 
-function MissionActionButton({
+function SectionHeading({
+  id,
+  title,
+  description,
   href,
-  label,
-  icon,
+  linkLabel,
 }: {
+  id: string
+  title: string
+  description: string
   href: string
-  label: string
-  icon: BrandIconName
+  linkLabel: string
 }) {
   return (
-    <Link
-      href={href}
-      className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-2 py-3 text-[11px] font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm md:py-5 md:text-sm"
-    >
-      <BrandIcon name={icon} size={22} decorative className="md:size-7" />
-      {label}
-    </Link>
-  )
-}
-
-function MobileQuickActions() {
-  return (
-    <section className="border-t border-border/60 bg-card px-4 py-4 md:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-2">
-        <MissionActionButton href="/adopt" label="입양 신청" icon="adopted" />
-        <MissionActionButton href="/adopt" label="임보 신청" icon="home-shelter" />
-        <MissionActionButton href="/volunteer" label="봉사 신청" icon="volunteer" />
-        <MissionActionButton href="/donate" label="후원하기" icon="heart" />
-      </div>
-    </section>
-  )
-}
-
-type CounterAccent = "orange" | "green" | "deepGreen" | "yellow"
-
-const COUNTER_ACCENT: Record<
-  CounterAccent,
-  { ring: string; hoverBorder: string }
-> = {
-  orange: {
-    ring: "bg-[#FCE9D9] dark:bg-[rgba(232,155,94,0.18)]",
-    hoverBorder: "hover:border-[#E89B5E]",
-  },
-  green: {
-    ring: "bg-[#DCEBDE] dark:bg-[rgba(154,176,158,0.18)]",
-    hoverBorder: "hover:border-[#5C8F4F]",
-  },
-  deepGreen: {
-    ring: "bg-[#C8DBCB] dark:bg-[rgba(75,122,66,0.25)]",
-    hoverBorder: "hover:border-[#2A3D2F]",
-  },
-  yellow: {
-    ring: "bg-[#FBF1CC] dark:bg-[rgba(234,191,73,0.18)]",
-    hoverBorder: "hover:border-[#D4A92A]",
-  },
-}
-
-function CounterCard({
-  icon,
-  label,
-  value,
-  suffix,
-  href,
-  fallbackText,
-  accent = "orange",
-}: {
-  icon: BrandIconName
-  label: string
-  value: number
-  suffix: string
-  href: string
-  /** value 가 0 일 때 숫자 대신 보여줄 문구 (예: "모집 중") */
-  fallbackText?: string
-  accent?: CounterAccent
-}) {
-  const showFallback = value === 0 && !!fallbackText
-  const a = COUNTER_ACCENT[accent]
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group rounded-xl border border-border bg-card p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-md md:p-6",
-        a.hoverBorder
-      )}
-    >
-      <div className="flex justify-center">
-        <span
-          className={cn(
-            "flex size-14 items-center justify-center rounded-full transition-transform group-hover:scale-105 md:size-16",
-            a.ring
-          )}
+    <div className="mb-3 flex items-end justify-between gap-4">
+      <div>
+        <h2
+          id={id}
+          className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
         >
-          <BrandIcon name={icon} size={32} decorative className="md:size-10" />
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {description}
+        </p>
+      </div>
+      <Link
+        href={href}
+        className="inline-flex min-h-10 shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline"
+      >
+        {linkLabel}
+        <ChevronRight className="size-4" aria-hidden />
+      </Link>
+    </div>
+  )
+}
+
+function HomeDogCard({ dog }: { dog: Dog }) {
+  const thumbnail = dog.images[dog.thumbnail_index] ?? dog.images[0] ?? null
+
+  return (
+    <Link
+      href={`/dogs/${dog.id}`}
+      className="group min-w-0 overflow-hidden rounded-2xl border border-border bg-card/90 shadow-[0_8px_24px_rgba(88,76,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_12px_28px_rgba(88,76,68,0.11)]"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        {thumbnail ? (
+          <Image
+            src={thumbnail}
+            alt={dog.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 240px"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <BrandIcon name="dog-happy" size={54} decorative />
+          </div>
+        )}
+        <span className="absolute left-2.5 top-2.5 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-foreground/75 shadow-sm backdrop-blur">
+          {dog.status}
         </span>
       </div>
-      <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground md:mt-3 md:text-xs">
-        {label}
-      </p>
-      {showFallback ? (
-        <p className="mt-1 text-xl font-bold text-primary md:text-3xl">
-          {fallbackText}
+      <div className="p-3">
+        <h3 className="truncate font-semibold text-foreground">
+          {dog.name}
+        </h3>
+        <p className="mt-1 truncate text-xs text-muted-foreground">
+          {[dog.breed, formatAge(dog)].filter(Boolean).join(" · ") || "왕왕랜드 친구"}
         </p>
-      ) : (
-        <p className="mt-1 text-2xl font-bold text-foreground md:text-4xl">
-          <CountUp value={value} />
-          <span className="ml-0.5 text-xs font-medium text-muted-foreground">
-            {suffix}
-          </span>
-        </p>
-      )}
+      </div>
     </Link>
   )
+}
+
+function RecentBoard({
+  title,
+  href,
+  icon,
+  tone,
+  posts,
+}: {
+  title: string
+  href: string
+  icon: BrandIconName
+  tone: "coral" | "sage" | "yellow"
+  posts: RecentPostPreview[]
+}) {
+  const toneClass = {
+    coral: "border-t-[#e89273]",
+    sage: "border-t-[#a9c7b5]",
+    yellow: "border-t-[#f2d59b]",
+  }[tone]
+  const slots = Array.from({ length: RECENT_POST_COUNT }, (_, index) => posts[index] ?? null)
+
+  return (
+    <article
+      className={`grid min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-border border-t-4 bg-card/90 shadow-[0_8px_24px_rgba(88,76,68,0.06)] ${toneClass}`}
+    >
+      <div className="flex min-h-12 items-center gap-2 px-4">
+        <BrandIcon name={icon} size={19} decorative />
+        <h3 className="font-semibold text-foreground">
+          {title}
+        </h3>
+      </div>
+      <div className="grid grid-rows-[auto_repeat(5,minmax(0,1fr))] border-t border-border">
+        <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 bg-secondary/60 px-3 text-[10px] font-semibold text-muted-foreground">
+          <span>제목</span>
+          <span className="text-right">작성자</span>
+          <span className="text-right">조회</span>
+        </div>
+        {slots.map((post, index) =>
+          post ? (
+            <Link
+              key={post.id}
+              href={post.href}
+              className="grid min-h-10 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border/70 px-3 text-xs transition-colors last:border-b-0 hover:bg-primary/5"
+            >
+              <span className="flex min-w-0 items-center text-foreground/80">
+                <span className="truncate" title={post.title}>
+                  {post.title}
+                </span>
+                {post.commentCount > 0 && (
+                  <span className="ml-1 shrink-0 font-semibold text-primary">
+                    ({post.commentCount})
+                  </span>
+                )}
+              </span>
+              <span
+                className="truncate text-right text-[11px] text-muted-foreground"
+                title={post.author}
+              >
+                {post.author}
+              </span>
+              <span className="inline-flex items-center justify-end gap-1 text-[11px] tabular-nums text-muted-foreground">
+                <Eye className="size-3" aria-hidden />
+                {post.viewCount}
+              </span>
+            </Link>
+          ) : (
+            <div
+              key={`empty-${index}`}
+              className="flex min-h-10 items-center border-b border-border/70 px-3 text-xs text-muted-foreground/70 last:border-b-0"
+              aria-hidden={index > 0}
+            >
+              {index === 0 ? "아직 등록된 글이 없습니다." : ""}
+            </div>
+          )
+        )}
+      </div>
+      <Link
+        href={href}
+        className="flex min-h-11 items-center justify-end gap-1 border-t border-border px-4 text-xs font-semibold text-primary hover:bg-primary/5"
+      >
+        전체 보기
+        <ChevronRight className="size-3.5" aria-hidden />
+      </Link>
+    </article>
+  )
+}
+
+interface RecentPostPreview {
+  id: string
+  title: string
+  href: string
+  author: string
+  viewCount: number
+  commentCount: number
 }

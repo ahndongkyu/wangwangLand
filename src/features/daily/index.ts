@@ -9,6 +9,7 @@ export {
   listDailyPostsByUser,
   countDailyPostsByUser,
 } from "./api/queries"
+export type { DailyPostWithAuthor } from "./api/queries"
 export {
   createDailyPost,
   updateDailyPost,

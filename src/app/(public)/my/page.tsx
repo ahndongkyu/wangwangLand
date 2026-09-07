@@ -34,7 +34,7 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
 
-import { MyPageTabs } from "./_components/mypage-tabs"
+import { MyPageTabs, type MyPostItem } from "./_components/mypage-tabs"
 
 export const metadata: Metadata = { title: "마이페이지" }
 export const dynamic = "force-dynamic"
@@ -68,6 +68,8 @@ export default async function MyPage() {
     dogLikesCountRes,
     catLikesCountRes,
     adoptionCountRes,
+    dailyPostsRes,
+    storyPostsRes,
   ] = await Promise.all([
     listMyUpcomingEvents(),
     admin
@@ -108,6 +110,19 @@ export default async function MyPage() {
       .from("adoption_applications")
       .select("*", { count: "exact", head: true })
       .eq("created_by", userId),
+    admin
+      .from("daily_posts")
+      .select("id, title, posted_at, category")
+      .eq("created_by", userId)
+      .order("posted_at", { ascending: false })
+      .limit(20),
+    admin
+      .from("adoption_stories")
+      .select("id, title, published_at")
+      .eq("created_by", userId)
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(20),
   ])
 
   const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
@@ -163,6 +178,27 @@ export default async function MyPage() {
     ...likedDogPreviews.map((d) => ({ ...d, kind: "dog" as const })),
     ...likedCatPreviews.map((c) => ({ ...c, kind: "cat" as const })),
   ]
+
+  const myPosts: MyPostItem[] = [
+    ...(dailyPostsRes.data ?? []).map((post) => ({
+      id: post.id,
+      title: post.title,
+      date: post.posted_at,
+      label: post.category ?? "일상",
+      href: `/daily/${post.id}`,
+      kind: "daily" as const,
+    })),
+    ...(storyPostsRes.data ?? []).map((post) => ({
+      id: post.id,
+      title: post.title,
+      date: post.published_at!,
+      label: "입양 후기",
+      href: `/stories/${post.id}`,
+      kind: "story" as const,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 20)
 
   const nextEvent = upcomingEvents[0] ?? null
 
@@ -240,7 +276,7 @@ export default async function MyPage() {
 
       {/* ── 다가오는 일정 ── */}
       {nextEvent ? (
-        <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#2A3D2F] to-[#3a5440] p-6 text-white">
+        <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#596f63] to-[#78927f] p-6 text-white dark:from-[#2b3a32] dark:to-[#405548]">
           <span className="pointer-events-none absolute -bottom-2 right-6 select-none text-7xl leading-none opacity-10">
             📅
           </span>
@@ -293,7 +329,7 @@ export default async function MyPage() {
             {/* 상세 보기 버튼 */}
             <Link
               href={`/calendar/${nextEvent.id}`}
-              className="hidden shrink-0 rounded-lg bg-white px-4 py-2 text-xs font-bold text-[#2A3D2F] transition-opacity hover:opacity-90 sm:block"
+              className="hidden shrink-0 rounded-lg bg-white px-4 py-2 text-xs font-bold text-[#46534d] transition-opacity hover:opacity-90 sm:block"
             >
               상세 보기
             </Link>
@@ -314,6 +350,7 @@ export default async function MyPage() {
         adoptions={adoptions}
         donations={donations}
         likedAnimals={likedAnimals}
+        myPosts={myPosts}
       />
 
       {/* ── 랭킹 바로가기 ── */}

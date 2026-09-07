@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 export default async function DailyNewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ application?: string }>
+  searchParams: Promise<{ application?: string; category?: string }>
 }) {
   const profile = await getCurrentProfile()
   if (!profile) redirect("/login")
@@ -20,6 +20,13 @@ export default async function DailyNewPage({
 
   const params = await searchParams
   const applicationId = params.application?.trim()
+  const requestedCategory = params.category?.trim()
+  const defaultCategory =
+    requestedCategory === "일상" ||
+    requestedCategory === "자유게시판" ||
+    requestedCategory === "질문 및 답변"
+      ? requestedCategory
+      : undefined
 
   // 봉사 신청 ID가 있으면 본인 + 승인 + 봉사일 지났는지 검증
   let validatedAppId: string | undefined
@@ -40,13 +47,22 @@ export default async function DailyNewPage({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
       <nav className="mb-4 text-sm text-muted-foreground">
-        <Link href={isVolunteerCert ? "/my/applications" : "/daily"} className="hover:text-foreground">
-          ← {isVolunteerCert ? "내 신청 내역" : "일상 목록"}
+        <Link
+          href={
+            isVolunteerCert
+              ? "/my/applications"
+              : defaultCategory
+                ? `/daily?category=${encodeURIComponent(defaultCategory)}`
+                : "/daily"
+          }
+          className="hover:text-foreground"
+        >
+          ← {isVolunteerCert ? "내 신청 내역" : `${defaultCategory ?? "일상"} 목록`}
         </Link>
       </nav>
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-          {isVolunteerCert ? "봉사 인증글 작성" : "일상 작성"}
+          {isVolunteerCert ? "봉사 인증글 작성" : `${defaultCategory ?? "일상"} 글쓰기`}
         </h1>
         {isVolunteerCert && (
           <p className="mt-2 text-sm text-muted-foreground">
@@ -55,9 +71,22 @@ export default async function DailyNewPage({
         )}
       </header>
       <DailyForm
-        cancelHref={isVolunteerCert ? "/my/applications" : "/daily"}
-        returnTo={isVolunteerCert ? "/my/applications" : "/daily"}
+        cancelHref={
+          isVolunteerCert
+            ? "/my/applications"
+            : defaultCategory
+              ? `/daily?category=${encodeURIComponent(defaultCategory)}`
+              : "/daily"
+        }
+        returnTo={
+          isVolunteerCert
+            ? "/my/applications"
+            : defaultCategory
+              ? `/daily?category=${encodeURIComponent(defaultCategory)}`
+              : "/daily"
+        }
         volunteerApplicationId={validatedAppId}
+        defaultCategory={defaultCategory}
       />
     </div>
   )

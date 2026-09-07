@@ -59,7 +59,7 @@ function buildShareText(dateStr: string, evs: EventWithSignupCount[]): string {
 
 // 카테고리별 실제 색상값 (CSS 변수 없이 고정)
 const CATEGORY_HEX: Record<string, { bg: string; text: string }> = {
-  volunteer: { bg: "#E87C3E", text: "#FFFFFF" },
+  volunteer: { bg: "#C96849", text: "#FFFFFF" },
   event:     { bg: "#059669", text: "#FFFFFF" },
   closed:    { bg: "#9CA3AF", text: "#FFFFFF" },
   custom:    { bg: "#7C7AC9", text: "#FFFFFF" },
@@ -85,30 +85,30 @@ function buildScheduleImage(
     ctx.scale(SCALE, SCALE)
 
     // 배경
-    ctx.fillStyle = "#FAF6F0"
+    ctx.fillStyle = "#EEF1EC"
     ctx.fillRect(0, 0, W, totalH)
 
     // 헤더 영역
-    ctx.fillStyle = "#F0E8DC"
+    ctx.fillStyle = "#FBFCFA"
     ctx.fillRect(0, 0, W, HEADER_H)
 
     // 브랜드명
-    ctx.fillStyle = "#E87C3E"
+    ctx.fillStyle = "#C96849"
     ctx.font = "bold 13px sans-serif"
     ctx.fillText("🐾 왕왕랜드", PAD, 22)
 
     // 날짜
-    ctx.fillStyle = "#2C2C2A"
+    ctx.fillStyle = "#2B3630"
     ctx.font = "bold 20px sans-serif"
     ctx.fillText(fullDayLabel(dateStr), PAD, 52)
 
     // 건수
-    ctx.fillStyle = "#9B8F80"
+    ctx.fillStyle = "#66756D"
     ctx.font = "13px sans-serif"
     ctx.fillText(`${evs.length}건`, PAD + ctx.measureText(fullDayLabel(dateStr)).width + 8, 52)
 
     // 구분선
-    ctx.strokeStyle = "#E5DDD0"
+    ctx.strokeStyle = "#CDD7D0"
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(0, HEADER_H)
@@ -121,7 +121,7 @@ function buildScheduleImage(
 
       // 행 구분선 (첫 행 제외)
       if (i > 0) {
-        ctx.strokeStyle = "#EDE5DC"
+        ctx.strokeStyle = "#DDE4DF"
         ctx.lineWidth = 0.5
         ctx.beginPath()
         ctx.moveTo(PAD, y)
@@ -145,13 +145,13 @@ function buildScheduleImage(
 
       // 제목
       const titleX = badgeX + badgeW + 10
-      ctx.fillStyle = "#2C2C2A"
+      ctx.fillStyle = "#2B3630"
       ctx.font = "500 14px sans-serif"
       const maxTitleW = W - titleX - PAD - 80
       ctx.fillText(truncateText(ctx, getEventTitle(ev), maxTitleW), titleX, y + ROW_H / 2 - 2)
 
       // 시간
-      ctx.fillStyle = "#9B8F80"
+      ctx.fillStyle = "#66756D"
       ctx.font = "12px sans-serif"
       ctx.fillText(formatRange(ev), titleX, y + ROW_H / 2 + 14)
 
@@ -160,16 +160,16 @@ function buildScheduleImage(
         const signupText = `신청 ${ev.signup_count}`
         const signupW = ctx.measureText(signupText).width + 12
         const signupX = W - PAD - signupW
-        ctx.fillStyle = "#E87C3E26"
+        ctx.fillStyle = "#C9684926"
         roundRect(ctx, signupX, y + ROW_H / 2 - 9, signupW, 18, 9)
-        ctx.fillStyle = "#E87C3E"
+        ctx.fillStyle = "#C96849"
         ctx.font = "bold 11px sans-serif"
         ctx.fillText(signupText, signupX + 6, y + ROW_H / 2 + 4)
       }
     })
 
     // 푸터
-    ctx.fillStyle = "#C4B8AC"
+    ctx.fillStyle = "#94A49A"
     ctx.font = "11px sans-serif"
     ctx.fillText("wangwangland.kr", PAD, totalH - 12)
 
@@ -304,7 +304,7 @@ export function UpcomingEvents({ events }: Props) {
               className={cn(
                 "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-primary text-primary-foreground dark:bg-[#d97045]"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >

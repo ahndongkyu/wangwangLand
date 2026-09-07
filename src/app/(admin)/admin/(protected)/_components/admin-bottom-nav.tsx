@@ -32,8 +32,8 @@ export function AdminBottomNav({ counts }: Props) {
         className={cn(
           "flex flex-col items-center justify-center gap-1 rounded-md px-1 py-2.5 text-[11px] font-semibold transition-colors",
           isActive
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            ? "bg-white/10 text-[#efa085]"
+            : "text-white/60 hover:bg-white/[0.07] hover:text-white"
         )}
       >
         <span className="relative">
@@ -50,7 +50,7 @@ export function AdminBottomNav({ counts }: Props) {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#3c5145] bg-[#26382f]/95 px-2 pb-[max(env(safe-area-inset-bottom),16px)] pt-2.5 shadow-[0_-4px_16px_rgba(10,24,16,0.22)] backdrop-blur md:hidden">
       <ul className="grid grid-cols-4 gap-1">
         {/* 대시보드 (항상 첫 칸) */}
         <li>{renderTabLink(HOME_TAB, pathname === HOME_TAB.href)}</li>

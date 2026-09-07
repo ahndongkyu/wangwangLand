@@ -88,22 +88,20 @@ export function Header({
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileBackHref = getMobileBackHref(pathname)
-
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
 
   return (
     <header
-      className={cn(
-        "sticky top-0 z-40 w-full bg-background",
-        "border-b border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
-      )}
+      className="sticky top-0 z-40 w-full border-b border-border bg-[linear-gradient(100deg,var(--background)_0%,var(--secondary)_50%,var(--background)_100%)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur"
     >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:grid md:h-20 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-6 lg:gap-8">
+      <div
+        className="relative mx-auto flex h-14 w-full max-w-[1440px] items-center justify-between px-4 md:h-16 md:px-8 2xl:px-12"
+      >
         {mobileBackHref && (
           <Link
             href={mobileBackHref}
-            className="inline-flex items-center gap-0.5 text-sm font-medium text-foreground md:hidden"
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-foreground lg:hidden"
             aria-label="이전 화면으로"
           >
             <ChevronLeft className="size-6" aria-hidden />
@@ -113,8 +111,8 @@ export function Header({
         <Link
           href="/"
           className={cn(
-            "min-w-0 items-center gap-2 justify-self-start md:gap-3",
-            mobileBackHref ? "hidden md:flex" : "flex"
+            "absolute left-1/2 min-w-0 -translate-x-1/2 items-center gap-2 md:gap-3",
+            mobileBackHref ? "hidden lg:flex" : "flex"
           )}
         >
           <Image
@@ -122,21 +120,30 @@ export function Header({
             alt={`${SITE.name} 로고`}
             width={52}
             height={52}
-            className="size-9 shrink-0 rounded-full md:size-13"
+            className={cn(
+              "shrink-0 rounded-full",
+              "size-9 md:size-10"
+            )}
             priority
           />
           <div className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-sm font-bold tracking-tight text-foreground md:text-xl">
+            <span
+              className={cn(
+                "truncate text-sm font-bold tracking-tight text-foreground md:text-lg"
+              )}
+            >
               {SITE.name}
             </span>
-            <span className="hidden text-xs text-muted-foreground md:inline">
+            <span
+              className="hidden"
+            >
               {SITE.subtitle}
             </span>
           </div>
         </Link>
 
         {/* 데스크톱 중앙 네비 */}
-        <nav className="hidden justify-center md:flex">
+        <nav className="hidden">
           <ul className="flex items-center gap-0.5">
             {HEADER_NAV_GROUPS.map((node) =>
               node.kind === "link" ? (
@@ -173,16 +180,34 @@ export function Header({
           </ul>
         </nav>
 
-        {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
-        <div className="flex min-w-0 items-center justify-end gap-1.5 justify-self-end md:gap-2">
-          {profile && (
-            <span
-              className="max-w-[52px] truncate text-xs font-semibold text-foreground sm:max-w-[88px] md:hidden"
-              title={`${profile.nickname}님`}
+        <div className="ml-auto hidden items-center gap-1.5 lg:flex">
+          {SITE.sns.kakaoChannel && (
+            <HeaderChannelLink
+              href={SITE.sns.kakaoChannel}
+              label="카카오톡 문의"
+              className="border-[#F0D900] bg-[#FEE500] text-[#3C1E1E] hover:bg-[#FFEA32]"
             >
-              {profile.nickname}님
-            </span>
+              <KakaoIcon />
+            </HeaderChannelLink>
           )}
+          {SITE.sns.naverCafe && (
+            <HeaderChannelLink href={SITE.sns.naverCafe} label="네이버 카페">
+              <span className="inline-flex size-4 items-center justify-center rounded bg-[#03C75A] text-[10px] font-black text-white">
+                N
+              </span>
+            </HeaderChannelLink>
+          )}
+          {SITE.sns.instagram && (
+            <HeaderChannelLink href={SITE.sns.instagram} label="인스타그램">
+              <InstaIcon />
+            </HeaderChannelLink>
+          )}
+        </div>
+
+        {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
+        <div
+          className="ml-auto flex min-w-0 items-center justify-end gap-1.5 lg:hidden"
+        >
           {pendingCounts && <AdminNotificationBell counts={pendingCounts} />}
           {!pendingCounts && profile && (
             <UserNotificationBell
@@ -191,17 +216,21 @@ export function Header({
             />
           )}
           {profile ? (
-            <span className="hidden md:inline-flex">
+            <span className="hidden">
               <UserMenu profile={profile} />
             </span>
           ) : (
             <>
-              <span className="hidden md:inline-flex">
+              <span className="hidden">
                 <ThemeToggle />
               </span>
               <Link
                 href="/login"
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "whitespace-nowrap")}
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "whitespace-nowrap",
+                  "hidden sm:inline-flex lg:hidden"
+                )}
               >
                 로그인
               </Link>
@@ -215,7 +244,7 @@ export function Header({
                 <Button
                   variant="default"
                   size="sm"
-                  className="size-9 rounded-lg p-0 shadow-sm md:hidden"
+                  className="size-9 rounded-lg p-0 shadow-sm lg:hidden"
                   aria-label="메뉴 열기"
                 />
               }
@@ -225,14 +254,14 @@ export function Header({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="w-[min(320px,85vw)] flex flex-col p-0 bg-[#FAF6F0] dark:bg-[#2B2520] gap-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
+              className="flex w-[min(320px,85vw)] flex-col gap-0 bg-popover p-0 data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{SITE.name}</SheetTitle>
               </SheetHeader>
 
               {/* ── 드로어 회원 헤더 ── */}
-              <div className="flex items-center justify-between gap-3 border-b border-[#E5DDD0] px-4 py-3.5 dark:border-[#3A3229]">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5">
                 {profile ? (
                   <Link
                     href="/my"
@@ -265,13 +294,13 @@ export function Header({
                       >
                         {MOBILE_ROLE_LABEL[profile.role]}
                       </span>
-                      <span className="max-w-[116px] truncate text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                      <span className="max-w-[116px] truncate text-sm font-semibold text-foreground">
                         {profile.nickname}님
                       </span>
                     </div>
                   </Link>
                 ) : (
-                  <span className="text-sm font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+                  <span className="text-sm font-semibold text-foreground">
                     메뉴
                   </span>
                 )}
@@ -281,7 +310,7 @@ export function Header({
                     render={
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground"
                         aria-label="메뉴 닫기"
                       />
                     }
@@ -305,6 +334,8 @@ export function Header({
                   <MobileNavItem href="/cats" icon="paw" label="고양이" isActive={isActive("/cats")} onClose={() => setMobileOpen(false)} />
                   <MobileNavItem href="/stories" icon="heart" label="입양 후기" isActive={isActive("/stories")} onClose={() => setMobileOpen(false)} />
                   <MobileNavItem href="/daily" icon="camera" label="일상" isActive={isActive("/daily")} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/daily?category=자유게시판" icon="chat" label="자유게시판" isActive={false} onClose={() => setMobileOpen(false)} />
+                  <MobileNavItem href="/daily?category=질문 및 답변" icon="mail" label="질문 및 답변" isActive={false} onClose={() => setMobileOpen(false)} />
                 </MobileNavGroup>
 
                 <MobileDivider />
@@ -326,15 +357,28 @@ export function Header({
               </nav>
 
               {/* ── 하단 SNS ── */}
-              {(SITE.sns.naverCafe || SITE.sns.instagram) && (
-                <div className="border-t border-[#E5DDD0] bg-[#FAF3E8] px-4 py-3 dark:border-[#3A3229] dark:bg-black/20">
-                  <div className="flex gap-2">
+              {(SITE.sns.kakaoChannel || SITE.sns.naverCafe || SITE.sns.instagram) && (
+                <div className="border-t border-border bg-secondary/60 px-4 py-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {SITE.sns.kakaoChannel && (
+                      <a
+                        href={SITE.sns.kakaoChannel}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-[#F0D900] bg-[#FEE500] py-2 text-[10px] font-medium text-[#3C1E1E]"
+                      >
+                        <KakaoIcon />
+                        카카오톡
+                      </a>
+                    )}
                     {SITE.sns.naverCafe && (
                       <a
                         href={SITE.sns.naverCafe}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#E2D6C8] bg-[#F7F2EA] py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card py-2 text-[10px] font-medium text-foreground"
                       >
                         <span className="inline-flex h-[16px] w-[16px] items-center justify-center rounded bg-[#03C75A] text-[9px] font-black text-white">N</span>
                         네이버 카페
@@ -345,7 +389,8 @@ export function Header({
                         href={SITE.sns.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#E2D6C8] bg-[#F7F2EA] py-2 text-[10px] font-medium text-[#2C2C2A] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)] dark:text-[#F5EDE0]"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card py-2 text-[10px] font-medium text-foreground"
                       >
                         <InstaIcon />
                         인스타
@@ -371,7 +416,7 @@ function MobileThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF3E8] text-[#6B5D4F] dark:bg-[rgba(255,212,161,0.08)] dark:text-[#B8A78F]"
+      className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground"
       aria-label="테마 변경"
     >
       {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -382,7 +427,7 @@ function MobileThemeToggle() {
 function MobileNavGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="px-4 py-1">
-      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-[#9B8F80]">{label}</p>
+      <p className="mb-1 px-1 text-[10px] font-semibold tracking-wider text-muted-foreground">{label}</p>
       {children}
     </div>
   )
@@ -419,13 +464,13 @@ function MobileNavItem({
         "flex items-center gap-2.5 rounded-lg px-1 py-2.5 transition-colors",
         isActive && "bg-primary/8",
         highlighted
-          ? "bg-[rgba(232,155,94,0.08)]"
-          : !isActive && "hover:bg-[#FAF3E8] dark:hover:bg-[rgba(255,212,161,0.04)]"
+          ? "bg-primary/10"
+          : !isActive && "hover:bg-secondary"
       )}
     >
       <span className={cn(
         "flex h-4 w-4 shrink-0 items-center justify-center",
-        highlighted ? "text-[#C06B2A] dark:text-[#FFD4A1]" : "text-[#C06B2A] dark:text-[#FFD4A1]"
+        "text-primary"
       )}>
         {isLocation
           ? <MapPin className="size-4" />
@@ -435,26 +480,26 @@ function MobileNavItem({
       <span className={cn(
         "flex-1 text-[13px]",
         highlighted
-          ? "font-medium text-[#C06B2A] dark:text-[#FFD4A1]"
+          ? "font-medium text-primary"
           : isActive
             ? "font-medium text-primary"
-            : "text-[#2C2C2A] dark:text-[#F5EDE0]"
+            : "text-foreground"
       )}>
         {label}
       </span>
       {badge && (
-        <span className="rounded-full bg-[#E89B5E] px-1.5 py-0.5 text-[9px] font-semibold text-white dark:text-[#2C2C2A]">
+        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold text-primary-foreground">
           {badge}
         </span>
       )}
       {noticeBadge && <NoticeBadge notices={noticeBadge} dbLastSeenAt={noticeDbLastSeenAt} />}
-      <ChevronRight className="size-3.5 text-[#9B8F80]" />
+      <ChevronRight className="size-3.5 text-muted-foreground" />
     </Link>
   )
 }
 
 function MobileDivider() {
-  return <div className="mx-4 my-1.5 h-px bg-[#E5DDD0] dark:bg-[#3A3229]" />
+  return <div className="mx-4 my-1.5 h-px bg-border" />
 }
 
 function InstaIcon() {
@@ -474,6 +519,45 @@ function InstaIcon() {
   )
 }
 
+function KakaoIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 3C6.48 3 2 6.45 2 10.7c0 2.75 1.88 5.16 4.7 6.52l-1.2 3.53a.45.45 0 0 0 .68.51l4.15-2.74c.54.08 1.1.12 1.67.12 5.52 0 10-3.45 10-7.94S17.52 3 12 3Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}
+
+function HeaderChannelLink({
+  href,
+  label,
+  className,
+  children,
+}: {
+  href: string
+  label: string
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      title={label}
+      className={cn(
+        "flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-md",
+        className
+      )}
+    >
+      {children}
+    </a>
+  )
+}
+
 function MobileProfileSection({
   profile,
   summary,
@@ -485,8 +569,8 @@ function MobileProfileSection({
 }) {
   if (!profile) {
     return (
-      <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FCE9D9] to-[#F5E1C8] px-4 py-3.5 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.12)] dark:to-[rgba(192,107,42,0.08)]">
-        <p className="mb-2 text-[11px] text-[#6B5D4F] dark:text-[#B8A78F]">
+      <div className="border-b border-border bg-gradient-to-br from-primary/15 to-secondary px-4 py-3.5">
+        <p className="mb-2 text-[11px] text-muted-foreground">
           로그인하고 관심 아이를 저장해 보세요
         </p>
         <Link
@@ -503,46 +587,46 @@ function MobileProfileSection({
   const isStaff = profile.role === "staff" || profile.role === "admin"
 
   return (
-    <div className="border-b border-[#E5DDD0] bg-gradient-to-br from-[#FAF3E8] to-[#F5EDE0] px-4 py-3 dark:border-[#3A3229] dark:from-[rgba(232,155,94,0.08)] dark:to-[rgba(192,107,42,0.04)]">
+    <div className="border-b border-border bg-gradient-to-br from-secondary to-muted px-4 py-3">
       {summary && (
-        <div className="overflow-hidden rounded-xl border border-[#E5DDD0] bg-[#FFFDF9]/80 dark:border-[#3A3229] dark:bg-white/[0.03]">
+        <div className="overflow-hidden rounded-xl border border-border bg-card/80">
           <Link
             href={summary.nextEvent?.href ?? "/calendar"}
             onClick={onClose}
-            className="flex min-w-0 items-center gap-2.5 px-3 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:hover:bg-[rgba(255,212,161,0.04)]"
+            className="flex min-w-0 items-center gap-2.5 px-3 py-3 transition-colors hover:bg-primary/5"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#FAF3E8] text-[#6B5D4F] dark:bg-white/[0.06] dark:text-[#B8A78F]">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
               <CalendarDays className="size-4" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+              <span className="block text-[10px] font-medium text-muted-foreground">
                 다음 일정
               </span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-foreground">
                 {summary.nextEvent
                   ? `${formatMobileHeaderDate(summary.nextEvent.startsAt)} · ${summary.nextEvent.title}`
                   : "예정된 일정 없음"}
               </span>
             </span>
-            <ChevronRight className="size-4 shrink-0 text-[#9B8F80]" />
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
           </Link>
           <Link
             href="/my/applications"
             onClick={onClose}
-            className="flex min-w-0 items-center gap-2.5 border-t border-[#E5DDD0] px-3 py-3 transition-colors hover:bg-[rgba(192,107,42,0.06)] dark:border-[#3A3229] dark:hover:bg-[rgba(255,212,161,0.04)]"
+            className="flex min-w-0 items-center gap-2.5 border-t border-border px-3 py-3 transition-colors hover:bg-primary/5"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#FAF3E8] text-[#6B5D4F] dark:bg-white/[0.06] dark:text-[#B8A78F]">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
               <ClipboardList className="size-4" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[10px] font-medium text-[#9B8F80] dark:text-[#B8A78F]">
+              <span className="block text-[10px] font-medium text-muted-foreground">
                 신청 현황
               </span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-[#2C2C2A] dark:text-[#F5EDE0]">
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-foreground">
                 승인 {summary.approvedApplications} · 진행 {summary.pendingApplications}
               </span>
             </span>
-            <ChevronRight className="size-4 shrink-0 text-[#9B8F80]" />
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
           </Link>
         </div>
       )}
@@ -552,7 +636,7 @@ function MobileProfileSection({
           href="/admin"
           onClick={onClose}
           className={cn(
-            "flex items-center justify-between rounded-xl border border-[#E2D6C8] bg-[#F7F2EA] px-3 py-2.5 text-[11px] font-semibold text-primary transition-colors hover:bg-[rgba(192,107,42,0.08)] dark:border-[rgba(255,212,161,0.12)] dark:bg-[rgba(255,212,161,0.06)]",
+            "flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2.5 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10",
             summary && "mt-2.5"
           )}
         >

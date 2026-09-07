@@ -11,7 +11,18 @@ import { Label } from "@/shared/components/ui/label"
 import { cn } from "@/shared/lib/utils"
 import type { DailyPost, DailyCategory } from "@/shared/types/database"
 
-const DAILY_CATEGORIES: DailyCategory[] = ["일상", "구조 소식", "입소", "임시보호", "봉사 현장", "시설 안내", "후원 소식", "봉사 후기"]
+const DAILY_CATEGORIES: DailyCategory[] = [
+  "일상",
+  "자유게시판",
+  "질문 및 답변",
+  "구조 소식",
+  "입소",
+  "임시보호",
+  "봉사 현장",
+  "시설 안내",
+  "후원 소식",
+  "봉사 후기",
+]
 
 const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -93,7 +104,7 @@ export function DailyForm({
           name="title"
           required
           defaultValue={post?.title ?? ""}
-          placeholder="예: 4.21.화 왕왕랜드 일상"
+          placeholder="편하게 제목을 입력해주세요"
         />
       </div>
 

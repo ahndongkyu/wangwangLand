@@ -2,6 +2,11 @@ import { unstable_cache } from "next/cache"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import {
+  DEFAULT_HOME_FAVORITES,
+  isHomeFavoriteKey,
+  type HomeFavoriteKey,
+} from "@/shared/constants/home-navigation"
 
 /** status별 회원 수 — 60초 캐싱. 변경 빈도 낮으니 페이지 로딩 부담 ↓ */
 const getCachedStatusCounts = unstable_cache(
@@ -54,6 +59,30 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     .maybeSingle()
 
   return data as Profile | null
+}
+
+export async function listMyHomeFavorites(): Promise<HomeFavoriteKey[]> {
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session?.user) return DEFAULT_HOME_FAVORITES
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("favorite_menu_items")
+    .eq("id", session.user.id)
+    .maybeSingle()
+
+  if (error) return DEFAULT_HOME_FAVORITES
+
+  const values = Array.isArray(data?.favorite_menu_items)
+    ? data.favorite_menu_items.filter(
+        (value): value is string => typeof value === "string"
+      )
+    : []
+  const valid = values.filter(isHomeFavoriteKey)
+  return valid.length > 0 ? valid : DEFAULT_HOME_FAVORITES
 }
 
 export interface PaginatedProfiles {

@@ -1,10 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import {
-  VolunteerApplicationGuide,
-  VolunteerForm,
-} from "@/features/applications"
+import { VolunteerForm } from "@/features/applications"
 import { getCurrentProfile } from "@/features/members"
 import { TERMS_VERSION } from "@/features/legal"
 import { listEventsInRange } from "@/features/events"
@@ -26,29 +23,43 @@ export default async function VolunteerPage() {
   // 비로그인이면 가입 안내
   if (!profile) {
     return (
-      <div className="mx-auto w-full max-w-xl px-4 py-12 text-center md:py-20">
-        <div className="mb-3 text-4xl">🐾</div>
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">봉사 신청</h1>
-        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-          회원가입 후 이용 가능합니다.
-          <br />
-          왕왕랜드 가족이 되어 아이들과 함께해 주세요.
-        </p>
-        <VolunteerApplicationGuide className="mt-6 text-left" />
-        <div className="mt-5 flex flex-col gap-2">
-          <Link
-            href="/login?next=/volunteer"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            회원가입 / 로그인
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center text-xs text-muted-foreground hover:text-foreground"
-          >
-            홈으로
-          </Link>
-        </div>
+      <div className="relative flex min-h-[520px] items-center justify-center overflow-hidden bg-[linear-gradient(135deg,var(--secondary)_0%,var(--accent)_100%)] px-4 py-10 sm:px-6 md:min-h-[620px] md:py-14">
+        <div
+          aria-hidden
+          className="absolute -left-16 top-10 size-44 rounded-full bg-primary/10 blur-2xl"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-16 -right-12 size-56 rounded-full bg-brand-sage/25 blur-2xl"
+        />
+
+        <section className="relative w-full max-w-[520px] rounded-[28px] border border-border bg-card/95 px-6 py-9 text-center shadow-[0_18px_48px_rgba(88,76,68,0.12)] backdrop-blur-sm sm:px-10 sm:py-11">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-3xl shadow-sm">
+            <span aria-hidden>🐾</span>
+          </div>
+          <h1 className="mt-5 text-2xl font-bold text-foreground md:text-3xl">
+            봉사 신청
+          </h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            회원가입 후 이용 가능합니다.
+            <br />
+            왕왕랜드 가족이 되어 아이들과 함께해 주세요.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-3">
+            <Link
+              href="/login?next=/volunteer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(201,112,82,0.20)] transition-all hover:-translate-y-0.5 hover:bg-brand-coral-hover hover:shadow-[0_9px_22px_rgba(201,112,82,0.24)]"
+            >
+              회원가입
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"
+            >
+              홈으로
+            </Link>
+          </div>
+        </section>
       </div>
     )
   }

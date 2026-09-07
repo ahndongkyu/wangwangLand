@@ -369,7 +369,7 @@ function CTALink({
     variant === "primary" &&
       "shadow-lg shadow-primary/30 transition-transform hover:-translate-y-0.5",
     variant === "outline" &&
-      "border-2 border-[#2A3D2F] bg-white/85 text-[#2A3D2F] backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:bg-[#2A3D2F] hover:text-white"
+      "border-2 border-brand-sage bg-card/85 text-foreground backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:bg-brand-sage hover:text-foreground"
   )
 
   if (cta.external) {

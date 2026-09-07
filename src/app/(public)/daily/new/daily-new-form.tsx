@@ -23,7 +23,7 @@ export function DailyNewForm() {
           name="title"
           required
           maxLength={100}
-          placeholder="예: 4.21.화 왕왕랜드 일상"
+          placeholder="편하게 제목을 입력해주세요"
         />
       </div>
 

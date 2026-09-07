@@ -9,6 +9,7 @@ export interface ListDailyOptions {
   limit?: number
   offset?: number
   category?: string
+  board?: "daily" | "free" | "qna"
 }
 
 export interface PaginatedDaily {
@@ -22,6 +23,7 @@ export async function listDailyPosts({
   limit = 12,
   offset = 0,
   category,
+  board,
 }: ListDailyOptions = {}): Promise<PaginatedDaily> {
   const supabase = await createClient()
 
@@ -35,7 +37,15 @@ export async function listDailyPosts({
   if (searchQuery && searchQuery.trim()) {
     query = query.ilike("title", `%${searchQuery.trim()}%`)
   }
-  if (category && category.trim()) {
+  if (board === "daily") {
+    query = query.or(
+      'category.is.null,category.not.in.("자유게시판","질문 및 답변")'
+    )
+  } else if (board === "free") {
+    query = query.eq("category", "자유게시판")
+  } else if (board === "qna") {
+    query = query.eq("category", "질문 및 답변")
+  } else if (category && category.trim()) {
     query = query.eq("category", category.trim())
   }
 
