@@ -9,6 +9,10 @@ import {
   getVolunteerTimeOptions,
   validateVolunteerSchedule,
 } from "../lib/volunteer-operating-hours"
+import {
+  getVolunteerApplicantParts,
+  normalizeVolunteerGroupName,
+} from "../lib/volunteer-applicant"
 import { VolunteerTimeField } from "./volunteer-time-field"
 import { LargeGroupInquiry } from "./volunteer-application-guide"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
@@ -21,8 +25,6 @@ import { Textarea } from "@/shared/components/ui/textarea"
 import {
   NAME_HINT,
   NAME_PATTERN_RAW,
-  ORG_OR_PERSON_HINT,
-  ORG_OR_PERSON_PATTERN_RAW,
   validateGroupPartySize,
   validateKoreanPhone,
   validateName,
@@ -46,16 +48,12 @@ export function VolunteerEditForm({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const isGroup = application.party_size > 1
-  const groupSeparator = " / "
-  const separatorIndex = isGroup
-    ? application.applicant_name.indexOf(groupSeparator)
-    : -1
-  const defaultGroupName = separatorIndex >= 0
-    ? application.applicant_name.slice(0, separatorIndex)
-    : ""
-  const defaultApplicantName = separatorIndex >= 0
-    ? application.applicant_name.slice(separatorIndex + groupSeparator.length)
-    : application.applicant_name
+  const applicantParts = getVolunteerApplicantParts(
+    application.applicant_name,
+    application.group_name
+  )
+  const defaultGroupName = applicantParts.groupName ?? ""
+  const defaultApplicantName = applicantParts.applicantName
 
   // 일정변경요청 모드면 reschedule_dates를 초기값으로
   const initialDates = isReschedule
@@ -114,8 +112,15 @@ export function VolunteerEditForm({
 
     // 일반 수정 모드
     if (isGroup) {
-      const groupNameCheck = validateOrgOrPersonName(String(fd.get("group_name") ?? ""))
-      if (!groupNameCheck.valid) return setError(`단체명: ${groupNameCheck.error}`)
+      const groupName = normalizeVolunteerGroupName(
+        String(fd.get("group_name") ?? "")
+      )
+      if (groupName) {
+        const groupNameCheck = validateOrgOrPersonName(groupName)
+        if (!groupNameCheck.valid) {
+          return setError(`단체명: ${groupNameCheck.error}`)
+        }
+      }
     }
     const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
     if (!nameCheck.valid) return setError(nameCheck.error!)
@@ -150,19 +155,17 @@ export function VolunteerEditForm({
         <>
           {isGroup && (
             <div className="space-y-1.5">
-              <Label htmlFor="group_name">단체명 *</Label>
+              <Label htmlFor="group_name">단체명 (선택)</Label>
               <Input
                 id="group_name"
                 name="group_name"
-                required
-                minLength={2}
                 maxLength={30}
-                pattern={ORG_OR_PERSON_PATTERN_RAW}
-                title={ORG_OR_PERSON_HINT}
                 defaultValue={defaultGroupName}
                 placeholder="예: 왕왕대학교 봉사동아리"
               />
-              <p className="text-xs text-muted-foreground">{ORG_OR_PERSON_HINT}</p>
+              <p className="text-xs text-muted-foreground">
+                비워두거나 X, 없음으로 입력하면 단체명 없이 저장됩니다.
+              </p>
             </div>
           )}
 

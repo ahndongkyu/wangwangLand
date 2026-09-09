@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { formatVolunteerApplicantName } from "@/features/applications"
 import { EventForm } from "@/features/events/components/event-form"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 
@@ -24,14 +25,17 @@ async function loadApplication(id: string): Promise<FromApp | null> {
   const { data } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_dates, available_time, message, status"
+      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, status"
     )
     .eq("id", id)
     .maybeSingle()
   if (!data || data.status !== "승인") return null
   return {
     id: data.id,
-    applicantName: data.applicant_name,
+    applicantName: formatVolunteerApplicantName(
+      data.applicant_name,
+      data.group_name
+    ),
     partySize: data.party_size ?? 1,
     availableDates: (data.available_dates ?? []) as string[],
     availableTime: data.available_time,

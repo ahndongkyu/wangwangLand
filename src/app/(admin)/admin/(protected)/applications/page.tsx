@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 
 import {
+  formatVolunteerApplicantName,
   listAdoptionApplications,
   listVolunteerApplications,
 } from "@/features/applications"
@@ -401,7 +402,12 @@ export default async function AdminApplicationsPage({
               <Link key={item.id} href={`/admin/applications/volunteer/${item.id}`}
                 className={cn(`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 border-l-4 ${statusBorderColor(item.status)}`, isProcessed(item.status) && "opacity-60 hover:opacity-100")}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{item.applicant_name}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {formatVolunteerApplicantName(
+                      item.applicant_name,
+                      item.group_name
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatKoreanPhone(item.phone)} · {new Date(item.submitted_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "short", day: "numeric" })}
                   </p>
@@ -448,7 +454,10 @@ export default async function AdminApplicationsPage({
                         href={`/admin/applications/volunteer/${v.id}`}
                         className="block hover:text-primary"
                       >
-                        {v.applicant_name}
+                        {formatVolunteerApplicantName(
+                          v.applicant_name,
+                          v.group_name
+                        )}
                       </Link>
                     </td>
                     <td className="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">

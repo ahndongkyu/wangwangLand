@@ -9,6 +9,7 @@ import {
   getVolunteerTimeOptions,
   validateVolunteerSchedule,
 } from "../lib/volunteer-operating-hours"
+import { normalizeVolunteerGroupName } from "../lib/volunteer-applicant"
 import { VolunteerTimeField } from "./volunteer-time-field"
 import {
   LargeGroupInquiry,
@@ -25,8 +26,6 @@ import { Textarea } from "@/shared/components/ui/textarea"
 import {
   NAME_HINT,
   NAME_PATTERN_RAW,
-  ORG_OR_PERSON_HINT,
-  ORG_OR_PERSON_PATTERN_RAW,
   PHONE_HINT,
   validateGroupPartySize,
   validateKoreanPhone,
@@ -186,10 +185,15 @@ export function VolunteerForm({
     if (step === 1) {
       const fd = new FormData(formRef.current!)
       if (partyType === "group") {
-        const groupNameCheck = validateOrgOrPersonName(String(fd.get("group_name") ?? ""))
-        if (!groupNameCheck.valid) {
-          showFieldError("group_name", groupNameCheck.error!)
-          return
+        const groupName = normalizeVolunteerGroupName(
+          String(fd.get("group_name") ?? "")
+        )
+        if (groupName) {
+          const groupNameCheck = validateOrgOrPersonName(groupName)
+          if (!groupNameCheck.valid) {
+            showFieldError("group_name", groupNameCheck.error!)
+            return
+          }
         }
       }
       const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
@@ -233,9 +237,14 @@ export function VolunteerForm({
     const formData = new FormData(e.currentTarget)
 
     if (partyType === "group") {
-      const groupNameCheck = validateOrgOrPersonName(String(formData.get("group_name") ?? ""))
-      if (!groupNameCheck.valid) {
-        return showFieldError("group_name", groupNameCheck.error!)
+      const groupName = normalizeVolunteerGroupName(
+        String(formData.get("group_name") ?? "")
+      )
+      if (groupName) {
+        const groupNameCheck = validateOrgOrPersonName(groupName)
+        if (!groupNameCheck.valid) {
+          return showFieldError("group_name", groupNameCheck.error!)
+        }
       }
     }
     const nameCheck = validateName(String(formData.get("applicant_name") ?? ""))
@@ -388,7 +397,7 @@ export function VolunteerForm({
               active={partyType === "group"}
               Icon={Users}
               label="단체 신청"
-              desc="학교/기업/종교단체 등"
+              desc="학교 동아리 단체 등 2인 이상"
               onClick={() => handlePartyTypeChange("group")}
             />
           </div>
@@ -400,25 +409,20 @@ export function VolunteerForm({
             {partyType === "group" && (
               <Field
                 id="group_name"
-                label="단체명"
-                required
+                label="단체명 (선택)"
                 className="md:col-span-2"
               >
                 <Input
                   id="group_name"
                   name="group_name"
-                  required
-                  minLength={2}
                   maxLength={30}
-                  pattern={ORG_OR_PERSON_PATTERN_RAW}
-                  title={ORG_OR_PERSON_HINT}
                   placeholder="예: 왕왕대학교 봉사동아리"
                   aria-invalid={Boolean(fieldErrors.group_name)}
                   aria-describedby={fieldErrors.group_name ? "group_name-error" : "group_name-hint"}
                   onChange={() => clearFieldError("group_name")}
                 />
                 <p id="group_name-hint" className="text-xs text-muted-foreground">
-                  {ORG_OR_PERSON_HINT}
+                  비워두거나 X, 없음으로 입력하면 단체명 없이 접수됩니다.
                 </p>
                 <FieldError id="group_name-error" message={fieldErrors.group_name} />
               </Field>
@@ -677,7 +681,7 @@ export function VolunteerForm({
             purpose: "봉사 활동 운영 및 안전 관리, 출입 기록 관리",
             items:
               partyType === "group"
-                ? "단체명, 인솔자 이름·연락처, 동행 인원수, 활동 일정"
+                ? "인솔자 이름·연락처, 동행 인원수, 활동 일정, 단체명(선택)"
                 : "이름, 연락처, 인원수, 활동 일정",
             retention: "봉사 활동 종료 후 1년",
           }}

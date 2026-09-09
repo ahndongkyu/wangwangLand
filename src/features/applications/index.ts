@@ -6,6 +6,7 @@ export {
   VolunteerApplicationGuide,
 } from "./components/volunteer-application-guide"
 export { ApplicationStatusForm } from "./components/status-form"
+export { formatVolunteerApplicantName } from "./lib/volunteer-applicant"
 export {
   submitAdoptionApplication,
   submitVolunteerApplication,

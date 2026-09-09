@@ -10,7 +10,10 @@ import {
   type EventCategory,
 } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
-import { listVolunteerApplications } from "@/features/applications"
+import {
+  formatVolunteerApplicantName,
+  listVolunteerApplications,
+} from "@/features/applications"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 import { MonthShareButton } from "./_components/month-share-button"
@@ -123,7 +126,10 @@ export default async function AdminCalendarPage({
                 className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm"
               >
                 <span className="font-medium text-foreground">
-                  {app.applicant_name}
+                  {formatVolunteerApplicantName(
+                    app.applicant_name,
+                    app.group_name
+                  )}
                   {app.party_size > 1 && ` 외 ${app.party_size - 1}명`}
                 </span>
                 <span className="text-xs text-muted-foreground">

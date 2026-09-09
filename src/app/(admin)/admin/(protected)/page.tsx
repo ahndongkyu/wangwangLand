@@ -10,6 +10,7 @@ import {
 
 import {
   countPendingApplications,
+  formatVolunteerApplicantName,
   getApplicationStats,
   listRecentApplications,
   getMonthlyVolunteerStats,
@@ -281,7 +282,12 @@ export default async function AdminDashboardPage({
                     <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-foreground/70">
                       {app.type === "adoption" ? "입양" : "봉사"}
                     </span>
-                    <span className="truncate text-foreground">{app.applicant_name}</span>
+                    <span className="truncate text-foreground">
+                      {formatVolunteerApplicantName(
+                        app.applicant_name,
+                        app.group_name
+                      )}
+                    </span>
                     <Badge
                       className={cn(
                         "shrink-0 border-0 text-[10px] font-semibold",

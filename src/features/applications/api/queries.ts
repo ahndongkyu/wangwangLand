@@ -17,7 +17,7 @@ export interface MyApplicationSummary {
 
 interface ListOptions {
   status?: ApplicationStatus | "전체"
-  /** 신청자 이름·전화 통합 검색 (ilike) */
+  /** 신청자/단체 이름·전화 통합 검색 (ilike) */
   query?: string
   /** 제출일 이상 (ISO 날짜 YYYY-MM-DD) */
   from?: string
@@ -107,7 +107,9 @@ export async function listVolunteerApplications({
 
   if (searchQuery && searchQuery.trim()) {
     const q = `%${searchQuery.trim()}%`
-    query = query.or(`applicant_name.ilike.${q},phone.ilike.${q}`)
+    query = query.or(
+      `applicant_name.ilike.${q},group_name.ilike.${q},phone.ilike.${q}`
+    )
   }
 
   const fromIso = toStartOfDayIso(from)
@@ -417,6 +419,7 @@ export interface RecentApplication {
   id: string
   type: "adoption" | "volunteer"
   applicant_name: string
+  group_name: string | null
   status: ApplicationStatus
   submitted_at: string
 }
@@ -476,14 +479,18 @@ export async function listRecentApplications(
       .limit(limit),
     supabase
       .from("volunteer_applications")
-      .select("id, applicant_name, status, submitted_at")
+      .select("id, applicant_name, group_name, status, submitted_at")
       .order("submitted_at", { ascending: false })
       .limit(limit),
   ])
 
   const rows: RecentApplication[] = [
-    ...((adoption.data ?? []) as Omit<RecentApplication, "type">[]).map((r) => ({
+    ...((adoption.data ?? []) as Omit<
+      RecentApplication,
+      "type" | "group_name"
+    >[]).map((r) => ({
       ...r,
+      group_name: null,
       type: "adoption" as const,
     })),
     ...((volunteer.data ?? []) as Omit<RecentApplication, "type">[]).map((r) => ({

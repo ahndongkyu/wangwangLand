@@ -160,6 +160,7 @@ export interface AdoptionApplication {
 export interface VolunteerApplication {
   id: string
   applicant_name: string
+  group_name: string | null
   phone: string
   email: string | null
   party_size: number

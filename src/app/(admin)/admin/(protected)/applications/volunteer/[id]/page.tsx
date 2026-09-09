@@ -4,6 +4,7 @@ import { KeyRound, MessageSquare, Phone, Users } from "lucide-react"
 
 import {
   ApplicationStatusForm,
+  formatVolunteerApplicantName,
   getVolunteerApplication,
 } from "@/features/applications"
 import { getEventTitle } from "@/features/events"
@@ -173,8 +174,11 @@ export default async function VolunteerApplicationDetailPage({
 
       <section className="mb-6 grid gap-4 md:grid-cols-2">
         <Card title={isGroup ? "단체 / 인솔자 정보" : "신청자 정보"}>
+          {isGroup && (
+            <Row label="단체명" value={app.group_name ?? "미입력"} />
+          )}
           <Row
-            label={isGroup ? "단체명/인솔자" : "이름"}
+            label={isGroup ? "인솔자" : "이름"}
             value={app.applicant_name}
           />
           <Row
@@ -355,7 +359,10 @@ export default async function VolunteerApplicationDetailPage({
         kind="volunteer"
         currentStatus={app.status}
         currentNote={app.admin_note}
-        applicantName={app.applicant_name}
+        applicantName={formatVolunteerApplicantName(
+          app.applicant_name,
+          app.group_name
+        )}
         linkedEventCount={linkedEvents.length}
         hint={{
           availableDates: app.status === "일정변경요청" && app.reschedule_dates?.length

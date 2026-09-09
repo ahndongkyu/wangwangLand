@@ -11,6 +11,10 @@ import {
   GROUP_BLOCK_THRESHOLD,
   GROUP_BLOCKING_CATEGORIES,
 } from "@/features/events/types"
+import {
+  formatVolunteerApplicantName,
+  normalizeVolunteerGroupName,
+} from "../lib/volunteer-applicant"
 import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
 import {
   formatKoreanPhone,
@@ -152,7 +156,9 @@ export async function submitVolunteerApplication(
   formData: FormData
 ): Promise<SubmitResult> {
   const applicantName = String(formData.get("applicant_name") ?? "").trim()
-  const groupName = String(formData.get("group_name") ?? "").trim()
+  const groupName = normalizeVolunteerGroupName(
+    String(formData.get("group_name") ?? "")
+  )
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const privacy_agreed = formData.get("privacy_agreed") === "on"
   const partyType = String(formData.get("party_type") ?? "")
@@ -162,7 +168,7 @@ export async function submitVolunteerApplication(
   }
   const nameCheck = validateName(applicantName)
   if (!nameCheck.valid) return { error: nameCheck.error, field: "applicant_name" }
-  if (partyType === "group") {
+  if (partyType === "group" && groupName) {
     const groupNameCheck = validateOrgOrPersonName(groupName)
     if (!groupNameCheck.valid) {
       return { error: groupNameCheck.error, field: "group_name" }
@@ -179,9 +185,6 @@ export async function submitVolunteerApplication(
   if (partyType === "individual" && partyCheck.partySize !== 1) {
     return { error: "개인 신청 인원수는 1명이어야 합니다.", field: "party_size" }
   }
-
-  const storedApplicantName =
-    partyType === "group" ? `${groupName} / ${applicantName}` : applicantName
 
   if (!privacy_agreed) {
     return { error: "개인정보 수집·이용 동의가 필요합니다.", field: "privacy_agreed" }
@@ -246,7 +249,8 @@ export async function submitVolunteerApplication(
   const { data, error } = await admin
     .from("volunteer_applications")
     .insert({
-      applicant_name: storedApplicantName,
+      applicant_name: applicantName,
+      group_name: partyType === "group" ? groupName : null,
       phone,
       email: user.email ?? null,
       party_size: partyCheck.partySize!,
@@ -269,9 +273,13 @@ export async function submitVolunteerApplication(
   // 운영진에게 푸시 알림
   try {
     const { sendPushToStaff } = await import("@/features/push")
+    const displayName = formatVolunteerApplicantName(
+      applicantName,
+      partyType === "group" ? groupName : null
+    )
     await sendPushToStaff({
       title: "🐾 새 봉사 신청",
-      body: `${storedApplicantName}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
+      body: `${displayName}님이 봉사를 신청했어요 (${partyCheck.partySize}명)`,
       url: `/admin/applications/volunteer/${data.id}`,
       tag: `volunteer-app-${data.id}`,
     })
@@ -291,7 +299,9 @@ export async function updateMyVolunteerApplication(
   formData: FormData
 ): Promise<SubmitResult> {
   const applicantName = String(formData.get("applicant_name") ?? "").trim()
-  const groupName = String(formData.get("group_name") ?? "").trim()
+  const groupName = normalizeVolunteerGroupName(
+    String(formData.get("group_name") ?? "")
+  )
   const partyType = String(formData.get("party_type") ?? "")
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
 
@@ -300,7 +310,7 @@ export async function updateMyVolunteerApplication(
   }
   const nameCheck = validateName(applicantName)
   if (!nameCheck.valid) return { error: nameCheck.error, field: "applicant_name" }
-  if (partyType === "group") {
+  if (partyType === "group" && groupName) {
     const groupNameCheck = validateOrgOrPersonName(groupName)
     if (!groupNameCheck.valid) {
       return { error: groupNameCheck.error, field: "group_name" }
@@ -312,9 +322,6 @@ export async function updateMyVolunteerApplication(
     ? validateGroupPartySize(String(formData.get("party_size") ?? "1"))
     : validatePartySize(String(formData.get("party_size") ?? "1"))
   if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
-  const storedApplicantName =
-    partyType === "group" ? `${groupName} / ${applicantName}` : applicantName
-
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
@@ -347,7 +354,8 @@ export async function updateMyVolunteerApplication(
   const { error } = await admin
     .from("volunteer_applications")
     .update({
-      applicant_name: storedApplicantName,
+      applicant_name: applicantName,
+      group_name: partyType === "group" ? groupName : null,
       phone,
       party_size: partyCheck.partySize!,
       available_dates: availableDates,
@@ -576,7 +584,7 @@ export async function updateVolunteerApplication(
   const { data: prev } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time"
+      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time"
     )
     .eq("id", id)
     .maybeSingle()
@@ -683,19 +691,23 @@ export async function updateVolunteerApplication(
 
     // SMS 발송
     if (prev.phone) {
+      const volunteerApplicantName = formatVolunteerApplicantName(
+        prev.applicant_name ?? "",
+        prev.group_name
+      )
       let smsText: string | null = null
       if (status === "승인" && prev.status === "일정변경요청" && rejectReschedule) {
-        smsText = buildRescheduleRejectedSmsText(prev.applicant_name ?? "")
+        smsText = buildRescheduleRejectedSmsText(volunteerApplicantName)
       } else if (status === "승인" && prev.status === "일정변경요청") {
-        smsText = buildRescheduleSmsText(prev.applicant_name ?? "")
+        smsText = buildRescheduleSmsText(volunteerApplicantName)
       } else if (status === "승인" && prev.status !== "일정변경요청") {
-        smsText = buildVolunteerSmsText(prev.applicant_name ?? "")
+        smsText = buildVolunteerSmsText(volunteerApplicantName)
       } else if (prev.status === "일정변경요청" && status !== "승인") {
-        smsText = buildRescheduleRejectedSmsText(prev.applicant_name ?? "")
+        smsText = buildRescheduleRejectedSmsText(volunteerApplicantName)
       } else if (status === "검토중" && prev.status !== "검토중") {
-        smsText = buildReviewSmsText(prev.applicant_name ?? "", "봉사")
+        smsText = buildReviewSmsText(volunteerApplicantName, "봉사")
       } else if (status === "취소" && prev.status !== "취소") {
-        smsText = buildCancelSmsText(prev.applicant_name ?? "", "봉사")
+        smsText = buildCancelSmsText(volunteerApplicantName, "봉사")
       }
       if (smsText) {
         try {
@@ -841,7 +853,7 @@ export async function requestReschedule(
 
   const { data: prev } = await admin
     .from("volunteer_applications")
-    .select("id, created_by, status, applicant_name")
+    .select("id, created_by, status, applicant_name, group_name")
     .eq("id", id)
     .maybeSingle()
 
@@ -883,10 +895,14 @@ export async function requestReschedule(
   // 운영진에게 푸시 알림
   try {
     const { sendPushToStaff } = await import("@/features/push")
+    const displayName = formatVolunteerApplicantName(
+      prev.applicant_name,
+      prev.group_name
+    )
     await sendPushToStaff(
       {
         title: "🗓️ 봉사 일정변경 요청",
-        body: `${prev.applicant_name}님이 일정변경을 요청했어요.`,
+        body: `${displayName}님이 일정변경을 요청했어요.`,
         url: `/admin/applications/volunteer/${id}`,
         tag: `volunteer-reschedule-${id}`,
       },
