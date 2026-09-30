@@ -8,15 +8,18 @@ import { deleteNotice } from "../api/mutations"
 import { useConfirm } from "@/shared/components/confirm-dialog"
 import { useToast } from "@/shared/components/toast"
 import { Button } from "@/shared/components/ui/button"
+import type { NoticeBoardType } from "@/shared/types/database"
 
 export function NoticeDeleteButton({
   id,
   title,
   redirectTo,
+  boardType = "notice",
 }: {
   id: string
   title: string
   redirectTo?: string
+  boardType?: NoticeBoardType
 }) {
   const [pending, startTransition] = useTransition()
   const confirm = useConfirm()
@@ -25,18 +28,18 @@ export function NoticeDeleteButton({
 
   async function handleClick() {
     const ok = await confirm({
-      title: `'${title}' 공지를 삭제할까요?`,
+      title: `'${title}' ${boardType === "expense" ? "지출 내역을" : "공지를"} 삭제할까요?`,
       description: "되돌릴 수 없습니다.",
       confirmLabel: "삭제",
       danger: true,
     })
     if (!ok) return
     startTransition(async () => {
-      const result = await deleteNotice(id)
+      const result = await deleteNotice(id, boardType)
       if (result?.error) {
         toast.error(`삭제 실패: ${result.error}`)
       } else {
-        toast.success("공지를 삭제했습니다.")
+        toast.success(boardType === "expense" ? "지출 내역을 삭제했습니다." : "공지를 삭제했습니다.")
         if (redirectTo) router.push(redirectTo)
       }
     })

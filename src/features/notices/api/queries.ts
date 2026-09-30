@@ -1,6 +1,6 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
-import type { Notice } from "@/shared/types/database"
+import type { Notice, NoticeBoardType } from "@/shared/types/database"
 
 import type { RecentNoticeMeta } from "../types"
 
@@ -18,6 +18,8 @@ export interface ListNoticesOptions {
   status?: "published" | "draft"
   /** 카테고리 prefix (예: "공지", "이벤트") */
   category?: string
+  /** 게시판 구분 (기본: 공개 공지사항) */
+  boardType?: NoticeBoardType
 }
 
 export interface PaginatedNotices {
@@ -34,12 +36,14 @@ export async function listNotices({
   offset = 0,
   status,
   category,
+  boardType = "notice",
 }: ListNoticesOptions = {}): Promise<PaginatedNotices> {
   const supabase = await createClient()
 
   let query = supabase
     .from("notices")
-    .select("id, title, is_pinned, published_at, created_at, created_by, view_count", { count: "exact" })
+    .select("id, title, is_pinned, published_at, created_at, created_by, view_count, board_type, attachments, home_visible", { count: "exact" })
+    .eq("board_type", boardType)
     .order("is_pinned", { ascending: false })
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
@@ -62,8 +66,8 @@ export async function listNotices({
   if (includeDrafts) {
     const [mainResult, publishedCountRes, draftCountRes] = await Promise.all([
       query,
-      supabase.from("notices").select("*", { count: "exact", head: true }).not("published_at", "is", null),
-      supabase.from("notices").select("*", { count: "exact", head: true }).is("published_at", null),
+      supabase.from("notices").select("*", { count: "exact", head: true }).eq("board_type", boardType).not("published_at", "is", null),
+      supabase.from("notices").select("*", { count: "exact", head: true }).eq("board_type", boardType).is("published_at", null),
     ])
 
     if (mainResult.error) {
@@ -112,6 +116,7 @@ export async function listRecentPublishedNotices(
   const { data, error } = await supabase
     .from("notices")
     .select("id, published_at, is_pinned")
+    .eq("board_type", "notice")
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
     .limit(limit)
@@ -131,13 +136,15 @@ export interface AdjacentNotice {
 
 export async function getAdjacentNotices(
   currentId: string,
-  publishedAt: string
+  publishedAt: string,
+  boardType: NoticeBoardType = "notice"
 ): Promise<{ prev: AdjacentNotice | null; next: AdjacentNotice | null }> {
   const supabase = await createClient()
   const [olderRes, newerRes] = await Promise.all([
     supabase
       .from("notices")
       .select("id, title")
+      .eq("board_type", boardType)
       .not("published_at", "is", null)
       .neq("id", currentId)
       .lt("published_at", publishedAt)
@@ -146,6 +153,7 @@ export async function getAdjacentNotices(
     supabase
       .from("notices")
       .select("id, title")
+      .eq("board_type", boardType)
       .not("published_at", "is", null)
       .neq("id", currentId)
       .gt("published_at", publishedAt)
@@ -160,11 +168,11 @@ export async function getAdjacentNotices(
 
 export async function getNotice(
   id: string,
-  { includeDrafts = false }: { includeDrafts?: boolean } = {}
+  { includeDrafts = false, boardType = "notice" }: { includeDrafts?: boolean; boardType?: NoticeBoardType } = {}
 ): Promise<NoticeWithAuthor | null> {
   const supabase = await createClient()
 
-  let query = supabase.from("notices").select("*").eq("id", id)
+  let query = supabase.from("notices").select("*").eq("id", id).eq("board_type", boardType)
   if (!includeDrafts) {
     query = query.not("published_at", "is", null)
   }

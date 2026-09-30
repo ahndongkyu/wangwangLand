@@ -22,6 +22,7 @@ import {
   Megaphone,
   Menu as MenuIcon,
   Moon,
+  ReceiptText,
   Settings,
   ShieldCheck,
   Sun,
@@ -80,6 +81,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
       label: "게시글 관리",
       items: [
         { label: "공지사항", href: "/admin/notices", icon: Megaphone },
+        { label: "지출 내역", href: "/admin/expenses", icon: ReceiptText },
         { label: "일상", href: "/admin/daily", icon: Camera },
         { label: "입양후기", href: "/admin/stories", icon: Heart },
         { label: "후원 감사글", href: "/admin/thanks", icon: Gift },
@@ -130,7 +132,7 @@ function getAdminMobileBackHref(pathname: string): string | null {
   // 게시물 관리 수정 화면은 별도 상세 페이지가 없으므로 각 목록으로 이동한다.
   if (
     segments.at(-1) === "edit" &&
-    ["dogs", "cats", "notices", "daily", "stories", "thanks"].includes(segments[1])
+    ["dogs", "cats", "notices", "expenses", "daily", "stories", "thanks"].includes(segments[1])
   ) {
     return `/admin/${segments[1]}`
   }

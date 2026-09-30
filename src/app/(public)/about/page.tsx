@@ -5,16 +5,12 @@ import {
   Calendar,
   ChevronDown,
   Heart,
-  HeartHandshake,
-  Home as HomeIcon,
   MapPin,
   MoonStar,
   ShieldCheck,
-  Sprout,
   Stethoscope,
   Sun,
   Sunrise,
-  Users,
 } from "lucide-react"
 
 import { CopyButton } from "@/shared/components/copy-button"
@@ -114,34 +110,8 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <section
-        className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4"
-        aria-label="센터 현황"
-      >
-        <StatCard
-          icon={<Sprout className="size-5" aria-hidden />}
-          label="누적 구조"
-          value={stats.rescued}
-          suffix="마리"
-        />
-        <StatCard
-          icon={<HomeIcon className="size-5" aria-hidden />}
-          label="현재 보호 중"
-          value={stats.sheltered}
-          suffix="마리"
-        />
-        <StatCard
-          icon={<HeartHandshake className="size-5" aria-hidden />}
-          label="입양 완료"
-          value={stats.adopted}
-          suffix="마리"
-        />
-        <StatCard
-          icon={<Users className="size-5" aria-hidden />}
-          label="누적 봉사자"
-          value={stats.volunteers}
-          suffix="명"
-        />
+      <section className="mt-8" aria-label="센터 현황">
+        <ShelterImpactPanel adopted={stats.adopted} volunteers={stats.volunteers} />
       </section>
 
       <section className="mt-12" aria-labelledby="mission-heading">
@@ -354,29 +324,25 @@ export default async function AboutPage() {
   )
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  suffix,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  suffix: string
-}) {
+function ShelterImpactPanel({ adopted, volunteers }: { adopted: number; volunteers: number }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/40">
-      <span className="mx-auto mb-2 flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-foreground">
-        {value.toLocaleString()}
-        <span className="ml-0.5 text-sm font-medium text-muted-foreground">
-          {suffix}
-        </span>
-      </p>
+    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_28px_rgba(88,76,68,0.06)]">
+      <div className="grid grid-cols-2 divide-x divide-border">
+        <div className="px-5 py-5 text-center sm:px-8 sm:py-6">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground">입양 완료</p>
+          <p className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            {adopted.toLocaleString()}
+            <span className="ml-1 text-sm font-medium text-muted-foreground">마리</span>
+          </p>
+        </div>
+        <div className="px-5 py-5 text-center sm:px-8 sm:py-6">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground">누적 봉사자</p>
+          <p className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            {volunteers.toLocaleString()}
+            <span className="ml-1 text-sm font-medium text-muted-foreground">명</span>
+          </p>
+        </div>
+      </div>
     </div>
   )
 }

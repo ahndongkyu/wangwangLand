@@ -1,26 +1,29 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import Image from "next/image"
-import { Pin } from "lucide-react"
+import { Paperclip, Pin } from "lucide-react"
 
 import { AdminPostActions } from "@/shared/components/admin-post-actions"
 import { NoticeTypeBadge, stripNoticePrefix } from "./notice-type-badge"
 import type { NoticeWithAuthor } from "../api/queries"
+import type { NoticeBoardType } from "@/shared/types/database"
 
 interface Props {
   notices: NoticeWithAuthor[]
   deleteAction: (id: string) => Promise<{ error?: string }>
   bulkDeleteAction: (ids: string[]) => Promise<{ error?: string }>
+  boardType?: NoticeBoardType
 }
 
-export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction }: Props) {
+export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boardType = "notice" }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, startBulkDelete] = useTransition()
 
   const allIds = notices.map((n) => n.id)
   const allSelected = allIds.length > 0 && allIds.every((id) => selected.has(id))
   const someSelected = selected.size > 0
+  const isExpense = boardType === "expense"
+  const basePath = isExpense ? "/admin/expenses" : "/admin/notices"
 
   function toggleAll() {
     if (allSelected) {
@@ -87,13 +90,22 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction }: P
                   aria-label="전체 선택"
                 />
               </th>
-              <th className="px-3 py-3 text-left">카테고리</th>
-              <th className="w-8 px-2 py-3 text-center">핀</th>
+              {isExpense ? (
+                <>
+                  <th className="px-3 py-3 text-left">첨부</th>
+                  <th className="px-3 py-3 text-left">홈 노출</th>
+                </>
+              ) : (
+                <>
+                  <th className="px-3 py-3 text-left">카테고리</th>
+                  <th className="w-8 px-2 py-3 text-center">핀</th>
+                </>
+              )}
               <th className="px-3 py-3 text-left">제목</th>
-              <th className="px-3 py-3 text-left">상태</th>
+              {!isExpense && <th className="px-3 py-3 text-left">상태</th>}
               <th className="hidden sm:table-cell px-3 py-3 text-left">작성자</th>
               <th className="px-3 py-3 text-left">작성일</th>
-              <th className="hidden sm:table-cell px-3 py-3 text-right">조회</th>
+              {!isExpense && <th className="hidden sm:table-cell px-3 py-3 text-right">조회</th>}
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
@@ -116,23 +128,38 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction }: P
                       aria-label={`선택: ${stripNoticePrefix(n.title)}`}
                     />
                   </td>
-                  <td className="px-3 py-3">
-                    <NoticeTypeBadge title={n.title} />
-                  </td>
-                  <td className="px-2 py-3 text-center">
-                    {n.is_pinned && (
-                      <Pin className="inline size-3.5 text-amber-500" />
-                    )}
-                  </td>
+                  {isExpense ? (
+                    <>
+                      <td className="px-3 py-3 text-muted-foreground">
+                        {n.attachments?.length ? (
+                          <span className="inline-flex items-center gap-1 text-xs"><Paperclip className="size-3.5" aria-hidden /> {n.attachments.length}개</span>
+                        ) : "—"}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={n.home_visible ? "text-xs font-semibold text-primary" : "text-xs text-muted-foreground"}>
+                          {n.home_visible ? "ON" : "OFF"}
+                        </span>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-3 py-3">
+                        <NoticeTypeBadge title={n.title} />
+                      </td>
+                      <td className="px-2 py-3 text-center">
+                        {n.is_pinned && <Pin className="inline size-3.5 text-amber-500" />}
+                      </td>
+                    </>
+                  )}
                   <td className="px-3 py-3 max-w-xs">
                     <a
-                      href={`/admin/notices/${n.id}/edit`}
+                      href={`${basePath}/${n.id}/edit`}
                       className="line-clamp-1 font-medium text-foreground hover:underline"
                     >
-                      {stripNoticePrefix(n.title)}
+                      {isExpense ? n.title : stripNoticePrefix(n.title)}
                     </a>
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap">
+                  {!isExpense && <td className="px-3 py-3 whitespace-nowrap">
                     {n.published_at ? (
                       <span className="inline-flex items-center gap-1.5">
                         <span className="inline-block size-2 rounded-full bg-green-500" />
@@ -143,21 +170,21 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction }: P
                         임시저장
                       </span>
                     )}
-                  </td>
+                  </td>}
                   <td className="hidden sm:table-cell px-3 py-3 text-muted-foreground whitespace-nowrap">
                     {n.author?.nickname ?? "—"}
                   </td>
                   <td className="px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
                     {new Date(n.created_at).toLocaleDateString("ko-KR")}
                   </td>
-                  <td className="hidden sm:table-cell px-3 py-3 text-right text-muted-foreground text-xs">
+                  {!isExpense && <td className="hidden sm:table-cell px-3 py-3 text-right text-muted-foreground text-xs">
                     {n.view_count.toLocaleString()}
-                  </td>
+                  </td>}
                   <td className="px-3 py-3">
                     <AdminPostActions
-                      editHref={`/admin/notices/${n.id}/edit`}
+                      editHref={`${basePath}/${n.id}/edit`}
                       deleteAction={() => deleteAction(n.id)}
-                      label="공지"
+                      label={isExpense ? "지출 내역" : "공지"}
                     />
                   </td>
                 </tr>
