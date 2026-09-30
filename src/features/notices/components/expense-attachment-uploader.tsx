@@ -83,7 +83,7 @@ export function ExpenseAttachmentUploader({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold text-foreground">첨부파일</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">최대 5개, 파일당 20MB · 운영진만 열람할 수 있습니다.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">최대 5개 · 파일당 20MB</p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading || attachments.length >= MAX_FILES}>
           <Upload className="mr-1.5 size-3.5" aria-hidden />

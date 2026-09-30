@@ -45,6 +45,7 @@ function editorContent(content: string, isExpense: boolean) {
 export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/notices" }: Props) {
   const [pending, setPending] = useState(false)
   const [attachmentsUploading, setAttachmentsUploading] = useState(false)
+  const [homeVisible, setHomeVisible] = useState(notice?.home_visible ?? false)
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(notice)
   const isPublished = Boolean(notice?.published_at)
@@ -90,7 +91,27 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
     <form onSubmit={handleSubmit} className="space-y-6">
 
       {/* 상단 저장 버튼 */}
-      <div className="flex items-center justify-end gap-2 border-b border-border pb-4">
+      <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3 border-b border-border pb-4">
+        {isExpense && (
+          <div className="flex items-center gap-2.5">
+            <Label htmlFor="home_visible">홈 노출</Label>
+            <button
+              id="home_visible"
+              type="button"
+              role="switch"
+              aria-checked={homeVisible}
+              aria-label="홈 노출"
+              onClick={() => setHomeVisible((current) => !current)}
+              className={cn(
+                "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                homeVisible ? "bg-primary" : "bg-muted-foreground/30"
+              )}
+            >
+              <span className={cn("pointer-events-none block size-5 rounded-full bg-white shadow-sm transition-transform", homeVisible ? "translate-x-5" : "translate-x-0.5")} />
+            </button>
+            <input type="hidden" name="home_visible" value={homeVisible ? "on" : "off"} />
+          </div>
+        )}
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           취소
         </Link>
@@ -177,17 +198,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
       {isExpense && <ExpenseAttachmentUploader defaultValue={notice?.attachments ?? []} onUploadingChange={setAttachmentsUploading} />}
 
       {/* 옵션 */}
-      {isExpense ? (
-        <div className="rounded-lg border border-border bg-secondary/30 p-4">
-          <label htmlFor="home_visible" className="flex cursor-pointer items-start gap-2 text-sm">
-            <Checkbox id="home_visible" name="home_visible" defaultChecked={notice?.home_visible ?? false} className="mt-0.5" />
-            <span>
-              <span className="block font-medium text-foreground">홈 화면 노출 준비</span>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">현재는 노출 여부만 저장합니다. 추후 홈 화면에 지출 내역을 추가할 때 켠 항목만 사용할 수 있습니다.</span>
-            </span>
-          </label>
-        </div>
-      ) : <div className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row sm:items-center sm:gap-6">
+      {!isExpense && <div className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row sm:items-center sm:gap-6">
         <label htmlFor="is_pinned" className="flex cursor-pointer items-center gap-2 text-sm">
           <Checkbox
             id="is_pinned"
