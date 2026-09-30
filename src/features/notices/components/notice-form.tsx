@@ -10,7 +10,6 @@ import { Button } from "@/shared/components/ui/button"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
-import { Textarea } from "@/shared/components/ui/textarea"
 import { cn } from "@/shared/lib/utils"
 import type { Notice, NoticeBoardType } from "@/shared/types/database"
 
@@ -38,6 +37,11 @@ function splitPrefix(title: string): { type: string; body: string } {
 const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
+function editorContent(content: string, isExpense: boolean) {
+  if (!isExpense || /<\/?[a-z][\s\S]*>/i.test(content)) return content
+  return content.split(/\r?\n/).map((line) => `<p>${line.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</p>`).join("")
+}
+
 export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/notices" }: Props) {
   const [pending, setPending] = useState(false)
   const [attachmentsUploading, setAttachmentsUploading] = useState(false)
@@ -59,7 +63,8 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
       ? customPrefix.trim()
       : noticeType              // "공지" | "이벤트" | ""
 
-  const contentRef = useRef<string>(notice?.content === "<p></p>" ? "" : notice?.content ?? "")
+  const initialContent = editorContent(notice?.content ?? "", isExpense)
+  const contentRef = useRef<string>(initialContent)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -132,7 +137,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
 
       {/* 제목 */}
       <div className="space-y-1.5">
-        <Label htmlFor="title">{isExpense ? "지출 내역 제목 *" : "제목 *"}</Label>
+        <Label htmlFor="title">제목 *</Label>
         <div className="flex items-center gap-2">
           {!isExpense && resolvedPrefix && (
             <span className="shrink-0 rounded-md border border-border bg-secondary px-3 py-2 text-sm font-semibold text-foreground">
@@ -153,29 +158,20 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
 
       {/* 내용 */}
       <div className="space-y-1.5">
-        <Label>{isExpense ? "메모 (선택)" : "내용 *"}</Label>
-        {isExpense ? (
-          <Textarea
-            name="content"
-            defaultValue={notice?.content === "<p></p>" ? "" : notice?.content ?? ""}
-            placeholder="지출 내역에 대한 간단한 설명을 입력하세요."
-            className="min-h-32 resize-y"
-            onChange={(event) => { contentRef.current = event.target.value }}
-          />
-        ) : (
-          <>
+        <Label>{isExpense ? "내용" : "내용 *"}</Label>
             <RichTextEditor
               name="content"
-              defaultValue={notice?.content ?? ""}
-              placeholder="공지 본문을 입력하세요."
-              folder="notices"
+              defaultValue={initialContent}
+              placeholder={isExpense ? "지출 내역 본문을 입력하세요." : "공지 본문을 입력하세요."}
+              folder={isExpense ? "expense-reports" : "notices"}
+              privateUpload={isExpense}
               onChange={(html) => { contentRef.current = html }}
             />
+            {!isExpense && (
             <p className="text-xs text-muted-foreground">
               본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
             </p>
-          </>
-        )}
+            )}
       </div>
 
       {isExpense && <ExpenseAttachmentUploader defaultValue={notice?.attachments ?? []} onUploadingChange={setAttachmentsUploading} />}

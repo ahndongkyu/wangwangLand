@@ -39,6 +39,7 @@ import {
 import { cn } from "@/shared/lib/utils"
 import { compressImage } from "@/shared/lib/compress-image"
 import { useDraftSave } from "@/shared/hooks/use-draft-save"
+import { uploadExpenseFile } from "@/shared/lib/expense-upload"
 
 interface Props {
   name: string
@@ -56,6 +57,7 @@ interface Props {
    * 형식: "draft:notices:new" 처럼 충돌 없는 고유 키 권장.
    */
   draftKey?: string
+  privateUpload?: boolean
 }
 
 export function RichTextEditor({
@@ -67,6 +69,7 @@ export function RichTextEditor({
   maxFileSizeMB = 10,
   onChange,
   draftKey,
+  privateUpload = false,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -190,6 +193,10 @@ export function RichTextEditor({
         const ext = prepared.name.split(".").pop() ?? "jpg"
         const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
+        let data: { url: string }
+        if (privateUpload) {
+          data = await uploadExpenseFile(prepared)
+        } else {
         const res = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
           method: "POST",
           body: prepared,
@@ -199,7 +206,8 @@ export function RichTextEditor({
           alert(`이미지 업로드 실패: ${error}`)
           return
         }
-        const data = await res.json()
+        data = await res.json()
+        }
 
         // 모바일에서 file picker 거치며 lost된 selection 복원.
         // savedSelectionRef 는 onSelectionUpdate 에서 항상 최신값 유지.
@@ -215,11 +223,13 @@ export function RichTextEditor({
           .setImage({ src: data.url })
           .createParagraphNear()
           .run()
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.")
       } finally {
         setUploading(false)
       }
     },
-    [editor, folder, imageCount, maxImages, maxFileSizeMB]
+    [editor, folder, imageCount, maxImages, maxFileSizeMB, privateUpload]
   )
 
   // editorProps.handlePaste / handleDrop 이 stale closure 안 되게 ref 로 감싸기

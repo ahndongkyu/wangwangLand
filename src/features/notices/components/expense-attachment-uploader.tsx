@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 
 import { Button } from "@/shared/components/ui/button"
 import type { FileAttachment } from "@/shared/types/database"
+import { uploadExpenseFile } from "@/shared/lib/expense-upload"
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
 const MAX_FILES = 5
@@ -15,12 +16,6 @@ const ACCEPTED_EXTENSIONS = new Set([
 function formatFileSize(size: number) {
   if (size < 1024 * 1024) return `${Math.ceil(size / 1024)}KB`
   return `${(size / (1024 * 1024)).toFixed(1)}MB`
-}
-
-function createStorageName(file: File) {
-  const extension = file.name.split(".").pop()?.toLowerCase() || "file"
-  const token = crypto.randomUUID().replaceAll("-", "")
-  return `expense-reports/${Date.now()}-${token}.${extension}`
 }
 
 export function ExpenseAttachmentUploader({
@@ -60,27 +55,16 @@ export function ExpenseAttachmentUploader({
     setUploading(true)
     onUploadingChange?.(true)
     try {
-      const uploaded = await Promise.all(selected.map(async (file) => {
-        const response = await fetch(
-          `/api/upload?scope=expense&filename=${encodeURIComponent(createStorageName(file))}`,
-          {
-            method: "POST",
-            headers: { "content-type": file.type || "application/octet-stream" },
-            body: file,
-          }
-        )
-        const result = await response.json() as { path?: string; error?: string }
-        if (!response.ok || !result.path) {
-          throw new Error(result.error || "첨부파일 업로드에 실패했습니다.")
-        }
-        return {
+      for (const file of selected) {
+        const result = await uploadExpenseFile(file)
+        const attachment = {
           name: file.name,
           path: result.path,
           size: file.size,
           mime_type: file.type || null,
         } satisfies FileAttachment
-      }))
-      setAttachments((current) => [...current, ...uploaded])
+        setAttachments((current) => [...current, attachment])
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "첨부파일 업로드에 실패했습니다.")
     } finally {

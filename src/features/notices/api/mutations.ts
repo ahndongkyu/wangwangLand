@@ -109,7 +109,7 @@ export async function createNotice(
 
   if (!input.title) return { error: "제목은 필수입니다." }
   if (boardType === "notice" && !input.content.trim()) return { error: "내용은 필수입니다." }
-  if (boardType === "expense" && !input.content.trim() && !input.attachments.length) {
+  if (boardType === "expense" && !input.content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() && !input.images.length && !input.attachments.length) {
     return { error: "메모 또는 첨부파일을 하나 이상 입력해 주세요." }
   }
 
@@ -169,7 +169,7 @@ export async function updateNotice(
 
   if (!input.title) return { error: "제목은 필수입니다." }
   if (boardType === "notice" && !input.content.trim()) return { error: "내용은 필수입니다." }
-  if (boardType === "expense" && !input.content.trim() && !input.attachments.length) {
+  if (boardType === "expense" && !input.content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() && !input.images.length && !input.attachments.length) {
     return { error: "메모 또는 첨부파일을 하나 이상 입력해 주세요." }
   }
 
