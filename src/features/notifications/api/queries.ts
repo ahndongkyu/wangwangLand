@@ -19,6 +19,7 @@ export interface UserNotification {
   is_read: boolean
   created_at: string
   actor: { nickname: string; role: string } | null
+  postPath?: string
 }
 
 export async function listMyNotifications(): Promise<UserNotification[]> {
@@ -34,6 +35,13 @@ export async function listMyNotifications(): Promise<UserNotification[]> {
     .limit(30)
 
   if (error || !data) return []
+
+  const noticeIds = [...new Set(data.filter((n) => n.post_type === "notice").map((n) => n.post_id))]
+  const expenseIds = new Set<string>()
+  if (noticeIds.length) {
+    const { data: posts } = await supabase.from("notices").select("id").eq("board_type", "expense").in("id", noticeIds)
+    for (const post of posts ?? []) expenseIds.add(post.id)
+  }
 
   // 액터 일괄 조회
   const actorIds = [...new Set(data.map((n) => n.actor_id).filter(Boolean))] as string[]
@@ -55,6 +63,7 @@ export async function listMyNotifications(): Promise<UserNotification[]> {
     is_read: n.is_read,
     created_at: n.created_at,
     actor: n.actor_id ? (actorMap[n.actor_id] ?? null) : null,
+    ...(expenseIds.has(n.post_id) && n.post_type === "notice" ? { postPath: `/expenses/${n.post_id}` } : {}),
   }))
 }
 

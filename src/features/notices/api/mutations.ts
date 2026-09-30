@@ -89,6 +89,8 @@ function revalidateAll(id?: string, boardType: NoticeBoardType = "notice") {
   revalidatePath(adminPath)
   if (boardType === "expense") {
     revalidatePath("/")
+    revalidatePath("/expenses")
+    if (id) revalidatePath(`/expenses/${id}`)
     if (id) revalidatePath(`${adminPath}/${id}/edit`)
     return
   }

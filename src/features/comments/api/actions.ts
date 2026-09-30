@@ -5,6 +5,17 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { sendCommentNotifications } from "@/features/notifications/api/actions"
 import type { PostType } from "./queries"
 
+async function revalidateCommentPost(postType: PostType, postId: string) {
+  revalidatePath("/")
+  if (postType === "notice") {
+    revalidatePath(`/notice/${postId}`)
+    revalidatePath(`/expenses/${postId}`)
+    revalidatePath("/expenses")
+    return
+  }
+  revalidatePath(postType === "story" ? `/stories/${postId}` : `/daily/${postId}`)
+}
+
 export async function createComment(
   postType: PostType,
   postId: string,
@@ -27,6 +38,16 @@ export async function createComment(
 
   if (!profile || profile.status !== "approved" || profile.is_banned) {
     return { error: "승인된 회원만 댓글을 작성할 수 있습니다." }
+  }
+
+  if (postType === "notice") {
+    // RLS로 공개 여부까지 확인한다. 비공개 전환된 지출 글에는 댓글을 달 수 없다.
+    const { data: post } = await supabase.from("notices").select("id").eq("id", postId).maybeSingle()
+    if (!post) return { error: "댓글을 작성할 수 없는 게시글입니다." }
+  }
+  if (parentId) {
+    const { data: parent } = await supabase.from("comments").select("id").eq("id", parentId).eq("post_type", postType).eq("post_id", postId).maybeSingle()
+    if (!parent) return { error: "답글을 작성할 댓글을 찾을 수 없습니다." }
   }
 
   const { data: comment, error } = await supabase
@@ -55,8 +76,7 @@ export async function createComment(
     actorId: session.user.id,
   }).catch(console.error)
 
-  const path = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
-  revalidatePath(path)
+  await revalidateCommentPost(postType, postId)
   return {}
 }
 
@@ -85,8 +105,7 @@ export async function updateComment(
     return { error: "수정에 실패했습니다." }
   }
 
-  const path = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
-  revalidatePath(path)
+  await revalidateCommentPost(postType, postId)
   return {}
 }
 
@@ -115,7 +134,6 @@ export async function deleteComment(
 
   if (error) return { error: "삭제에 실패했습니다." }
 
-  const path = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
-  revalidatePath(path)
+  await revalidateCommentPost(postType, postId)
   return {}
 }

@@ -5,6 +5,7 @@ export const HOME_FAVORITE_OPTIONS = [
   { key: "adopt", label: "입양 문의", href: "/adopt", icon: "adopted" },
   { key: "daily", label: "일상", href: "/daily?category=일상", icon: "camera" },
   { key: "free", label: "자유게시판", href: "/daily?category=자유게시판", icon: "chat" },
+  { key: "expenses", label: "지출 내역", href: "/expenses", icon: "piggy-bank" },
   { key: "dogs", label: "입양 대기 아이들", href: "/dogs", icon: "dog" },
   { key: "calendar", label: "일정", href: "/calendar", icon: "calendar" },
   { key: "donate", label: "후원하기", href: "/donate", icon: "heart" },

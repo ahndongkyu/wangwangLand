@@ -31,7 +31,7 @@ export default async function HomePage({
       : yearMonthKst(todayKst())
   const scheduleRange = monthRange(scheduleYearMonth)
 
-  const [dogs, noticeResult, dailyResult, scheduleEvents] = await Promise.all([
+  const [dogs, noticeResult, dailyResult, scheduleEvents, expenseResult] = await Promise.all([
     listDogsForHome(4),
     listNotices({ limit: RECENT_POST_COUNT }),
     listDailyPosts({ board: "daily", limit: RECENT_POST_COUNT }),
@@ -40,15 +40,17 @@ export default async function HomePage({
       to: scheduleRange.to,
       categories: ["volunteer", "regular_volunteer", "closed"],
     }),
+    listNotices({ boardType: "expense", publicOnly: true, limit: RECENT_POST_COUNT }),
   ])
 
   const dailyPostIds = dailyResult.posts.map((post) => post.id)
-  const [dailyCommentCounts, noticeCommentCounts] = await Promise.all([
+  const [dailyCommentCounts, noticeCommentCounts, expenseCommentCounts] = await Promise.all([
     fetchCommentCounts("daily", dailyPostIds),
     fetchCommentCounts(
       "notice",
       noticeResult.notices.map((notice) => notice.id)
     ),
+    fetchCommentCounts("notice", expenseResult.notices.map((post) => post.id)),
   ])
 
   return (
@@ -147,7 +149,7 @@ export default async function HomePage({
                   글쓰기
                 </Link>
               </div>
-              <div className="grid items-stretch gap-4 md:grid-cols-2">
+              <div className="grid items-stretch gap-4 xl:grid-cols-3">
                 <RecentBoard
                   title="공지사항"
                   href="/notice"
@@ -174,6 +176,20 @@ export default async function HomePage({
                     author: post.author?.nickname ?? "왕왕랜드",
                     viewCount: post.view_count ?? 0,
                     commentCount: dailyCommentCounts[post.id] ?? 0,
+                  }))}
+                />
+                <RecentBoard
+                  title="지출 내역"
+                  href="/expenses"
+                  icon="piggy-bank"
+                  tone="yellow"
+                  posts={expenseResult.notices.map((post) => ({
+                    id: post.id,
+                    title: post.title,
+                    href: `/expenses/${post.id}`,
+                    author: post.author?.nickname ?? "왕왕랜드",
+                    viewCount: post.view_count ?? 0,
+                    commentCount: expenseCommentCounts[post.id] ?? 0,
                   }))}
                 />
               </div>

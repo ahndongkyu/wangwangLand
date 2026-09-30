@@ -160,6 +160,7 @@ export const FOOTER_LINK_GROUPS: ReadonlyArray<{
     links: [
       { label: "센터 소개", href: "/about" },
       { label: "공지사항", href: "/notice" },
+      { label: "지출 내역", href: "/expenses" },
       { label: "오시는 길", href: "/contact" },
     ],
   },

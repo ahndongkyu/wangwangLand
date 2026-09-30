@@ -94,13 +94,13 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3 border-b border-border pb-4">
         {isExpense && (
           <div className="flex items-center gap-2.5">
-            <Label htmlFor="home_visible">홈 노출</Label>
+            <Label htmlFor="home_visible">공개</Label>
             <button
               id="home_visible"
               type="button"
               role="switch"
               aria-checked={homeVisible}
-              aria-label="홈 노출"
+              aria-label="지출 내역 공개"
               onClick={() => setHomeVisible((current) => !current)}
               className={cn(
                 "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

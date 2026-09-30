@@ -41,6 +41,7 @@ const APPLICATION_STATUS_TYPES = new Set([
 
 function notifPath(n: UserNotification): string {
   if (APPLICATION_STATUS_TYPES.has(n.type)) return "/my/applications"
+  if (n.postPath) return n.postPath
   return `${POST_PATH[n.post_type] ?? ""}/${n.post_id}`
 }
 

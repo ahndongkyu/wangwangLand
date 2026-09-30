@@ -16,6 +16,11 @@ export async function sendCommentNotifications(opts: {
 }) {
   const { commentId, postType, postId, parentId, actorId } = opts
   const admin = createAdminClient()
+  let postPath = postType === "notice" ? `/notice/${postId}` : postType === "story" ? `/stories/${postId}` : `/daily/${postId}`
+  if (postType === "notice") {
+    const { data: post } = await admin.from("notices").select("board_type").eq("id", postId).maybeSingle()
+    if (post?.board_type === "expense") postPath = `/expenses/${postId}`
+  }
 
   const targets: Array<{ userId: string; type: "comment_on_post" | "reply_to_comment" }> = []
 
@@ -77,11 +82,7 @@ export async function sendCommentNotifications(opts: {
             body: t.type === "reply_to_comment"
               ? `${actorName}님이 내 댓글에 답글을 달았어요.`
               : `${actorName}님이 댓글을 달았어요.`,
-            url: postType === "notice"
-              ? `/notice/${postId}`
-              : postType === "story"
-                ? `/stories/${postId}`
-                : `/daily/${postId}`,
+            url: postPath,
             tag: `comment-${commentId}`,
           },
           t.userId

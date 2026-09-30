@@ -20,6 +20,7 @@ export interface ListNoticesOptions {
   category?: string
   /** 게시판 구분 (기본: 공개 공지사항) */
   boardType?: NoticeBoardType
+  publicOnly?: boolean
 }
 
 export interface PaginatedNotices {
@@ -37,6 +38,7 @@ export async function listNotices({
   status,
   category,
   boardType = "notice",
+  publicOnly = false,
 }: ListNoticesOptions = {}): Promise<PaginatedNotices> {
   const supabase = await createClient()
 
@@ -49,6 +51,10 @@ export async function listNotices({
     .order("created_at", { ascending: false })
     .order("id", { ascending: true })
     .range(offset, offset + limit - 1)
+
+  if (boardType === "expense" && (publicOnly || !includeDrafts)) {
+    query = query.eq("home_visible", true)
+  }
 
   if (!includeDrafts || status === "published") {
     query = query.not("published_at", "is", null)
@@ -140,22 +146,17 @@ export async function getAdjacentNotices(
   boardType: NoticeBoardType = "notice"
 ): Promise<{ prev: AdjacentNotice | null; next: AdjacentNotice | null }> {
   const supabase = await createClient()
+  const adjacentQuery = () => {
+    let query = supabase.from("notices").select("id, title").eq("board_type", boardType).not("published_at", "is", null).neq("id", currentId)
+    if (boardType === "expense") query = query.eq("home_visible", true)
+    return query
+  }
   const [olderRes, newerRes] = await Promise.all([
-    supabase
-      .from("notices")
-      .select("id, title")
-      .eq("board_type", boardType)
-      .not("published_at", "is", null)
-      .neq("id", currentId)
+    adjacentQuery()
       .lt("published_at", publishedAt)
       .order("published_at", { ascending: false })
       .limit(1),
-    supabase
-      .from("notices")
-      .select("id, title")
-      .eq("board_type", boardType)
-      .not("published_at", "is", null)
-      .neq("id", currentId)
+    adjacentQuery()
       .gt("published_at", publishedAt)
       .order("published_at", { ascending: true })
       .limit(1),
@@ -175,6 +176,7 @@ export async function getNotice(
   let query = supabase.from("notices").select("*").eq("id", id).eq("board_type", boardType)
   if (!includeDrafts) {
     query = query.not("published_at", "is", null)
+    if (boardType === "expense") query = query.eq("home_visible", true)
   }
 
   const { data, error } = await query.maybeSingle()

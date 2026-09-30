@@ -13,6 +13,16 @@ export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 20
 
+async function deleteExpense(id: string) {
+  "use server"
+  return deleteNotice(id, "expense")
+}
+
+async function bulkDeleteExpenses(ids: string[]) {
+  "use server"
+  return bulkDeleteNotices(ids, "expense")
+}
+
 export default async function AdminExpensesPage({
   searchParams,
 }: {
@@ -52,8 +62,8 @@ export default async function AdminExpensesPage({
           <AdminNoticesTable
             notices={notices}
             boardType="expense"
-            deleteAction={(id) => deleteNotice(id, "expense")}
-            bulkDeleteAction={(ids) => bulkDeleteNotices(ids, "expense")}
+            deleteAction={deleteExpense}
+            bulkDeleteAction={bulkDeleteExpenses}
           />
           <Pagination currentPage={pageNum} totalPages={totalPages} basePath="/admin/expenses" searchParams={{ q: activeQuery || undefined }} />
         </>

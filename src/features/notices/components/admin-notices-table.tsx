@@ -93,7 +93,7 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boa
               {isExpense ? (
                 <>
                   <th className="px-3 py-3 text-left">첨부</th>
-                  <th className="px-3 py-3 text-left">홈 노출</th>
+                  <th className="px-3 py-3 text-left">공개</th>
                 </>
               ) : (
                 <>

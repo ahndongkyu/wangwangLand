@@ -356,14 +356,20 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           id={`${idPrefix}board-menu-heading`}
           className="px-2 text-xs font-semibold tracking-wide text-muted-foreground"
         >
-          게시판
+          보호소 소식
         </h2>
-        <nav className="mt-2 grid gap-1" aria-label="게시판 목록">
+        <nav className="mt-2 grid gap-1" aria-label="보호소 소식">
+          <SidebarLink href="/notice" icon={<BrandIcon name="notification" size={16} decorative />} label="공지사항" />
           <SidebarLink href="/daily?category=일상" icon={<BrandIcon name="camera" size={16} decorative />} label="일상" />
+          <SidebarLink href="/expenses" icon={<BrandIcon name="piggy-bank" size={16} decorative />} label="지출 내역" />
+        </nav>
+      </section>
+      <section aria-labelledby={`${idPrefix}community-menu-heading`}>
+        <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-semibold tracking-wide text-muted-foreground">회원 커뮤니티</h2>
+        <nav className="mt-2 grid gap-1" aria-label="회원 커뮤니티">
           <SidebarLink href="/daily?category=자유게시판" icon={<BrandIcon name="chat" size={16} decorative />} label="자유게시판" />
           <SidebarLink href="/daily?category=봉사 후기" icon={<BrandIcon name="volunteer" size={16} decorative />} label="봉사 후기" />
           <SidebarLink href="/stories" icon={<BrandIcon name="heart" size={16} decorative />} label="입양 후기" />
-          <SidebarLink href="/notice" icon={<BrandIcon name="notification" size={16} decorative />} label="공지사항" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}participation-menu-heading`}>
@@ -371,7 +377,7 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           id={`${idPrefix}participation-menu-heading`}
           className="px-2 text-xs font-semibold tracking-wide text-muted-foreground"
         >
-          함께하기
+          참여·안내
         </h2>
         <nav className="mt-2 grid gap-1" aria-label="참여 메뉴">
           <SidebarLink href="/dogs" icon={<BrandIcon name="dog" size={16} decorative />} label="입양 대기 강아지" />
@@ -380,16 +386,6 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           <SidebarLink href="/volunteer" icon={<BrandIcon name="volunteer" size={16} decorative />} label="봉사 신청" />
           <SidebarLink href="/adopt" icon={<BrandIcon name="adopted" size={16} decorative />} label="입양 문의" />
           <SidebarLink href="/donate" icon={<BrandIcon name="heart" size={16} decorative />} label="후원하기" />
-        </nav>
-      </section>
-      <section aria-labelledby={`${idPrefix}center-menu-heading`}>
-        <h2
-          id={`${idPrefix}center-menu-heading`}
-          className="px-2 text-xs font-semibold tracking-wide text-muted-foreground"
-        >
-          센터 안내
-        </h2>
-        <nav className="mt-2 grid gap-1" aria-label="센터 안내">
           <SidebarLink href="/about" icon={<BrandIcon name="home-shelter" size={16} decorative />} label="센터 소개" />
           <SidebarLink href="/contact" icon={<BrandIcon name="location" size={16} decorative />} label="오시는 길" />
         </nav>
