@@ -163,10 +163,10 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="fixed bottom-5 left-5 top-5 z-30 hidden w-[252px] flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#32463a] dark:bg-[#17241d]">
+    <aside className="sticky top-6 z-30 hidden h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#32463a] dark:bg-[#17241d]">
       <div
         className={cn(
-          "rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
+          "shrink-0 rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
           pendingCounts.total > 0 &&
             "animate-profile-notification-glow border-[#e89273]/80"
         )}
@@ -223,7 +223,7 @@ export function AdminSidebar({
             className={cn(
               "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5",
               pathname === "/admin"
-                ? "bg-[#c96849] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                ? "bg-[#426b54] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
                 : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
             )}
           >
@@ -249,7 +249,7 @@ export function AdminSidebar({
                     className={cn(
                       "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all duration-200 hover:-translate-y-0.5",
                       isActive(item.href)
-                        ? "bg-[#c96849] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                        ? "bg-[#426b54] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
                         : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
                     )}
                   >
@@ -456,7 +456,7 @@ export function AdminMobileHeader({
                     className={cn(
                       "group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all",
                       pathname === "/admin"
-                        ? "bg-[#c96849] font-semibold text-white"
+                        ? "bg-[#426b54] font-semibold text-white"
                         : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
                     )}
                   >
@@ -483,7 +483,7 @@ export function AdminMobileHeader({
                             className={cn(
                               "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all",
                               isActive(item.href)
-                                ? "bg-[#c96849] font-semibold text-white"
+                                ? "bg-[#426b54] font-semibold text-white"
                                 : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
                             )}
                           >

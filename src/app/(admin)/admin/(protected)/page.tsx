@@ -137,7 +137,7 @@ export default async function AdminDashboardPage({
   const newMembersPrev = monthlyMemberStats.at(-2)?.rescued ?? 0
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-8 md:px-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-8 md:px-0 md:py-0">
       <header className="mb-8">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">오늘의 운영 현황</h1>
         <p className="mt-1 text-sm text-muted-foreground">

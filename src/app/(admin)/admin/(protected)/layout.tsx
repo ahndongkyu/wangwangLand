@@ -28,20 +28,17 @@ export default async function AdminProtectedLayout({
   }
 
   return (
-    <div data-admin-scope className="flex min-h-screen bg-background">
-      {/* PC 사이드바 — md 이상만 표시 */}
-      <AdminSidebar {...sharedProps} pendingCounts={pendingCounts} />
-
-      {/* 콘텐츠 영역 */}
-      <div className="flex min-w-0 flex-1 flex-col bg-background md:pl-[284px]">
-        {/* 모바일 헤더 — md 이상에서 숨김 */}
+    <div data-admin-scope className="min-h-screen bg-background">
         <AdminMobileHeader {...sharedProps} pendingCounts={pendingCounts} />
-        <header className="hidden h-16 shrink-0 items-center justify-between border-b border-border bg-card px-8 md:flex">
+        <header className="hidden border-b border-border bg-card md:block">
+          <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-6 lg:px-8">
           <Link href="/admin" className="font-semibold tracking-tight text-foreground">{SITE.name} <span className="ml-2 text-xs font-normal text-muted-foreground">운영 관리</span></Link>
           <ThemeToggle />
+          </div>
         </header>
-
-        <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
+      <div className="mx-auto grid w-full max-w-[1440px] min-w-0 items-start md:grid-cols-[252px_minmax(0,1fr)] md:gap-6 md:px-6 md:py-6 lg:gap-8 lg:px-8">
+        <AdminSidebar {...sharedProps} pendingCounts={pendingCounts} />
+        <main className="min-w-0 pb-24 md:pb-0">{children}</main>
       </div>
 
       {/* 모바일 하단탭 */}
