@@ -154,7 +154,7 @@ export function HomeSidebar({
   ) : null
 
   const content = (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <section
         className={cn(
           "rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)] motion-reduce:transition-none",
@@ -258,10 +258,10 @@ export function HomeSidebar({
       </section>
 
       <section aria-labelledby={`${idPrefix}favorite-menu-heading`}>
-        <div className="flex min-h-9 items-center justify-between px-2">
+        <div className="flex min-h-6 items-center justify-between px-2">
           <h2
             id={`${idPrefix}favorite-menu-heading`}
-            className="text-xs font-semibold tracking-wide text-muted-foreground"
+            className="text-xs font-bold tracking-wide text-foreground/70"
           >
             내 즐겨찾기
           </h2>
@@ -269,7 +269,7 @@ export function HomeSidebar({
             <button
               type="button"
               onClick={openEditor}
-              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl text-primary transition-all duration-200 hover:-translate-y-0.5 hover:bg-card hover:shadow-[0_6px_14px_rgba(88,76,68,0.10)]"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-primary transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
               aria-label="즐겨찾기 추가 및 편집"
               aria-expanded={editing}
             >
@@ -277,7 +277,7 @@ export function HomeSidebar({
             </button>
           )}
         </div>
-        <nav className="grid gap-1" aria-label="즐겨찾기 목록">
+        <nav className="mt-2 grid gap-1 pl-3" aria-label="즐겨찾기 목록">
           {selectedItems.map((item) => (
             <SidebarLink key={item.key} href={item.href} label={item.label} />
           ))}
@@ -337,19 +337,19 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
       <section aria-labelledby={`${idPrefix}board-menu-heading`}>
         <h2
           id={`${idPrefix}board-menu-heading`}
-          className="px-2 text-xs font-semibold tracking-wide text-muted-foreground"
+          className="px-2 text-xs font-bold tracking-wide text-foreground/70"
         >
           보호소 소식
         </h2>
-        <nav className="mt-2 grid gap-1" aria-label="보호소 소식">
+        <nav className="mt-2 grid gap-1 pl-3" aria-label="보호소 소식">
           <SidebarLink href="/notice" label="공지사항" />
           <SidebarLink href="/daily?category=일상" label="일상" />
           <SidebarLink href="/expenses" label="지출 내역" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}community-menu-heading`}>
-        <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-semibold tracking-wide text-muted-foreground">회원 커뮤니티</h2>
-        <nav className="mt-2 grid gap-1" aria-label="회원 커뮤니티">
+        <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">회원 커뮤니티</h2>
+        <nav className="mt-2 grid gap-1 pl-3" aria-label="회원 커뮤니티">
           <SidebarLink href="/daily?category=자유게시판" label="자유게시판" />
           <SidebarLink href="/daily?category=봉사 후기" label="봉사 후기" />
           <SidebarLink href="/stories" label="입양 후기" />
@@ -358,11 +358,11 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
       <section aria-labelledby={`${idPrefix}participation-menu-heading`}>
         <h2
           id={`${idPrefix}participation-menu-heading`}
-          className="px-2 text-xs font-semibold tracking-wide text-muted-foreground"
+          className="px-2 text-xs font-bold tracking-wide text-foreground/70"
         >
           참여·안내
         </h2>
-        <nav className="mt-2 grid gap-1" aria-label="참여 메뉴">
+        <nav className="mt-2 grid gap-1 pl-3" aria-label="참여 메뉴">
           <SidebarLink href="/dogs" label="입양 대기 강아지" />
           <SidebarLink href="/cats" label="보호 중인 고양이" />
           <SidebarLink href="/calendar" label="활동 일정" />
