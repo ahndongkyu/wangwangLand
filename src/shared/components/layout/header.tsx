@@ -11,10 +11,6 @@ import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
 import type { Profile } from "@/features/members/api/queries"
 import {
-  BrandIcon,
-  type BrandIconName,
-} from "@/shared/components/brand-icon"
-import {
   HEADER_NAV_GROUPS,
   type HeaderNavItem,
   SITE,
@@ -409,28 +405,13 @@ function NavGroupDropdown({
                 key={item.href}
                 className={cn(
                   "group/item relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none text-foreground",
-                  "transition-all duration-200",
-                  "hover:-translate-y-0.5 hover:bg-secondary"
+                  "transition-colors duration-150 motion-reduce:transition-none",
+                  "hover:bg-primary/10 hover:text-primary data-[highlighted]:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
                 )}
                 render={<Link href={item.href} />}
               >
-                {item.icon && (
-                  <span
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary",
-                      "transition-colors duration-200",
-                      "group-hover/item:bg-primary/30"
-                    )}
-                  >
-                    <BrandIcon
-                      name={item.icon as BrandIconName}
-                      size={22}
-                      decorative
-                    />
-                  </span>
-                )}
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-semibold text-foreground">
+                  <span className="font-semibold transition-colors duration-150 group-hover/item:text-primary group-data-[highlighted]/item:text-primary motion-reduce:transition-none">
                     {item.label}
                   </span>
                   {item.desc && (

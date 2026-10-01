@@ -85,7 +85,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
             key={tab.key}
             onClick={() => setActive(tab.key)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 py-3.5 text-sm font-medium transition-colors",
+              "flex min-h-11 flex-1 flex-wrap items-center justify-center gap-1.5 px-1 py-3.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none",
               active === tab.key
                 ? "border-b-2 border-primary bg-primary/5 text-primary"
                 : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -110,14 +110,11 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
       {active === "apps" && (
         <div>
           {totalApps === 0 ? (
-            <EmptyState icon="📋" message="신청 내역이 없습니다." href="/calendar" cta="봉사 일정 보기" />
+            <EmptyState message="신청 내역이 없습니다." href="/calendar" cta="봉사 일정 보기" />
           ) : (
             <div className="divide-y divide-border">
               {volunteers.map((v) => (
-                <Link key={v.id} href="/my/applications" className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base">
-                    ✋
-                  </div>
+                <Link key={v.id} href="/my/applications" className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">봉사 신청</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -133,10 +130,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                 </Link>
               ))}
               {adoptions.map((a) => (
-                <Link key={a.id} href="/my/applications" className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-base">
-                    🏠
-                  </div>
+                <Link key={a.id} href="/my/applications" className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">
                       입양 신청 — {a.dog?.[0]?.name ?? a.cat?.[0]?.name ?? "아이"}
@@ -157,18 +151,15 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
       {active === "posts" && (
         <div>
           {myPosts.length === 0 ? (
-            <EmptyState icon="📝" message="아직 작성한 글이 없습니다." href="/daily/new" cta="첫 글 쓰기" />
+            <EmptyState message="아직 작성한 글이 없습니다." href="/daily/new" cta="첫 글 쓰기" />
           ) : (
             <div className="divide-y divide-border">
               {myPosts.map((post) => (
                 <Link
                   key={`${post.kind}:${post.id}`}
                   href={post.href}
-                  className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40"
+                  className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
                 >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-base">
-                    {post.kind === "story" ? "🏠" : "📝"}
-                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-foreground">
                       {post.title}
@@ -189,14 +180,11 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
       {active === "donations" && (
         <div>
           {donations.length === 0 ? (
-            <EmptyState icon="❤️" message="후원 내역이 없습니다." href="/donate" cta="후원하기" />
+            <EmptyState message="후원 내역이 없습니다." href="/donate" cta="후원하기" />
           ) : (
             <div className="divide-y divide-border">
               {donations.map((d) => (
-                <Link key={d.id} href="/my/donations" className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/40">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-base">
-                    {d.type === "cash" ? "💰" : "📦"}
-                  </div>
+                <Link key={d.id} href="/my/donations" className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">
                       {d.type === "cash"
@@ -228,7 +216,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
       {active === "likes" && (
         <div>
           {likedAnimals.length === 0 ? (
-            <EmptyState icon="⭐" message="찜한 아이가 없습니다." href="/dogs" cta="아이들 보러 가기" />
+            <EmptyState message="찜한 아이가 없습니다." href="/dogs" cta="아이들 보러 가기" />
           ) : (
             <div className="grid grid-cols-3 gap-3 p-4 sm:grid-cols-4">
               {likedAnimals.map((animal) => {
@@ -238,7 +226,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                   <Link
                     key={`${animal.kind}:${animal.id}`}
                     href={`/${animal.kind === "dog" ? "dogs" : "cats"}/${animal.id}`}
-                    className="group overflow-hidden rounded-xl border border-border bg-muted transition-all hover:border-primary/40 hover:shadow-sm"
+                    className="group overflow-hidden rounded-xl border border-border bg-muted transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
                   >
                     <div className="relative aspect-square w-full overflow-hidden bg-muted">
                       {thumbnailSrc ? (
@@ -246,11 +234,11 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                           src={thumbnailSrc}
                           alt={animal.name}
                           fill
-                          className="object-cover transition-transform group-hover:scale-105"
+                          className="object-cover transition-transform group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                         />
                       ) : (
-                        <span className="flex h-full w-full items-center justify-center text-2xl">
-                          {animal.kind === "dog" ? "🐾" : "🐱"}
+                        <span className="flex h-full w-full items-center justify-center px-2 text-center text-xs text-muted-foreground">
+                          사진 준비 중
                         </span>
                       )}
                     </div>
@@ -274,25 +262,20 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
 }
 
 function EmptyState({
-  icon,
   message,
   href,
   cta,
 }: {
-  icon: string
   message: string
   href: string
   cta: string
 }) {
   return (
     <div className="flex flex-col items-center py-12">
-      <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-secondary text-3xl">
-        {icon}
-      </div>
       <p className="mb-4 text-sm text-muted-foreground">{message}</p>
       <Link
         href={href}
-        className="rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-opacity duration-200 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:opacity-80 motion-reduce:transition-none"
       >
         {cta}
       </Link>

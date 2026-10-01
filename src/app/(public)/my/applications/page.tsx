@@ -202,7 +202,7 @@ export default async function MyApplicationsPage() {
                         {/* 날짜별 출근 예정 운영진 */}
                         {v.available_dates.length > 0 && (
                           <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5">
-                            <p className="text-xs font-semibold text-foreground">📌 봉사일 운영진 출근 예정</p>
+                            <p className="text-xs font-semibold text-foreground">봉사일 운영진 출근 예정</p>
                             <div className="mt-2 space-y-2">
                               {v.available_dates.map((date) => {
                                 const list = staffByDate[date] ?? []
@@ -239,7 +239,7 @@ export default async function MyApplicationsPage() {
                                   href={`/daily/new?application=${v.id}`}
                                   className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
                                 >
-                                  ✍️ 인증글 작성
+                                  인증글 작성
                                 </Link>
                               )
                             )}

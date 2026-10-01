@@ -2,8 +2,7 @@ import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 
 import { getCurrentProfile, AgreementForm } from "@/features/members"
-import { TERMS_VERSION } from "@/app/(public)/terms/page"
-import { PRIVACY_VERSION } from "@/app/(public)/privacy/page"
+import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
 
 export const metadata: Metadata = { title: "약관 재동의" }
 export const dynamic = "force-dynamic"

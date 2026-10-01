@@ -207,10 +207,6 @@ export default async function MyPage() {
 
       {/* ── 환영 헤더 ── */}
       <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/8 to-primary/3 p-7">
-        {/* 배경 워터마크 */}
-        <span className="pointer-events-none absolute -bottom-8 -right-5 select-none text-[160px] leading-none opacity-[0.05]">
-          🐾
-        </span>
         <div className="relative flex items-center gap-5">
           {/* 아바타 */}
           <div className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-background/80 bg-muted shadow-md">
@@ -277,9 +273,6 @@ export default async function MyPage() {
       {/* ── 다가오는 일정 ── */}
       {nextEvent ? (
         <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#596f63] to-[#78927f] p-6 text-white dark:from-[#2b3a32] dark:to-[#405548]">
-          <span className="pointer-events-none absolute -bottom-2 right-6 select-none text-7xl leading-none opacity-10">
-            📅
-          </span>
           <div className="relative flex items-center gap-4">
             {/* 날짜 박스 */}
             <div className="shrink-0 rounded-xl bg-white/15 px-4 py-3 text-center">

@@ -8,7 +8,7 @@ import { listDogsForHome } from "@/features/dogs"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
 import { listNotices } from "@/features/notices"
-import { BrandIcon, type BrandIconName } from "@/shared/components/brand-icon"
+import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
 import { formatAge } from "@/shared/lib/age"
@@ -153,7 +153,6 @@ export default async function HomePage({
                 <RecentBoard
                   title="공지사항"
                   href="/notice"
-                  icon="notification"
                   tone="coral"
                   posts={noticeResult.notices.map((notice) => ({
                     id: notice.id,
@@ -167,7 +166,6 @@ export default async function HomePage({
                 <RecentBoard
                   title="일상"
                   href="/daily?category=일상"
-                  icon="camera"
                   tone="sage"
                   posts={dailyResult.posts.map((post) => ({
                     id: post.id,
@@ -181,7 +179,6 @@ export default async function HomePage({
                 <RecentBoard
                   title="지출 내역"
                   href="/expenses"
-                  icon="piggy-bank"
                   tone="yellow"
                   posts={expenseResult.notices.map((post) => ({
                     id: post.id,
@@ -300,13 +297,11 @@ function HomeDogCard({ dog }: { dog: Dog }) {
 function RecentBoard({
   title,
   href,
-  icon,
   tone,
   posts,
 }: {
   title: string
   href: string
-  icon: BrandIconName
   tone: "coral" | "sage" | "yellow"
   posts: RecentPostPreview[]
 }) {
@@ -322,7 +317,6 @@ function RecentBoard({
       className={`grid min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-border border-t-4 bg-card/90 shadow-[0_8px_24px_rgba(88,76,68,0.06)] ${toneClass}`}
     >
       <div className="flex min-h-12 items-center gap-2 px-4">
-        <BrandIcon name={icon} size={19} decorative />
         <h3 className="font-semibold text-foreground">
           {title}
         </h3>
@@ -338,10 +332,10 @@ function RecentBoard({
             <Link
               key={post.id}
               href={post.href}
-              className="grid min-h-10 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border/70 px-3 text-xs transition-colors last:border-b-0 hover:bg-primary/5"
+              className="group grid min-h-11 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border/70 px-3 text-xs transition-colors duration-150 last:border-b-0 hover:bg-primary/10 focus-visible:z-10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 active:bg-primary/15 motion-reduce:transition-none"
             >
               <span className="flex min-w-0 items-center text-foreground/80">
-                <span className="truncate" title={post.title}>
+                <span className="truncate transition-colors duration-150 group-hover:text-primary group-hover:underline group-hover:decoration-primary/40 group-hover:underline-offset-4 group-focus-visible:text-primary motion-reduce:transition-none" title={post.title}>
                   {post.title}
                 </span>
                 {post.commentCount > 0 && (
@@ -374,10 +368,10 @@ function RecentBoard({
       </div>
       <Link
         href={href}
-        className="flex min-h-11 items-center justify-end gap-1 border-t border-border px-4 text-xs font-semibold text-primary hover:bg-primary/5"
+        className="group flex min-h-11 items-center justify-end gap-1 border-t border-border px-4 text-xs font-semibold text-primary transition-colors duration-150 hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 active:bg-primary/15 motion-reduce:transition-none"
       >
         전체 보기
-        <ChevronRight className="size-3.5" aria-hidden />
+        <ChevronRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none" aria-hidden />
       </Link>
     </article>
   )

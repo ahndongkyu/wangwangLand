@@ -3,15 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { ReactNode } from "react"
 import { useState, useTransition } from "react"
 import {
   ChevronRight,
   CirclePlus,
   LogOut,
   Moon,
-  Settings2,
-  Sparkles,
   Sun,
   User,
 } from "lucide-react"
@@ -20,7 +17,6 @@ import type { Profile } from "@/features/members"
 import type { UserNotification } from "@/features/notifications/api/queries"
 import { signOut, updateHomeFavorites } from "@/features/members/api/actions"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
-import { BrandIcon } from "@/shared/components/brand-icon"
 import { useTheme } from "@/shared/components/theme-provider"
 import { UserNotificationBell } from "@/shared/components/user-notification-bell"
 import {
@@ -128,7 +124,6 @@ export function HomeSidebar({
               onChange={() => toggleDraft(item.key)}
               className="size-4 accent-primary"
             />
-            <BrandIcon name={item.icon} size={18} decorative />
             <span>{item.label}</span>
           </label>
         ))}
@@ -162,7 +157,7 @@ export function HomeSidebar({
     <div className="space-y-5">
       <section
         className={cn(
-          "rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)]",
+          "rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)] motion-reduce:transition-none",
           hasSidebarNotification &&
             "animate-profile-notification-glow border-primary/70"
         )}
@@ -193,10 +188,9 @@ export function HomeSidebar({
             )}
             <Link
               href="/my"
-              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-border bg-background/70 px-3 text-sm font-semibold text-foreground/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5 hover:shadow-[0_7px_16px_rgba(88,76,68,0.10)]"
+              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-border bg-background/70 px-3 text-sm font-semibold text-foreground/80 transition-colors duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
             >
               <span className="flex items-center gap-2">
-                <Sparkles className="size-4 text-brand-sage" aria-hidden />
                 마이페이지
               </span>
               <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
@@ -204,10 +198,9 @@ export function HomeSidebar({
             {(profile.role === "staff" || profile.role === "admin") && (
               <Link
                 href="/admin"
-                className="mt-2 flex min-h-10 items-center justify-between rounded-xl border border-border bg-card/70 px-3 text-xs font-semibold text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5"
+                className="mt-2 flex min-h-11 items-center justify-between rounded-xl border border-border bg-card/70 px-3 text-xs font-semibold text-foreground transition-colors duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
               >
                 <span className="flex items-center gap-2">
-                  <Settings2 className="size-4 text-primary" aria-hidden />
                   관리자 페이지
                 </span>
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
@@ -217,7 +210,7 @@ export function HomeSidebar({
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-foreground/80 transition-colors hover:bg-accent"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-foreground/80 transition-colors duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
               >
                 {resolvedTheme === "dark" ? (
                   <Sun className="size-4 text-brand-sage" aria-hidden />
@@ -229,7 +222,7 @@ export function HomeSidebar({
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-destructive/15 motion-reduce:transition-none"
                 >
                   <LogOut className="size-4" aria-hidden />
                   로그아웃
@@ -239,20 +232,19 @@ export function HomeSidebar({
           </>
         ) : (
           <div className="text-center">
-            <BrandIcon name="profile" size={38} decorative />
             <p className="mt-2 text-sm font-semibold text-foreground">
               로그인하고 함께해요
             </p>
             <Link
               href="/login"
-              className="mt-3 inline-flex min-h-10 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-coral-hover hover:shadow-[0_8px_17px_rgba(201,112,82,0.22)]"
+              className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-brand-coral-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
             >
               로그인
             </Link>
             <button
               type="button"
               onClick={toggleTheme}
-              className="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary text-xs font-semibold text-foreground/80"
+              className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary text-xs font-semibold text-foreground/80 transition-colors duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
             >
               {resolvedTheme === "dark" ? (
                 <Sun className="size-4 text-brand-sage" aria-hidden />
@@ -287,16 +279,7 @@ export function HomeSidebar({
         </div>
         <nav className="grid gap-1" aria-label="즐겨찾기 목록">
           {selectedItems.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-foreground/80 transition-all duration-200 hover:-translate-y-0.5 hover:bg-card hover:text-primary hover:shadow-[0_7px_16px_rgba(88,76,68,0.10)]"
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-card transition-transform duration-200 group-hover:scale-105">
-                <BrandIcon name={item.icon} size={20} decorative />
-              </span>
-              <span className="truncate">{item.label}</span>
-            </Link>
+            <SidebarLink key={item.key} href={item.href} label={item.label} />
           ))}
         </nav>
         {favoriteEditor}
@@ -359,17 +342,17 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           보호소 소식
         </h2>
         <nav className="mt-2 grid gap-1" aria-label="보호소 소식">
-          <SidebarLink href="/notice" icon={<BrandIcon name="notification" size={16} decorative />} label="공지사항" />
-          <SidebarLink href="/daily?category=일상" icon={<BrandIcon name="camera" size={16} decorative />} label="일상" />
-          <SidebarLink href="/expenses" icon={<BrandIcon name="piggy-bank" size={16} decorative />} label="지출 내역" />
+          <SidebarLink href="/notice" label="공지사항" />
+          <SidebarLink href="/daily?category=일상" label="일상" />
+          <SidebarLink href="/expenses" label="지출 내역" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}community-menu-heading`}>
         <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-semibold tracking-wide text-muted-foreground">회원 커뮤니티</h2>
         <nav className="mt-2 grid gap-1" aria-label="회원 커뮤니티">
-          <SidebarLink href="/daily?category=자유게시판" icon={<BrandIcon name="chat" size={16} decorative />} label="자유게시판" />
-          <SidebarLink href="/daily?category=봉사 후기" icon={<BrandIcon name="volunteer" size={16} decorative />} label="봉사 후기" />
-          <SidebarLink href="/stories" icon={<BrandIcon name="heart" size={16} decorative />} label="입양 후기" />
+          <SidebarLink href="/daily?category=자유게시판" label="자유게시판" />
+          <SidebarLink href="/daily?category=봉사 후기" label="봉사 후기" />
+          <SidebarLink href="/stories" label="입양 후기" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}participation-menu-heading`}>
@@ -380,14 +363,14 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           참여·안내
         </h2>
         <nav className="mt-2 grid gap-1" aria-label="참여 메뉴">
-          <SidebarLink href="/dogs" icon={<BrandIcon name="dog" size={16} decorative />} label="입양 대기 강아지" />
-          <SidebarLink href="/cats" icon={<BrandIcon name="paw" size={16} decorative />} label="보호 중인 고양이" />
-          <SidebarLink href="/calendar" icon={<BrandIcon name="calendar" size={16} decorative />} label="활동 일정" />
-          <SidebarLink href="/volunteer" icon={<BrandIcon name="volunteer" size={16} decorative />} label="봉사 신청" />
-          <SidebarLink href="/adopt" icon={<BrandIcon name="adopted" size={16} decorative />} label="입양 문의" />
-          <SidebarLink href="/donate" icon={<BrandIcon name="heart" size={16} decorative />} label="후원하기" />
-          <SidebarLink href="/about" icon={<BrandIcon name="home-shelter" size={16} decorative />} label="센터 소개" />
-          <SidebarLink href="/contact" icon={<BrandIcon name="location" size={16} decorative />} label="오시는 길" />
+          <SidebarLink href="/dogs" label="입양 대기 강아지" />
+          <SidebarLink href="/cats" label="보호 중인 고양이" />
+          <SidebarLink href="/calendar" label="활동 일정" />
+          <SidebarLink href="/volunteer" label="봉사 신청" />
+          <SidebarLink href="/adopt" label="입양 문의" />
+          <SidebarLink href="/donate" label="후원하기" />
+          <SidebarLink href="/about" label="센터 소개" />
+          <SidebarLink href="/contact" label="오시는 길" />
         </nav>
       </section>
     </>
@@ -396,11 +379,9 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
 
 function SidebarLink({
   href,
-  icon,
   label,
 }: {
   href: string
-  icon: ReactNode
   label: string
 }) {
   const pathname = usePathname()
@@ -419,15 +400,12 @@ function SidebarLink({
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-card hover:text-primary hover:shadow-[0_7px_16px_rgba(88,76,68,0.10)]",
+        "relative flex min-h-11 items-center rounded-xl border border-transparent px-3 text-sm transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-primary/20 hover:bg-card hover:text-primary hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:bg-primary/10 motion-reduce:transition-none",
         isActive
-          ? "bg-card font-semibold text-primary shadow-[0_7px_16px_rgba(88,76,68,0.10)]"
+          ? "border-primary/20 bg-card font-semibold text-primary shadow-sm before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
           : "text-foreground/80"
       )}
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-card/75 transition-transform duration-200 group-hover:scale-105 [&>img]:size-4 [&>svg]:size-4 [&>svg]:text-primary/70">
-        {icon}
-      </span>
       <span className="truncate">{label}</span>
     </Link>
   )
