@@ -222,7 +222,7 @@ export default async function MyPage() {
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               <UserName nickname={profile.nickname} role={profile.role} size="md" />
             </div>
-            <p className="text-xs text-foreground/60">오늘도 따뜻한 마음 감사합니다. 아이들이 기다리고 있어요.</p>
+            <p className="text-xs text-foreground/60">함께해 주셔서 감사해요. 신청 내역과 활동 기록을 확인해 보세요.</p>
           </div>
           {/* 수정 버튼 */}
           <Link

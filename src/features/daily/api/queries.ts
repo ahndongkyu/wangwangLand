@@ -1,6 +1,7 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { DailyPost } from "@/shared/types/database"
+import type { CommunityType } from "../lib/community-category"
 
 export type DailyPostWithAuthor = DailyPost & { author: AuthorInfo | null }
 
@@ -10,6 +11,7 @@ export interface ListDailyOptions {
   offset?: number
   category?: string
   board?: "daily" | "free" | "qna"
+  community?: CommunityType
 }
 
 export interface PaginatedDaily {
@@ -24,6 +26,7 @@ export async function listDailyPosts({
   offset = 0,
   category,
   board,
+  community,
 }: ListDailyOptions = {}): Promise<PaginatedDaily> {
   const supabase = await createClient()
 
@@ -37,7 +40,13 @@ export async function listDailyPosts({
   if (searchQuery && searchQuery.trim()) {
     query = query.ilike("title", `%${searchQuery.trim()}%`)
   }
-  if (board === "daily") {
+  if (community === "일상") {
+    query = query.or('category.is.null,category.not.in.("자유","자유게시판","질문 및 답변","후기","봉사 후기","입양 후기")')
+  } else if (community === "자유") {
+    query = query.in("category", ["자유", "자유게시판", "질문 및 답변"])
+  } else if (community === "후기") {
+    query = query.in("category", ["후기", "봉사 후기", "입양 후기"])
+  } else if (board === "daily") {
     query = query.or(
       'category.is.null,category.not.in.("자유게시판","질문 및 답변")'
     )

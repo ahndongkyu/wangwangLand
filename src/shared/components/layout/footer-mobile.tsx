@@ -8,6 +8,8 @@ const MOBILE_LINKS = [
   { label: "아이들 만나기", href: "/dogs" },
   { label: "센터 소개", href: "/about" },
   { label: "공지사항", href: "/notice" },
+  { label: "왕왕랜드 이야기", href: "/daily" },
+  { label: "지출 내역", href: "/expenses" },
   { label: "오시는 길", href: "/contact" },
 ] as const
 

@@ -48,6 +48,8 @@ function validate(input: StoryInput): string | null {
 }
 
 function revalidateAll(id?: string) {
+  revalidatePath("/daily")
+  revalidatePath("/admin/community")
   revalidatePath("/admin/stories")
   revalidatePath("/stories")
   revalidatePath("/")

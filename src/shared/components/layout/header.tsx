@@ -17,6 +17,7 @@ import {
 } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
 import { Button, buttonVariants } from "@/shared/components/ui/button"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
 import {
   Sheet,
   SheetClose,
@@ -61,7 +62,7 @@ export function Header({
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b border-border bg-[linear-gradient(100deg,var(--background)_0%,var(--secondary)_50%,var(--background)_100%)] shadow-[0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur"
+      className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur"
     >
       <div
         className="relative mx-auto flex h-14 w-full max-w-[1440px] items-center justify-between px-4 md:h-16 md:px-8 2xl:px-12"
@@ -153,7 +154,6 @@ export function Header({
             <HeaderChannelLink
               href={SITE.sns.kakaoChannel}
               label="카카오톡 문의"
-              className="border-[#F0D900] bg-[#FEE500] text-[#3C1E1E] hover:bg-[#FFEA32]"
             >
               <KakaoIcon />
             </HeaderChannelLink>
@@ -170,6 +170,7 @@ export function Header({
               <InstaIcon />
             </HeaderChannelLink>
           )}
+          <ThemeToggle />
         </div>
 
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
@@ -189,13 +190,14 @@ export function Header({
           )}
 
           {/* 모바일 햄버거 */}
+          <ThemeToggle />
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
                 <Button
                   variant="default"
                   size="sm"
-                  className="size-9 rounded-lg p-0 shadow-sm lg:hidden"
+                  className="size-11 rounded-lg p-0 shadow-none lg:hidden"
                   aria-label="메뉴 열기"
                 />
               }
@@ -334,7 +336,6 @@ function HeaderChannelLink({
   href,
   label,
   className,
-  children,
 }: {
   href: string
   label: string
@@ -349,11 +350,11 @@ function HeaderChannelLink({
       aria-label={label}
       title={label}
       className={cn(
-        "flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-md",
+        "inline-flex min-h-11 items-center justify-center gap-1 whitespace-nowrap rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className
       )}
     >
-      {children}
+      {label}<span aria-hidden>↗</span>
     </a>
   )
 }

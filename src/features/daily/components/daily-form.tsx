@@ -10,19 +10,7 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { cn } from "@/shared/lib/utils"
 import type { DailyPost, DailyCategory } from "@/shared/types/database"
-
-const DAILY_CATEGORIES: DailyCategory[] = [
-  "일상",
-  "자유게시판",
-  "질문 및 답변",
-  "구조 소식",
-  "입소",
-  "임시보호",
-  "봉사 현장",
-  "시설 안내",
-  "후원 소식",
-  "봉사 후기",
-]
+import { COMMUNITY_TYPES, communityType } from "../lib/community-category"
 
 const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -56,6 +44,9 @@ export function DailyForm({
   const [error, setError] = useState<string | null>(null)
   const isEdit = Boolean(post)
   const contentRef = useRef<string>(post?.content ?? "")
+  const originalType = communityType(post?.category ?? defaultCategory)
+  const [selectedType, setSelectedType] = useState(originalType)
+  const certificationId = volunteerApplicationId ?? post?.related_volunteer_application_id
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -109,11 +100,11 @@ export function DailyForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="category">카테고리</Label>
-        {volunteerApplicationId ? (
+        <Label htmlFor="category">이야기 유형</Label>
+        {certificationId ? (
           <>
             <input type="hidden" name="category" value="봉사 후기" />
-            <input type="hidden" name="related_volunteer_application_id" value={volunteerApplicationId} />
+            <input type="hidden" name="related_volunteer_application_id" value={certificationId} />
             <div className="flex items-center gap-2 rounded-md border border-pink-200 bg-pink-50 px-3 py-2 text-sm dark:border-pink-900/40 dark:bg-pink-900/20">
               <span className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] font-semibold text-pink-700 dark:bg-pink-900/40 dark:text-pink-300">
                 봉사 후기
@@ -122,17 +113,20 @@ export function DailyForm({
             </div>
           </>
         ) : (
+        <>
+        <input type="hidden" name="category" value={post && selectedType === originalType ? post.category ?? "일상" : selectedType} />
         <select
           id="category"
-          name="category"
-          defaultValue={post?.category ?? defaultCategory ?? ""}
+          name="community_category"
+          value={selectedType}
+          onChange={(event) => setSelectedType(communityType(event.target.value))}
           className={cn(selectClass, "max-w-[200px]")}
         >
-          <option value="">— 없음 —</option>
-          {DAILY_CATEGORIES.map((c) => (
+          {COMMUNITY_TYPES.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        </>
         )}
       </div>
 
@@ -159,7 +153,7 @@ export function DailyForm({
           onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
-          💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
+          본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
         </p>
       </div>
 

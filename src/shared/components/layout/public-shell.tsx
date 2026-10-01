@@ -41,12 +41,12 @@ export function PublicShell({
         <div className="min-h-full">{children}</div>
       ) : (
         <div className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 2xl:px-12">
-          <div className="grid min-w-0 gap-5 lg:grid-cols-[252px_minmax(0,1fr)] lg:gap-8">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-9">
             {sidebar}
             <section
               className={cn(
-                "min-w-0 overflow-hidden rounded-[28px] border border-border bg-card",
-                "shadow-[0_16px_38px_rgba(88,76,68,0.08)]"
+                "min-w-0",
+                pathname !== "/" && "rounded-2xl border border-border bg-card"
               )}
             >
               {children}

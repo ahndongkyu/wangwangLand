@@ -2,6 +2,8 @@ import { cn } from "@/shared/lib/utils"
 import type { DailyCategory } from "@/shared/types/database"
 
 const BADGE_STYLES: Record<DailyCategory, string> = {
+  "자유": "bg-accent text-accent-foreground",
+  "후기": "bg-secondary text-secondary-foreground",
   "구조 소식":  "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
   "봉사 현장":  "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
   "시설 안내":  "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",

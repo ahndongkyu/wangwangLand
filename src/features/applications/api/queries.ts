@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { recentMonthWindows } from "@/shared/lib/month-windows"
 import type {
   AdoptionApplication,
   ApplicationStatus,
@@ -339,20 +340,19 @@ async function aggregateByStatus(
   opts: { from?: string; to?: string } = {}
 ): Promise<ApplicationStatusCounts> {
   const supabase = await createClient()
-  let q = supabase.from(table).select("status")
   const fromIso = toStartOfDayIso(opts.from)
-  if (fromIso) q = q.gte("submitted_at", fromIso)
   const toIso = toEndOfDayIso(opts.to)
-  if (toIso) q = q.lte("submitted_at", toIso)
-
-  const { data, error } = await q
-  if (error || !data) return emptyStatusCounts()
-
   const acc = emptyStatusCounts()
-  for (const row of data as { status: ApplicationStatus }[]) {
-    acc[row.status] = (acc[row.status] ?? 0) + 1
-    acc.total += 1
-  }
+  const statuses: ApplicationStatus[] = ["접수", "검토중", "승인", "반려", "취소", "일정변경요청"]
+  await Promise.all(statuses.map(async (status) => {
+    let q = supabase.from(table).select("id", { count: "exact", head: true }).eq("status", status)
+    if (fromIso) q = q.gte("submitted_at", fromIso)
+    if (toIso) q = q.lte("submitted_at", toIso)
+    const { count, error } = await q
+    if (error) throw new Error("신청 통계를 불러오지 못했습니다.", { cause: error })
+    acc[status] = count ?? 0
+  }))
+  acc.total = statuses.reduce((sum, status) => sum + acc[status], 0)
   return acc
 }
 
@@ -430,41 +430,31 @@ export interface MonthlyVolunteerStat {
   rescued: number  // 봉사 신청 수 (차트 컴포넌트와 동일 키 재사용)
 }
 
+/** 승인된 신청의 동반 인원 합계. 실제 참석이나 고유 봉사자 수와는 다르다. */
+export async function getApprovedVolunteerPeople(): Promise<number> {
+  const supabase = await createClient()
+  let total = 0
+  for (let offset = 0; ; offset += 500) {
+    const { data, error } = await supabase.from("volunteer_applications")
+      .select("id, party_size").eq("status", "승인")
+      .order("id", { ascending: true }).range(offset, offset + 499)
+    if (error) throw new Error("승인 인원을 불러오지 못했습니다.", { cause: error })
+    for (const row of data ?? []) total += row.party_size ?? 0
+    if (!data || data.length < 500) break
+  }
+  return total
+}
+
 /** 최근 N개월 봉사 신청 추이 */
 export async function getMonthlyVolunteerStats(months = 6): Promise<MonthlyVolunteerStat[]> {
   const supabase = await createClient()
-
-  const since = new Date()
-  since.setMonth(since.getMonth() - months + 1)
-  since.setDate(1)
-  const sinceStr = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-01T00:00:00+09:00`
-
-  const { data, error } = await supabase
-    .from("volunteer_applications")
-    .select("submitted_at")
-    .gte("submitted_at", sinceStr)
-
-  if (error || !data) return []
-
-  const map = new Map<string, number>()
-  for (const { submitted_at } of data as { submitted_at: string }[]) {
-    // KST 기준 월 추출
-    const d = new Date(submitted_at)
-    const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-    const key = `${kst.getUTCFullYear()}-${String(kst.getUTCMonth() + 1).padStart(2, "0")}`
-    map.set(key, (map.get(key) ?? 0) + 1)
-  }
-
-  const result: MonthlyVolunteerStat[] = []
-  for (let i = months - 1; i >= 0; i--) {
-    const d = new Date()
-    d.setMonth(d.getMonth() - i)
-    d.setDate(1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-    result.push({ month: key, label: `${d.getMonth() + 1}월`, rescued: map.get(key) ?? 0 })
-  }
-
-  return result
+  return Promise.all(recentMonthWindows(months).map(async (window) => {
+    const { count, error } = await supabase.from("volunteer_applications")
+      .select("id", { count: "exact", head: true })
+      .gte("submitted_at", window.from).lt("submitted_at", window.to)
+    if (error) throw new Error("월별 통계를 불러오지 못했습니다.", { cause: error })
+    return { month: window.month, label: window.label, rescued: count ?? 0 }
+  }))
 }
 
 export async function listRecentApplications(

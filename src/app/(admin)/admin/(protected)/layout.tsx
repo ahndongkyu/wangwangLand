@@ -4,6 +4,8 @@ import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { SITE } from "@/shared/constants/site"
 import { AdminSidebar, AdminMobileHeader } from "./_components/admin-header"
 import { AdminBottomNav } from "./_components/admin-bottom-nav"
+import Link from "next/link"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
 
 export default async function AdminProtectedLayout({
   children,
@@ -34,6 +36,10 @@ export default async function AdminProtectedLayout({
       <div className="flex min-w-0 flex-1 flex-col bg-background md:pl-[284px]">
         {/* 모바일 헤더 — md 이상에서 숨김 */}
         <AdminMobileHeader {...sharedProps} pendingCounts={pendingCounts} />
+        <header className="hidden h-16 shrink-0 items-center justify-between border-b border-border bg-card px-8 md:flex">
+          <Link href="/admin" className="font-semibold tracking-tight text-foreground">{SITE.name} <span className="ml-2 text-xs font-normal text-muted-foreground">운영 관리</span></Link>
+          <ThemeToggle />
+        </header>
 
         <main className="min-w-0 flex-1 overflow-x-hidden pb-24 md:pb-0">{children}</main>
       </div>

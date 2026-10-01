@@ -76,8 +76,7 @@ export const MAIN_NAV = [
   { label: "센터소개", href: "/about" },
   { label: "강아지", href: "/dogs" },
   { label: "고양이", href: "/cats" },
-  { label: "일상", href: "/daily" },
-  { label: "입양후기", href: "/stories" },
+  { label: "왕왕랜드 이야기", href: "/daily" },
   { label: "봉사", href: "/volunteer" },
   { label: "후원", href: "/donate" },
   { label: "공지사항", href: "/notice" },
@@ -112,8 +111,7 @@ export const HEADER_NAV_GROUPS: ReadonlyArray<
     items: [
       { label: "강아지", href: "/dogs", desc: "입양 대기 중인 강아지들", icon: "dog" },
       { label: "고양이", href: "/cats", desc: "보호 중인 고양이들", icon: "paw" },
-      { label: "입양 후기", href: "/stories", desc: "새 가족을 만난 아이들", icon: "heart" },
-      { label: "일상", href: "/daily", desc: "봉사 활동·근황 기록", icon: "camera" },
+      { label: "왕왕랜드 이야기", href: "/daily", desc: "일상·자유·후기를 나눠요", icon: "camera" },
     ],
   },
   {
@@ -142,8 +140,7 @@ export const FOOTER_LINK_GROUPS: ReadonlyArray<{
     links: [
       { label: "강아지", href: "/dogs" },
       { label: "고양이", href: "/cats" },
-      { label: "입양 후기", href: "/stories" },
-      { label: "일상", href: "/daily" },
+      { label: "왕왕랜드 이야기", href: "/daily" },
     ],
   },
   {

@@ -8,8 +8,6 @@ import {
   ChevronRight,
   CirclePlus,
   LogOut,
-  Moon,
-  Sun,
   User,
 } from "lucide-react"
 
@@ -17,7 +15,6 @@ import type { Profile } from "@/features/members"
 import type { UserNotification } from "@/features/notifications/api/queries"
 import { signOut, updateHomeFavorites } from "@/features/members/api/actions"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
-import { useTheme } from "@/shared/components/theme-provider"
 import { UserNotificationBell } from "@/shared/components/user-notification-bell"
 import {
   HOME_FAVORITE_OPTIONS,
@@ -51,7 +48,6 @@ export function HomeSidebar({
   variant = "desktop",
 }: Props) {
   const router = useRouter()
-  const { resolvedTheme, setTheme } = useTheme()
   const [favorites, setFavorites] = useState(initialFavorites)
   const [draft, setDraft] = useState(initialFavorites)
   const [editing, setEditing] = useState(false)
@@ -99,8 +95,6 @@ export function HomeSidebar({
   }
 
   const idPrefix = variant === "mobile" ? "mobile-" : ""
-  const toggleTheme = () =>
-    setTheme(resolvedTheme === "dark" ? "light" : "dark")
 
   const favoriteEditor = editing ? (
     <div className="mt-3 rounded-2xl border border-border bg-card p-3 shadow-[0_14px_32px_rgba(88,76,68,0.12)]">
@@ -206,19 +200,7 @@ export function HomeSidebar({
                 <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
               </Link>
             )}
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-foreground/80 transition-colors duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
-              >
-                {resolvedTheme === "dark" ? (
-                  <Sun className="size-4 text-brand-sage" aria-hidden />
-                ) : (
-                  <Moon className="size-4 text-brand-sage" aria-hidden />
-                )}
-                {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
-              </button>
+            <div className="mt-3 pt-3">
               <form action={signOut}>
                 <button
                   type="submit"
@@ -241,18 +223,6 @@ export function HomeSidebar({
             >
               로그인
             </Link>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary text-xs font-semibold text-foreground/80 transition-colors duration-200 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
-            >
-              {resolvedTheme === "dark" ? (
-                <Sun className="size-4 text-brand-sage" aria-hidden />
-              ) : (
-                <Moon className="size-4 text-brand-sage" aria-hidden />
-              )}
-              {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
-            </button>
           </div>
         )}
       </section>
@@ -343,16 +313,13 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
         </h2>
         <nav className="mt-2 grid gap-1 pl-3" aria-label="보호소 소식">
           <SidebarLink href="/notice" label="공지사항" />
-          <SidebarLink href="/daily?category=일상" label="일상" />
           <SidebarLink href="/expenses" label="지출 내역" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}community-menu-heading`}>
         <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">회원 커뮤니티</h2>
         <nav className="mt-2 grid gap-1 pl-3" aria-label="회원 커뮤니티">
-          <SidebarLink href="/daily?category=자유게시판" label="자유게시판" />
-          <SidebarLink href="/daily?category=봉사 후기" label="봉사 후기" />
-          <SidebarLink href="/stories" label="입양 후기" />
+          <SidebarLink href="/daily" label="왕왕랜드 이야기" />
         </nav>
       </section>
       <section aria-labelledby={`${idPrefix}participation-menu-heading`}>

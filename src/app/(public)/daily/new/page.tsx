@@ -5,8 +5,9 @@ import Link from "next/link"
 import { DailyForm } from "@/features/daily"
 import { getCurrentProfile } from "@/features/members"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { communityType } from "@/features/daily/lib/community-category"
 
-export const metadata: Metadata = { title: "일상 작성" }
+export const metadata: Metadata = { title: "왕왕랜드 이야기 작성" }
 export const dynamic = "force-dynamic"
 
 export default async function DailyNewPage({
@@ -21,12 +22,7 @@ export default async function DailyNewPage({
   const params = await searchParams
   const applicationId = params.application?.trim()
   const requestedCategory = params.category?.trim()
-  const defaultCategory =
-    requestedCategory === "일상" ||
-    requestedCategory === "자유게시판" ||
-    requestedCategory === "질문 및 답변"
-      ? requestedCategory
-      : undefined
+  const defaultCategory = communityType(requestedCategory)
 
   // 봉사 신청 ID가 있으면 본인 + 승인 + 봉사일 지났는지 검증
   let validatedAppId: string | undefined
@@ -66,7 +62,7 @@ export default async function DailyNewPage({
         </h1>
         {isVolunteerCert && (
           <p className="mt-2 text-sm text-muted-foreground">
-            소중한 봉사 활동을 기록해주세요. 등록 시 봉사 횟수가 1회 추가됩니다.
+            아이들과 함께한 봉사 활동을 기록해 주세요. 등록하면 봉사 횟수가 1회 추가됩니다.
           </p>
         )}
       </header>
@@ -81,9 +77,7 @@ export default async function DailyNewPage({
         returnTo={
           isVolunteerCert
             ? "/my/applications"
-            : defaultCategory
-              ? `/daily?category=${encodeURIComponent(defaultCategory)}`
-              : "/daily"
+            : "/daily"
         }
         volunteerApplicationId={validatedAppId}
         defaultCategory={defaultCategory}

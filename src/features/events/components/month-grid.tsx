@@ -31,6 +31,7 @@ interface Props {
   addHrefBase?: string
   maskNames?: boolean
   readOnly?: boolean
+  initialSelectedDate?: string
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -42,10 +43,11 @@ export function MonthGrid({
   addHrefBase,
   maskNames = false,
   readOnly = false,
+  initialSelectedDate,
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(initialSelectedDate ?? null)
 
   const byDate = new Map<string, CalendarEvent[]>()
   for (const ev of events) {
@@ -112,6 +114,8 @@ export function MonthGrid({
             <div
               key={d.toISOString()}
               role="button"
+              aria-label={`${fullDayLabel(cellKey)}, 일정 ${dayEvents.length}건`}
+              aria-pressed={isSelected}
               tabIndex={0}
               onClick={() => {
                 // 통일된 동작: 셀 탭 → 그 날 이벤트 패널 토글
@@ -129,7 +133,7 @@ export function MonthGrid({
                 }
               }}
               className={cn(
-                "group border-r border-t border-border outline-none transition-colors",
+                "group border-r border-t border-border outline-none transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
                 // 데스크톱: 기존 높이 유지
                 "sm:min-h-[110px] sm:p-1.5",
                 // 모바일: 날짜와 일정 표시가 읽히고 터치하기 쉬운 크기
@@ -248,13 +252,14 @@ export function MonthGrid({
             <button
               type="button"
               onClick={() => setSelectedKey(null)}
-              className="flex size-6 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary"
+              className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="닫기"
             >
               <X className="size-3.5" />
             </button>
           </div>
           <ul className="divide-y divide-border">
+            {selectedEvents.length === 0 && <li className="px-4 py-5 text-sm text-muted-foreground">등록된 일정이 없습니다.</li>}
             {selectedEvents.map((ev) => {
               const isCustom = ev.category === "custom"
               const color = CATEGORY_COLOR[ev.category]

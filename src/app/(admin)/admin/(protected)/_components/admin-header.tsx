@@ -16,16 +16,13 @@ import {
   ExternalLink,
   Gift,
   HandHeart,
-  Heart,
   LayoutDashboard,
   LogOut,
   Megaphone,
   Menu as MenuIcon,
-  Moon,
   ReceiptText,
   Settings,
   ShieldCheck,
-  Sun,
   User,
   Users,
   X,
@@ -33,7 +30,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 
-import { useTheme } from "@/shared/components/theme-provider"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
@@ -82,8 +79,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
       items: [
         { label: "공지사항", href: "/admin/notices", icon: Megaphone },
         { label: "지출 내역", href: "/admin/expenses", icon: ReceiptText },
-        { label: "일상", href: "/admin/daily", icon: Camera },
-        { label: "입양후기", href: "/admin/stories", icon: Heart },
+        { label: "왕왕랜드 이야기", href: "/admin/community", icon: Camera },
         { label: "후원 감사글", href: "/admin/thanks", icon: Gift },
       ],
     },
@@ -153,7 +149,6 @@ export function AdminSidebar({
 }: AdminHeaderProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { resolvedTheme, setTheme } = useTheme()
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
   const isActive = (href: string) => {
     const [path, query] = href.split("?")
@@ -208,19 +203,7 @@ export function AdminSidebar({
           </span>
           <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
         </Link>
-        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
-          <button
-            type="button"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#d8e3dc] transition-colors hover:bg-white/[0.10]"
-          >
-            {resolvedTheme === "dark" ? (
-              <Sun className="size-4 text-[#efa085]" aria-hidden />
-            ) : (
-              <Moon className="size-4 text-[#efa085]" aria-hidden />
-            )}
-            {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
-          </button>
+        <div className="mt-3 pt-3">
           <form action={logoutAction}>
             <button
               type="submit"
@@ -331,7 +314,6 @@ export function AdminMobileHeader({
 }: AdminHeaderProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { resolvedTheme, setTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
   const mobileBackHref = getAdminMobileBackHref(pathname)
@@ -368,6 +350,7 @@ export function AdminMobileHeader({
 
         {/* 햄버거 메뉴 */}
         <div className="flex items-center gap-1 [&_button]:text-white/80 [&_button:hover]:bg-white/10 [&_button:hover]:text-white">
+          <ThemeToggle />
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
@@ -449,19 +432,7 @@ export function AdminMobileHeader({
                     </span>
                     <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
                   </Link>
-                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                      className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-white/[0.06] text-xs font-semibold text-[#d8e3dc] transition-colors hover:bg-white/[0.10]"
-                    >
-                      {resolvedTheme === "dark" ? (
-                        <Sun className="size-4 text-[#efa085]" aria-hidden />
-                      ) : (
-                        <Moon className="size-4 text-[#efa085]" aria-hidden />
-                      )}
-                      {resolvedTheme === "dark" ? "라이트모드" : "다크모드"}
-                    </button>
+                  <div className="mt-3 pt-3">
                     <form action={logoutAction}>
                       <button
                         type="submit"

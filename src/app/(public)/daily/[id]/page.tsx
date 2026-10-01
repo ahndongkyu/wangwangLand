@@ -74,7 +74,7 @@ export default async function DailyDetailPage({
       />
       <nav className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <Link href="/daily" className="hover:text-foreground">
-          ← 일상 목록
+          ← 왕왕랜드 이야기 목록
         </Link>
         {canEdit && (
           <div className="flex items-center gap-2">

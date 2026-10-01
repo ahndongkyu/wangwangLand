@@ -71,16 +71,16 @@ export function PostListRow({
   return (
     <Link
       href={href}
-      className="flex items-stretch gap-3 px-4 py-3 transition-colors hover:bg-secondary/50 sm:gap-4 sm:px-5 sm:py-4"
+      className="group flex items-stretch gap-4 px-4 py-5 transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:gap-5 sm:px-5 sm:py-6"
     >
       {/* 썸네일 (있을 때만) */}
       {thumbnail ? (
-        <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-muted sm:size-20">
+        <div className="relative order-2 size-20 shrink-0 self-center overflow-hidden rounded-lg bg-muted sm:h-24 sm:w-28">
           <Image
             src={thumbnail}
             alt=""
             fill
-            sizes="(max-width: 640px) 64px, 80px"
+            sizes="(max-width: 640px) 80px, 112px"
             className="object-cover"
           />
         </div>
@@ -103,12 +103,12 @@ export function PostListRow({
                 NEW
               </span>
             )}
-            <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
+            <h3 className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-relaxed text-foreground group-hover:text-primary sm:text-base">
               {title}
             </h3>
             {commentCount != null && commentCount > 0 && (
               <span className="shrink-0 text-sm font-semibold text-primary">
-                [{commentCount}]
+                ({commentCount})
               </span>
             )}
             {statusBadge && (
@@ -128,7 +128,7 @@ export function PostListRow({
         </div>
 
         {/* 메타 */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           {author && (
             <UserName
               nickname={author.nickname}
@@ -145,7 +145,7 @@ export function PostListRow({
           {typeof viewCount === "number" && (
             <>
               <span aria-hidden className="text-muted-foreground/40">·</span>
-              <span className="inline-flex items-center gap-0.5">
+              <span className="inline-flex items-center gap-0.5" aria-label={`조회 ${viewCount}회`}>
                 <Eye className="size-3" aria-hidden />
                 {viewCount}
               </span>

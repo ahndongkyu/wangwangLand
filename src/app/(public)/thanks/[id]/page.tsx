@@ -82,7 +82,7 @@ export default async function ThanksDetailPage({
 
       <div className="mt-12 rounded-lg border border-primary/30 bg-primary/5 p-5 text-center">
         <p className="text-sm text-foreground">
-          <strong>왕왕랜드</strong>는 작은 마음 하나하나로 살아갑니다.
+          <strong>왕왕랜드</strong> 아이들을 함께 돌봐주셔서 감사합니다.
         </p>
         <Link
           href="/donate"

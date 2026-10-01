@@ -77,6 +77,8 @@ export interface FileAttachment {
 }
 
 export type DailyCategory =
+  | "자유"
+  | "후기"
   | "구조 소식"
   | "봉사 현장"
   | "시설 안내"

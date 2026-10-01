@@ -76,8 +76,8 @@ export default async function StoryDetailPage({
         currentUserId={profile?.id ?? null}
       />
       <nav className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
-        <Link href="/stories" className="hover:text-foreground">
-          ← 입양 후기 목록
+        <Link href="/daily?category=후기" className="hover:text-foreground">
+          ← 왕왕랜드 이야기 · 후기
         </Link>
         {canEdit && (
           <div className="flex items-center gap-2">

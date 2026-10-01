@@ -46,6 +46,7 @@ function parseFormData(formData: FormData): DailyInput {
 }
 
 function revalidateAll(id?: string) {
+  revalidatePath("/admin/community")
   revalidatePath("/admin/daily")
   revalidatePath("/daily")
   revalidatePath("/")
@@ -74,6 +75,8 @@ export async function createDailyPost(
 ): Promise<DailyMutationResult> {
   const input = parseFormData(formData)
   const returnTo = String(formData.get("_returnTo") ?? "/daily")
+
+  if (input.related_volunteer_application_id) input.category = "봉사 후기"
 
   if (!input.title) return { error: "제목은 필수입니다." }
 
@@ -208,7 +211,7 @@ export async function updateDailyPost(
   // 본인 글 또는 staff/admin만 수정 가능
   const { data: post } = await supabase
     .from("daily_posts")
-    .select("created_by")
+    .select("created_by, category, related_volunteer_application_id")
     .eq("id", id)
     .maybeSingle()
 
@@ -217,6 +220,11 @@ export async function updateDailyPost(
   const isAuthor = post.created_by === user.id
   const isStaff = profile.role === "staff" || profile.role === "admin"
   if (!isAuthor && !isStaff) return { error: "수정 권한이 없습니다." }
+
+  if (post.related_volunteer_application_id) {
+    input.category = "봉사 후기"
+    if (input.images.length === 0) return { error: "봉사 인증글에는 사진을 1장 이상 첨부해주세요." }
+  }
 
   const { error } = await supabase
     .from("daily_posts")

@@ -13,19 +13,16 @@ export function ThemeToggle({ className }: { className?: string }) {
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
-      title={isDark ? "라이트 모드" : "다크 모드"}
+      title={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-full border transition-all duration-200 hover:scale-105",
-        isDark
-          ? "border-border bg-foreground text-background hover:bg-foreground/90"
-          : "border-border bg-transparent text-foreground/70 hover:border-primary hover:bg-primary/10 hover:text-foreground",
+        "inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-transparent bg-transparent text-foreground transition-colors duration-200 hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none",
         className
       )}
     >
       {isDark ? (
-        <Sun className="size-4" />
+        <Sun className="size-5" strokeWidth={1.7} aria-hidden />
       ) : (
-        <Moon className="size-4" />
+        <Moon className="size-5" strokeWidth={1.7} aria-hidden />
       )}
     </button>
   )

@@ -3,8 +3,11 @@ import Link from "next/link"
 import { ChevronRight, Eye, PenLine } from "lucide-react"
 
 import { fetchCommentCounts } from "@/features/comments"
-import { listDailyPosts } from "@/features/daily"
+import { listCommunityPosts } from "@/features/daily/api/community-queries"
+import { PostListRow } from "@/shared/components/post-list-row"
+import { stripHtml } from "@/shared/lib/utils"
 import { listDogsForHome } from "@/features/dogs"
+import { getCurrentProfile } from "@/features/members"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
 import { listNotices } from "@/features/notices"
@@ -17,7 +20,7 @@ import type { Dog } from "@/shared/types/database"
 export const revalidate = 60
 
 const RECENT_POST_COUNT = 5
-const YM_RE = /^\d{4}-\d{2}$/
+const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
 export default async function HomePage({
   searchParams,
@@ -31,31 +34,38 @@ export default async function HomePage({
       : yearMonthKst(todayKst())
   const scheduleRange = monthRange(scheduleYearMonth)
 
-  const [dogs, noticeResult, dailyResult, scheduleEvents, expenseResult] = await Promise.all([
+  const [dogs, noticeResult, dailyResult, scheduleEvents, expenseResult, profile] = await Promise.all([
     listDogsForHome(4),
     listNotices({ limit: RECENT_POST_COUNT }),
-    listDailyPosts({ board: "daily", limit: RECENT_POST_COUNT }),
+    listCommunityPosts({ limit: 3 }),
     listEventsInRange({
       from: scheduleRange.from,
       to: scheduleRange.to,
       categories: ["volunteer", "regular_volunteer", "closed"],
     }),
     listNotices({ boardType: "expense", publicOnly: true, limit: RECENT_POST_COUNT }),
+    getCurrentProfile(),
   ])
 
-  const dailyPostIds = dailyResult.posts.map((post) => post.id)
-  const [dailyCommentCounts, noticeCommentCounts, expenseCommentCounts] = await Promise.all([
+  const dailyPostIds = dailyResult.posts.filter(post => post.source === "daily").map((post) => post.id)
+  const [dailyCommentCounts, noticeCommentCounts, expenseCommentCounts, storyCommentCounts] = await Promise.all([
     fetchCommentCounts("daily", dailyPostIds),
     fetchCommentCounts(
       "notice",
       noticeResult.notices.map((notice) => notice.id)
     ),
     fetchCommentCounts("notice", expenseResult.notices.map((post) => post.id)),
+    fetchCommentCounts("story", dailyResult.posts.filter(post => post.source === "story").map(post => post.id)),
   ])
 
   return (
-    <div className="min-w-0 p-3 text-foreground sm:p-4 lg:p-5">
-      <section className="relative isolate min-h-[210px] overflow-hidden rounded-[26px] border border-border bg-muted shadow-[0_16px_42px_rgba(88,76,68,0.10)] sm:min-h-[230px]">
+    <div className="flex min-w-0 flex-col text-foreground">
+      <div className="mb-6">
+        <p className="mb-1 text-xs font-medium text-muted-foreground">아이들과 함께하는 왕왕랜드</p>
+        <h1 className="text-3xl font-bold tracking-tight">왕왕랜드의 오늘</h1>
+      </div>
+      <section className="grid gap-4 md:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
+        <div className="relative isolate min-h-[260px] overflow-hidden rounded-2xl bg-muted sm:min-h-[320px]">
               <Image
                 src="/images/banner.jpeg"
                 alt="왕왕랜드 아이들"
@@ -64,19 +74,23 @@ export default async function HomePage({
                 className="object-cover object-center"
                 priority
               />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.97)_0%,rgba(250,242,233,0.87)_45%,rgba(246,239,229,0.18)_76%)] dark:bg-[linear-gradient(90deg,rgba(35,39,34,0.96)_0%,rgba(46,52,46,0.84)_45%,rgba(46,52,46,0.18)_76%)]" />
-              <div className="relative flex min-h-[210px] max-w-xl flex-col items-start justify-center px-6 py-8 sm:min-h-[230px] sm:px-9 lg:px-10">
-                <h1 className="max-w-md text-2xl font-bold leading-snug tracking-tight text-foreground sm:text-3xl">
-                  기다림이 가족을 만나는 순간까지
-                </h1>
-                <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  왕왕랜드 아이들의 오늘을 가까이에서 만나보세요.
-                </p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 px-6 py-7 text-white">
+                <p className="mb-1 text-sm">우리의 일상</p>
+                <h2 className="text-2xl font-bold">함께 돌보고, 일상을 나눠요</h2>
               </div>
+        </div>
+        <div className="flex flex-col justify-center rounded-2xl bg-secondary p-6 sm:p-7">
+          <p className="text-xs text-muted-foreground">함께하는 방법</p>
+          <h2 className="mt-3 text-2xl font-bold leading-snug">아이들과 함께할<br className="hidden md:block" /> 시간을 내어주세요</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">처음 방문하시는 분도 함께할 수 있어요.<br />가능한 날짜와 시간을 확인해 주세요.</p>
+          <Link href="/volunteer" className="mt-6 flex min-h-12 items-center justify-between rounded-lg bg-primary px-4 font-semibold text-primary-foreground hover:bg-primary/90">봉사 신청하기 <span aria-hidden>↗</span></Link>
+          <div className="mt-2 flex flex-wrap gap-x-5 text-xs text-muted-foreground"><Link href="#volunteer-calendar" className="inline-flex min-h-11 items-center hover:text-primary">일정 먼저 보기</Link><Link href="/about" className="inline-flex min-h-11 items-center hover:text-primary">첫 방문 안내</Link></div>
+        </div>
       </section>
 
             <section
-              className="mt-8 grid min-h-24 gap-4 rounded-2xl border border-border border-l-[5px] border-l-brand-sage bg-accent/60 p-5 shadow-[0_10px_28px_rgba(88,76,68,0.07)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center sm:p-6"
+              className="order-1 mt-5 grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
               aria-label="후원 계좌 안내"
             >
               <span className="flex size-14 items-center justify-center rounded-2xl bg-accent">
@@ -84,7 +98,7 @@ export default async function HomePage({
               </span>
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-foreground">
-                  작은 마음이 아이들의 하루를 바꿉니다
+                  보내주신 후원은 아이들을 돌보는 데 쓰입니다
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   후원금은 구조 동물의 치료비와 생활비로 사용됩니다.
@@ -107,7 +121,64 @@ export default async function HomePage({
               </div>
             </section>
 
-            <section className="mt-10" aria-labelledby="waiting-dogs-heading">
+            <section className="order-2 mt-10" aria-labelledby="recent-community-heading">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2
+                    id="recent-community-heading"
+                    className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+                  >
+                    왕왕랜드 이야기
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    아이들 소식과 함께한 경험을 나눠요.
+                  </p>
+                </div>
+                <Link
+                  href="/daily/new"
+                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary/10 px-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
+                >
+                  <PenLine className="size-4" aria-hidden />
+                  글쓰기
+                </Link>
+              </div>
+              <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+                <article className="overflow-hidden rounded-xl border border-border bg-card">
+                  <div className="flex items-center justify-between gap-3 border-b-2 border-primary px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
+                  <div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} badge={<span className="text-xs text-primary">{post.category}</span>} thumbnail={post.images[0]} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} viewCount={post.viewCount} commentCount={(post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
+                  {dailyResult.posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">나누고 싶은 이야기가 있다면 편하게 남겨주세요.</p>}
+                </article>
+                <div className="grid gap-6">
+                <RecentBoard
+                  title="공지사항"
+                  href="/notice"
+                  posts={noticeResult.notices.map((notice) => ({
+                    id: notice.id,
+                    title: notice.title,
+                    href: `/notice/${notice.id}`,
+                    author: notice.author?.nickname ?? "왕왕랜드",
+                    viewCount: notice.view_count ?? 0,
+                    commentCount: noticeCommentCounts[notice.id] ?? 0,
+                  }))}
+                />
+                <RecentBoard
+                  title="지출 내역"
+                  emptyMessage={!profile ? "로그인 후 공개된 지출 내역을 확인할 수 있어요." : undefined}
+                  href="/expenses"
+                  posts={expenseResult.notices.map((post) => ({
+                    id: post.id,
+                    title: post.title,
+                    href: `/expenses/${post.id}`,
+                    author: post.author?.nickname ?? "왕왕랜드",
+                    viewCount: post.view_count ?? 0,
+                    commentCount: expenseCommentCounts[post.id] ?? 0,
+                  }))}
+                />
+                </div>
+              </div>
+      </section>
+
+            <section className="order-3 mt-10" aria-labelledby="waiting-dogs-heading">
               <SectionHeading
                 id="waiting-dogs-heading"
                 title="가족을 기다리는 아이들"
@@ -128,73 +199,9 @@ export default async function HomePage({
               )}
             </section>
 
-            <section className="mt-10" aria-labelledby="recent-community-heading">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2
-                    id="recent-community-heading"
-                    className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
-                  >
-                    최근 소식
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    회원들과 나누는 새로운 이야기입니다.
-                  </p>
-                </div>
-                <Link
-                  href="/daily/new"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary/10 px-3.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
-                >
-                  <PenLine className="size-4" aria-hidden />
-                  글쓰기
-                </Link>
-              </div>
-              <div className="grid items-stretch gap-4 xl:grid-cols-3">
-                <RecentBoard
-                  title="공지사항"
-                  href="/notice"
-                  tone="coral"
-                  posts={noticeResult.notices.map((notice) => ({
-                    id: notice.id,
-                    title: notice.title,
-                    href: `/notice/${notice.id}`,
-                    author: notice.author?.nickname ?? "왕왕랜드",
-                    viewCount: notice.view_count ?? 0,
-                    commentCount: noticeCommentCounts[notice.id] ?? 0,
-                  }))}
-                />
-                <RecentBoard
-                  title="일상"
-                  href="/daily?category=일상"
-                  tone="sage"
-                  posts={dailyResult.posts.map((post) => ({
-                    id: post.id,
-                    title: post.title,
-                    href: `/daily/${post.id}`,
-                    author: post.author?.nickname ?? "왕왕랜드",
-                    viewCount: post.view_count ?? 0,
-                    commentCount: dailyCommentCounts[post.id] ?? 0,
-                  }))}
-                />
-                <RecentBoard
-                  title="지출 내역"
-                  href="/expenses"
-                  tone="yellow"
-                  posts={expenseResult.notices.map((post) => ({
-                    id: post.id,
-                    title: post.title,
-                    href: `/expenses/${post.id}`,
-                    author: post.author?.nickname ?? "왕왕랜드",
-                    viewCount: post.view_count ?? 0,
-                    commentCount: expenseCommentCounts[post.id] ?? 0,
-                  }))}
-                />
-              </div>
-      </section>
-
       <section
         id="volunteer-calendar"
-        className="mt-10"
+        className="order-4 mt-10 scroll-mt-24"
         aria-labelledby="volunteer-calendar-heading"
       >
         <SectionHeading
@@ -297,31 +304,26 @@ function HomeDogCard({ dog }: { dog: Dog }) {
 function RecentBoard({
   title,
   href,
-  tone,
   posts,
+  emptyMessage = "아직 등록된 글이 없습니다.",
 }: {
   title: string
   href: string
-  tone: "coral" | "sage" | "yellow"
   posts: RecentPostPreview[]
+  emptyMessage?: string
 }) {
-  const toneClass = {
-    coral: "border-t-[#e89273]",
-    sage: "border-t-[#a9c7b5]",
-    yellow: "border-t-[#f2d59b]",
-  }[tone]
   const slots = Array.from({ length: RECENT_POST_COUNT }, (_, index) => posts[index] ?? null)
 
   return (
     <article
-      className={`grid min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-border border-t-4 bg-card/90 shadow-[0_8px_24px_rgba(88,76,68,0.06)] ${toneClass}`}
+      className="grid min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-border bg-card"
     >
-      <div className="flex min-h-12 items-center gap-2 px-4">
-        <h3 className="font-semibold text-foreground">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-primary px-5 py-4">
+        <h3 className="flex min-h-11 items-center font-semibold text-foreground">
           {title}
         </h3>
       </div>
-      <div className="grid grid-rows-[auto_repeat(5,minmax(0,1fr))] border-t border-border">
+      <div className="grid grid-rows-[auto_repeat(5,minmax(0,1fr))]">
         <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 bg-secondary/60 px-3 text-[10px] font-semibold text-muted-foreground">
           <span>제목</span>
           <span className="text-right">작성자</span>
@@ -332,7 +334,7 @@ function RecentBoard({
             <Link
               key={post.id}
               href={post.href}
-              className="group grid min-h-11 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border/70 px-3 text-xs transition-colors duration-150 last:border-b-0 hover:bg-primary/10 focus-visible:z-10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 active:bg-primary/15 motion-reduce:transition-none"
+              className="group grid min-h-11 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border px-3 text-xs transition-colors duration-150 last:border-b-0 hover:bg-primary/10 focus-visible:z-10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 active:bg-primary/15 motion-reduce:transition-none"
             >
               <span className="flex min-w-0 items-center text-foreground/80">
                 <span className="truncate transition-colors duration-150 group-hover:text-primary group-hover:underline group-hover:decoration-primary/40 group-hover:underline-offset-4 group-focus-visible:text-primary motion-reduce:transition-none" title={post.title}>
@@ -358,10 +360,10 @@ function RecentBoard({
           ) : (
             <div
               key={`empty-${index}`}
-              className="flex min-h-10 items-center border-b border-border/70 px-3 text-xs text-muted-foreground/70 last:border-b-0"
+              className="flex min-h-10 items-center border-b border-border px-3 text-xs text-muted-foreground/70 last:border-b-0"
               aria-hidden={index > 0}
             >
-              {index === 0 ? "아직 등록된 글이 없습니다." : ""}
+              {index === 0 ? emptyMessage : ""}
             </div>
           )
         )}

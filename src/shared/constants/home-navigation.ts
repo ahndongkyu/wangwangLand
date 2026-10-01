@@ -3,8 +3,8 @@ import type { BrandIconName } from "@/shared/components/brand-icon"
 export const HOME_FAVORITE_OPTIONS = [
   { key: "volunteer", label: "봉사 신청", href: "/volunteer", icon: "volunteer" },
   { key: "adopt", label: "입양 문의", href: "/adopt", icon: "adopted" },
-  { key: "daily", label: "일상", href: "/daily?category=일상", icon: "camera" },
-  { key: "free", label: "자유게시판", href: "/daily?category=자유게시판", icon: "chat" },
+  { key: "daily", label: "왕왕랜드 이야기", href: "/daily", icon: "camera" },
+  { key: "free", label: "왕왕랜드 이야기 · 자유", href: "/daily?category=자유", icon: "chat" },
   { key: "expenses", label: "지출 내역", href: "/expenses", icon: "piggy-bank" },
   { key: "dogs", label: "입양 대기 아이들", href: "/dogs", icon: "dog" },
   { key: "calendar", label: "일정", href: "/calendar", icon: "calendar" },

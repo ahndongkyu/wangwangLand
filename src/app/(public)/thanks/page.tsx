@@ -7,7 +7,7 @@ import { SearchBox } from "@/shared/components/search-box"
 
 export const metadata: Metadata = {
   title: "후원 감사",
-  description: "왕왕랜드에 도착한 따뜻한 마음에 감사드립니다.",
+  description: "아이들을 위해 보내주신 후원에 감사드립니다.",
 }
 
 export const revalidate = 60
@@ -40,7 +40,7 @@ export default async function ThanksPage({
           후원 감사
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          왕왕랜드에 도착한 따뜻한 마음을 기록합니다. 후원 한 번이 한 생명을 살립니다.
+          아이들을 위해 보내주신 후원 소식을 전해요. 함께해 주셔서 감사합니다.
         </p>
       </header>
 

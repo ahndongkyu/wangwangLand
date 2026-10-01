@@ -16,6 +16,7 @@ import {
   getMonthlyVolunteerStats,
 } from "@/features/applications"
 import { getMonthlyMemberStats } from "@/features/members"
+import { getApprovedVolunteerPeople } from "@/features/applications/api/queries"
 import { listNotices } from "@/features/notices"
 import { listDailyPosts } from "@/features/daily"
 import { listAdoptionStories } from "@/features/stories"
@@ -26,10 +27,12 @@ import {
   yearMonthKst,
 } from "@/features/events/lib/date"
 import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
+import { AdminStatusChart } from "@/shared/components/admin-status-chart"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { Badge } from "@/shared/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { cn } from "@/shared/lib/utils"
+import { recentMonthWindows } from "@/shared/lib/month-windows"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 export const dynamic = "force-dynamic"
@@ -37,13 +40,8 @@ export const dynamic = "force-dynamic"
 const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
 function statsMonthRange(d: Date) {
-  const start = new Date(d.getFullYear(), d.getMonth(), 1)
-  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-  const fmt = (x: Date) =>
-    `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(
-      x.getDate()
-    ).padStart(2, "0")}`
-  return { from: fmt(start), to: fmt(end) }
+  const window = recentMonthWindows(1, d)[0]
+  return { from: window.firstDay, to: window.lastDay }
 }
 
 function statusBadgeColor(status: ApplicationStatus) {
@@ -93,9 +91,7 @@ export default async function AdminDashboardPage({
   const params = await searchParams
   const now = new Date()
   const thisMonth = statsMonthRange(now)
-  const prevMonth = statsMonthRange(
-    new Date(now.getFullYear(), now.getMonth() - 1, 15)
-  )
+  const prevMonth = statsMonthRange(new Date(new Date(recentMonthWindows(1, now)[0].from).getTime() - 1))
   const calendarYearMonth =
     params.ym && YM_RE.test(params.ym)
       ? params.ym
@@ -112,6 +108,7 @@ export default async function AdminDashboardPage({
     noticesCount,
     dailyCount,
     storiesCount,
+    approvedPeople,
   ] = await Promise.all([
     listEventsInRange({
       from: calendarRange.from,
@@ -126,37 +123,68 @@ export default async function AdminDashboardPage({
       prevMonthTo: prevMonth.to,
     }),
     listRecentApplications(5),
-    getMonthlyVolunteerStats(3),
-    getMonthlyMemberStats(3),
+    getMonthlyVolunteerStats(7),
+    getMonthlyMemberStats(7),
     listNotices({ includeDrafts: true, limit: 1 }).then((r) => r.total),
     listDailyPosts({ limit: 1 }).then((r) => r.total),
     listAdoptionStories({ includeDrafts: true, limit: 1 }).then((r) => r.total),
+    getApprovedVolunteerPeople(),
   ])
 
-  const monthLabel = now.toLocaleDateString("ko-KR", { month: "long" })
+  const monthLabel = now.toLocaleDateString("ko-KR", { month: "long", timeZone: "Asia/Seoul" })
   const totalPending = pendingCounts.adoption + pendingCounts.volunteer
   const newMembersThis = monthlyMemberStats.at(-1)?.rescued ?? 0
   const newMembersPrev = monthlyMemberStats.at(-2)?.rescued ?? 0
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-8 md:px-6">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">대시보드</h1>
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">오늘의 운영 현황</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           왕왕랜드 운영 현황 ·{" "}
           {now.toLocaleDateString("ko-KR", {
             year: "numeric",
+            timeZone: "Asia/Seoul",
             month: "long",
             day: "numeric",
           })}
         </p>
       </header>
 
-      {/* 1. 빠른 작성 — 매일 가장 자주 쓰는 4가지 */}
+      {/* 2. 월간 봉사·행사 일정 */}
       <section className="mb-8">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <CalendarDays className="size-4" aria-hidden />
+            봉사·행사 일정
+          </h2>
+          <div className="flex items-center gap-3 text-xs font-semibold">
+            <Link href="/admin/calendar/new" className="text-primary hover:underline">
+              새 일정 등록
+            </Link>
+            <Link href="/admin/calendar" className="text-primary hover:underline">
+              전체 캘린더 →
+            </Link>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-secondary/30 p-3 shadow-sm sm:p-5">
+          <MonthNav yearMonth={calendarYearMonth} basePath="/admin" />
+          <MonthGrid
+            key={calendarYearMonth}
+            yearMonth={calendarYearMonth}
+            events={calendarEvents}
+            hrefBase="/admin/calendar"
+            addHrefBase="/admin/calendar/new"
+            initialSelectedDate={yearMonthKst(now) === calendarYearMonth ? new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) : `${calendarYearMonth}-01`}
+          />
+        </div>
+      </section>
+
+      {/* 1. 자주 하는 작업 — 매일 가장 자주 쓰는 4가지 */}
+      <section className="order-1 mb-8">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
           <PenSquare className="size-4" aria-hidden />
-          빠른 작성
+          자주 하는 작업
         </h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <QuickLink
@@ -174,7 +202,7 @@ export default async function AdminDashboardPage({
           <QuickLink
             href="/admin/daily/new"
             icon="camera"
-            label="일상 작성"
+            label="이야기 작성"
             desc="활동 기록"
           />
           <QuickLink
@@ -186,35 +214,8 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      {/* 2. 월간 일정 캘린더 */}
-      <section className="mb-8">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-            <CalendarDays className="size-4" aria-hidden />
-            일정 캘린더
-          </h2>
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            <Link href="/admin/calendar/new" className="text-primary hover:underline">
-              새 일정 등록
-            </Link>
-            <Link href="/admin/calendar" className="text-primary hover:underline">
-              전체 캘린더 →
-            </Link>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-secondary/30 p-3 shadow-sm sm:p-5">
-          <MonthNav yearMonth={calendarYearMonth} basePath="/admin" />
-          <MonthGrid
-            yearMonth={calendarYearMonth}
-            events={calendarEvents}
-            hrefBase="/admin/calendar"
-            addHrefBase="/admin/calendar/new"
-          />
-        </div>
-      </section>
-
       {/* 3. 처리 대기 + 최근 신청 — 운영진이 즉시 액션해야 하는 항목 */}
-      <section className="mb-8 grid gap-4 md:grid-cols-2">
+      <section className="order-2 mb-8 grid gap-4 md:grid-cols-2">
         <Card
           className={cn(
             totalPending > 0 && "border-primary animate-pending-glow"
@@ -223,7 +224,7 @@ export default async function AdminDashboardPage({
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <Inbox className="size-4 text-muted-foreground" aria-hidden />
-              처리 대기 신청
+              확인이 필요한 신청
               {totalPending > 0 && (
                 <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
                   {totalPending}
@@ -315,24 +316,25 @@ export default async function AdminDashboardPage({
       </section>
 
       {/* 4. 이번 달 현황 — 통계 (작게) */}
-      <section className="mb-8">
+      <section className="order-3 mb-8">
         <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
           <ClipboardList className="size-4" aria-hidden />
           {monthLabel} 현황
         </h2>
+        <p className="mb-4 text-xs leading-relaxed text-muted-foreground">이번 달은 현재까지의 수치이며, 전월은 지난달 전체 수치입니다. 봉사 신청은 인원이 아닌 신청 건수이고, 승인 상태는 실제 참석을 의미하지 않습니다.</p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MonthCard
-            label="공지/일상/후기"
+            label="누적 게시글 (전체 기간)"
             value={noticesCount + dailyCount + storiesCount}
             extra={
               <span className="text-[10px] text-muted-foreground/70">
-                ({noticesCount}/{dailyCount}/{storiesCount})
+                공지·이야기·기존 후기 합계
               </span>
             }
             href="/admin/notices"
           />
           <MonthCard
-            label="신규 가입 회원"
+            label="이번 달 가입 회원"
             value={newMembersThis}
             prev={newMembersPrev}
             href="/admin/members"
@@ -353,13 +355,23 @@ export default async function AdminDashboardPage({
         </div>
       </section>
 
-      {/* 5. 추이 차트 — 봉사 신청 / 신규 회원 (각 최근 3개월) */}
-      <section className="mb-8 grid gap-4 md:grid-cols-2">
+      <section className="order-4 mb-8 grid gap-4 md:grid-cols-2" aria-label="신청 처리 상태 통계">
+        <div className="rounded-xl border border-border bg-card p-5 md:col-span-2">
+          <h3 className="text-sm font-medium text-muted-foreground">누적 승인 봉사 인원</h3>
+          <p className="mt-2 text-3xl font-bold tabular-nums">{approvedPeople.toLocaleString()}<span className="ml-1 text-sm font-normal">명</span></p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">현재 승인 상태인 신청의 동반 인원 합계입니다. 같은 사람의 반복 신청을 포함하며, 실제 참석 인원이나 고유 봉사자 수는 아닙니다.</p>
+        </div>
+        <AdminStatusChart title="봉사 신청 처리 상태" counts={appStats.volunteer.allTime} />
+        <AdminStatusChart title="입양 신청 처리 상태" counts={appStats.adoption.allTime} />
+      </section>
+
+      {/* 완료된 최근 6개월 추이 */}
+      <section className="order-4 mb-8 grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
-              월별 봉사 신청 추이
+              월별 봉사 신청 건수
               <Link
                 href="/admin/applications?type=volunteer"
                 className="ml-auto text-xs font-normal text-primary hover:underline"
@@ -369,14 +381,15 @@ export default async function AdminDashboardPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AdminTrendChart data={monthlyVolunteerStats} valueLabel="건" />
+            <p className="mb-3 text-xs text-muted-foreground">신청일 기준 · 진행 중인 이번 달 제외</p>
+            <AdminTrendChart data={monthlyVolunteerStats.slice(0, -1)} valueLabel="건" />
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
-              월별 신규 회원 추이
+              월별 가입 회원 수
               <Link
                 href="/admin/members"
                 className="ml-auto text-xs font-normal text-primary hover:underline"
@@ -386,7 +399,8 @@ export default async function AdminDashboardPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AdminTrendChart data={monthlyMemberStats} valueLabel="명" />
+            <p className="mb-3 text-xs text-muted-foreground">가입일 기준 · 진행 중인 이번 달 제외</p>
+            <AdminTrendChart data={monthlyMemberStats.slice(0, -1)} valueLabel="명" />
           </CardContent>
         </Card>
       </section>
@@ -430,7 +444,7 @@ function MonthCard({
         {suffix && <p className="text-xs text-muted-foreground">{suffix}</p>}
         {extra}
         {prev !== undefined && (
-          <p className="text-[10px] text-muted-foreground/70">전월 {prev}건</p>
+          <p className="text-xs text-muted-foreground">전월 {prev}{suffix ?? "건"}</p>
         )}
       </CardContent>
     </Card>

@@ -27,9 +27,9 @@ export default async function DonatePage() {
           후원 안내
         </h1>
         <p className="mt-3 text-muted-foreground">
-          {SITE.name}은 여러분의 따뜻한 마음으로 운영됩니다.
+          {SITE.name}은 여러분의 후원으로 아이들을 돌보고 있어요.
           <br />
-          작은 정성이 아이들의 한 끼, 한 번의 진료가 됩니다.
+          보내주신 후원은 사료와 치료비, 보호소 운영에 쓰입니다.
         </p>
       </header>
 
