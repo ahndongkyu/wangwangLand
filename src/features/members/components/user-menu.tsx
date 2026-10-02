@@ -73,8 +73,8 @@ export function UserMenu({ profile }: { profile: Profile }) {
       {open && (
         <div className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-2xl border border-border bg-popover shadow-[0_16px_40px_rgba(40,30,20,0.18)]">
 
-          {/* ── 프로필 헤더 (다크 그린, 정보 표시용) ── */}
-          <div className="flex items-center gap-3 bg-[#2A3D2F] px-4 py-3.5 dark:bg-[#1A2820]">
+          {/* 프로필 정보 */}
+          <div className="flex items-center gap-3 bg-admin-nav px-4 py-3.5">
             <div className="relative size-11 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-white/10">
               {profile.avatar_url ? (
                 <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
@@ -86,7 +86,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
               <p className="truncate text-base font-bold text-white">
                 {profile.nickname}
               </p>
-              <p className="mt-0.5 text-[11px] text-[#9AB09E]">
+              <p className="mt-0.5 text-[11px] text-admin-nav-muted">
                 {ROLE_LABEL[profile.role] ?? "회원"}
               </p>
             </div>
@@ -128,13 +128,13 @@ export function UserMenu({ profile }: { profile: Profile }) {
                 <Link
                   href="/admin"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[#2A3D2F] transition-colors hover:bg-[#DCEBDE] dark:text-[#9AB09E] dark:hover:bg-[#1A2820]"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent"
                 >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#DCEBDE] text-[#2A3D2F] dark:bg-[#1A2820] dark:text-[#9AB09E]">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
                     <Settings className="size-4" />
                   </span>
                   <span className="flex-1">어드민 페이지</span>
-                  <span className="rounded-full bg-[#2A3D2F] px-1.5 py-0.5 text-[9px] font-bold tracking-[0.5px] text-white dark:bg-[#9AB09E] dark:text-[#1A2820]">
+                  <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold tracking-[0.5px] text-primary-foreground">
                     STAFF
                   </span>
                   <ChevronRight className="size-3.5 text-muted-foreground/50" />

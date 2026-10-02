@@ -162,7 +162,7 @@ export function AdminSidebar({
   }
 
   return (
-    <aside className="sticky top-6 z-30 hidden h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden rounded-[26px] border border-[#40584b] bg-[#26382f] p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-[#32463a] dark:bg-[#17241d]">
+    <aside className="sticky top-6 z-30 hidden h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden rounded-[26px] border border-admin-nav-border bg-admin-nav p-4 shadow-[0_18px_42px_rgba(20,34,27,0.24)] md:flex dark:border-admin-nav-border dark:bg-admin-nav">
       <div
         className={cn(
           "shrink-0 rounded-[20px] border border-white/10 bg-white/[0.06] p-3 shadow-[0_10px_26px_rgba(8,18,12,0.16)]",
@@ -194,13 +194,13 @@ export function AdminSidebar({
         <Link
           href="/"
           target="_blank"
-          className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-[#e4ebe5] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
+          className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-admin-nav-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08]"
         >
           <span className="flex items-center gap-2">
-            <ExternalLink className="size-4 text-[#efa085]" aria-hidden />
+            <ExternalLink className="size-4 text-[#eaa077]" aria-hidden />
             메인 페이지
           </span>
-          <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
+          <ChevronRight className="size-4 text-admin-nav-muted" aria-hidden />
         </Link>
         <div className="mt-3 pt-3">
           <form action={logoutAction}>
@@ -222,8 +222,8 @@ export function AdminSidebar({
             className={cn(
               "group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200 hover:-translate-y-0.5",
               pathname === "/admin"
-                ? "bg-[#426b54] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
-                : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                ? "bg-admin-nav-active font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                : "text-admin-nav-foreground hover:bg-white/[0.08] hover:text-white"
             )}
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] transition-transform duration-200 group-hover:scale-105">
@@ -235,7 +235,7 @@ export function AdminSidebar({
 
         {NAV_GROUPS.map((group) => (
           <section key={group.label} className="mt-5">
-            <h2 className="px-2 text-[11px] font-semibold tracking-wide text-[#9db1a4]">
+            <h2 className="px-2 text-[11px] font-semibold tracking-wide text-admin-nav-muted">
               {group.label}
             </h2>
             <div className="mt-2 grid gap-1">
@@ -248,11 +248,11 @@ export function AdminSidebar({
                     className={cn(
                       "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all duration-200 hover:-translate-y-0.5",
                       isActive(item.href)
-                        ? "bg-[#426b54] font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
-                        : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                        ? "bg-admin-nav-active font-semibold text-white shadow-[0_7px_16px_rgba(10,24,16,0.20)]"
+                        : "text-admin-nav-foreground hover:bg-white/[0.08] hover:text-white"
                     )}
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-[#b8cbbf] transition-all duration-200 group-hover:scale-105 group-hover:text-white">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-admin-nav-muted transition-all duration-200 group-hover:scale-105 group-hover:text-white">
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span>{item.label}</span>
@@ -284,14 +284,14 @@ function AdminSidebarProfileIdentity({
             className="object-cover"
           />
         ) : (
-          <User className="size-full p-2.5 text-[#d2ded6]" aria-hidden />
+          <User className="size-full p-2.5 text-admin-nav-foreground" aria-hidden />
         )}
       </span>
       <span className="min-w-0 flex-1 text-left">
         <span className="block break-all text-sm font-semibold leading-snug text-white">
           {adminName}님
         </span>
-        <span className="mt-1 block text-xs text-[#a9c0b1]">
+        <span className="mt-1 block text-xs text-admin-nav-muted">
           {ROLE_LABEL[adminRole] ?? adminRole}
         </span>
       </span>
@@ -329,7 +329,7 @@ export function AdminMobileHeader({
   }
 
   return (
-    <header className="border-b border-[#3c5145] bg-[#26382f] text-white md:hidden dark:border-[#32463a] dark:bg-[#17241d]">
+    <header className="border-b border-admin-nav-border bg-admin-nav text-white md:hidden dark:border-admin-nav-border dark:bg-admin-nav">
       <div className="flex h-14 items-center justify-between px-4">
         {/* 3단계부터 뒤로가기, 그 외에는 로고 */}
         {mobileBackHref ? (
@@ -363,7 +363,7 @@ export function AdminMobileHeader({
             <SheetContent
               side="right"
               showCloseButton={false}
-              className="flex w-[min(340px,90vw)] flex-col gap-0 bg-[#1f3028] p-0 text-[#e7ece8] data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full dark:bg-[#17241d]"
+              className="flex w-[min(340px,90vw)] flex-col gap-0 bg-admin-nav p-0 text-admin-nav-foreground data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full dark:bg-admin-nav"
             >
               <SheetHeader className="sr-only">
                 <SheetTitle>{siteName} 관리자</SheetTitle>
@@ -424,13 +424,13 @@ export function AdminMobileHeader({
                     href="/"
                     target="_blank"
                     onClick={() => setMobileOpen(false)}
-                    className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-[#e4ebe5] transition-colors hover:bg-white/[0.08]"
+                    className="mt-3 flex min-h-10 items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 text-xs font-semibold text-admin-nav-foreground transition-colors hover:bg-white/[0.08]"
                   >
                     <span className="flex items-center gap-2">
-                      <ExternalLink className="size-4 text-[#efa085]" aria-hidden />
+                      <ExternalLink className="size-4 text-[#eaa077]" aria-hidden />
                       메인 페이지
                     </span>
-                    <ChevronRight className="size-4 text-[#9db1a4]" aria-hidden />
+                    <ChevronRight className="size-4 text-admin-nav-muted" aria-hidden />
                   </Link>
                   <div className="mt-3 pt-3">
                     <form action={logoutAction}>
@@ -456,8 +456,8 @@ export function AdminMobileHeader({
                     className={cn(
                       "group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all",
                       pathname === "/admin"
-                        ? "bg-[#426b54] font-semibold text-white"
-                        : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                        ? "bg-admin-nav-active font-semibold text-white"
+                        : "text-admin-nav-foreground hover:bg-white/[0.08] hover:text-white"
                     )}
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.08]">
@@ -469,7 +469,7 @@ export function AdminMobileHeader({
 
                 {NAV_GROUPS.map((group) => (
                   <section key={group.label} className="mt-5">
-                    <h2 className="px-2 text-[11px] font-semibold tracking-wide text-[#9db1a4]">
+                    <h2 className="px-2 text-[11px] font-semibold tracking-wide text-admin-nav-muted">
                       {group.label}
                     </h2>
                     <div className="mt-2 grid gap-1">
@@ -483,11 +483,11 @@ export function AdminMobileHeader({
                             className={cn(
                               "group flex min-h-10 items-center gap-3 rounded-xl px-3 text-sm transition-all",
                               isActive(item.href)
-                                ? "bg-[#426b54] font-semibold text-white"
-                                : "text-[#e4ebe5] hover:bg-white/[0.08] hover:text-white"
+                                ? "bg-admin-nav-active font-semibold text-white"
+                                : "text-admin-nav-foreground hover:bg-white/[0.08] hover:text-white"
                             )}
                           >
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-[#b8cbbf] group-hover:text-white">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] text-admin-nav-muted group-hover:text-white">
                               <Icon className="size-4" aria-hidden />
                             </span>
                             {item.label}

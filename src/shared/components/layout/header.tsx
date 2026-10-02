@@ -3,16 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronDown, ChevronLeft, Menu as MenuIcon, X } from "lucide-react"
-import { Menu } from "@base-ui/react/menu"
+import { ChevronLeft, Menu as MenuIcon, X } from "lucide-react"
 import { useState } from "react"
 
-import { NoticeBadge } from "@/features/notices/components/notice-badge"
 import type { RecentNoticeMeta } from "@/features/notices/types"
 import type { Profile } from "@/features/members/api/queries"
 import {
-  HEADER_NAV_GROUPS,
-  type HeaderNavItem,
   SITE,
 } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
@@ -50,22 +46,19 @@ function getMobileBackHref(pathname: string): string | null {
 }
 
 export function Header({
-  recentNotices = [],
   profile,
   mobileSidebar,
 }: HeaderProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileBackHref = getMobileBackHref(pathname)
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href)
 
   return (
     <header
       className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur"
     >
       <div
-        className="relative mx-auto flex h-14 w-full max-w-[1440px] items-center justify-between px-4 md:h-16 md:px-8 2xl:px-12"
+        className="relative mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 lg:h-24 md:px-8 2xl:px-12"
       >
         {mobileBackHref && (
           <Link
@@ -85,69 +78,15 @@ export function Header({
           )}
         >
           <Image
-            src={SITE.logo}
-            alt={`${SITE.name} 로고`}
-            width={52}
-            height={52}
-            className={cn(
-              "shrink-0 rounded-full",
-              "size-9 md:size-10"
-            )}
-            priority
+            src={SITE.headerLogo}
+            alt={SITE.name}
+            width={2172}
+            height={724}
+            sizes="(min-width: 1024px) 260px, 180px"
+            className="h-auto w-[180px] shrink-0 rounded-md dark:bg-[#fbf8f3] lg:w-[260px]"
+            preload
           />
-          <div className="flex min-w-0 flex-col leading-tight">
-            <span
-              className={cn(
-                "truncate text-sm font-bold tracking-tight text-foreground md:text-lg"
-              )}
-            >
-              {SITE.name}
-            </span>
-            <span
-              className="hidden"
-            >
-              {SITE.subtitle}
-            </span>
-          </div>
         </Link>
-
-        {/* 데스크톱 중앙 네비 */}
-        <nav className="hidden">
-          <ul className="flex items-center gap-0.5">
-            {HEADER_NAV_GROUPS.map((node) =>
-              node.kind === "link" ? (
-                <li key={node.href}>
-                  <Link
-                    href={node.href}
-                    className={cn(
-                      "group/navlink relative inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive(node.href)
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground/80 hover:text-[#2A3D2F] dark:hover:text-[#9ab09e]"
-                    )}
-                  >
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-x-3 bottom-1 h-px origin-left scale-x-0 bg-[#2A3D2F] transition-transform duration-200 group-hover/navlink:scale-x-100 dark:bg-[#9ab09e]"
-                    />
-                    {node.label}
-                    {node.href === "/notice" && (
-                      <NoticeBadge notices={recentNotices} dbLastSeenAt={profile?.notices_last_seen_at} />
-                    )}
-                  </Link>
-                </li>
-              ) : (
-                <li key={node.label}>
-                  <NavGroupDropdown
-                    label={node.label}
-                    items={node.items}
-                    isActive={node.items.some((i) => isActive(i.href))}
-                  />
-                </li>
-              )
-            )}
-          </ul>
-        </nav>
 
         <div className="ml-auto hidden items-center gap-1.5 lg:flex">
           {SITE.sns.kakaoChannel && (
@@ -195,7 +134,7 @@ export function Header({
             <SheetTrigger
               render={
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
                   className="size-11 rounded-lg p-0 shadow-none lg:hidden"
                   aria-label="메뉴 열기"
@@ -221,13 +160,12 @@ export function Header({
                   className="flex min-w-0 items-center gap-2.5"
                 >
                   <Image
-                    src={SITE.logo}
+                    src={SITE.headerLogo}
                     alt={`${SITE.name} 로고`}
-                    width={32}
-                    height={32}
-                    className="size-8 rounded-full"
+                    width={2172}
+                    height={724}
+                    className="h-auto w-[180px] rounded-md dark:bg-[#fbf8f3]"
                   />
-                  <span className="text-sm font-bold text-foreground">{SITE.name}</span>
                 </Link>
                 <SheetClose
                   render={
@@ -356,76 +294,5 @@ function HeaderChannelLink({
     >
       {label}<span aria-hidden>↗</span>
     </a>
-  )
-}
-
-/** 데스크톱 드롭다운 그룹 */
-function NavGroupDropdown({
-  label,
-  items,
-  isActive,
-}: {
-  label: string
-  items: ReadonlyArray<HeaderNavItem>
-  isActive: boolean
-}) {
-  return (
-    <Menu.Root>
-      <Menu.Trigger
-        className={cn(
-          "group/trig inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          "data-[popup-open]:bg-primary/10 data-[popup-open]:text-primary",
-          isActive
-            ? "bg-primary/10 text-primary"
-            : "text-foreground/80 hover:bg-secondary hover:text-foreground"
-        )}
-      >
-        {label}
-        <ChevronDown
-          className="size-3.5 opacity-70 transition-transform duration-200 group-data-[popup-open]/trig:rotate-180"
-          aria-hidden
-        />
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Positioner sideOffset={12} align="center">
-          <Menu.Popup
-            className={cn(
-              "relative z-50 w-60 overflow-visible rounded-xl border border-border bg-popover p-1.5",
-              "shadow-[0_12px_32px_rgba(0,0,0,0.15)]",
-              "data-[starting-style]:-translate-y-1 data-[starting-style]:opacity-0",
-              "data-[ending-style]:-translate-y-1 data-[ending-style]:opacity-0",
-              "transition-[transform,opacity] duration-200 ease-out"
-            )}
-          >
-            <span
-              aria-hidden
-              className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-l border-t border-border bg-popover"
-            />
-            {items.map((item) => (
-              <Menu.Item
-                key={item.href}
-                className={cn(
-                  "group/item relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm outline-none text-foreground",
-                  "transition-colors duration-150 motion-reduce:transition-none",
-                  "hover:bg-primary/10 hover:text-primary data-[highlighted]:bg-primary/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
-                )}
-                render={<Link href={item.href} />}
-              >
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-semibold transition-colors duration-150 group-hover/item:text-primary group-data-[highlighted]/item:text-primary motion-reduce:transition-none">
-                    {item.label}
-                  </span>
-                  {item.desc && (
-                    <span className="text-xs leading-snug text-muted-foreground">
-                      {item.desc}
-                    </span>
-                  )}
-                </span>
-              </Menu.Item>
-            ))}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
   )
 }

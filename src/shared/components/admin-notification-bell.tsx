@@ -106,7 +106,7 @@ export function AdminNotificationBell({
           className={cn(
             "z-50 overflow-hidden rounded-xl border shadow-lg",
             surface === "admin-dark"
-              ? "border-white/10 bg-[#203229] shadow-[0_14px_30px_rgba(5,14,9,0.28)] dark:bg-[#1b2821]"
+              ? "border-white/10 bg-admin-nav shadow-[0_14px_30px_rgba(5,14,9,0.28)] dark:bg-admin-nav"
               : "border-border bg-popover",
             inline
               ? "mt-3 w-full"
@@ -125,7 +125,7 @@ export function AdminNotificationBell({
             <p
               className={cn(
                 "text-xs font-semibold",
-                surface === "admin-dark" ? "text-[#a9c0b1]" : "text-muted-foreground"
+                surface === "admin-dark" ? "text-admin-nav-muted" : "text-muted-foreground"
               )}
             >
               처리 대기 알림
@@ -146,7 +146,7 @@ export function AdminNotificationBell({
                   <span
                     className={cn(
                       "flex-1 text-sm",
-                      surface === "admin-dark" ? "text-[#e7ece8]" : "text-foreground"
+                      surface === "admin-dark" ? "text-admin-nav-foreground" : "text-foreground"
                     )}
                   >
                     {item.label}

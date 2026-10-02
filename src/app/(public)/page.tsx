@@ -84,7 +84,7 @@ export default async function HomePage({
           <p className="text-xs text-muted-foreground">함께하는 방법</p>
           <h2 className="mt-3 text-2xl font-bold leading-snug">아이들과 함께할<br className="hidden md:block" /> 시간을 내어주세요</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">처음 방문하시는 분도 함께할 수 있어요.<br />가능한 날짜와 시간을 확인해 주세요.</p>
-          <Link href="/volunteer" className="mt-6 flex min-h-12 items-center justify-between rounded-lg bg-primary px-4 font-semibold text-primary-foreground hover:bg-primary/90">봉사 신청하기 <span aria-hidden>↗</span></Link>
+          <Link href="/volunteer" className="mt-6 flex min-h-12 items-center justify-between rounded-lg bg-primary px-4 font-semibold text-primary-foreground hover:bg-brand-action-hover">봉사 신청하기 <span aria-hidden>↗</span></Link>
           <div className="mt-2 flex flex-wrap gap-x-5 text-xs text-muted-foreground"><Link href="#volunteer-calendar" className="inline-flex min-h-11 items-center hover:text-primary">일정 먼저 보기</Link><Link href="/about" className="inline-flex min-h-11 items-center hover:text-primary">첫 방문 안내</Link></div>
         </div>
       </section>
@@ -144,7 +144,7 @@ export default async function HomePage({
               </div>
               <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                 <article className="overflow-hidden rounded-xl border border-border bg-card">
-                  <div className="flex items-center justify-between gap-3 border-b-2 border-primary px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
+                  <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기 · 후원</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
                   <div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} badge={<span className="text-xs text-primary">{post.category}</span>} thumbnail={post.images[0]} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
                   {dailyResult.posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">나누고 싶은 이야기가 있다면 편하게 남겨주세요.</p>}
                 </article>
@@ -318,7 +318,7 @@ function RecentBoard({
     <article
       className="grid min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-border bg-card"
     >
-      <div className="flex items-center justify-between gap-3 border-b-2 border-primary px-5 py-4">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <h3 className="flex min-h-11 items-center font-semibold text-foreground">
           {title}
         </h3>

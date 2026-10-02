@@ -218,7 +218,7 @@ export function HomeSidebar({
             </p>
             <Link
               href="/login"
-              className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-brand-coral-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+              className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
             >
               로그인
             </Link>
@@ -254,6 +254,13 @@ export function HomeSidebar({
         {favoriteEditor}
       </section>
 
+      <Link
+        href="/volunteer"
+        className="flex min-h-12 items-center justify-between rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+      >
+        봉사 신청하기
+        <ChevronRight className="size-4" aria-hidden />
+      </Link>
       <SidebarMenu idPrefix={idPrefix} />
     </div>
   )
@@ -264,7 +271,7 @@ export function HomeSidebar({
 
   return (
     <aside
-      className="admin-sidebar-scroll sticky top-20 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto rounded-[26px] border border-sidebar-border bg-sidebar p-4 shadow-[0_16px_35px_rgba(88,76,68,0.11)] lg:block"
+      className="admin-sidebar-scroll sticky top-28 hidden max-h-[calc(100dvh-8rem)] self-start overflow-y-auto rounded-[26px] border border-sidebar-border bg-sidebar p-4 shadow-[0_16px_35px_rgba(88,76,68,0.11)] lg:block"
       aria-label="회원 및 게시판 메뉴"
     >
       {content}
@@ -332,7 +339,6 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
           <SidebarLink href="/dogs" label="입양 대기 강아지" />
           <SidebarLink href="/cats" label="보호 중인 고양이" />
           <SidebarLink href="/calendar" label="활동 일정" />
-          <SidebarLink href="/volunteer" label="봉사 신청" />
           <SidebarLink href="/adopt" label="입양 문의" />
           <SidebarLink href="/donate" label="후원하기" />
           <SidebarLink href="/about" label="센터 소개" />

@@ -89,7 +89,7 @@ export function RecentNewsSection({ notices }: Props) {
           </div>
           <Link
             href="/notice"
-            className="shrink-0 whitespace-nowrap text-sm font-semibold text-[#2A3D2F] transition-colors hover:underline dark:text-[#9ab09e]"
+            className="shrink-0 whitespace-nowrap text-sm font-semibold text-primary transition-colors hover:underline"
           >
             전체 공지 →
           </Link>

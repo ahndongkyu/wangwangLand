@@ -48,7 +48,7 @@ export default async function VolunteerPage() {
           <div className="mt-8 grid grid-cols-2 gap-3">
             <Link
               href="/login?next=/volunteer"
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(201,112,82,0.20)] transition-all hover:-translate-y-0.5 hover:bg-brand-coral-hover hover:shadow-[0_9px_22px_rgba(201,112,82,0.24)]"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_7px_18px_rgba(201,112,82,0.20)] transition-all hover:-translate-y-0.5 hover:bg-brand-action-hover hover:shadow-[0_9px_22px_rgba(201,112,82,0.24)]"
             >
               회원가입
             </Link>

@@ -43,10 +43,16 @@
   --color-card: var(--card);
 
   /* Wangwangland brand palette (warm · clear · lively) */
+  --color-brand-orange: var(--brand-orange);
+  --color-admin-nav: var(--admin-nav);
+  --color-admin-nav-border: var(--admin-nav-border);
+  --color-admin-nav-active: var(--admin-nav-active);
+  --color-admin-nav-foreground: var(--admin-nav-foreground);
+  --color-admin-nav-muted: var(--admin-nav-muted);
   --color-brand-cream: var(--brand-cream);
   --color-brand-ivory: var(--brand-ivory);
-  --color-brand-coral: var(--brand-coral);
-  --color-brand-coral-hover: var(--brand-coral-hover);
+  --color-brand-action: var(--brand-action);
+  --color-brand-action-hover: var(--brand-action-hover);
   --color-brand-sage: var(--brand-sage);
   --color-brand-brown: var(--brand-brown);
   --color-brand-warm-gray: var(--brand-warm-gray);
@@ -61,14 +67,20 @@
 }
 
 :root {
-  /* Brand palette (source of truth) */
-  --brand-cream: #f6f7f3;       /* page bg */
+  /* Brand identity and role-based colors */
+  --brand-orange: #c66b43;
+  --admin-nav: #343a30;
+  --admin-nav-border: #51594a;
+  --admin-nav-active: #b65532;
+  --admin-nav-foreground: #f5f0e7;
+  --admin-nav-muted: #bdc5b6;
+  --brand-cream: #fbf8f3;       /* page bg */
   --brand-ivory: #ffffff;       /* card bg */
-  --brand-coral: #3d634f;       /* CTA */
-  --brand-coral-hover: #2c4b3a;
-  --brand-sage: #a9c7b5;        /* accent */
-  --brand-brown: #283c32;       /* text */
-  --brand-warm-gray: #657168;   /* muted */
+  --brand-action: #b65532;       /* CTA */
+  --brand-action-hover: #a94b2b;
+  --brand-sage: #647863;        /* accent */
+  --brand-brown: #373a32;       /* text */
+  --brand-warm-gray: #6f7068;   /* muted */
 
   /* Shadcn semantic tokens mapped to brand */
   --background: var(--brand-cream);
@@ -77,70 +89,72 @@
   --card-foreground: var(--brand-brown);
   --popover: var(--brand-ivory);
   --popover-foreground: var(--brand-brown);
-  --primary: var(--brand-coral);
+  --primary: var(--brand-action);
   --primary-foreground: #ffffff;
-  --secondary: #f7f2e9;
+  --secondary: #faede5;
   --secondary-foreground: var(--brand-brown);
-  --muted: #f5f1ec;
+  --muted: #f1eee7;
   --muted-foreground: var(--brand-warm-gray);
-  --accent: #edf3ee;
+  --accent: #faede5;
   --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #dde4da;
-  --input: #bdcbbf;
-  --ring: var(--brand-coral);
-  --chart-1: var(--brand-coral);
-  --chart-2: #84ac94;
+  --border: #e5dfd5;
+  --input: #a7a398;
+  --ring: var(--brand-action);
+  --chart-1: var(--brand-action);
+  --chart-2: #647863;
   --chart-3: var(--brand-warm-gray);
   --chart-4: oklch(0.6 0.1 50);
   --chart-5: oklch(0.45 0.04 45);
   --radius: 0.75rem;
-  --sidebar: #edf2ea;
+  --sidebar: #f1eee7;
   --sidebar-foreground: var(--brand-brown);
-  --sidebar-primary: var(--brand-coral);
+  --sidebar-primary: var(--brand-action);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ffffff;
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: #dedfd4;
-  --sidebar-ring: var(--brand-coral);
+  --sidebar-border: #e5dfd5;
+  --sidebar-ring: var(--brand-action);
 }
 
 .dark {
-  /* Brand palette — warm forest dark */
-  --brand-cream: #19251f;
-  --brand-ivory: #222e26;
-  --brand-coral: #bed9c1;
-  --brand-coral-hover: #d6e8d8;
-  --brand-sage: #a8c5ae;
-  --brand-brown: #f6f0e8;
-  --brand-warm-gray: #b3bdb4;
+  /* Warm charcoal and apricot */
+  --admin-nav: #20251e;
+  --admin-nav-border: #454e3e;
+  --brand-cream: #242622;
+  --brand-ivory: #2e312b;
+  --brand-action: #eaa077;
+  --brand-action-hover: #f4b48c;
+  --brand-sage: #b8c9ae;
+  --brand-brown: #f5f0e7;
+  --brand-warm-gray: #bcbdb1;
 
   --background: var(--brand-cream);
   --foreground: var(--brand-brown);
   --card: var(--brand-ivory);
-  --card-foreground: #edf1ed;
-  --popover: #333b34;
+  --card-foreground: #f5f0e7;
+  --popover: #34372f;
   --popover-foreground: var(--brand-brown);
-  --primary: var(--brand-coral);
-  --primary-foreground: #232722;
-  --secondary: #383f37;
-  --secondary-foreground: #e0e7e1;
-  --muted: #343a33;
+  --primary: var(--brand-action);
+  --primary-foreground: #242622;
+  --secondary: #44352b;
+  --secondary-foreground: #f5f0e7;
+  --muted: #35382f;
   --muted-foreground: var(--brand-warm-gray);
-  --accent: #3b493f;
+  --accent: #44352b;
   --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: #49544b;
-  --input: #556158;
-  --ring: var(--brand-coral);
-  --sidebar: #293229;
+  --border: #4d5146;
+  --input: #858b7c;
+  --ring: var(--brand-action);
+  --sidebar: #292d26;
   --sidebar-foreground: var(--brand-brown);
-  --sidebar-primary: var(--brand-coral);
-  --sidebar-primary-foreground: #232722;
-  --sidebar-accent: #384239;
+  --sidebar-primary: var(--brand-action);
+  --sidebar-primary-foreground: #242622;
+  --sidebar-accent: #44352b;
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: #445048;
-  --sidebar-ring: var(--brand-coral);
+  --sidebar-border: #4d5146;
+  --sidebar-ring: var(--brand-action);
 }
 
 @layer base {
@@ -175,7 +189,7 @@
   /* ── Tiptap 에디터 + 게시글 렌더링 공통 prose 스타일 ─────────── */
   .rich-content,
   .tiptap {
-    color: oklch(var(--foreground) / 0.9);
+    color: var(--foreground);
     font-size: 0.9375rem;
     line-height: 1.8;
   }
@@ -197,7 +211,7 @@
     border-left: 3px solid var(--primary);
     padding-left: 1em;
     margin: 1em 0;
-    color: oklch(var(--muted-foreground));
+    color: var(--muted-foreground);
     font-style: italic;
   }
   .rich-content hr, .tiptap hr {
@@ -219,7 +233,7 @@
   /* Tiptap placeholder */
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
-    color: oklch(var(--muted-foreground));
+    color: var(--muted-foreground);
     pointer-events: none;
     float: left;
     height: 0;
@@ -361,58 +375,28 @@
   -ms-overflow-style: none;
 }
 
-/* ────────────────────────────────────────────────────────────
- * 관리자 페이지 전용 색상
- * 공개 화면보다 진한 포레스트 색상으로 운영 영역을 구분한다.
- * ──────────────────────────────────────────────────────────── */
+/* 관리자 화면은 더 차분한 배경을 쓰고 주요 행동 색상은 공유한다. */
 [data-admin-scope],
 body:has([data-admin-scope]) {
-  --background: #eef1ec;
-  --foreground: #2b3630;
-  --card: #fbfcfa;
-  --card-foreground: #2b3630;
-  --popover: #ffffff;
-  --popover-foreground: #2b3630;
-  --primary: #315c49;
-  --primary-foreground: #ffffff;
-  --secondary: #dde7df;
-  --secondary-foreground: #2b3630;
-  --muted: #e5ebe6;
-  --muted-foreground: #66756d;
-  --accent: #d5e2d8;
-  --accent-foreground: #26382f;
-  --border: #cdd7d0;
-  --input: #becbc2;
-  --ring: #315c49;
-  --chart-1: #315c49;
-  --chart-2: #78927f;
-  --chart-3: #d6a95e;
-  --chart-4: #697f9e;
-  --chart-5: #9b765f;
+  --background: #f1f0e9;
+  --card: #fdfcf9;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --border: #d9dbd0;
+  --chart-2: #647863;
+  --chart-3: #8e743a;
+  --chart-4: #647f98;
+  --chart-5: #967486;
 }
-
 .dark [data-admin-scope],
 .dark body:has([data-admin-scope]) {
-  --background: #18201b;
-  --foreground: #edf2ee;
-  --card: #222c26;
-  --card-foreground: #edf2ee;
-  --popover: #26332b;
-  --popover-foreground: #edf2ee;
-  --primary: #c0dbc4;
-  --primary-foreground: #18201b;
-  --secondary: #2d3b32;
-  --secondary-foreground: #d8e2db;
-  --muted: #2d3b32;
-  --muted-foreground: #a4b4a9;
-  --accent: #37493e;
-  --accent-foreground: #f1f5f2;
-  --border: #3e5145;
-  --input: #4a6052;
-  --ring: #c0dbc4;
-  --chart-1: #c0dbc4;
-  --chart-2: #9ab9a4;
-  --chart-3: #e0b56b;
-  --chart-4: #8ea4c1;
-  --chart-5: #c3987e;
+  --background: #20241e;
+  --card: #2a3026;
+  --popover: var(--card);
+  --border: #47513f;
+  --chart-2: #b8c9ae;
+  --chart-3: #dec080;
+  --chart-4: #9fb9ce;
+  --chart-5: #c6a4b6;
 }
