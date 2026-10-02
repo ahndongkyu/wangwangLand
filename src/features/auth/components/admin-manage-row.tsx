@@ -51,7 +51,7 @@ export function AdminManageRow({ profile, currentProfileId }: Props) {
   async function handleRemove() {
     const ok = await confirm({
       title: `${profile.nickname}을(를) 운영진에서 제거할까요?`,
-      description: "해당 회원의 역할이 정회원으로 변경됩니다.",
+      description: "해당 회원의 역할이 회원으로 변경됩니다.",
       confirmLabel: "제거",
       danger: true,
     })

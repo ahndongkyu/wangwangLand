@@ -29,9 +29,6 @@ export async function createDailyPostAsUser(
   if (!profile || profile.status !== "approved" || profile.is_banned) {
     return { error: "로그인 후 이용할 수 있습니다." }
   }
-  if (profile.role === "member") {
-    return { error: "정회원 이상만 게시글을 작성할 수 있습니다." }
-  }
 
   const { data, error } = await supabase
     .from("daily_posts")

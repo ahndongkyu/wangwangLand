@@ -1,5 +1,7 @@
 "use server"
 
+import { requireAdmin } from "@/shared/lib/auth"
+import { isAssignableMemberRole, type MemberRole } from "@/shared/lib/member-role"
 import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -286,8 +288,11 @@ export async function acceptAgreements(
 /** 어드민: 회원 승인 (상태 + 권한 동시 설정) */
 export async function approveMember(
   id: string,
-  role: "member" | "full_member" | "staff" | "admin"
+  role: MemberRole
 ): Promise<{ error?: string }> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+  if (!isAssignableMemberRole(role)) return { error: "올바르지 않은 회원 권한입니다." }
   // admin role 설정은 관리자만 가능
   if (role === "admin") {
     const { createClient } = await import("@/shared/lib/supabase/server")
@@ -412,8 +417,11 @@ async function ensureNotLastAdmin(targetId: string): Promise<string | null> {
 /** 어드민: 회원 권한 변경 */
 export async function updateMemberRole(
   id: string,
-  role: "member" | "full_member" | "staff" | "admin"
+  role: MemberRole
 ): Promise<{ error?: string }> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+  if (!isAssignableMemberRole(role)) return { error: "올바르지 않은 회원 권한입니다." }
   // admin role 설정은 관리자만 가능
   if (role === "admin") {
     const { createClient } = await import("@/shared/lib/supabase/server")

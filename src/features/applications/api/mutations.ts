@@ -388,6 +388,8 @@ export async function updateAdoptionApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   const status = String(formData.get("status") ?? "") as ApplicationStatus
   const adminNote = String(formData.get("admin_note") ?? "").trim()
   const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
@@ -730,19 +732,12 @@ export async function updateVolunteerApplication(
 export async function deleteAdoptionApplication(
   id: string
 ): Promise<SubmitResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   const admin = createAdminClient()
-
-  // 연결된 캘린더 일정 cascade 삭제 (입양은 보통 자동 등록이 없지만 정합성 위해).
-  await admin
-    .from("events")
-    .delete()
-    .eq("source_application_type", "adoption")
-    .eq("source_application_id", id)
-
-  const { error } = await admin
-    .from("adoption_applications")
-    .delete()
-    .eq("id", id)
+  const { error } = await admin.rpc("delete_application_with_events", {
+    p_application_id: id, p_application_type: "adoption",
+  })
 
   if (error) {
     console.error("[deleteAdoptionApplication]", error)
@@ -758,20 +753,12 @@ export async function deleteAdoptionApplication(
 export async function deleteVolunteerApplication(
   id: string
 ): Promise<SubmitResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   const admin = createAdminClient()
-
-  // 캘린더에 연결된 자동 등록 일정 cascade 삭제.
-  // 신청자에게는 deleteVolunteerApplicationByOwner 에서 별도 알림 처리 (운영진 삭제 시 알림 X).
-  await admin
-    .from("events")
-    .delete()
-    .eq("source_application_type", "volunteer")
-    .eq("source_application_id", id)
-
-  const { error } = await admin
-    .from("volunteer_applications")
-    .delete()
-    .eq("id", id)
+  const { error } = await admin.rpc("delete_application_with_events", {
+    p_application_id: id, p_application_type: "volunteer",
+  })
 
   if (error) {
     console.error("[deleteVolunteerApplication]", error)

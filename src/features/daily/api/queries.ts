@@ -41,11 +41,13 @@ export async function listDailyPosts({
     query = query.ilike("title", `%${searchQuery.trim()}%`)
   }
   if (community === "일상") {
-    query = query.or('category.is.null,category.not.in.("자유","자유게시판","질문 및 답변","후기","봉사 후기","입양 후기")')
+    query = query.or('category.is.null,category.not.in.("자유","자유게시판","질문 및 답변","후기","봉사 후기","입양 후기","후원","후원 소식")')
   } else if (community === "자유") {
     query = query.in("category", ["자유", "자유게시판", "질문 및 답변"])
   } else if (community === "후기") {
     query = query.in("category", ["후기", "봉사 후기", "입양 후기"])
+  } else if (community === "후원") {
+    query = query.in("category", ["후원", "후원 소식"])
   } else if (board === "daily") {
     query = query.or(
       'category.is.null,category.not.in.("자유게시판","질문 및 답변")'

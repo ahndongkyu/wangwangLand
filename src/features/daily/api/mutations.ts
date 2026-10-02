@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { createClient } from "@/shared/lib/supabase/server"
+import { requireAdmin } from "@/shared/lib/auth"
 import { extractImagesFromHtml } from "@/shared/lib/utils"
 
 export async function markDailySeenInDB() {
@@ -76,14 +77,9 @@ export async function createDailyPost(
   const input = parseFormData(formData)
   const returnTo = String(formData.get("_returnTo") ?? "/daily")
 
-  if (input.related_volunteer_application_id) input.category = "봉사 후기"
+  if (input.related_volunteer_application_id) return { error: "봉사 인증글 기능은 종료되었습니다. 일반 후기로 작성해주세요." }
 
   if (!input.title) return { error: "제목은 필수입니다." }
-
-  // 봉사 후기 카테고리는 최소 1장 이상의 사진 필수
-  if (input.category === "봉사 후기" && input.images.length === 0) {
-    return { error: "봉사 후기는 사진을 1장 이상 첨부해주세요." }
-  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -91,20 +87,6 @@ export async function createDailyPost(
 
   const profile = await getApprovedProfile(supabase, user.id)
   if (!profile) return { error: "권한이 없습니다." }
-
-  // 봉사 인증글: 신청자 본인 + 승인 + 봉사일 지났는지 검증
-  let isVolunteerCert = false
-  if (input.related_volunteer_application_id) {
-    const { data: app } = await supabase
-      .from("volunteer_applications")
-      .select("id, created_by, status, available_dates")
-      .eq("id", input.related_volunteer_application_id)
-      .maybeSingle()
-    if (!app) return { error: "봉사 신청 정보를 찾을 수 없습니다." }
-    if (app.created_by !== user.id) return { error: "본인 신청 건만 인증할 수 있습니다." }
-    if (app.status !== "승인") return { error: "승인된 봉사 신청만 인증할 수 있습니다." }
-    isVolunteerCert = true
-  }
 
   const { data, error } = await supabase
     .from("daily_posts")
@@ -115,57 +97,13 @@ export async function createDailyPost(
       posted_at: input.posted_at ?? new Date().toISOString(),
       created_by: user.id,
       category: input.category,
-      related_volunteer_application_id: input.related_volunteer_application_id,
     })
     .select("id")
     .single()
 
   if (error) {
-    if (error.code === "23505" || /duplicate/i.test(error.message)) {
-      return { error: "이미 이 봉사 신청에 대한 인증글이 있습니다." }
-    }
     console.error("[createDailyPost]", error)
     return { error: error.message }
-  }
-
-  // 봉사 인증글이면 카운트 체크 → 25회 도달 시 자동 정회원 승급
-  if (isVolunteerCert) {
-    try {
-      const admin = createAdminClient()
-      const { count } = await admin
-        .from("daily_posts")
-        .select("id", { count: "exact", head: true })
-        .eq("created_by", user.id)
-        .eq("category", "봉사 후기")
-        .not("related_volunteer_application_id", "is", null)
-      const total = count ?? 0
-
-      // 25회 도달 + 아직 정회원 아니면 승급
-      if (total >= 25 && profile.role === "member") {
-        await admin
-          .from("profiles")
-          .update({ role: "full_member", updated_at: new Date().toISOString() })
-          .eq("id", user.id)
-
-        // 본인에게 정회원 승급 알림
-        try {
-          const { sendPushToUser } = await import("@/features/push")
-          await sendPushToUser(
-            {
-              title: "🏠 왕왕랜드 지킴이 등급 달성!",
-              body: "봉사 25회를 채우셔서 정회원이 되셨어요. 감사합니다 💕",
-              url: "/my",
-              tag: `tier-up-${user.id}`,
-            },
-            user.id
-          )
-        } catch (e) {
-          console.error("[push tier-up]", e)
-        }
-      }
-    } catch (e) {
-      console.error("[count/promote]", e)
-    }
   }
 
   // 푸시 알림 (작성자 제외)
@@ -221,11 +159,6 @@ export async function updateDailyPost(
   const isStaff = profile.role === "staff" || profile.role === "admin"
   if (!isAuthor && !isStaff) return { error: "수정 권한이 없습니다." }
 
-  if (post.related_volunteer_application_id) {
-    input.category = "봉사 후기"
-    if (input.images.length === 0) return { error: "봉사 인증글에는 사진을 1장 이상 첨부해주세요." }
-  }
-
   const { error } = await supabase
     .from("daily_posts")
     .update({
@@ -247,6 +180,8 @@ export async function updateDailyPost(
 }
 
 export async function bulkDeleteDailyPosts(ids: string[]): Promise<{ error?: string }> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   if (!ids.length) return {}
   const admin = createAdminClient()
   const { error } = await admin.from("daily_posts").delete().in("id", ids)
@@ -254,9 +189,7 @@ export async function bulkDeleteDailyPosts(ids: string[]): Promise<{ error?: str
     console.error("[bulkDeleteDailyPosts]", error)
     return { error: error.message }
   }
-  revalidatePath("/admin/daily")
-  revalidatePath("/daily")
-  revalidatePath("/")
+  revalidateAll()
   return {}
 }
 

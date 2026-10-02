@@ -14,7 +14,6 @@ import {
   Clock3,
   Dog,
   ExternalLink,
-  Gift,
   HandHeart,
   LayoutDashboard,
   LogOut,
@@ -80,7 +79,6 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
         { label: "공지사항", href: "/admin/notices", icon: Megaphone },
         { label: "지출 내역", href: "/admin/expenses", icon: ReceiptText },
         { label: "왕왕랜드 이야기", href: "/admin/community", icon: Camera },
-        { label: "후원 감사글", href: "/admin/thanks", icon: Gift },
       ],
     },
     {
@@ -101,7 +99,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
     {
       label: "회원",
       items: [
-        { label: "일반 회원", href: "/admin/members", icon: Users },
+        { label: "회원", href: "/admin/members", icon: Users },
         ...(isTopAdmin
           ? [{ label: "운영진", href: "/admin/admins", icon: ShieldCheck }]
           : []),
@@ -152,6 +150,7 @@ export function AdminSidebar({
   const NAV_GROUPS = buildNavGroups(isTopAdmin)
   const isActive = (href: string) => {
     const [path, query] = href.split("?")
+    if (path === "/admin/community" && ["/admin/daily", "/admin/stories", "/admin/thanks"].some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true
     if (!pathname.startsWith(path)) return false
     if (!query) return true
     // 모든 쿼리 파라미터가 현재 URL 과 일치해야 함
@@ -319,6 +318,7 @@ export function AdminMobileHeader({
   const mobileBackHref = getAdminMobileBackHref(pathname)
   const isActive = (href: string) => {
     const [path, query] = href.split("?")
+    if (path === "/admin/community" && ["/admin/daily", "/admin/stories", "/admin/thanks"].some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true
     if (!pathname.startsWith(path)) return false
     if (!query) return true
     const target = new URLSearchParams(query)

@@ -99,7 +99,6 @@ export default async function DailyDetailPage({
             <UserName
               nickname={post.author.nickname}
               role={post.author.role}
-              volunteerCount={post.author.volunteer_count}
             />
           )}
           <span>

@@ -145,7 +145,7 @@ export default async function HomePage({
               <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                 <article className="overflow-hidden rounded-xl border border-border bg-card">
                   <div className="flex items-center justify-between gap-3 border-b-2 border-primary px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
-                  <div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} badge={<span className="text-xs text-primary">{post.category}</span>} thumbnail={post.images[0]} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} viewCount={post.viewCount} commentCount={(post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
+                  <div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} badge={<span className="text-xs text-primary">{post.category}</span>} thumbnail={post.images[0]} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
                   {dailyResult.posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">나누고 싶은 이야기가 있다면 편하게 남겨주세요.</p>}
                 </article>
                 <div className="grid gap-6">

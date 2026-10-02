@@ -1,37 +1,19 @@
-import type React from "react"
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import {
-  CalendarDays,
-  ChevronRight,
-  ClipboardList,
-  HandCoins,
-  Heart,
-  LogOut,
-  Settings,
-  Trophy,
-  User,
-} from "lucide-react"
+import { User } from "lucide-react"
 
 import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
 import { signOut } from "@/features/members/api/actions"
 import { listMyDonations } from "@/features/donations"
-import {
-  CATEGORY_COLOR,
-  customColorStyle,
-  eventDisplayLabel,
-  getEventTitle,
-  listMyUpcomingEvents,
-} from "@/features/events"
+import { listMyUpcomingEvents } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
 import {
   getVolunteerCountBreakdown,
-} from "@/features/volunteer-tier"
-import { UserName } from "@/shared/components/user-name"
+} from "@/features/applications/api/volunteer-history"
+import { communityType } from "@/features/daily/lib/community-category"
 import { createClient } from "@/shared/lib/supabase/server"
-import { cn } from "@/shared/lib/utils"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 import { MyPageTabs, type MyPostItem } from "./_components/mypage-tabs"
@@ -52,7 +34,8 @@ export default async function MyPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession()
-  const userId = session!.user.id
+  if (!session) redirect("/login")
+  const userId = session.user.id
 
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
@@ -65,11 +48,9 @@ export default async function MyPage() {
     volunteerBreakdown,
     dogLikesRes,
     catLikesRes,
-    dogLikesCountRes,
-    catLikesCountRes,
-    adoptionCountRes,
     dailyPostsRes,
     storyPostsRes,
+    thanksPostsRes,
   ] = await Promise.all([
     listMyUpcomingEvents(),
     admin
@@ -80,7 +61,7 @@ export default async function MyPage() {
       .limit(20),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, available_dates")
+      .select("id, status, submitted_at, available_dates, available_time, party_size")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
       .limit(20),
@@ -99,18 +80,6 @@ export default async function MyPage() {
       .order("created_at", { ascending: false })
       .limit(8),
     admin
-      .from("dog_likes")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId),
-    admin
-      .from("cat_likes")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId),
-    admin
-      .from("adoption_applications")
-      .select("*", { count: "exact", head: true })
-      .eq("created_by", userId),
-    admin
       .from("daily_posts")
       .select("id, title, posted_at, category")
       .eq("created_by", userId)
@@ -123,6 +92,7 @@ export default async function MyPage() {
       .not("published_at", "is", null)
       .order("published_at", { ascending: false })
       .limit(20),
+    admin.from("donation_thanks").select("id, title, published_at").eq("created_by", userId).not("published_at", "is", null).order("published_at", { ascending: false }).limit(20),
   ])
 
   const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
@@ -139,27 +109,9 @@ export default async function MyPage() {
     status: ApplicationStatus
     submitted_at: string
     available_dates: string[]
+    available_time: string | null
+    party_size: number
   }>
-
-  const totalLikes = (dogLikesCountRes.count ?? 0) + (catLikesCountRes.count ?? 0)
-  const totalAdoptions = adoptionCountRes.count ?? 0
-  const activeAdoptions = adoptions.filter((a) => a.status !== "반려").length
-
-  // 현금 후원 승인 총액
-  const totalCashDonation = donations
-    .filter((d) => d.type === "cash" && d.status === "approved")
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
-
-  const now = new Date()
-  const yearStart = new Date(now.getFullYear(), 0, 1)
-  const yearlyCashDonation = donations
-    .filter(
-      (d) =>
-        d.type === "cash" &&
-        d.status === "approved" &&
-        new Date(d.donated_at) >= yearStart
-    )
-    .reduce((sum, d) => sum + (d.amount ?? 0), 0)
 
   type LikeAnimalPreview = {
     id: string
@@ -184,7 +136,7 @@ export default async function MyPage() {
       id: post.id,
       title: post.title,
       date: post.posted_at,
-      label: post.category ?? "일상",
+      label: communityType(post.category),
       href: `/daily/${post.id}`,
       kind: "daily" as const,
     })),
@@ -196,235 +148,76 @@ export default async function MyPage() {
       href: `/stories/${post.id}`,
       kind: "story" as const,
     })),
+    ...(thanksPostsRes.data ?? []).map((post) => ({ id: post.id, title: post.title, date: post.published_at!, label: "후원", href: `/thanks/${post.id}`, kind: "thanks" as const })),
   ]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 20)
 
-  const nextEvent = upcomingEvents[0] ?? null
+  const otherEvents = upcomingEvents.filter(event => event.source_application_type !== "volunteer")
+  const nextEvent = upcomingEvents.find(event => event.source_application_type === "volunteer") ?? null
+  const volunteerIds = volunteers.map(app => app.id)
+  const { data: linkedEvents, error: scheduleError } = volunteerIds.length
+    ? await admin.from("events").select("source_application_id, starts_at").eq("source_application_type", "volunteer").in("source_application_id", volunteerIds).order("starts_at", { ascending: true })
+    : { data: [], error: null }
+  const scheduleByApp: Record<string, string[]> = {}
+  for (const event of linkedEvents ?? []) {
+    if (event.source_application_id) (scheduleByApp[event.source_application_id] ??= []).push(event.starts_at)
+  }
+  const volunteerItems = volunteers.map(app => ({ ...app, scheduleStarts: scheduleError ? null : scheduleByApp[app.id] ?? [] }))
+  const nextApplication = volunteers.find(app => app.id === nextEvent?.source_application_id)
+  const hasPendingSchedule = volunteers.some(app => app.status === "승인" && !scheduleByApp[app.id]?.length)
+  const queryFailed = [adoptionRes, volunteerRes, dogLikesRes, catLikesRes, dailyPostsRes, storyPostsRes, thanksPostsRes].some(result => result.error)
+  const buttonClass = "inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
+
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 md:py-14">
-
-      {/* ── 환영 헤더 ── */}
-      <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-primary/8 to-primary/3 p-7">
-        <div className="relative flex items-center gap-5">
-          {/* 아바타 */}
-          <div className="relative size-20 shrink-0 overflow-hidden rounded-full border-4 border-background/80 bg-muted shadow-md">
-            {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
-            ) : (
-              <User className="size-full p-4 text-muted-foreground" />
-            )}
-          </div>
-          {/* 정보 */}
-          <div className="min-w-0 flex-1">
-            <p className="mb-1 text-xs text-foreground/50">안녕하세요</p>
-            <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <UserName nickname={profile.nickname} role={profile.role} size="md" />
-            </div>
-            <p className="text-xs text-foreground/60">함께해 주셔서 감사해요. 신청 내역과 활동 기록을 확인해 보세요.</p>
-          </div>
-          {/* 수정 버튼 */}
-          <Link
-            href="/profile"
-            className="hidden shrink-0 rounded-xl border border-border bg-background/80 px-4 py-2 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary sm:block"
-          >
-            프로필 수정
-          </Link>
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-12">
+      <header className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">마이페이지</h1>
+        <p className="text-sm text-muted-foreground">내 일정과 활동 기록</p>
+      </header>
+      {queryFailed && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 p-4 text-sm text-destructive">일부 기록을 불러오지 못했습니다. 잠시 후 다시 확인해주세요.</p>}
+      <section aria-label="내 프로필" className="mb-6 grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-border bg-card p-5 sm:grid-cols-[3.5rem_minmax(0,1fr)_auto] sm:p-6">
+        <div className="relative size-14 overflow-hidden rounded-full bg-secondary">
+          {profile.avatar_url ? <Image src={profile.avatar_url} alt="" fill sizes="56px" className="object-cover" /> : <User aria-hidden="true" className="size-full p-3 text-muted-foreground" />}
         </div>
-      </div>
-
-      {/* ── 활동 현황 2×2 그리드 ── */}
-      <div className="mb-5 grid grid-cols-2 gap-3">
-        <ActivityCard
-          icon={<CalendarDays className="size-5" />}
-          iconBg="bg-primary/10 text-primary"
-          label="총 봉사"
-          value={volunteerCount}
-          unit="회"
-          sub={`올해 ${volunteerYearly}회 · 이번 달 ${volunteerMonthly}회`}
-        />
-        <ActivityCard
-          icon={<HandCoins className="size-5" />}
-          iconBg="bg-rose-100 text-rose-500"
-          label="총 후원"
-          value={totalCashDonation.toLocaleString()}
-          unit="원"
-          sub={`올해 ${yearlyCashDonation.toLocaleString()}원`}
-        />
-        <ActivityCard
-          icon={<ClipboardList className="size-5" />}
-          iconBg="bg-emerald-100 text-emerald-600"
-          label="입양 신청"
-          value={totalAdoptions}
-          unit="건"
-          sub={`진행 중 ${activeAdoptions}건`}
-        />
-        <ActivityCard
-          icon={<Heart className="size-5" />}
-          iconBg="bg-amber-100 text-amber-500"
-          label="찜한 아이들"
-          value={totalLikes}
-          unit="마리"
-          sub={totalLikes === 0 ? "관심 목록 비어있음" : `${likedAnimals[0]?.name ?? ""} 외`}
-        />
-      </div>
-
-      {/* ── 다가오는 일정 ── */}
-      {nextEvent ? (
-        <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#596f63] to-[#78927f] p-6 text-white dark:from-[#2b3a32] dark:to-[#405548]">
-          <div className="relative flex items-center gap-4">
-            {/* 날짜 박스 */}
-            <div className="shrink-0 rounded-xl bg-white/15 px-4 py-3 text-center">
-              <p className="text-[10px] text-white/70">
-                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
-                  timeZone: "Asia/Seoul",
-                  weekday: "short",
-                })}
-              </p>
-              <p className="text-2xl font-bold leading-none">
-                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
-                  timeZone: "Asia/Seoul",
-                  day: "numeric",
-                })}
-              </p>
-              <p className="text-[10px] text-white/70">
-                {new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", {
-                  timeZone: "Asia/Seoul",
-                  month: "long",
-                })}
-              </p>
-            </div>
-            {/* 이벤트 정보 */}
-            <div className="min-w-0 flex-1">
-              {(() => {
-                const isCustom = nextEvent.category === "custom"
-                const color = CATEGORY_COLOR[nextEvent.category]
-                const customStyle = isCustom ? customColorStyle(nextEvent.custom_color) : null
-                return (
-                  <span
-                    style={customStyle?.soft}
-                    className={cn(
-                      "mb-2 inline-block rounded px-2 py-0.5 text-[10px] font-bold",
-                      !isCustom && color.soft,
-                      !isCustom && color.softText
-                    )}
-                  >
-                    {eventDisplayLabel(nextEvent)}
-                  </span>
-                )
-              })()}
-              <p className="text-base font-bold">{getEventTitle(nextEvent)}</p>
-              <p className="mt-1 text-xs text-white/70">
-                {formatKoreanDayLabel(nextEvent.starts_at, nextEvent.all_day)}
-              </p>
-            </div>
-            {/* 상세 보기 버튼 */}
-            <Link
-              href={`/calendar/${nextEvent.id}`}
-              className="hidden shrink-0 rounded-lg bg-white px-4 py-2 text-xs font-bold text-[#46534d] transition-opacity hover:opacity-90 sm:block"
-            >
-              상세 보기
-            </Link>
+        <div className="min-w-0">
+          <p className="text-lg font-semibold [overflow-wrap:anywhere]">{profile.nickname} 님</p>
+          <p className="mt-1 text-sm text-muted-foreground">{profile.role === "admin" ? "관리자" : profile.role === "staff" ? "운영진" : "회원"}</p>
+        </div>
+        <Link href="/profile" className={buttonClass + " col-start-2 justify-self-start sm:col-start-auto"}>프로필 수정</Link>
+      </section>
+      <section aria-labelledby="upcoming-title" className="mb-8 rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-7">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="upcoming-title" className="text-lg font-semibold">다가오는 봉사</h2>
+          {nextEvent && <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">일정 확정</span>}
+        </div>
+        {nextEvent ? <>
+          <p className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">{new Date(nextEvent.starts_at).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "long" })}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{formatKoreanDayLabel(nextEvent.starts_at, nextEvent.all_day)}{nextApplication ? ` · ${nextApplication.party_size}명` : ""}</p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link href={`/calendar/${nextEvent.id}`} className={buttonClass + " border-primary bg-primary text-primary-foreground hover:bg-primary/90"}>일정 상세 보기</Link>
+            <Link href="/my/applications" className={buttonClass}>신청 확인·변경</Link>
           </div>
-        </div>
-      ) : (
-        <div className="mb-5 rounded-2xl border border-dashed border-border bg-card p-6 text-center">
-          <p className="text-sm text-muted-foreground">예정된 봉사 일정이 없습니다.</p>
-          <Link href="/calendar" className="mt-2 inline-block text-xs font-medium text-primary hover:underline">
-            봉사 일정 보기 →
-          </Link>
-        </div>
-      )}
-
-      {/* ── 탭 섹션 (신청내역 / 후원내역 / 찜한아이들) ── */}
-      <MyPageTabs
-        volunteers={volunteers}
-        adoptions={adoptions}
-        donations={donations}
-        likedAnimals={likedAnimals}
-        myPosts={myPosts}
-      />
-
-      {/* ── 랭킹 바로가기 ── */}
-      <Link
-        href="/ranking"
-        className="mb-3 flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 transition-colors hover:bg-amber-100 dark:border-amber-800/40 dark:bg-amber-900/10"
-      >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30">
-          <Trophy className="size-4" />
-        </span>
-        <span className="flex-1">
-          <span className="block text-sm font-semibold text-amber-800 dark:text-amber-400">봉사 랭킹</span>
-          <span className="block text-xs text-amber-700/70 dark:text-amber-500/70">내 순위 확인하기</span>
-        </span>
-        <ChevronRight className="size-4 shrink-0 text-amber-400" />
-      </Link>
-
-      {/* ── 계정 관리 ── */}
-      <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-card">
-        {isStaff && (
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-secondary/50"
-          >
-            <Settings className="size-4 text-muted-foreground" />
-            <span className="flex-1 text-sm font-medium text-primary">어드민 페이지</span>
-            <ChevronRight className="size-4 text-muted-foreground" />
-          </Link>
-        )}
-        <Link
-          href="/profile"
-          className="flex items-center gap-3 border-t border-border px-5 py-4 transition-colors hover:bg-secondary/50 first:border-t-0"
-        >
-          <User className="size-4 text-muted-foreground" />
-          <span className="flex-1 text-sm text-foreground">프로필 수정</span>
-          <ChevronRight className="size-4 text-muted-foreground" />
-        </Link>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex w-full items-center gap-3 border-t border-border px-5 py-4 text-left text-destructive transition-colors hover:bg-destructive/5"
-          >
-            <LogOut className="size-4" />
-            <span className="flex-1 text-sm font-medium">로그아웃</span>
-            <ChevronRight className="size-4 opacity-50" />
-          </button>
-        </form>
-      </div>
-
-      {/* ── 회원 탈퇴 ── */}
-      <DeleteAccountButton />
-    </div>
-  )
-}
-
-function ActivityCard({
-  icon,
-  iconBg,
-  label,
-  value,
-  unit,
-  sub,
-}: {
-  icon: React.ReactNode
-  iconBg: string
-  label: string
-  value: number | string
-  unit: string
-  sub: string
-}) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md">
-      <div className={cn("mb-3 flex size-10 items-center justify-center rounded-xl", iconBg)}>
-        {icon}
-      </div>
-      <p className="mb-1 text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-bold leading-none text-foreground">
-        {value}
-        <span className="ml-0.5 text-sm font-normal text-muted-foreground">{unit}</span>
-      </p>
-      <p className="mt-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">{sub}</p>
+          <p className="mt-3 text-sm text-muted-foreground">방문 전 준비물과 안내사항을 확인해주세요.</p>
+        </> : <>
+          <p className="mt-4 text-sm text-muted-foreground">{hasPendingSchedule ? "승인된 신청이 있습니다. 확정 일정은 신청 내역에서 확인해주세요." : "현재 확정된 봉사 일정이 없습니다."}</p>
+          <Link href={hasPendingSchedule ? "/my/applications" : "/calendar"} className={buttonClass + " mt-4"}>{hasPendingSchedule ? "신청 내역 보기" : "봉사 일정 보기"}</Link>
+        </>}
+      </section>
+      {otherEvents.length > 0 && <section aria-label="다른 참여 일정" className="mb-8 rounded-xl border border-border bg-card p-5"><h2 className="font-semibold">다른 참여 일정</h2><ul className="mt-3 divide-y divide-border">{otherEvents.map(event => <li key={event.id}><Link href={`/calendar/${event.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-primary"><span>{event.title}</span><span className="text-muted-foreground">{formatKoreanDayLabel(event.starts_at, event.all_day)}</span></Link></li>)}</ul></section>}
+      <MyPageTabs volunteers={volunteerItems} adoptions={adoptions} donations={donations} likedAnimals={likedAnimals} myPosts={myPosts} />
+      <details className="mt-6 rounded-xl border border-border bg-card p-4 text-sm">
+        <summary className="min-h-11 cursor-pointer font-medium">지난 승인 신청 기록</summary>
+        <p className="mt-2">누적 {volunteerCount}건 · 올해 {volunteerYearly}건 · 이번 달 {volunteerMonthly}건</p>
+        <p className="mt-2 text-xs text-muted-foreground">첫 희망 날짜가 지난 승인 신청 기준입니다. 실제 참석 여부를 집계한 수치는 아닙니다.</p>
+      </details>
+      <section aria-label="계정 관리" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
+        {isStaff && <Link href="/admin" className="inline-flex min-h-11 items-center hover:text-primary">관리자 페이지</Link>}
+        <Link href="/profile" className="inline-flex min-h-11 items-center hover:text-primary">계정 설정</Link>
+        <form action={signOut}><button type="submit" className="min-h-11 cursor-pointer hover:text-foreground">로그아웃</button></form>
+        <DeleteAccountButton />
+      </section>
     </div>
   )
 }

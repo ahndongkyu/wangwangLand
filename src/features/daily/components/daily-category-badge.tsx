@@ -10,6 +10,7 @@ const BADGE_STYLES: Record<DailyCategory, string> = {
   "일상":       "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300",
   "입소":       "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
   "임시보호":   "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+  "후원": "bg-primary/10 text-primary",
   "후원 소식":  "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
   "봉사 후기":  "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
   "자유게시판":  "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",

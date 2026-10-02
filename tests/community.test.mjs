@@ -19,6 +19,7 @@ test("legacy types retain their intended community groups", () => {
   for (const value of [null, "입소", "구조 소식", "시설 안내"]) assert.equal(categories.communityType(value), "일상")
   for (const value of ["자유", "자유게시판", "질문 및 답변"]) assert.equal(categories.communityType(value), "자유")
   for (const value of ["후기", "봉사 후기", "입양 후기"]) assert.equal(categories.communityType(value), "후기")
+  for (const value of ["후원", "후원 소식"]) assert.equal(categories.communityType(value), "후원")
   assert.equal(categories.communityFilter("전체"), undefined)
 })
 
@@ -40,6 +41,8 @@ function fixture() {
   const api = load("src/features/daily/api/community-queries.ts", {
     "./queries": { listDailyPosts: async ({ offset, limit }) => ({ posts: daily.slice(offset, offset + limit), total: daily.length }) },
     "@/features/stories/api/queries": { listAdoptionStories: async (options) => { calls.push(options); return { stories: stories.slice(options.offset, options.offset + options.limit), total: stories.length } } },
+    "@/features/thanks/api/queries": { listDonationThanks: async () => ({ rows: [], total: 0 }) },
+    "@/shared/lib/fetch-authors": { fetchAuthorMap: async () => ({}) },
     "../lib/community-category": categories,
   })
   return { api, calls }
@@ -60,4 +63,33 @@ test("non-review filter skips the adoption source", async () => {
   const { api, calls } = fixture()
   await api.listCommunityPosts({ category: "일상" })
   assert.equal(calls.length, 0)
+})
+
+test("donation feed preserves original links, thumbnails, authors and draft visibility", async () => {
+  const calls = []
+  const rows = [
+    { id: "published", title: "후원 감사", content: "", images: ["first", "cover"], thumbnail_index: 1, created_by: "staff", created_at: "2026-09-01", published_at: "2026-09-02", view_count: 3 },
+    { id: "draft", title: "임시저장", content: "", images: [], created_by: "staff", created_at: "2026-10-01", published_at: null, view_count: 0 },
+  ]
+  const api = load("src/features/daily/api/community-queries.ts", {
+    "./queries": { listDailyPosts: async (options) => { assert.equal(options.community, "후원"); return { posts: [], total: 0 } } },
+    "@/features/stories/api/queries": { listAdoptionStories: () => { throw Error("Donation filter must skip adoption stories") } },
+    "@/features/thanks/api/queries": { listDonationThanks: async options => {
+      calls.push(options)
+      const filtered = rows.filter(row => options.includeDrafts || row.published_at)
+      return { rows: filtered.slice(options.offset, options.offset + options.limit), total: filtered.length }
+    } },
+    "@/shared/lib/fetch-authors": { fetchAuthorMap: async () => ({ staff: { nickname: "운영진", role: "staff" } }) },
+    "../lib/community-category": categories,
+  })
+  const published = await api.listCommunityPosts({ category: "후원", query: "후원" })
+  assert.equal(published.total, 1)
+  assert.equal(published.posts[0].href, "/thanks/published")
+  assert.equal(published.posts[0].images[0], "cover")
+  assert.equal(published.posts[0].author.nickname, "운영진")
+  assert.equal(calls[0].query, "후원")
+  const admin = await api.listCommunityPosts({ category: "후원", includeDrafts: true })
+  assert.equal(admin.total, 2)
+  assert.equal(admin.posts[0].id, "draft")
+  assert.equal(admin.posts[0].draft, true)
 })

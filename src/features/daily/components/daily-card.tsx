@@ -71,7 +71,6 @@ export function DailyCard({ post }: { post: DailyPostWithAuthor }) {
               <UserName
                 nickname={authorNickname}
                 role={post.author.role}
-                volunteerCount={post.author.volunteer_count}
                 className="max-w-full overflow-hidden"
               />
             ) : (

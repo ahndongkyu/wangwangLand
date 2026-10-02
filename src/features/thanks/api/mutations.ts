@@ -45,6 +45,8 @@ function parseFormData(formData: FormData): ThanksInput {
 }
 
 function revalidateAll(id?: string) {
+  revalidatePath("/daily")
+  revalidatePath("/admin/community")
   revalidatePath("/admin/thanks")
   revalidatePath("/thanks")
   revalidatePath("/donate")

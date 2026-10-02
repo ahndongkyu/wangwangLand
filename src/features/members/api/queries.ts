@@ -1,3 +1,4 @@
+import { normalizeMemberRole, type MemberRole } from "@/shared/lib/member-role"
 import { unstable_cache } from "next/cache"
 import { recentMonthWindows } from "@/shared/lib/month-windows"
 
@@ -33,7 +34,7 @@ export interface Profile {
   nickname: string
   avatar_url: string | null
   phone: string | null
-  role: "member" | "full_member" | "staff" | "admin"
+  role: MemberRole
   status: "pending" | "approved" | "rejected"
   is_banned: boolean
   created_at: string
@@ -59,7 +60,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
     .eq("id", session.user.id)
     .maybeSingle()
 
-  return data as Profile | null
+  return data ? { ...data, role: normalizeMemberRole(data.role) } as Profile : null
 }
 
 export async function listMyHomeFavorites(): Promise<HomeFavoriteKey[]> {
@@ -124,7 +125,7 @@ export async function getProfileDetail(id: string): Promise<ProfileDetail | null
     console.warn("[getProfileDetail] failed to fetch auth user:", e)
   }
 
-  return { ...(profile as Profile), email, signup_provider }
+  return { ...(profile as Profile), role: normalizeMemberRole(profile.role), email, signup_provider }
 }
 
 export type ProfileSort = "name" | "joined" | "status"
@@ -194,7 +195,7 @@ export async function listProfiles({
     : cachedCounts.pendingCount + cachedCounts.approvedCount + cachedCounts.rejectedCount
 
   return {
-    profiles: (data ?? []) as Profile[],
+    profiles: (data ?? []).map(profile => ({ ...profile, role: normalizeMemberRole(profile.role) })) as Profile[],
     total,
     pendingCount: cachedCounts.pendingCount,
     approvedCount: cachedCounts.approvedCount,

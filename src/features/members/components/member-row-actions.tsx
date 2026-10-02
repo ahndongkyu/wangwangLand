@@ -24,8 +24,7 @@ const STATUS_COLOR: Record<Profile["status"], string> = {
 }
 
 const ROLE_LABEL: Record<Profile["role"], string> = {
-  member: "일반회원",
-  full_member: "정회원",
+  member: "회원",
   staff: "운영진",
   admin: "관리자",
 }
@@ -207,8 +206,7 @@ export function MemberRowActions({
           )}
           aria-label={`${profile.nickname} 권한`}
         >
-          <option value="member">일반회원</option>
-          <option value="full_member">정회원</option>
+          <option value="member">회원</option>
           <option value="staff">운영진</option>
           {isTopAdmin && <option value="admin">관리자</option>}
         </select>

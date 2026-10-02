@@ -105,7 +105,6 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
               <UserName
                 nickname={comment.author.nickname}
                 role={comment.author.role}
-                volunteerCount={comment.author.volunteer_count}
                 size="sm"
               />
             ) : (

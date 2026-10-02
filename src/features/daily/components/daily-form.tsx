@@ -19,8 +19,6 @@ interface Props {
   post?: DailyPost
   cancelHref?: string
   returnTo?: string
-  /** 봉사 인증 모드 — 카테고리 "봉사 후기" 잠금 + 신청 ID 자동 첨부 */
-  volunteerApplicationId?: string
   defaultCategory?: DailyCategory
 }
 
@@ -37,7 +35,6 @@ export function DailyForm({
   post,
   cancelHref = "/admin/daily",
   returnTo,
-  volunteerApplicationId,
   defaultCategory,
 }: Props) {
   const [pending, setPending] = useState(false)
@@ -46,7 +43,6 @@ export function DailyForm({
   const contentRef = useRef<string>(post?.content ?? "")
   const originalType = communityType(post?.category ?? defaultCategory)
   const [selectedType, setSelectedType] = useState(originalType)
-  const certificationId = volunteerApplicationId ?? post?.related_volunteer_application_id
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -101,19 +97,6 @@ export function DailyForm({
 
       <div className="space-y-1.5">
         <Label htmlFor="category">이야기 유형</Label>
-        {certificationId ? (
-          <>
-            <input type="hidden" name="category" value="봉사 후기" />
-            <input type="hidden" name="related_volunteer_application_id" value={certificationId} />
-            <div className="flex items-center gap-2 rounded-md border border-pink-200 bg-pink-50 px-3 py-2 text-sm dark:border-pink-900/40 dark:bg-pink-900/20">
-              <span className="rounded-full bg-pink-100 px-2 py-0.5 text-[11px] font-semibold text-pink-700 dark:bg-pink-900/40 dark:text-pink-300">
-                봉사 후기
-              </span>
-              <span className="text-xs text-muted-foreground">봉사 인증글 — 사진 1장 이상 필수</span>
-            </div>
-          </>
-        ) : (
-        <>
         <input type="hidden" name="category" value={post && selectedType === originalType ? post.category ?? "일상" : selectedType} />
         <select
           id="category"
@@ -126,8 +109,6 @@ export function DailyForm({
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
-        </>
-        )}
       </div>
 
       <div className="space-y-1.5">

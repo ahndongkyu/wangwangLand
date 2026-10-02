@@ -43,8 +43,8 @@ export default async function ThanksDetailPage({
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 md:px-6 md:py-14">
       <nav className="mb-6 text-sm text-muted-foreground">
-        <Link href="/thanks" className="hover:text-foreground">
-          ← 후원 감사글
+        <Link href="/daily?category=%ED%9B%84%EC%9B%90" className="hover:text-foreground">
+          ← 후원 이야기
         </Link>
       </nav>
 

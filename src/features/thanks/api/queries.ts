@@ -33,7 +33,7 @@ export async function listDonationThanks({
       .order("published_at", { ascending: false })
   }
 
-  q = q.range(offset, offset + limit - 1)
+  q = q.order("id", { ascending: true }).range(offset, offset + limit - 1)
 
   if (searchQuery && searchQuery.trim()) {
     q = q.ilike("title", `%${searchQuery.trim()}%`)

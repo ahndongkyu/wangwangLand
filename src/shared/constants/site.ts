@@ -111,7 +111,7 @@ export const HEADER_NAV_GROUPS: ReadonlyArray<
     items: [
       { label: "강아지", href: "/dogs", desc: "입양 대기 중인 강아지들", icon: "dog" },
       { label: "고양이", href: "/cats", desc: "보호 중인 고양이들", icon: "paw" },
-      { label: "왕왕랜드 이야기", href: "/daily", desc: "일상·자유·후기를 나눠요", icon: "camera" },
+      { label: "왕왕랜드 이야기", href: "/daily", desc: "일상·자유·후기·후원을 나눠요", icon: "camera" },
     ],
   },
   {
@@ -121,7 +121,6 @@ export const HEADER_NAV_GROUPS: ReadonlyArray<
       { label: "일정", href: "/calendar", desc: "다가오는 봉사·행사", icon: "calendar" },
       { label: "봉사 신청", href: "/volunteer", desc: "매주 봉사자를 기다려요", icon: "volunteer" },
       { label: "후원하기", href: "/donate", desc: "작은 정성이 큰 힘이 됩니다", icon: "gift" },
-      { label: "후원 감사글", href: "/thanks", desc: "도착한 따뜻한 마음", icon: "heart" },
     ],
   },
   { kind: "link", label: "공지사항", href: "/notice" },

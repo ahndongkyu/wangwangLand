@@ -51,7 +51,6 @@ export function StoryCard({ story }: { story: StoryWithDog }) {
             <UserName
               nickname={story.author.nickname}
               role={story.author.role}
-              volunteerCount={story.author.volunteer_count}
             />
           )}
           {story.published_at && (

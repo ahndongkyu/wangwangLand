@@ -24,7 +24,6 @@ import type { Profile } from "../api/queries"
 const ROLE_LABEL: Record<string, string> = {
   admin: "관리자",
   staff: "운영진",
-  full_member: "정회원",
   member: "회원",
 }
 
@@ -67,7 +66,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
           )}
         </div>
         <div className="hidden flex-col items-center gap-0.5 sm:flex">
-          <UserName nickname={profile.nickname} role={profile.role} showTier={false} />
+          <UserName nickname={profile.nickname} role={profile.role} />
         </div>
       </button>
 

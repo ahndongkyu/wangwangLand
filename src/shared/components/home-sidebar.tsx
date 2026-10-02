@@ -26,7 +26,6 @@ import { cn } from "@/shared/lib/utils"
 const ROLE_LABEL: Record<Profile["role"], string> = {
   admin: "관리자",
   staff: "운영진",
-  full_member: "정회원",
   member: "회원",
 }
 

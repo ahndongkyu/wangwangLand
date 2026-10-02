@@ -12,6 +12,9 @@ interface VolunteerApp {
   status: ApplicationStatus
   submitted_at: string
   available_dates: string[]
+  available_time: string | null
+  party_size: number
+  scheduleStarts: string[] | null
 }
 
 interface AdoptionApp {
@@ -37,7 +40,7 @@ export interface MyPostItem {
   date: string
   label: string
   href: string
-  kind: "daily" | "story"
+  kind: "daily" | "story" | "thanks"
 }
 
 interface Props {
@@ -50,11 +53,11 @@ interface Props {
 
 const STATUS_STYLE: Record<ApplicationStatus, string> = {
   접수: "bg-primary/15 text-primary",
-  검토중: "bg-amber-100 text-amber-700",
-  승인: "bg-emerald-100 text-emerald-700",
+  검토중: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  승인: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
   반려: "bg-muted text-muted-foreground",
   취소: "bg-muted text-muted-foreground",
-  일정변경요청: "bg-blue-100 text-blue-700",
+  일정변경요청: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
 }
 
 function formatDate(iso: string) {
@@ -70,10 +73,10 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
 
   const totalApps = volunteers.length + adoptions.length
   const tabs = [
-    { key: "apps" as const, label: "신청 내역", count: totalApps },
-    { key: "posts" as const, label: "내가 쓴 글", count: myPosts.length },
-    { key: "donations" as const, label: "후원 내역", count: donations.length },
-    { key: "likes" as const, label: "찜한 아이들", count: likedAnimals.length },
+    { key: "apps" as const, label: "신청 내역" },
+    { key: "posts" as const, label: "내 글" },
+    { key: "donations" as const, label: "후원 기록" },
+    { key: "likes" as const, label: "관심 동물" },
   ]
 
   return (
@@ -83,6 +86,8 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
         {tabs.map((tab) => (
           <button
             key={tab.key}
+            aria-pressed={active === tab.key}
+            aria-controls="my-activity-content"
             onClick={() => setActive(tab.key)}
             className={cn(
               "flex min-h-11 flex-1 flex-wrap items-center justify-center gap-1.5 px-1 py-3.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none",
@@ -92,23 +97,15 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
             )}
           >
             {tab.label}
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                active === tab.key
-                  ? "bg-primary/20 text-primary"
-                  : "bg-secondary text-muted-foreground"
-              )}
-            >
-              {tab.count}
-            </span>
           </button>
         ))}
       </div>
 
+      <div id="my-activity-content">
       {/* 신청 내역 */}
       {active === "apps" && (
         <div>
+          <p className="px-5 pt-4 text-xs text-muted-foreground">최근 신청 내역입니다. 희망 날짜와 확정 일정은 다를 수 있습니다.</p>
           {totalApps === 0 ? (
             <EmptyState message="신청 내역이 없습니다." href="/calendar" cta="봉사 일정 보기" />
           ) : (
@@ -118,14 +115,14 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">봉사 신청</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {v.available_dates.length > 0
-                        ? v.available_dates[0]
-                        : formatDate(v.submitted_at)}{" "}
-                      신청
+                      {v.status === "승인" && v.scheduleStarts?.length
+                        ? v.scheduleStarts.map(date => new Date(date).toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })).join(" / ")
+                        : `${v.available_dates[0] ?? formatDate(v.submitted_at)} ${v.available_time ?? ""} 희망`}
+                      {" · "}{v.party_size}명
                     </p>
                   </div>
                   <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold", STATUS_STYLE[v.status])}>
-                    {v.status}
+                    {v.status === "승인" ? v.scheduleStarts === null ? "승인 · 일정 조회 실패" : v.scheduleStarts.length ? "일정 확정" : "승인 · 일정 미확정" : v.status}
                   </span>
                 </Link>
               ))}
@@ -147,6 +144,8 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
         </div>
       )}
 
+      {active === "apps" && totalApps > 0 && <Link href="/my/applications" className="flex min-h-11 items-center justify-end border-t border-border px-5 text-sm text-primary hover:bg-secondary">신청 내역 전체 보기 →</Link>}
+
       {/* 내가 쓴 글 */}
       {active === "posts" && (
         <div>
@@ -154,6 +153,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
             <EmptyState message="아직 작성한 글이 없습니다." href="/daily/new" cta="첫 글 쓰기" />
           ) : (
             <div className="divide-y divide-border">
+              <p className="px-5 py-3 text-xs text-muted-foreground">최근 작성한 공개 글 최대 20건을 보여줍니다.</p>
               {myPosts.map((post) => (
                 <Link
                   key={`${post.kind}:${post.id}`}
@@ -197,7 +197,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                     className={cn(
                       "shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold",
                       d.status === "approved"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
                         : d.status === "pending"
                           ? "bg-primary/15 text-primary"
                           : "bg-muted text-muted-foreground"
@@ -257,6 +257,7 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -61,11 +61,18 @@ export function getVolunteerTimeOptions(dates: string[]): string[] {
   return REGULAR_TIME_OPTIONS
 }
 
-export function validateVolunteerSchedule(dates: string[], time: string): string | null {
+export function volunteerToday(now = new Date()): string {
+  return new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+export function validateVolunteerSchedule(dates: string[], time: string, now = new Date()): string | null {
   if (dates.length === 0 || dates.some((date) => !isValidVolunteerDate(date))) {
     return "봉사 가능 날짜를 하나 이상 선택해주세요."
   }
   if (!time) return "방문 예정 시간을 선택해주세요."
+  if (dates.some((date) => date < volunteerToday(now))) {
+    return "지난 날짜에는 봉사를 신청할 수 없습니다."
+  }
   if (!getVolunteerTimeOptions(dates).includes(time)) {
     return "선택한 날짜의 운영시간 안에서 방문 예정 시간을 선택해주세요."
   }

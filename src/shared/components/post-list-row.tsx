@@ -8,7 +8,6 @@ import { formatShortDate } from "@/shared/lib/utils"
 interface Author {
   nickname: string
   role: string
-  volunteer_count?: number
 }
 
 interface Props {
@@ -133,7 +132,6 @@ export function PostListRow({
             <UserName
               nickname={author.nickname}
               role={author.role}
-              volunteerCount={author.volunteer_count}
             />
           )}
           {date && (

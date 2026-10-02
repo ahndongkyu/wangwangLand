@@ -26,7 +26,6 @@ import {
 } from "@/features/donations"
 import { Badge } from "@/shared/components/ui/badge"
 import { UserName } from "@/shared/components/user-name"
-import { getVolunteerCount } from "@/features/volunteer-tier"
 import { formatKoreanPhone } from "@/shared/lib/validation"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 import type { Profile } from "@/features/members"
@@ -83,7 +82,6 @@ export default async function AdminMemberDetailPage({
   const profile = await getProfileDetail(id)
   if (!profile) notFound()
 
-  const volunteerCount = await getVolunteerCount(profile.id)
 
   const [
     dailyPosts,
@@ -138,7 +136,6 @@ export default async function AdminMemberDetailPage({
               <UserName
                 nickname={profile.nickname}
                 role={profile.role}
-                volunteerCount={volunteerCount}
                 size="md"
               />
               <span

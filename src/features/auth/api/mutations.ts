@@ -1,5 +1,6 @@
 "use server"
 
+import { requireTopAdmin } from "@/shared/lib/auth"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
@@ -15,6 +16,8 @@ export async function updateAdminRole(
   profileId: string,
   role: StaffRole
 ): Promise<AdminMutationResult> {
+  const auth = await requireTopAdmin()
+  if (!auth.ok) return { error: auth.error }
   if (role !== "admin" && role !== "staff") {
     return { error: "올바르지 않은 역할입니다." }
   }
@@ -34,8 +37,10 @@ export async function updateAdminRole(
   return {}
 }
 
-/** 운영진 제거 — role을 full_member로 강등. 본인은 제거 불가. */
+/** 운영진 제거 — role을 member로 변경. 본인은 제거 불가. */
 export async function removeAdmin(profileId: string): Promise<AdminMutationResult> {
+  const auth = await requireTopAdmin()
+  if (!auth.ok) return { error: auth.error }
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.user) return { error: "로그인이 필요합니다." }
@@ -67,7 +72,7 @@ export async function removeAdmin(profileId: string): Promise<AdminMutationResul
 
   const { error } = await adminClient
     .from("profiles")
-    .update({ role: "full_member" })
+    .update({ role: "member" })
     .eq("id", profileId)
 
   if (error) {

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import { volunteerToday } from "@/features/applications/lib/volunteer-operating-hours"
 import { ChevronDown } from "lucide-react"
 
 import { CancelMyApplicationButton } from "./cancel-button"
@@ -107,27 +108,8 @@ export default async function MyApplicationsPage() {
   const allDates = Array.from(new Set(volunteers.flatMap((v) => v.available_dates ?? [])))
   const staffByDate = allDates.length > 0 ? await listStaffOnDates(allDates) : {}
 
-  const approvedVolunteerIds = volunteers
-    .filter((v) => v.status === "승인")
-    .map((v) => v.id)
-  const certificationByAppId: Record<string, string> = {}
-  if (approvedVolunteerIds.length > 0) {
-    const { data: certs } = await admin
-      .from("daily_posts")
-      .select("id, related_volunteer_application_id")
-      .eq("created_by", session.user.id)
-      .eq("category", "봉사 후기")
-      .in("related_volunteer_application_id", approvedVolunteerIds)
-    for (const c of (certs ?? []) as { id: string; related_volunteer_application_id: string }[]) {
-      certificationByAppId[c.related_volunteer_application_id] = c.id
-    }
-  }
+  const today = volunteerToday()
 
-  const today = new Date().toISOString().slice(0, 10)
-
-  function hasPastVolunteerDate(dates: string[]): boolean {
-    return dates.some((d) => d <= today)
-  }
   /** 모든 날짜가 오늘 이전 → 일정변경 불가 */
   function allDatesPast(dates: string[]): boolean {
     return dates.length > 0 && dates.every((d) => d < today)
@@ -163,8 +145,6 @@ export default async function MyApplicationsPage() {
               <div className="space-y-2">
                 {activeVolunteers.map((v) => {
                   const isPast = allDatesPast(v.available_dates)
-                  const hasCert = !!certificationByAppId[v.id]
-                  const showCertBtn = v.status === "승인" && hasPastVolunteerDate(v.available_dates)
                   const canRequestEdit = v.status !== "반려" && v.status !== "취소" && !isPast
                   const isRescheduleMode = v.status === "승인" || v.status === "일정변경요청"
                   const editBtnLabel = isRescheduleMode ? "일정변경 요청" : "일정 변경"
@@ -224,27 +204,6 @@ export default async function MyApplicationsPage() {
 
                         {/* ── 버튼 행 ── */}
                         <div className="flex items-center gap-2 border-t border-border/60 pt-3">
-                          {/* 인증글 버튼 (왼쪽) */}
-                          <div className="flex-1">
-                            {showCertBtn && (
-                              hasCert ? (
-                                <Link
-                                  href={`/daily/${certificationByAppId[v.id]}`}
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/40 dark:bg-pink-900/20 dark:text-pink-300"
-                                >
-                                  ✓ 봉사 후기 보기
-                                </Link>
-                              ) : (
-                                <Link
-                                  href={`/daily/new?application=${v.id}`}
-                                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-                                >
-                                  인증글 작성
-                                </Link>
-                              )
-                            )}
-                          </div>
-
                           {/* 일정 변경 / 일정변경 요청 */}
                           {v.status === "일정변경요청" ? (
                             <span className="rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-500 cursor-not-allowed dark:border-blue-800/40 dark:bg-blue-950/20 dark:text-blue-400">

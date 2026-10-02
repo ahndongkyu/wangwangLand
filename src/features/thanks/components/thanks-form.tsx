@@ -20,7 +20,7 @@ interface Props {
   cancelHref?: string
 }
 
-export function ThanksForm({ post, cancelHref = "/admin/thanks" }: Props) {
+export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9B%84%EC%9B%90" }: Props) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
