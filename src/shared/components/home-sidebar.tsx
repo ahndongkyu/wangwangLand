@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import {
   ChevronRight,
   CirclePlus,
@@ -46,6 +46,31 @@ export function HomeSidebar({
   const [editing, setEditing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const sidebarRef = useRef<HTMLElement>(null)
+  const [fitsViewport, setFitsViewport] = useState(false)
+
+  useEffect(() => {
+    if (variant !== "desktop") return
+    const sidebar = sidebarRef.current
+    if (!sidebar) return
+
+    function updateFit() {
+      if (!sidebar) return
+      const height = sidebar.getBoundingClientRect().height
+      const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
+      // 상단 헤더와 여백 7rem, 하단 여백 1rem을 확보한다.
+      setFitsViewport(height > 0 && height <= window.innerHeight - rem * 8)
+    }
+
+    const observer = new ResizeObserver(updateFit)
+    observer.observe(sidebar)
+    window.addEventListener("resize", updateFit)
+    updateFit()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", updateFit)
+    }
+  }, [variant])
 
   const selectedItems = favorites
     .map((key) => HOME_FAVORITE_OPTIONS.find((item) => item.key === key))
@@ -215,7 +240,11 @@ export function HomeSidebar({
 
   return (
     <aside
-      className="admin-sidebar-scroll sticky top-28 hidden max-h-[calc(100dvh-8rem)] self-start overflow-y-auto rounded-[26px] border border-sidebar-border bg-sidebar p-4 shadow-[0_16px_35px_rgba(88,76,68,0.11)] lg:block"
+      ref={sidebarRef}
+      className={cn(
+        "hidden self-start rounded-[26px] border border-sidebar-border bg-sidebar p-4 shadow-[0_16px_35px_rgba(88,76,68,0.11)] lg:block",
+        fitsViewport && "sticky top-28"
+      )}
       aria-label="회원 및 게시판 메뉴"
     >
       {content}
