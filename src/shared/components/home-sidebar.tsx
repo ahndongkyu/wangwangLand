@@ -261,9 +261,7 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
     <section key={group.label} aria-labelledby={`${idPrefix}menu-group-${index}`}>
       <h2 id={`${idPrefix}menu-group-${index}`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">{group.label}</h2>
       <nav className="mt-2 grid gap-1 pl-3" aria-label={group.label}>
-        {group.items.map(([href, label]) => href === "/volunteer" ? (
-          <Link key={href} href={href} className="volunteer-menu-action flex min-h-11 items-center justify-between rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none">{label}<ChevronRight className="size-4" aria-hidden /></Link>
-        ) : <SidebarLink key={href} href={href} label={label} />)}
+        {group.items.map(([href, label]) => <SidebarLink key={href} href={href} label={label} highlight={href === "/volunteer"} />)}
       </nav>
     </section>
   ))}</>
@@ -272,9 +270,11 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
 function SidebarLink({
   href,
   label,
+  highlight = false,
 }: {
   href: string
   label: string
+  highlight?: boolean
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -295,10 +295,11 @@ function SidebarLink({
         "relative flex min-h-11 items-center rounded-xl border border-transparent px-3 text-sm transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-primary/20 hover:bg-card hover:text-primary hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:bg-primary/10 motion-reduce:transition-none",
         isActive
           ? "border-primary/20 bg-card font-semibold text-primary shadow-sm before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
-          : "text-foreground/80"
+          : "text-foreground/80",
+        highlight && "volunteer-menu-link"
       )}
     >
-      <span className="truncate">{label}</span>
+      <span className={cn("truncate", highlight && "volunteer-menu-label font-medium text-primary")}>{label}</span>
     </Link>
   )
 }

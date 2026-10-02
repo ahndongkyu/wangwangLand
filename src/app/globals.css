@@ -254,37 +254,25 @@
 }
 
 /* NEW 뱃지 반짝거리는 효과 — 하이라이트 + 약간의 펄스 */
-@keyframes volunteer-menu-sheen {
-  0%, 76% { transform: translateX(-110%); }
-  96%, 100% { transform: translateX(110%); }
+@keyframes volunteer-menu-text-glow {
+  0%, 65%, 100% { text-shadow: 0 0 0 transparent; }
+  82% { text-shadow: 0 0 8px color-mix(in srgb, var(--primary) 40%, transparent); }
 }
 
-.volunteer-menu-action {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
+.volunteer-menu-label {
+  animation: volunteer-menu-text-glow 7s ease-in-out infinite;
 }
 
-.volunteer-menu-action::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 14%) 50%, transparent 70%);
-  transform: translateX(-110%);
-  animation: volunteer-menu-sheen 7s ease-in-out infinite;
-}
-
-@media (hover: hover) {
-  .volunteer-menu-action:hover::after {
-    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 22%) 50%, transparent 70%);
-  }
+.volunteer-menu-link:hover .volunteer-menu-label,
+.volunteer-menu-link:focus-visible .volunteer-menu-label {
+  animation: none;
+  text-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .volunteer-menu-action::after {
-    display: none;
+  .volunteer-menu-label {
     animation: none;
+    text-shadow: none;
   }
 }
 
