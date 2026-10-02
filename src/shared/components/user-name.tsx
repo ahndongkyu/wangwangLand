@@ -11,15 +11,15 @@ interface Props {
   className?: string
 }
 
-const ROLE_BORDER: Record<UserRole, string> = {
-  member:      "border-border text-foreground/80",
-  staff:       "border-amber-500/70 text-amber-700 dark:text-amber-400",
-  admin:       "border-red-500/70 text-red-700 dark:text-red-400",
+const ROLE_COLOR: Record<UserRole, string> = {
+  member: "text-foreground/80",
+  staff: "text-primary",
+  admin: "text-primary",
 }
 
 /**
  * 작성자/회원 이름 표시 컴포넌트.
- * - 권한(role) → 닉네임 둘레 테두리 색
+ * - 운영진 닉네임은 배경과 테두리 없이 강조색으로 표시합니다.
  */
 export function UserName({
   nickname,
@@ -28,13 +28,14 @@ export function UserName({
   className,
 }: Props) {
   const key = normalizeMemberRole(role)
-  const border = ROLE_BORDER[key]
-  const padding = size === "md" ? "px-2.5 py-0.5 text-sm" : "px-2 py-[1px] text-xs"
+  const color = ROLE_COLOR[key]
+  const fontSize = size === "md" ? "text-sm" : "text-xs"
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className={cn("inline-flex items-center rounded-full border font-semibold", padding, border)}>
+    <span className={cn("inline-flex min-w-0 max-w-full items-center", className)}>
+      <span className={cn("break-all font-semibold", fontSize, color)}>
         {nickname}
+        {key !== "member" && <span className="sr-only"> ({key === "admin" ? "관리자" : "운영진"})</span>}
       </span>
     </span>
   )

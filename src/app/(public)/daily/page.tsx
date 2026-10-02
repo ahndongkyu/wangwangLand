@@ -8,11 +8,11 @@ import { MarkPageSeen } from "@/shared/components/mark-page-seen"
 import { markDailySeenInDB } from "@/features/daily/api/mutations"
 import { markStoriesSeenInDB } from "@/features/stories/api/mutations"
 import { Pagination } from "@/shared/components/pagination"
-import { PostListRow } from "@/shared/components/post-list-row"
+import { BoardListRow as PostListRow, BoardListHeader } from "@/shared/components/board-list-row"
 import { SearchBox } from "@/shared/components/search-box"
 import { WriteButton } from "@/shared/components/write-button"
 import { ScrollRestorer } from "@/shared/components/scroll-restorer"
-import { cn, stripHtml } from "@/shared/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 export const metadata: Metadata = { title: "왕왕랜드 이야기", description: "일상부터 자유로운 이야기, 봉사와 입양 후기까지 함께 나눠요." }
 export const revalidate = 60
@@ -45,7 +45,7 @@ export default async function DailyPage({ searchParams }: { searchParams: Promis
         {["전체", ...COMMUNITY_TYPES].map(type => <Link key={type} href={type === "전체" ? "/daily" : `/daily?category=${encodeURIComponent(type)}`} aria-current={(category ?? "전체") === type ? "page" : undefined} className={cn("inline-flex min-h-11 items-center rounded-full border px-5 text-sm font-semibold transition-colors", (category ?? "전체") === type ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:bg-accent")}>{type}</Link>)}
       </nav>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4"><SearchBox placeholder="제목으로 검색" className="max-w-sm" /><p className="text-sm text-muted-foreground">총 {total}건</p></div>
-      {posts.length ? <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">{posts.map(post => <li key={`${post.source}-${post.id}`}><PostListRow href={post.href} title={post.title} badge={<span className="text-xs font-semibold text-primary">{post.category}</span>} thumbnail={post.images[0] ?? null} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} date={post.date} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCounts : storyCounts)[post.id] ?? 0} newAfter={post.source === "thanks" ? undefined : post.source === "daily" ? profile?.daily_last_seen_at : profile?.stories_last_seen_at} /></li>)}</ul> : <p className="rounded-xl border border-dashed border-border px-6 py-16 text-center text-muted-foreground">{query ? "검색 결과가 없습니다." : "아직 등록된 이야기가 없습니다."}</p>}
+      {posts.length ? <div className="overflow-hidden rounded-xl border border-border bg-card"><BoardListHeader /><ul className="divide-y divide-border">{posts.map(post => <li key={`${post.source}-${post.id}`}><PostListRow href={post.href} title={post.title} category={post.category} author={post.author} date={post.date} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCounts : storyCounts)[post.id] ?? 0} newAfter={post.source === "thanks" ? undefined : post.source === "daily" ? profile?.daily_last_seen_at : profile?.stories_last_seen_at} /></li>)}</ul></div> : <p className="rounded-xl border border-dashed border-border px-6 py-16 text-center text-muted-foreground">{query ? "검색 결과가 없습니다." : "아직 등록된 이야기가 없습니다."}</p>}
       <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))} basePath="/daily" searchParams={{ q: query || undefined, category }} />
     </div>
   )

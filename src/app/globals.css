@@ -118,42 +118,50 @@
 }
 
 .dark {
-  /* Warm charcoal and apricot */
-  --admin-nav: #20251e;
-  --admin-nav-border: #454e3e;
-  --brand-cream: #242622;
-  --brand-ivory: #2e312b;
-  --brand-action: #eaa077;
-  --brand-action-hover: #f4b48c;
-  --brand-sage: #b8c9ae;
-  --brand-brown: #f5f0e7;
-  --brand-warm-gray: #bcbdb1;
+  /* Neutral charcoal and apricot */
+  color-scheme: dark;
+  --admin-nav-foreground: #f2efeb;
+  --admin-nav-muted: #b9b5b0;
+  --chart-1: #eea078;
+  --chart-2: #a6b9e2;
+  --chart-3: #c6afe2;
+  --chart-4: #e5c77d;
+  --chart-5: #91c7cc;
+  --admin-nav: #17181c;
+  --admin-nav-border: #494c56;
+  --brand-cream: #18191d;
+  --brand-ivory: #2b2d34;
+  --brand-action: #eea078;
+  --brand-action-hover: #f6b38e;
+  --brand-sage: #acb9d0;
+  --brand-brown: #f2efeb;
+  --brand-warm-gray: #b9b5b0;
 
   --background: var(--brand-cream);
   --foreground: var(--brand-brown);
   --card: var(--brand-ivory);
-  --card-foreground: #f5f0e7;
-  --popover: #34372f;
+  --card-foreground: #f2efeb;
+  --popover: #363840;
   --popover-foreground: var(--brand-brown);
   --primary: var(--brand-action);
-  --primary-foreground: #242622;
-  --secondary: #44352b;
-  --secondary-foreground: #f5f0e7;
-  --muted: #35382f;
+  --primary-foreground: #18191d;
+  --secondary: #363840;
+  --secondary-foreground: #f2efeb;
+  --muted: #363840;
   --muted-foreground: var(--brand-warm-gray);
-  --accent: #44352b;
+  --accent: #46332b;
   --accent-foreground: var(--brand-brown);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: #4d5146;
-  --input: #858b7c;
+  --border: #494c56;
+  --input: #848792;
   --ring: var(--brand-action);
-  --sidebar: #292d26;
+  --sidebar: #202126;
   --sidebar-foreground: var(--brand-brown);
   --sidebar-primary: var(--brand-action);
-  --sidebar-primary-foreground: #242622;
-  --sidebar-accent: #44352b;
+  --sidebar-primary-foreground: #18191d;
+  --sidebar-accent: #46332b;
   --sidebar-accent-foreground: var(--brand-brown);
-  --sidebar-border: #4d5146;
+  --sidebar-border: #494c56;
   --sidebar-ring: var(--brand-action);
 }
 
@@ -391,12 +399,12 @@ body:has([data-admin-scope]) {
 }
 .dark [data-admin-scope],
 .dark body:has([data-admin-scope]) {
-  --background: #20241e;
-  --card: #2a3026;
-  --popover: var(--card);
-  --border: #47513f;
-  --chart-2: #b8c9ae;
-  --chart-3: #dec080;
-  --chart-4: #9fb9ce;
-  --chart-5: #c6a4b6;
+  --background: #18191d;
+  --card: #2b2d34;
+  --popover: #363840;
+  --border: #494c56;
+  --chart-2: #a6b9e2;
+  --chart-3: #c6afe2;
+  --chart-4: #e5c77d;
+  --chart-5: #91c7cc;
 }

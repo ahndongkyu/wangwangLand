@@ -23,12 +23,6 @@ import {
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
 
-const ROLE_LABEL: Record<Profile["role"], string> = {
-  admin: "관리자",
-  staff: "운영진",
-  member: "회원",
-}
-
 interface Props {
   profile: Profile | null
   initialFavorites: HomeFavoriteKey[]
@@ -157,59 +151,15 @@ export function HomeSidebar({
       >
         {profile ? (
           <>
-            {pendingCounts ? (
-              pendingCounts.total > 0 ? (
-                <AdminNotificationBell
-                  counts={pendingCounts}
-                  inline
-                  trigger={<SidebarProfileIdentity profile={profile} />}
-                  triggerClassName="p-1"
-                />
-              ) : (
-                <SidebarProfileIdentity profile={profile} />
-              )
-            ) : unreadNotificationCount > 0 ? (
-              <UserNotificationBell
-                notifications={userNotifications}
-                unreadCount={unreadNotificationCount}
-                inline
-                trigger={<SidebarProfileIdentity profile={profile} />}
-                triggerClassName="p-1"
-              />
-            ) : (
+            <Link href="/my" aria-label={`${profile.nickname} 마이페이지`} className="flex rounded-xl p-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <SidebarProfileIdentity profile={profile} />
-            )}
-            <Link
-              href="/my"
-              className="mt-4 flex min-h-11 items-center justify-between rounded-xl border border-border bg-background/70 px-3 text-sm font-semibold text-foreground/80 transition-colors duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
-            >
-              <span className="flex items-center gap-2">
-                마이페이지
-              </span>
-              <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground" aria-hidden />
             </Link>
-            {(profile.role === "staff" || profile.role === "admin") && (
-              <Link
-                href="/admin"
-                className="mt-2 flex min-h-11 items-center justify-between rounded-xl border border-border bg-card/70 px-3 text-xs font-semibold text-foreground transition-colors duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none"
-              >
-                <span className="flex items-center gap-2">
-                  관리자 페이지
-                </span>
-                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
-              </Link>
-            )}
-            <div className="mt-3 pt-3">
-              <form action={signOut}>
-                <button
-                  type="submit"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-secondary text-xs font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-destructive/15 motion-reduce:transition-none"
-                >
-                  <LogOut className="size-4" aria-hidden />
-                  로그아웃
-                </button>
-              </form>
-            </div>
+            {pendingCounts && pendingCounts.total > 0 ? (
+              <AdminNotificationBell counts={pendingCounts} inline trigger={<span>확인할 알림 {pendingCounts.total}건</span>} triggerClassName="mt-3 min-h-11 text-xs" />
+            ) : !pendingCounts && unreadNotificationCount > 0 ? (
+              <UserNotificationBell notifications={userNotifications} unreadCount={unreadNotificationCount} inline trigger={<span>새 알림 {unreadNotificationCount}건</span>} triggerClassName="mt-3 min-h-11 text-xs" />
+            ) : null}
           </>
         ) : (
           <div className="text-center">
@@ -254,14 +204,8 @@ export function HomeSidebar({
         {favoriteEditor}
       </section>
 
-      <Link
-        href="/volunteer"
-        className="flex min-h-12 items-center justify-between rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
-      >
-        봉사 신청하기
-        <ChevronRight className="size-4" aria-hidden />
-      </Link>
       <SidebarMenu idPrefix={idPrefix} />
+      {profile && <form action={signOut}><button type="submit" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><LogOut className="size-4" aria-hidden />로그아웃</button></form>}
     </div>
   )
 
@@ -297,56 +241,32 @@ function SidebarProfileIdentity({ profile }: { profile: Profile }) {
       </span>
       <span className="min-w-0 flex-1 text-left">
         <span className="block break-all font-semibold leading-snug text-foreground">
-          {profile.nickname}님
-        </span>
-        <span className="mt-1 block text-xs text-muted-foreground">
-          {ROLE_LABEL[profile.role]}
+          {profile.nickname}
         </span>
       </span>
     </span>
   )
 }
 
+const MENU_GROUPS = [
+  { label: "소식·이야기", items: [["/notice", "공지사항"], ["/daily", "왕왕랜드 이야기"]] },
+  { label: "아이들·입양", items: [["/dogs", "입양 대기 강아지"], ["/cats", "보호 중인 고양이"], ["/adopt", "입양 문의"]] },
+  { label: "봉사", items: [["/volunteer", "봉사 신청하기"], ["/calendar", "활동 일정"]] },
+  { label: "후원", items: [["/donate", "후원하기"], ["/expenses", "지출 내역"]] },
+  { label: "보호소 안내", items: [["/about", "센터 소개"], ["/contact", "오시는 길"]] },
+] as const
+
 function SidebarMenu({ idPrefix }: { idPrefix: string }) {
-  return (
-    <>
-      <section aria-labelledby={`${idPrefix}board-menu-heading`}>
-        <h2
-          id={`${idPrefix}board-menu-heading`}
-          className="px-2 text-xs font-bold tracking-wide text-foreground/70"
-        >
-          보호소 소식
-        </h2>
-        <nav className="mt-2 grid gap-1 pl-3" aria-label="보호소 소식">
-          <SidebarLink href="/notice" label="공지사항" />
-          <SidebarLink href="/expenses" label="지출 내역" />
-        </nav>
-      </section>
-      <section aria-labelledby={`${idPrefix}community-menu-heading`}>
-        <h2 id={`${idPrefix}community-menu-heading`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">회원 커뮤니티</h2>
-        <nav className="mt-2 grid gap-1 pl-3" aria-label="회원 커뮤니티">
-          <SidebarLink href="/daily" label="왕왕랜드 이야기" />
-        </nav>
-      </section>
-      <section aria-labelledby={`${idPrefix}participation-menu-heading`}>
-        <h2
-          id={`${idPrefix}participation-menu-heading`}
-          className="px-2 text-xs font-bold tracking-wide text-foreground/70"
-        >
-          참여·안내
-        </h2>
-        <nav className="mt-2 grid gap-1 pl-3" aria-label="참여 메뉴">
-          <SidebarLink href="/dogs" label="입양 대기 강아지" />
-          <SidebarLink href="/cats" label="보호 중인 고양이" />
-          <SidebarLink href="/calendar" label="활동 일정" />
-          <SidebarLink href="/adopt" label="입양 문의" />
-          <SidebarLink href="/donate" label="후원하기" />
-          <SidebarLink href="/about" label="센터 소개" />
-          <SidebarLink href="/contact" label="오시는 길" />
-        </nav>
-      </section>
-    </>
-  )
+  return <>{MENU_GROUPS.map((group, index) => (
+    <section key={group.label} aria-labelledby={`${idPrefix}menu-group-${index}`}>
+      <h2 id={`${idPrefix}menu-group-${index}`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">{group.label}</h2>
+      <nav className="mt-2 grid gap-1 pl-3" aria-label={group.label}>
+        {group.items.map(([href, label]) => href === "/volunteer" ? (
+          <Link key={href} href={href} className="flex min-h-11 items-center justify-between rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{label}<ChevronRight className="size-4" aria-hidden /></Link>
+        ) : <SidebarLink key={href} href={href} label={label} />)}
+      </nav>
+    </section>
+  ))}</>
 }
 
 function SidebarLink({

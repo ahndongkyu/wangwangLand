@@ -1,11 +1,11 @@
+import { parseNoticePrefix, stripNoticePrefix } from "@/features/notices/components/notice-type-badge"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronRight, Eye, PenLine } from "lucide-react"
+import { ChevronRight, PenLine } from "lucide-react"
 
 import { fetchCommentCounts } from "@/features/comments"
 import { listCommunityPosts } from "@/features/daily/api/community-queries"
-import { PostListRow } from "@/shared/components/post-list-row"
-import { stripHtml } from "@/shared/lib/utils"
+import { BoardListRow as PostListRow, BoardListHeader } from "@/shared/components/board-list-row"
 import { listDogsForHome } from "@/features/dogs"
 import { getCurrentProfile } from "@/features/members"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
@@ -142,10 +142,10 @@ export default async function HomePage({
                   글쓰기
                 </Link>
               </div>
-              <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+              <div className="grid items-start gap-6">
                 <article className="overflow-hidden rounded-xl border border-border bg-card">
                   <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기 · 후원</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
-                  <div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} badge={<span className="text-xs text-primary">{post.category}</span>} thumbnail={post.images[0]} excerpt={stripHtml(post.content ?? "").slice(0, 100)} author={post.author} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
+                  <BoardListHeader /><div className="divide-y divide-border">{dailyResult.posts.map(post => <PostListRow key={`${post.source}-${post.id}`} href={post.href} title={post.title} category={post.category} author={post.author} date={post.date} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
                   {dailyResult.posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">나누고 싶은 이야기가 있다면 편하게 남겨주세요.</p>}
                 </article>
                 <div className="grid gap-6">
@@ -154,9 +154,13 @@ export default async function HomePage({
                   href="/notice"
                   posts={noticeResult.notices.map((notice) => ({
                     id: notice.id,
-                    title: notice.title,
+                    title: stripNoticePrefix(notice.title),
+                    category: parseNoticePrefix(notice.title) ?? "공지",
                     href: `/notice/${notice.id}`,
-                    author: notice.author?.nickname ?? "왕왕랜드",
+                    author: notice.author,
+                    date: notice.published_at ?? notice.created_at,
+                    pinned: notice.is_pinned,
+                    attachmentCount: notice.attachments?.length ?? 0,
                     viewCount: notice.view_count ?? 0,
                     commentCount: noticeCommentCounts[notice.id] ?? 0,
                   }))}
@@ -168,8 +172,11 @@ export default async function HomePage({
                   posts={expenseResult.notices.map((post) => ({
                     id: post.id,
                     title: post.title,
+                    category: "지출",
                     href: `/expenses/${post.id}`,
-                    author: post.author?.nickname ?? "왕왕랜드",
+                    author: post.author,
+                    date: post.published_at ?? post.created_at,
+                    attachmentCount: post.attachments?.length ?? 0,
                     viewCount: post.view_count ?? 0,
                     commentCount: expenseCommentCounts[post.id] ?? 0,
                   }))}
@@ -312,7 +319,6 @@ function RecentBoard({
   posts: RecentPostPreview[]
   emptyMessage?: string
 }) {
-  const slots = Array.from({ length: RECENT_POST_COUNT }, (_, index) => posts[index] ?? null)
 
   return (
     <article
@@ -323,50 +329,10 @@ function RecentBoard({
           {title}
         </h3>
       </div>
-      <div className="grid grid-rows-[auto_repeat(5,minmax(0,1fr))]">
-        <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 bg-secondary/60 px-3 text-[10px] font-semibold text-muted-foreground">
-          <span>제목</span>
-          <span className="text-right">작성자</span>
-          <span className="text-right">조회</span>
-        </div>
-        {slots.map((post, index) =>
-          post ? (
-            <Link
-              key={post.id}
-              href={post.href}
-              className="group grid min-h-11 min-w-0 grid-cols-[minmax(0,1fr)_56px_44px] items-center gap-1.5 border-b border-border px-3 text-xs transition-colors duration-150 last:border-b-0 hover:bg-primary/10 focus-visible:z-10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50 active:bg-primary/15 motion-reduce:transition-none"
-            >
-              <span className="flex min-w-0 items-center text-foreground/80">
-                <span className="truncate transition-colors duration-150 group-hover:text-primary group-hover:underline group-hover:decoration-primary/40 group-hover:underline-offset-4 group-focus-visible:text-primary motion-reduce:transition-none" title={post.title}>
-                  {post.title}
-                </span>
-                {post.commentCount > 0 && (
-                  <span className="ml-1 shrink-0 font-semibold text-primary">
-                    ({post.commentCount})
-                  </span>
-                )}
-              </span>
-              <span
-                className="truncate text-right text-[11px] text-muted-foreground"
-                title={post.author}
-              >
-                {post.author}
-              </span>
-              <span className="inline-flex items-center justify-end gap-1 text-[11px] tabular-nums text-muted-foreground">
-                <Eye className="size-3" aria-hidden />
-                {post.viewCount}
-              </span>
-            </Link>
-          ) : (
-            <div
-              key={`empty-${index}`}
-              className="flex min-h-10 items-center border-b border-border px-3 text-xs text-muted-foreground/70 last:border-b-0"
-              aria-hidden={index > 0}
-            >
-              {index === 0 ? emptyMessage : ""}
-            </div>
-          )
-        )}
+      <BoardListHeader />
+      <div className="divide-y divide-border">
+        {posts.slice(0, RECENT_POST_COUNT).map(post => <PostListRow key={post.id} {...post} />)}
+        {posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>}
       </div>
       <Link
         href={href}
@@ -382,8 +348,12 @@ function RecentBoard({
 interface RecentPostPreview {
   id: string
   title: string
+  category: string
   href: string
-  author: string
+  author: { nickname: string; role: string } | null
+  date: string
+  pinned?: boolean
+  attachmentCount?: number
   viewCount: number
   commentCount: number
 }

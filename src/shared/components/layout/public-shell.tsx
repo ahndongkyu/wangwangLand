@@ -46,7 +46,7 @@ export function PublicShell({
             <section
               className={cn(
                 "min-w-0",
-                pathname !== "/" && "rounded-2xl border border-border bg-card"
+                pathname !== "/" && "rounded-2xl border border-border bg-card dark:bg-sidebar"
               )}
             >
               {children}

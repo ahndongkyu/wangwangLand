@@ -1,5 +1,5 @@
+import { BoardListRow as PostListRow, BoardListHeader } from "@/shared/components/board-list-row"
 import type { Metadata } from "next"
-import { Pin } from "lucide-react"
 
 import { listNotices, MarkNoticesSeen } from "@/features/notices"
 import { fetchCommentCounts } from "@/features/comments"
@@ -7,7 +7,7 @@ import { getCurrentProfile } from "@/features/members"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
 import { ScrollRestorer } from "@/shared/components/scroll-restorer"
-import { NoticeTypeBadge, stripNoticePrefix } from "@/features/notices/components/notice-type-badge"
+import { parseNoticePrefix, stripNoticePrefix } from "@/features/notices/components/notice-type-badge"
 
 export const metadata: Metadata = {
   title: "공지사항",
@@ -37,7 +37,9 @@ export default async function NoticePage({
   ])
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const isLoggedIn = !!profile
-  const noticesLastSeenAt = profile?.notices_last_seen_at ?? null
+  // 서버 응답 생성 시점을 기준으로 비회원에게 최근 이틀의 새 글을 표시한다.
+  // eslint-disable-next-line react-hooks/purity
+  const noticesLastSeenAt = profile?.notices_last_seen_at ?? new Date(Date.now() - 2 * 86400000).toISOString()
 
   const commentCounts = await fetchCommentCounts("notice", notices.map((n) => n.id))
 
@@ -65,78 +67,14 @@ export default async function NoticePage({
           {activeQuery ? `'${activeQuery}' 검색 결과가 없습니다.` : "아직 등록된 공지가 없어요."}
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <th className="px-4 py-3 text-left">제목</th>
-                <th className="hidden sm:table-cell w-24 px-4 py-3 text-center whitespace-nowrap">작성자</th>
-                <th className="w-20 px-4 py-3 text-center whitespace-nowrap">날짜</th>
-                <th className="w-14 px-4 py-3 text-right whitespace-nowrap">조회</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notices.map((n) => {
-                const commentCount = commentCounts[n.id] ?? 0
-                const isNew = noticesLastSeenAt
-                  ? new Date(n.published_at ?? n.created_at) > new Date(noticesLastSeenAt)
-                  : new Date(n.published_at ?? n.created_at) > new Date(Date.now() - 2 * 86400_000)
-
-                return (
-                  <tr
-                    key={n.id}
-                    className={`border-b border-border last:border-0 transition-colors hover:bg-secondary/30 ${
-                      n.is_pinned ? "bg-primary/5" : ""
-                    }`}
-                  >
-                    {/* 제목 */}
-                    <td className="px-4 py-3">
-                      <a href={`/notice/${n.id}`} className="flex items-start gap-2 group">
-                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                          {n.is_pinned && (
-                            <Pin className="size-3 text-amber-500" />
-                          )}
-                          <NoticeTypeBadge title={n.title} />
-                        </div>
-                        <span className="font-medium text-foreground group-hover:underline line-clamp-1">
-                          {stripNoticePrefix(n.title)}
-                        </span>
-                        {isNew && (
-                          <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                            N
-                          </span>
-                        )}
-                        {commentCount > 0 && (
-                          <span className="shrink-0 text-xs text-primary font-semibold">
-                            [{commentCount}]
-                          </span>
-                        )}
-                      </a>
-                    </td>
-
-                    {/* 작성자 */}
-                    <td className="hidden sm:table-cell px-4 py-3 text-xs text-muted-foreground whitespace-nowrap text-center">
-                      {n.author?.nickname ?? "—"}
-                    </td>
-
-                    {/* 날짜 */}
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap text-center">
-                      {new Date(n.published_at ?? n.created_at).toLocaleDateString("ko-KR", {
-                        month: "2-digit",
-                        day: "2-digit",
-                      }).replace(/\.$/, "")}
-                    </td>
-
-                    {/* 조회 */}
-                    <td className="px-4 py-3 text-xs text-muted-foreground text-right whitespace-nowrap">
-                      {n.view_count.toLocaleString()}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <div className="overflow-hidden rounded-xl border border-border bg-card"><BoardListHeader /><ul className="divide-y divide-border">
+          {notices.map((post) => <li key={post.id}>
+            <PostListRow href={`/notice/${post.id}`} title={stripNoticePrefix(post.title)}
+              author={post.author} date={post.published_at ?? post.created_at} viewCount={post.view_count ?? 0}
+              commentCount={commentCounts[post.id] ?? 0} attachmentCount={post.attachments?.length ?? 0}
+              pinned={post.is_pinned} category={parseNoticePrefix(post.title) ?? "공지"} newAfter={noticesLastSeenAt} />
+          </li>)}
+        </ul></div>
       )}
 
       <Pagination

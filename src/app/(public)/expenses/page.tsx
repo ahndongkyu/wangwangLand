@@ -1,12 +1,10 @@
-import Link from "next/link"
+import { BoardListRow as PostListRow, BoardListHeader } from "@/shared/components/board-list-row"
 import type { Metadata } from "next"
-import { Paperclip } from "lucide-react"
 
 import { listNotices } from "@/features/notices"
 import { fetchCommentCounts } from "@/features/comments"
 import { Pagination } from "@/shared/components/pagination"
 import { SearchBox } from "@/shared/components/search-box"
-import { formatShortDate } from "@/shared/lib/utils"
 
 export const metadata: Metadata = { title: "지출 내역" }
 export const dynamic = "force-dynamic"
@@ -32,27 +30,14 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       {notices.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">{query ? "검색 결과가 없습니다." : "아직 공개된 지출 내역이 없습니다."}</div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead><tr className="border-b border-border bg-secondary/30 text-xs text-muted-foreground">
-              <th className="px-4 py-3 text-left">제목</th><th className="hidden w-24 px-4 py-3 sm:table-cell">작성자</th><th className="w-16 px-3 py-3">날짜</th><th className="w-14 px-3 py-3 text-right">조회</th>
-            </tr></thead>
-            <tbody>{notices.map((post) => (
-              <tr key={post.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                <td className="px-4 py-3">
-                  <Link href={`/expenses/${post.id}`} className="flex min-w-0 items-center gap-1.5 hover:underline">
-                    <span className="line-clamp-1 font-medium">{post.title}</span>
-                    {(counts[post.id] ?? 0) > 0 && <span className="shrink-0 text-xs font-semibold text-primary">({counts[post.id]})</span>}
-                    {post.attachments?.length > 0 && <Paperclip className="size-3.5 shrink-0 text-muted-foreground" aria-label="첨부파일 있음" />}
-                  </Link>
-                </td>
-                <td className="hidden max-w-24 truncate px-4 py-3 text-center text-xs text-muted-foreground sm:table-cell">{post.author?.nickname ?? "왕왕랜드"}</td>
-                <td className="px-3 py-3 text-center text-xs text-muted-foreground">{formatShortDate(post.published_at ?? post.created_at)}</td>
-                <td className="px-3 py-3 text-right text-xs text-muted-foreground">{post.view_count ?? 0}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
+        <div className="overflow-hidden rounded-xl border border-border bg-card"><BoardListHeader /><ul className="divide-y divide-border">
+          {notices.map((post) => <li key={post.id}>
+            <PostListRow category="지출" href={`/expenses/${post.id}`} title={post.title}
+              author={post.author} date={post.published_at ?? post.created_at} viewCount={post.view_count ?? 0}
+              commentCount={counts[post.id] ?? 0} attachmentCount={post.attachments?.length ?? 0}
+              pinned={post.is_pinned} />
+          </li>)}
+        </ul></div>
       )}
       <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(total / PAGE_SIZE))} basePath="/expenses" searchParams={{ q: query || undefined }} />
     </div>

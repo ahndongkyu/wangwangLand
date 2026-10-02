@@ -52,10 +52,11 @@ export function Header({
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileBackHref = getMobileBackHref(pathname)
+  const canManage = profile?.role === "admin" || profile?.role === "staff"
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur"
+      className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur dark:bg-sidebar/95"
     >
       <div
         className="relative mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between px-4 lg:h-24 md:px-8 2xl:px-12"
@@ -83,12 +84,12 @@ export function Header({
             width={2172}
             height={724}
             sizes="(min-width: 1024px) 260px, 180px"
-            className="h-auto w-[180px] shrink-0 rounded-md dark:bg-[#fbf8f3] lg:w-[260px]"
+            className={cn("h-auto shrink-0 rounded-md dark:bg-[#fbf8f3] lg:w-[260px]", canManage ? "w-[132px] sm:w-[180px]" : "w-[180px]")}
             preload
           />
         </Link>
 
-        <div className="ml-auto hidden items-center gap-1.5 lg:flex">
+        <div className="hidden items-center gap-1 lg:flex">
           {SITE.sns.kakaoChannel && (
             <HeaderChannelLink
               href={SITE.sns.kakaoChannel}
@@ -109,13 +110,17 @@ export function Header({
               <InstaIcon />
             </HeaderChannelLink>
           )}
+        </div>
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
+          {canManage && <Link href="/admin" className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">관리자 페이지 <span className="ml-1" aria-hidden>↗</span></Link>}
           <ThemeToggle />
         </div>
 
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
         <div
-          className="ml-auto flex min-w-0 items-center justify-end gap-1.5 lg:hidden"
+          className="ml-auto flex min-w-0 items-center justify-end gap-1 lg:hidden"
         >
+          {canManage && <Link href="/admin" aria-label="관리자 페이지" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-xs font-semibold text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">관리자</Link>}
           {!profile && (
             <Link
               href="/login"

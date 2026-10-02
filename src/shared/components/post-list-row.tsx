@@ -1,9 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Eye, Pin } from "lucide-react"
+import { Eye, Pin, Paperclip } from "lucide-react"
 
 import { UserName } from "@/shared/components/user-name"
-import { formatShortDate } from "@/shared/lib/utils"
+import { cn, formatShortDate } from "@/shared/lib/utils"
 
 interface Author {
   nickname: string
@@ -11,6 +11,8 @@ interface Author {
 }
 
 interface Props {
+  compact?: boolean
+  attachmentCount?: number
   href: string
   title: string
   /** 제목 앞에 붙는 카테고리/타입 뱃지 (예: [이벤트]) */
@@ -39,7 +41,7 @@ interface Props {
 
 function isNew(date: string | null | undefined, withinDays: number, after?: string | null): boolean {
   if (!date) return false
-  if (after) return date > after
+  if (after) return new Date(date).getTime() > new Date(after).getTime()
   if (withinDays <= 0) return false
   // diff < 0 허용: posted_at이 UTC 기준 약간 미래여도 NEW 표시 (한국 시간 오늘 작성)
   const diff = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
@@ -51,6 +53,8 @@ function isNew(date: string | null | undefined, withinDays: number, after?: stri
  * 모바일/데스크탑 동일 레이아웃: [썸네일] [제목·요약·메타]
  */
 export function PostListRow({
+  compact = false,
+  attachmentCount = 0,
   href,
   title,
   badge,
@@ -70,7 +74,7 @@ export function PostListRow({
   return (
     <Link
       href={href}
-      className="group flex items-stretch gap-4 px-4 py-5 transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:gap-5 sm:px-5 sm:py-6"
+      className={cn("group flex items-stretch gap-4 px-4 transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring motion-reduce:transition-none sm:gap-5 sm:px-5", compact ? "py-3.5" : "py-5 sm:py-6")}
     >
       {/* 썸네일 (있을 때만) */}
       {thumbnail ? (
@@ -83,17 +87,13 @@ export function PostListRow({
             className="object-cover"
           />
         </div>
-      ) : pinned ? (
-        <div className="flex size-16 shrink-0 items-center justify-center rounded-md bg-primary/10 sm:size-20">
-          <Pin className="size-5 text-primary" aria-label="상단 고정" />
-        </div>
       ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-1.5">
         {/* 제목 + 부제 */}
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            {pinned && thumbnail && (
+          {(pinned || badge || fresh || statusBadge) && <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            {pinned && (
               <Pin className="size-3.5 shrink-0 text-primary" aria-label="상단 고정" />
             )}
             {badge && <span className="shrink-0">{badge}</span>}
@@ -102,6 +102,9 @@ export function PostListRow({
                 NEW
               </span>
             )}
+            {statusBadge && <span>{statusBadge}</span>}
+          </div>}
+          <div className="flex items-baseline gap-1.5">
             <h3 className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-relaxed text-foreground group-hover:text-primary sm:text-base">
               {title}
             </h3>
@@ -109,9 +112,6 @@ export function PostListRow({
               <span className="shrink-0 text-sm font-semibold text-primary">
                 ({commentCount})
               </span>
-            )}
-            {statusBadge && (
-              <span className="shrink-0">{statusBadge}</span>
             )}
           </div>
           {subTitle && (
@@ -136,19 +136,20 @@ export function PostListRow({
           )}
           {date && (
             <>
-              <span aria-hidden className="text-muted-foreground/40">·</span>
-              <span>{formatShortDate(date)}</span>
+              {author && <span aria-hidden className="text-muted-foreground/40">·</span>}
+              <span className="whitespace-nowrap">{formatShortDate(date)}</span>
             </>
           )}
           {typeof viewCount === "number" && (
             <>
-              <span aria-hidden className="text-muted-foreground/40">·</span>
+              {(author || date) && <span aria-hidden className="text-muted-foreground/40">·</span>}
               <span className="inline-flex items-center gap-0.5" aria-label={`조회 ${viewCount}회`}>
                 <Eye className="size-3" aria-hidden />
                 {viewCount}
               </span>
             </>
           )}
+          {attachmentCount > 0 && <span className="inline-flex items-center gap-1 whitespace-nowrap" aria-label={`첨부파일 ${attachmentCount}개`}><Paperclip className="size-3" aria-hidden />{attachmentCount}</span>}
         </div>
       </div>
     </Link>
