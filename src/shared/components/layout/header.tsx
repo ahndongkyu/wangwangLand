@@ -79,9 +79,7 @@ export function Header({
           )}
         >
           <HeaderLogo
-            sizes="(min-width: 1024px) 260px, 180px"
             className={cn("lg:w-[260px]", canManage ? "w-[132px] sm:w-[180px]" : "w-[180px]")}
-            priority
           />
         </Link>
 
