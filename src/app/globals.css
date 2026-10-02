@@ -254,6 +254,40 @@
 }
 
 /* NEW 뱃지 반짝거리는 효과 — 하이라이트 + 약간의 펄스 */
+@keyframes volunteer-menu-sheen {
+  0%, 76% { transform: translateX(-110%); }
+  96%, 100% { transform: translateX(110%); }
+}
+
+.volunteer-menu-action {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.volunteer-menu-action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 14%) 50%, transparent 70%);
+  transform: translateX(-110%);
+  animation: volunteer-menu-sheen 7s ease-in-out infinite;
+}
+
+@media (hover: hover) {
+  .volunteer-menu-action:hover::after {
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 22%) 50%, transparent 70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .volunteer-menu-action::after {
+    display: none;
+    animation: none;
+  }
+}
+
 @keyframes new-shine {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(216, 90, 48, 0.6);

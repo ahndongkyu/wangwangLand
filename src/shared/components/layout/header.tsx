@@ -1,6 +1,6 @@
 "use client"
 
-import Image from "next/image"
+import { HeaderLogo } from "@/shared/components/header-logo"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronLeft, Menu as MenuIcon, X } from "lucide-react"
@@ -78,22 +78,26 @@ export function Header({
             mobileBackHref ? "hidden lg:flex" : "flex"
           )}
         >
-          <Image
-            src={SITE.headerLogo}
-            alt={SITE.name}
-            width={2172}
-            height={724}
+          <HeaderLogo
             sizes="(min-width: 1024px) 260px, 180px"
-            className={cn("h-auto shrink-0 rounded-md dark:bg-[#fbf8f3] lg:w-[260px]", canManage ? "w-[132px] sm:w-[180px]" : "w-[180px]")}
-            preload
+            className={cn("lg:w-[260px]", canManage ? "w-[132px] sm:w-[180px]" : "w-[180px]")}
+            priority
           />
         </Link>
 
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="ml-auto hidden items-center gap-1 xl:flex">
+          {canManage && (
+            <Link href="/admin" aria-label="관리자 페이지" className="inline-flex min-h-11 items-center whitespace-nowrap rounded-lg px-2 text-xs font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <span className="min-[1440px]:hidden">관리자</span>
+              <span className="hidden min-[1440px]:inline">관리자 페이지</span>
+              <span className="ml-1" aria-hidden>↗</span>
+            </Link>
+          )}
           {SITE.sns.kakaoChannel && (
             <HeaderChannelLink
               href={SITE.sns.kakaoChannel}
               label="카카오톡 문의"
+              compactLabel="카카오톡"
             >
               <KakaoIcon />
             </HeaderChannelLink>
@@ -110,15 +114,12 @@ export function Header({
               <InstaIcon />
             </HeaderChannelLink>
           )}
-        </div>
-        <div className="ml-auto hidden items-center gap-2 lg:flex">
-          {canManage && <Link href="/admin" className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">관리자 페이지 <span className="ml-1" aria-hidden>↗</span></Link>}
           <ThemeToggle />
         </div>
 
         {/* 오른쪽: 유저/로그인 + 모바일 햄버거 */}
         <div
-          className="ml-auto flex min-w-0 items-center justify-end gap-1 lg:hidden"
+          className="ml-auto flex min-w-0 items-center justify-end gap-1 xl:hidden"
         >
           {canManage && <Link href="/admin" aria-label="관리자 페이지" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-xs font-semibold text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">관리자</Link>}
           {!profile && (
@@ -141,7 +142,7 @@ export function Header({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="size-11 rounded-lg p-0 shadow-none lg:hidden"
+                  className="size-11 rounded-lg p-0 shadow-none xl:hidden"
                   aria-label="메뉴 열기"
                 />
               }
@@ -164,13 +165,7 @@ export function Header({
                   onClick={() => setMobileOpen(false)}
                   className="flex min-w-0 items-center gap-2.5"
                 >
-                  <Image
-                    src={SITE.headerLogo}
-                    alt={`${SITE.name} 로고`}
-                    width={2172}
-                    height={724}
-                    className="h-auto w-[180px] rounded-md dark:bg-[#fbf8f3]"
-                  />
+                  <HeaderLogo className="w-[180px]" />
                 </Link>
                 <SheetClose
                   render={
@@ -278,10 +273,12 @@ function KakaoIcon() {
 function HeaderChannelLink({
   href,
   label,
+  compactLabel,
   className,
 }: {
   href: string
   label: string
+  compactLabel?: string
   className?: string
   children: React.ReactNode
 }) {
@@ -297,7 +294,13 @@ function HeaderChannelLink({
         className
       )}
     >
-      {label}<span aria-hidden>↗</span>
+      {compactLabel ? (
+        <>
+          <span className="min-[1440px]:hidden">{compactLabel}</span>
+          <span className="hidden min-[1440px]:inline">{label}</span>
+        </>
+      ) : label}
+      <span aria-hidden>↗</span>
     </a>
   )
 }

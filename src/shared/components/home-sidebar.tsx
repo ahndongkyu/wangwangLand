@@ -144,14 +144,14 @@ export function HomeSidebar({
     <div className="space-y-8">
       <section
         className={cn(
-          "rounded-[22px] border border-border bg-card p-4 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)] motion-reduce:transition-none",
+          "rounded-[22px] border border-border bg-card p-3 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)] motion-reduce:transition-none",
           hasSidebarNotification &&
             "animate-profile-notification-glow border-primary/70"
         )}
       >
         {profile ? (
           <>
-            <Link href="/my" aria-label={`${profile.nickname} 마이페이지`} className="flex rounded-xl p-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link href="/my" aria-label={`${profile.nickname} 마이페이지`} title={profile.nickname} className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-xl p-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <SidebarProfileIdentity profile={profile} />
               <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground" aria-hidden />
             </Link>
@@ -225,22 +225,22 @@ export function HomeSidebar({
 
 function SidebarProfileIdentity({ profile }: { profile: Profile }) {
   return (
-    <span className="flex w-full min-w-0 items-center gap-3">
-      <span className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-border bg-muted">
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="relative size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
         {profile.avatar_url ? (
           <Image
             src={profile.avatar_url}
             alt={profile.nickname}
             fill
-            sizes="48px"
+            sizes="36px"
             className="object-cover"
           />
         ) : (
-          <User className="size-full p-2.5 text-primary" aria-hidden />
+          <User className="size-full p-2 text-primary" aria-hidden />
         )}
       </span>
       <span className="min-w-0 flex-1 text-left">
-        <span className="block break-all font-semibold leading-snug text-foreground">
+        <span className="block whitespace-normal break-all text-[13px] font-medium leading-5 text-foreground">
           {profile.nickname}
         </span>
       </span>
@@ -262,7 +262,7 @@ function SidebarMenu({ idPrefix }: { idPrefix: string }) {
       <h2 id={`${idPrefix}menu-group-${index}`} className="px-2 text-xs font-bold tracking-wide text-foreground/70">{group.label}</h2>
       <nav className="mt-2 grid gap-1 pl-3" aria-label={group.label}>
         {group.items.map(([href, label]) => href === "/volunteer" ? (
-          <Link key={href} href={href} className="flex min-h-11 items-center justify-between rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{label}<ChevronRight className="size-4" aria-hidden /></Link>
+          <Link key={href} href={href} className="volunteer-menu-action flex min-h-11 items-center justify-between rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none">{label}<ChevronRight className="size-4" aria-hidden /></Link>
         ) : <SidebarLink key={href} href={href} label={label} />)}
       </nav>
     </section>

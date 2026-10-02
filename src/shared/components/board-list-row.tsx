@@ -42,6 +42,6 @@ export function BoardListRow({ href, title, category = "일반", author, date, v
       <UserName nickname={author?.nickname ?? "왕왕랜드"} role={author?.role} className="max-w-full [&>span]:truncate [&>span]:break-normal" />
     </span>
     <span className="whitespace-nowrap text-center tabular-nums text-muted-foreground" title={date ?? undefined}><span className="sr-only">작성일 </span>{date ? formatShortDate(date) : "—"}</span>
-    <span className="truncate text-right tabular-nums text-muted-foreground" title={`조회 ${viewCount.toLocaleString()}회`}><span className="sr-only">조회수 </span>{viewCount.toLocaleString()}</span>
+    <span className="truncate text-center tabular-nums text-muted-foreground" title={`조회 ${viewCount.toLocaleString()}회`}><span className="sr-only">조회수 </span>{viewCount.toLocaleString()}</span>
   </Link>
 }
