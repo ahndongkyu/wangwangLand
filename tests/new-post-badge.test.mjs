@@ -53,6 +53,7 @@ test("both home renderers put the badge before title and motion reduction disabl
     assert.ok(source.indexOf('<NewPostBadge date={date}') < source.indexOf('>{title}'))
   }
   const css = fs.readFileSync("src/app/globals.css", "utf8")
-  assert.match(css, /animation: home-new-post-glow 3s ease-in-out infinite/)
+  assert.match(css, /animation: home-new-post-glow 2\.5s ease-in-out infinite/)
+  assert.match(css, /filter: brightness\(1\.25\)/)
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.home-new-post-badge \{ animation: none/)
 })
