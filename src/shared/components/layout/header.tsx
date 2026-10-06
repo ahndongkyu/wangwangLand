@@ -74,12 +74,12 @@ export function Header({
         <Link
           href="/"
           className={cn(
-            "min-w-0 items-center gap-2 md:gap-3 lg:absolute lg:left-1/2 lg:-translate-x-1/2",
+            "min-h-11 shrink-0 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             mobileBackHref ? "hidden lg:flex" : "flex"
           )}
         >
           <HeaderLogo
-            className={cn("lg:w-[260px]", canManage ? "w-[132px] sm:w-[180px]" : "w-[180px]")}
+            className={cn("lg:w-[234px]", canManage ? "w-[119px] sm:w-[162px]" : "w-[162px]")}
           />
         </Link>
 
@@ -163,7 +163,7 @@ export function Header({
                   onClick={() => setMobileOpen(false)}
                   className="flex min-w-0 items-center gap-2.5"
                 >
-                  <HeaderLogo className="w-[180px]" />
+                  <HeaderLogo className="w-[162px]" />
                 </Link>
                 <SheetClose
                   render={
