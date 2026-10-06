@@ -8,6 +8,7 @@ const DOG_CARD_COLS =
   "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, size, neutered, rescue_date, updated_at, is_pinned, pin_order" as const
 
 export interface ListDogsOptions {
+  adoptableOnly?: boolean
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
   gender?: DogGender | "전체"
@@ -72,6 +73,7 @@ export interface PaginatedDogs {
 }
 
 export async function listDogsWithCount({
+  adoptableOnly = false,
   status,
   size,
   gender,
@@ -84,6 +86,7 @@ export async function listDogsWithCount({
   const supabase = await createClient()
 
   let query = supabase.from("dogs").select(DOG_CARD_COLS, { count: "exact" })
+  if (adoptableOnly) query = query.in("status", ["보호중", "임시보호중"])
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })

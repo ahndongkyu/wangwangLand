@@ -7,7 +7,7 @@ import { fetchCommentCounts } from "@/features/comments"
 import { listCommunityPosts } from "@/features/daily/api/community-queries"
 import { HomePostRow, HomePostHeader } from "@/shared/components/home-post-row"
 import { HomeStoryCard } from "@/shared/components/home-story-card"
-import { listDogsForHome } from "@/features/dogs"
+import { DogCard, listDogsForHome } from "@/features/dogs"
 import { getCurrentProfile } from "@/features/members"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
@@ -15,8 +15,6 @@ import { listNotices } from "@/features/notices"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
-import { formatAge } from "@/shared/lib/age"
-import type { Dog } from "@/shared/types/database"
 
 export const revalidate = 60
 
@@ -197,7 +195,7 @@ export default async function HomePage({
               {dogs.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {dogs.map((dog) => (
-                    <HomeDogCard key={dog.id} dog={dog} />
+                    <DogCard key={dog.id} dog={dog} variant="home" />
                   ))}
                 </div>
               ) : (
@@ -268,44 +266,6 @@ function SectionHeading({
         <ChevronRight className="size-4" aria-hidden />
       </Link>
     </div>
-  )
-}
-
-function HomeDogCard({ dog }: { dog: Dog }) {
-  const thumbnail = dog.images[dog.thumbnail_index] ?? dog.images[0] ?? null
-
-  return (
-    <Link
-      href={`/dogs/${dog.id}`}
-      className="group min-w-0 overflow-hidden rounded-2xl border border-border bg-card/90 shadow-[0_8px_24px_rgba(88,76,68,0.06)] transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_12px_28px_rgba(88,76,68,0.11)]"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        {thumbnail ? (
-          <Image
-            src={thumbnail}
-            alt={dog.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 240px"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <BrandIcon name="dog-happy" size={54} decorative />
-          </div>
-        )}
-        <span className="absolute left-2.5 top-2.5 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-foreground/75 shadow-sm backdrop-blur">
-          {dog.status}
-        </span>
-      </div>
-      <div className="p-3">
-        <h3 className="truncate font-semibold text-foreground">
-          {dog.name}
-        </h3>
-        <p className="mt-1 truncate text-xs text-muted-foreground">
-          {[dog.breed, formatAge(dog)].filter(Boolean).join(" · ") || "왕왕랜드 친구"}
-        </p>
-      </div>
-    </Link>
   )
 }
 

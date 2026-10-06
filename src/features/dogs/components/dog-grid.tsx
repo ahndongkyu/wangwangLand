@@ -49,7 +49,7 @@ export function DogGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3">
       {dogs.map((dog, i) => {
         const cls = visibilityClass(i)
         return (
