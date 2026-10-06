@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
 import { createDailyPost, updateDailyPost } from "../api/mutations"
@@ -37,8 +38,8 @@ export function DailyForm({
   returnTo,
   defaultCategory,
 }: Props) {
-  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(post)
   const contentRef = useRef<string>(post?.content ?? "")
   const originalType = communityType(post?.category ?? defaultCategory)
@@ -46,8 +47,6 @@ export function DailyForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
-    setPending(true)
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
     const date = String(formData.get("posted_at") ?? "")
@@ -56,19 +55,12 @@ export function DailyForm({
     } else {
       formData.delete("posted_at")
     }
-    try {
-      const result = isEdit && post
-        ? await updateDailyPost(post.id, formData)
-        : await createDailyPost(formData)
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.redirectTo) {
-        window.location.href = result.redirectTo
-      }
-    } finally {
-      setPending(false)
-    }
+    await save(() => isEdit && post
+      ? updateDailyPost(post.id, formData)
+      : createDailyPost(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref)
   }
+
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

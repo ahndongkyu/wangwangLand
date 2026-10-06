@@ -120,6 +120,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const idRef = useRef(0)
   const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
+  useEffect(() => {
+    const activeTimers = timers.current
+    return () => { activeTimers.forEach(clearTimeout); activeTimers.clear() }
+  }, [])
 
   const toastsRef = useRef<Toast[]>([])
   useEffect(() => { toastsRef.current = toasts }, [toasts])
@@ -175,7 +179,7 @@ function ToastViewport({
 }) {
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-auto sm:top-4"
+      className="pointer-events-none fixed inset-x-0 top-[max(16px,env(safe-area-inset-top))] z-[100] flex max-h-[calc(100dvh-32px)] flex-col items-center gap-2 overflow-y-auto px-4"
       role="region"
       aria-label="알림"
     >
@@ -211,15 +215,14 @@ function ToastItem({
       aria-live={toast.type === "error" ? "assertive" : "polite"}
       className={cn(
         // 레이아웃 + 필 형태
-        "pointer-events-auto flex w-max min-w-[180px] max-w-[420px] items-center gap-2.5 rounded-full px-3 py-2",
+        "pointer-events-auto flex w-full max-w-[420px] shrink-0 items-center gap-2.5 rounded-xl px-3 py-2",
         // 배경 + 텍스트
-        "bg-white text-[#2C2C2A]",
-        "dark:bg-[#2B2520] dark:text-[#F5EDE0]",
+        "bg-card text-card-foreground",
         // 테두리 + 그림자
-        "border border-black/[0.04] dark:border-[#3A3229]",
+        "border border-border",
         "shadow-[0_4px_16px_rgba(60,40,20,0.10)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.35)]",
         // 애니메이션
-        "transition-all duration-200",
+        "transition-all duration-200 motion-reduce:transition-none",
         mounted
           ? "translate-y-0 opacity-100"
           : "-translate-y-2 opacity-0",
@@ -243,7 +246,7 @@ function ToastItem({
       </span>
 
       {/* 메시지 */}
-      <p className="text-[13px] font-medium leading-none">
+      <p className="min-w-0 flex-1 break-words text-sm font-medium leading-5 [overflow-wrap:anywhere]">
         {toast.message}
       </p>
 
@@ -255,7 +258,7 @@ function ToastItem({
             action.onClick()
             onDismiss(toast.id, true)
           }}
-          className="ml-1 shrink-0 rounded-full bg-[#FAF3E8] px-2.5 py-1 text-[12px] font-semibold text-[#C06B2A] transition-opacity hover:opacity-80 dark:bg-[#3D2815] dark:text-[#F0B079]"
+          className="ml-1 min-h-11 shrink-0 rounded-lg bg-secondary px-2.5 text-xs font-semibold text-secondary-foreground transition-opacity hover:opacity-80"
         >
           {action.label}
         </button>
@@ -267,9 +270,9 @@ function ToastItem({
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="닫기"
-          className="ml-0.5 shrink-0 rounded-full p-1 opacity-30 transition-opacity hover:opacity-70"
+          className="ml-0.5 flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <X className="size-2.5" aria-hidden />
+          <X className="size-4" aria-hidden />
         </button>
       )}
     </div>

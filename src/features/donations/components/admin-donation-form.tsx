@@ -2,7 +2,8 @@
 
 import { Banknote, PackageOpen } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
 import { adminRegisterDonation } from "../api/mutations"
 import { FormFooter } from "@/shared/components/form-footer"
@@ -31,7 +32,7 @@ export function AdminDonationForm() {
   const [type, setType] = useState<DonationType>("cash")
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [pending, startTransition] = useTransition()
+  const { save, pending, completed } = useSaveFeedback(setError)
 
   function handleAmountChange(v: string) {
     const digits = v.replace(/[^0-9]/g, "")
@@ -39,17 +40,16 @@ export function AdminDonationForm() {
     setAmount(Number(digits).toLocaleString())
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const formData = new FormData(e.currentTarget)
     formData.set("type", type)
     formData.set("amount", amount.replace(/,/g, ""))
-    startTransition(async () => {
-      const result = await adminRegisterDonation(formData)
-      if (result?.error) setError(result.error)
-    })
+    await save(() => adminRegisterDonation(formData), "후원 내역이 저장되었습니다.")
   }
+
+  if (completed) return <p role="status">저장되었습니다. 화면을 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">

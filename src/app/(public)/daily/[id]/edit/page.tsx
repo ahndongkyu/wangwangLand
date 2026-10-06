@@ -34,7 +34,7 @@ export default async function DailyEditPage({
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">일상 수정</h1>
       </header>
-      <DailyForm post={post} cancelHref={`/daily/${id}`} returnTo={`/daily/${id}`} />
+      <DailyForm post={post} cancelHref={`/daily/${id}`} returnTo="/daily" />
     </div>
   )
 }

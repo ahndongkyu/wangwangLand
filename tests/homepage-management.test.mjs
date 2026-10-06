@@ -71,6 +71,7 @@ function managerHarness(pinnedCount, save = async()=>({ok:true})) {
   const state=[];let cursor=0;let writes=0
   const {HomepageManager}=load("src/features/settings/components/homepage-manager.tsx",{
     "react/jsx-runtime":jsxRuntime,
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
     react:{useEffect(){},useState(initial){const slot=cursor++;if(!(slot in state))state[slot]=initial;return [state[slot],value=>{state[slot]=typeof value==="function"?value(state[slot]):value}]}},
     "next/image":{default:"img"},"next/navigation":{useRouter:()=>({refresh(){}})},
     "@/shared/components/ui/button":{Button:"button"},"./animal-photo-picker":{AnimalPhotoPicker:"picker"},

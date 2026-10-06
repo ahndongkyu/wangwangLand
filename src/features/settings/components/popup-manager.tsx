@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/shared/components/ui/button"
 import { useConfirm } from "@/shared/components/confirm-dialog"
+import { useToast } from "@/shared/components/toast"
 import { saveHomepagePopup, deleteHomepagePopup } from "../api/popup-actions"
 import { fromKoreanInput, toKoreanInput, popupStatus, popupValidation, type HomepagePopup, type PopupPlacement } from "../lib/popups"
 import { PopupContent, PopupDialog } from "./homepage-popup"
@@ -20,6 +21,7 @@ function newPopup(): HomepagePopup {
 
 export function PopupManager({ initialPopups, loadError }: { initialPopups: HomepagePopup[]; loadError: string | null }) {
   const router = useRouter(), confirm = useConfirm()
+  const toast = useToast()
   const [items, setItems] = useState(initialPopups)
   const [draft, setDraft] = useState<HomepagePopup | null>(null)
   const [saved, setSaved] = useState<HomepagePopup | null>(null)
@@ -31,6 +33,8 @@ export function PopupManager({ initialPopups, loadError }: { initialPopups: Home
   const [inlineClosed, setInlineClosed] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const errorRef = useRef<HTMLParagraphElement>(null)
+  const listRef = useRef<HTMLHeadingElement>(null)
+  function fail(message: string) { setError(message); toast.error(message) }
   const dirty = Boolean(draft && JSON.stringify(draft) !== JSON.stringify(saved))
   useEffect(() => { if (error) errorRef.current?.focus() }, [error])
   useEffect(() => {
@@ -55,17 +59,20 @@ export function PopupManager({ initialPopups, loadError }: { initialPopups: Home
   async function save() {
     if (!draft || busy || loadError) return
     const validation = popupValidation(draft)
-    if (validation) { setError(validation); return }
+    if (validation) { fail(validation); return }
     setBusy(true); setMessage(""); setError("")
     try {
       const result = await saveHomepagePopup(draft, saved?.revision ?? null)
-      if (result.error || !result.popup) { setError(result.error ?? "저장하지 못했습니다."); return }
+      if (result.error || !result.popup) { fail(result.error ?? "저장하지 못했습니다."); return }
       const updated = result.popup
       setItems(previous => [updated, ...previous.filter(p => p.id !== updated.id)].sort((a,b) => b.startsAt.localeCompare(a.startsAt)))
-      setDraft(updated); setSaved(updated); setNow(Date.now())
+      setDraft(null); setSaved(null); setPreviewOpen(false); setInlineClosed(false); setMobile(false); setNow(Date.now())
       setMessage("저장 완료 · " + popupStatus(updated) + " · 홈페이지에는 최대 30초 이내 반영됩니다.")
+      toast.success("팝업이 저장되었습니다. · " + popupStatus(updated))
+      listRef.current?.focus({ preventScroll: true })
+      listRef.current?.scrollIntoView({ block: "start" })
       router.refresh()
-    } catch { setError("저장하지 못했습니다. 입력 내용은 유지됩니다. 다시 시도해 주세요.") }
+    } catch { fail("저장하지 못했습니다. 입력 내용은 유지됩니다. 다시 시도해 주세요.") }
     finally { setBusy(false) }
   }
   async function remove(popup: HomepagePopup) {
@@ -74,17 +81,18 @@ export function PopupManager({ initialPopups, loadError }: { initialPopups: Home
     setBusy(true); setError(""); setMessage("")
     try {
       const result = await deleteHomepagePopup(popup.id, popup.revision)
-      if (result.error) { setError(result.error); return }
+      if (result.error) { fail(result.error); return }
       setItems(previous => previous.filter(p => p.id !== popup.id))
       if (draft?.id === popup.id) { setDraft(null); setSaved(null) }
       setMessage("삭제했습니다. 홈페이지에는 최대 30초 이내 반영됩니다.")
+      toast.success("팝업이 삭제되었습니다.")
       router.refresh()
-    } catch { setError("삭제하지 못했습니다. 다시 시도해 주세요.") }
+    } catch { fail("삭제하지 못했습니다. 다시 시도해 주세요.") }
     finally { setBusy(false) }
   }
   return <section aria-label="팝업 관리" className="min-w-0">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="text-lg font-semibold">팝업 관리</h2><p className="mt-1 text-sm text-muted-foreground">행사나 봉사 전 확인할 안내를 예약해서 노출할 수 있습니다.</p></div>
+      <div><h2 ref={listRef} tabIndex={-1} className="scroll-mt-24 text-lg font-semibold">팝업 관리</h2><p className="mt-1 text-sm text-muted-foreground">행사나 봉사 전 확인할 안내를 예약해서 노출할 수 있습니다.</p></div>
       <Button type="button" disabled={busy || !!loadError} onClick={() => select(null)}>새 팝업</Button>
     </div>
     {loadError && <p role="alert" className="mt-4 rounded-lg bg-destructive/10 p-4 text-sm text-destructive">{loadError}</p>}

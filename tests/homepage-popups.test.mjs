@@ -148,6 +148,7 @@ function editorHarness(saveResult) {
     "react/jsx-runtime": jsxRuntime,
     react: { useRef() { return { current: null } }, useEffect() {}, useState(initial) { const slot = cursor++; if (!(slot in state)) state[slot] = typeof initial === "function" ? initial() : initial; return [state[slot], value => { state[slot] = typeof value === "function" ? value(state[slot]) : value }] } },
     "next/navigation": { useRouter: () => ({ refresh() {} }) },
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
     "@/shared/components/ui/button": { Button: "button" }, "@/shared/components/confirm-dialog": { useConfirm: () => async () => ({ ok: true }) },
     "../api/popup-actions": { saveHomepagePopup: async () => { writes++; return saveResult }, deleteHomepagePopup: async () => ({ ok: true }) },
     "../lib/popups": model, "./homepage-popup": { PopupContent: "preview", PopupDialog: "dialog" },
@@ -173,8 +174,17 @@ test("failed save retains edits and only successful save reports completion", as
     h.nodes(tree).find(n => n.type === "input" && n.props.maxLength === 90).props.onChange({ target: { value: "변경한 제목" } }); tree = h.render()
     await h.button(tree, "팝업 설정 저장").props.onClick(); tree = h.render()
     assert.equal(h.writes(), 1)
-    assert.equal(h.nodes(tree).find(n => n.type === "input" && n.props.maxLength === 90).props.value, "변경한 제목")
     assert.match(h.text(tree), ok ? /저장 완료/ : /저장 실패/)
-    assert.equal(h.button(tree, "팝업 설정 저장").props.disabled, ok)
+    const title = h.nodes(tree).find(n => n.type === "input" && n.props.maxLength === 90)
+    if (ok) {
+      assert.equal(title, undefined)
+      assert.equal(h.button(tree, "팝업 설정 저장"), undefined)
+      assert.match(h.text(tree), /변경한 제목/)
+      await h.button(tree, "새 팝업").props.onClick(); tree = h.render()
+      assert.equal(h.nodes(tree).find(n => n.type === "input" && n.props.maxLength === 90).props.value, "")
+    } else {
+      assert.equal(title.props.value, "변경한 제목")
+      assert.equal(h.button(tree, "팝업 설정 저장").props.disabled, false)
+    }
   }
 })

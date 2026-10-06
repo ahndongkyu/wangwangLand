@@ -41,7 +41,7 @@ export default async function StoriesEditPage({
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-foreground md:text-3xl">입양 후기 수정</h1>
       </header>
-      <StoryForm story={story} dogs={dogOptions} cancelHref={`/stories/${id}`} returnTo={`/stories/${id}`} />
+      <StoryForm story={story} dogs={dogOptions} cancelHref={`/stories/${id}`} returnTo="/stories" />
     </div>
   )
 }

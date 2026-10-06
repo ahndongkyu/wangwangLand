@@ -4,6 +4,7 @@ import Image from "next/image"
 import { useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/shared/components/ui/button"
+import { useToast } from "@/shared/components/toast"
 import { AnimalPhotoPicker } from "./animal-photo-picker"
 import { DEFAULT_PHOTOS, eligibleAnimal, type ManagedAnimal, type SitePhotos } from "../lib/homepage"
 import { saveHomeAnimals, saveSitePhotos } from "../api/homepage-actions"
@@ -11,6 +12,7 @@ import { saveHomeAnimals, saveSitePhotos } from "../api/homepage-actions"
 const inputClass = "mt-2 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
 export function HomepageManager({ initialPhotos, initialAutoFill, animals, maintenance, popups, loadError }: { initialPhotos: SitePhotos; initialAutoFill: boolean; animals: ManagedAnimal[]; maintenance: ReactNode; popups?: ReactNode; loadError: string | null }) {
   const router = useRouter()
+  const toast = useToast()
   const [tab, setTab] = useState("photos")
   const [photos, setPhotos] = useState(initialPhotos)
   const initialIds = animals.filter(a => a.is_pinned).sort((a,b) => (a.pin_order ?? 999) - (b.pin_order ?? 999)).map(a => a.id)
@@ -39,8 +41,8 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
   const matches = animals.filter(a => !ids.includes(a.id) && a.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())).slice(0,30)
   async function run(action: () => Promise<{ error?: string }>, done: () => void) {
     setBusy(true); setMessage(""); setError("")
-    try { const result = await action(); if (result.error) setError(result.error); else { done(); setMessage("저장했습니다. 홈페이지에 반영되었습니다."); router.refresh() } }
-    catch { setError("저장에 실패했습니다. 다시 시도해 주세요.") } finally { setBusy(false) }
+    try { const result = await action(); if (result.error) { setError(result.error); toast.error(result.error) } else { done(); setMessage("저장했습니다. 홈페이지에 반영되었습니다."); toast.success("설정이 저장되었습니다."); router.refresh() } }
+    catch { setError("저장에 실패했습니다. 다시 시도해 주세요."); toast.error("저장에 실패했습니다. 다시 시도해 주세요.") } finally { setBusy(false) }
   }
   return <div className="[&_button]:min-h-11">
     <nav aria-label="홈페이지 관리 분류" className="mb-6 flex flex-wrap gap-2">{[["photos","사이트 사진"],["animals","홈 노출 아이들"],["popups","팝업 관리"],["settings","사이트 설정"]].map(([value,label]) => <Button key={value} disabled={busy} type="button" variant={tab===value ? "default" : "outline"} aria-current={tab===value ? "page" : undefined} className="min-h-11" onClick={() => { setTab(value); setMessage(""); setError("") }}>{label}{(value === "photos" && photosDirty || value === "animals" && homeDirty) ? " · 변경됨" : ""}</Button>)}</nav>

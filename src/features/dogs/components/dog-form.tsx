@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
 import { createDog, updateDog } from "../api/mutations"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
@@ -29,8 +30,8 @@ const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export function DogForm({ dog }: Props) {
-  const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const [birthDate, setBirthDate] = useState(dog?.birth_date ?? "")
   const isEdit = Boolean(dog)
 
@@ -39,23 +40,23 @@ export function DogForm({ dog }: Props) {
     ? formatAgeMonths(ageMonthsFromBirthDate(birthDate))
     : null
 
-  async function handleSubmit(formData: FormData) {
-    setError(null)
-    startTransition(async () => {
-      const result = isEdit && dog
-        ? await updateDog(dog.id, formData)
-        : await createDog(formData)
-      if (result?.error) setError(result.error)
-    })
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    await save(() => isEdit && dog
+      ? updateDog(dog.id, formData)
+      : createDog(formData), "아이 정보가 저장되었습니다.")
   }
 
   const neuteredDefault =
     dog?.neutered === true ? "true" : dog?.neutered === false ? "false" : ""
 
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
+
   return (
     <>
     {isEdit && <p className="mb-6 rounded-xl bg-muted p-4 text-sm">홈 노출 아이와 순서는 <Link href="/admin/settings" className="font-semibold text-primary underline">홈페이지 관리</Link>에서 설정해 주세요.</p>}
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-1.5">
         <Label>사진</Label>
         <AnimalImageUploader

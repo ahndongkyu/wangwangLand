@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -27,6 +26,7 @@ export interface CatMutationInput {
 }
 
 export interface MutationResult {
+  redirectTo?: string
   error?: string
   id?: string
 }
@@ -101,7 +101,7 @@ export async function createCat(formData: FormData): Promise<MutationResult> {
   revalidatePath("/admin/cats")
   revalidatePath("/cats")
   revalidatePath("/")
-  redirect("/admin/cats")
+  return { redirectTo: "/admin/cats" }
 }
 
 export async function updateCat(
@@ -129,7 +129,7 @@ export async function updateCat(
   revalidatePath(`/cats/${id}`)
   revalidatePath("/cats")
   revalidatePath("/")
-  redirect("/admin/cats")
+  return { redirectTo: "/admin/cats" }
 }
 
 export async function updateCatStatus(

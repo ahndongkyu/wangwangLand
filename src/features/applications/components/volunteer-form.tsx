@@ -1,4 +1,5 @@
 "use client"
+import { useToast } from "@/shared/components/toast"
 
 import React, { useRef, useState, useTransition } from "react"
 
@@ -73,6 +74,7 @@ export function VolunteerForm({
   regularVolunteerDates = [],
   groupBlockThreshold = 5,
 }: Props) {
+  const toast = useToast()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<VolunteerFieldErrors>({})
@@ -200,12 +202,18 @@ export function VolunteerForm({
       try {
         const result = await submitVolunteerApplication(formData)
         if (result.error) {
+          toast.error(result.error)
           const field = result.field as VolunteerFieldErrorKey | undefined
           if (field) showFieldError(field, result.error)
           else setError(result.error)
-        } else setSuccess(true)
+        } else {
+          toast.success("봉사 신청이 접수되었습니다.")
+          setSuccess(true)
+        }
       } catch {
-        setError("접수 결과를 확인하지 못했습니다. 신청 내역을 먼저 확인한 뒤 다시 시도해 주세요.")
+        const message = "접수 결과를 확인하지 못했습니다. 신청 내역을 먼저 확인한 뒤 다시 시도해 주세요."
+        setError(message)
+        toast.error(message)
       } finally {
         submittingRef.current = false
       }

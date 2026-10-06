@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import Link from "next/link"
 
 import { updateMyVolunteerApplication, requestReschedule } from "../api/mutations"
@@ -44,9 +44,8 @@ export function VolunteerEditForm({
   application,
   isReschedule = false,
 }: Props) {
-  const router = useRouter()
-  const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const isGroup = application.party_size > 1
   const applicantParts = getVolunteerApplicantParts(
     application.applicant_name,
@@ -86,7 +85,7 @@ export function VolunteerEditForm({
     )
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
@@ -98,15 +97,7 @@ export function VolunteerEditForm({
       // 일정변경 요청 모드: dates를 JSON으로 직렬화
       fd.set("available_dates", JSON.stringify(selectedDates))
       fd.set("available_time", visitTime)
-      startTransition(async () => {
-        const result = await requestReschedule(application.id, fd)
-        if (result.error) {
-          setError(result.error)
-          return
-        }
-        router.push("/my/applications")
-        router.refresh()
-      })
+      await save(() => requestReschedule(application.id, fd), "일정 변경 요청이 접수되었습니다.", "/my/applications")
       return
     }
 
@@ -132,16 +123,10 @@ export function VolunteerEditForm({
     if (!partyCheck.valid) return setError(partyCheck.error!)
     fd.set("party_type", isGroup ? "group" : "individual")
 
-    startTransition(async () => {
-      const result = await updateMyVolunteerApplication(application.id, fd)
-      if (result.error) {
-        setError(result.error)
-        return
-      }
-      router.push("/my/applications")
-      router.refresh()
-    })
+    await save(() => updateMyVolunteerApplication(application.id, fd), "신청 내용이 저장되었습니다.", "/my/applications")
   }
+
+  if (completed) return <p role="status">저장되었습니다. 신청 내역으로 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">

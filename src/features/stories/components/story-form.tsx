@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
 import { createAdoptionStory, updateAdoptionStory } from "../api/mutations"
@@ -25,31 +26,21 @@ interface Props {
 }
 
 export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
-  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(story)
   const contentRef = useRef<string>(story?.content ?? "")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
-    setPending(true)
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
-    try {
-      const result =
-        isEdit && story
-          ? await updateAdoptionStory(story.id, formData)
-          : await createAdoptionStory(formData)
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.redirectTo) {
-        window.location.href = result.redirectTo
-      }
-    } finally {
-      setPending(false)
-    }
+    await save(() => isEdit && story
+      ? updateAdoptionStory(story.id, formData)
+      : createAdoptionStory(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref)
   }
+
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

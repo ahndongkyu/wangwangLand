@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
 import { createNotice, updateNotice } from "../api/mutations"
@@ -43,10 +44,10 @@ function editorContent(content: string, isExpense: boolean) {
 }
 
 export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/notices" }: Props) {
-  const [pending, setPending] = useState(false)
   const [attachmentsUploading, setAttachmentsUploading] = useState(false)
   const [homeVisible, setHomeVisible] = useState(notice?.home_visible ?? false)
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(notice)
   const isPublished = Boolean(notice?.published_at)
   const isExpense = boardType === "expense"
@@ -69,23 +70,14 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
-    setPending(true)
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
-    try {
-      const result = isEdit && notice
-        ? await updateNotice(notice.id, formData, boardType)
-        : await createNotice(formData, boardType)
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.redirectTo) {
-        window.location.href = result.redirectTo
-      }
-    } finally {
-      setPending(false)
-    }
+    await save(() => isEdit && notice
+      ? updateNotice(notice.id, formData, boardType)
+      : createNotice(formData, boardType), "게시글이 저장되었습니다.", cancelHref)
   }
+
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

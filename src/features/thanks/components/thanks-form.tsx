@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
 import {
   createDonationThanks,
@@ -21,30 +21,24 @@ interface Props {
 }
 
 export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9B%84%EC%9B%90" }: Props) {
-  const router = useRouter()
-  const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(post?.id)
   const contentRef = useRef<string>(post?.content ?? "")
 
-  function handleSubmit(formData: FormData) {
-    setError(null)
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
     formData.set("content", contentRef.current)
-    startTransition(async () => {
-      const result =
-        isEdit && post?.id
-          ? await updateDonationThanks(post.id, formData)
-          : await createDonationThanks(formData)
-      if (result?.error) {
-        setError(result.error)
-      } else {
-        router.push(cancelHref)
-      }
-    })
+    await save(() => isEdit && post?.id
+      ? updateDonationThanks(post.id, formData)
+      : createDonationThanks(formData), "게시글이 저장되었습니다.", cancelHref)
   }
 
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
+
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-1.5">
         <Label htmlFor="title">
           제목 <span className="text-destructive">*</span>

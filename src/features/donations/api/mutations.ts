@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -12,6 +11,7 @@ import {
 import type { DonationType } from "@/shared/types/database"
 
 export interface DonationMutationResult {
+  redirectTo?: string
   error?: string
   id?: string
 }
@@ -119,7 +119,7 @@ export async function createDonation(
     console.error("[createDonation push]", e)
   }
 
-  redirect(`/donate/register/done?id=${data.id}`)
+  return { redirectTo: `/donate/register/done?id=${data.id}` }
 }
 
 /** 어드민: 직접 후원 내역 등록 (현장 전달 등) — 즉시 approved 처리 */
@@ -164,7 +164,7 @@ export async function adminRegisterDonation(
   const supabase = await createClient()
   const now = new Date().toISOString()
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("donations")
     .insert({
       type,
@@ -193,7 +193,7 @@ export async function adminRegisterDonation(
 
   revalidatePath("/admin/donations")
   revalidatePath("/donate")
-  redirect(`/admin/donations/${data.id}`)
+  return { redirectTo: "/admin/donations" }
 }
 
 /** 어드민: 검토중 → 승인 */

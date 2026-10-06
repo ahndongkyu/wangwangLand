@@ -2,7 +2,8 @@
 
 import { Banknote, ChevronDown, PackageOpen, Sprout } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
 import { createDonation } from "../api/mutations"
 import { ConsentSection } from "@/features/legal"
@@ -42,7 +43,7 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
   const [type, setType] = useState<DonationType>("cash")
   const [amount, setAmount] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [pending, startTransition] = useTransition()
+  const { save, pending, completed } = useSaveFeedback(setError)
   const [showOptional, setShowOptional] = useState(false)
   const [privacyAgreed, setPrivacyAgreed] = useState(false)
   const [termsAgreed, setTermsAgreed] = useState(termsAlreadyAgreed)
@@ -59,7 +60,7 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
     setAmount(Number(digits).toLocaleString())
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     if (!privacyAgreed) return setError("개인정보 수집·이용 동의가 필요합니다.")
@@ -67,11 +68,10 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
     const formData = new FormData(e.currentTarget)
     formData.set("type", type)
     formData.set("amount", amount.replace(/,/g, ""))
-    startTransition(async () => {
-      const result = await createDonation(formData)
-      if (result?.error) setError(result.error)
-    })
+    await save(() => createDonation(formData), "후원 내역이 접수되었습니다.")
   }
+
+  if (completed) return <p role="status">저장되었습니다. 화면을 이동합니다.</p>
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">

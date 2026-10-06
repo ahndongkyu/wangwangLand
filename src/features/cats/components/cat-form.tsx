@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useTransition } from "react"
+import { useState } from "react"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
 import { createCat, updateCat } from "../api/mutations"
 import { AnimalImageUploader } from "@/shared/components/animal-image-uploader"
@@ -28,8 +29,8 @@ const selectClass =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export function CatForm({ cat }: Props) {
-  const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const [birthDate, setBirthDate] = useState(cat?.birth_date ?? "")
   const isEdit = Boolean(cat)
 
@@ -37,21 +38,21 @@ export function CatForm({ cat }: Props) {
     ? formatAgeMonths(ageMonthsFromBirthDate(birthDate))
     : null
 
-  async function handleSubmit(formData: FormData) {
-    setError(null)
-    startTransition(async () => {
-      const result = isEdit && cat
-        ? await updateCat(cat.id, formData)
-        : await createCat(formData)
-      if (result?.error) setError(result.error)
-    })
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    await save(() => isEdit && cat
+      ? updateCat(cat.id, formData)
+      : createCat(formData), "아이 정보가 저장되었습니다.")
   }
 
   const neuteredDefault =
     cat?.neutered === true ? "true" : cat?.neutered === false ? "false" : ""
 
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
+
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-1.5">
         <Label>사진</Label>
         <AnimalImageUploader

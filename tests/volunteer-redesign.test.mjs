@@ -108,6 +108,7 @@ test("unauthenticated/restricted submissions and failed saves do not notify staf
 test("initial form shows the whole flow and unchecked required preparation, without activity choices", () => {
   const stub = name => props => React.createElement(name, props, props.children)
   const imports = {
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
     react: React, "react/jsx-runtime": jsx, "../api/mutations": {},
     "../lib/volunteer-operating-hours": hours, "../lib/volunteer-applicant": applicant,
     "./volunteer-time-field": { VolunteerTimeField: () => React.createElement("span", null, "時間") },

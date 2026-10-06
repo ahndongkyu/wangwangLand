@@ -1,4 +1,5 @@
 "use client"
+import { useToast } from "@/shared/components/toast"
 
 import Image from "next/image"
 import Link from "next/link"
@@ -24,6 +25,7 @@ interface Props {
 const control = "min-h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-ring"
 
 export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlreadyAgreed = false, unavailableAnimal = false }: Props) {
+  const toast = useToast()
   const [animal, setAnimal] = useState(initialAnimal)
   const [mode, setMode] = useState("select")
   const [query, setQuery] = useState("")
@@ -63,7 +65,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
     if (error || success) feedbackRef.current?.focus()
   }, [error, success])
 
-  function fail(message: string, field?: string) { setError({ message, field }) }
+  function fail(message: string, field?: string) { setError({ message, field }); toast.error(message) }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -86,7 +88,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
       try {
         const result = await submitAdoptionApplication(data)
         if (result.error) fail(result.error, result.field)
-        else setSuccess(true)
+        else { toast.success("입양 신청이 접수되었습니다."); setSuccess(true) }
       } catch {
         fail("접수 결과를 확인하지 못했습니다. 마이페이지의 신청 내역을 먼저 확인한 뒤 다시 시도해 주세요.")
       } finally { submitting.current = false }

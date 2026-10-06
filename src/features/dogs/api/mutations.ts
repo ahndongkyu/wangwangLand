@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/shared/lib/auth"
 import { createClient } from "@/shared/lib/supabase/server"
@@ -28,6 +27,7 @@ export interface DogMutationInput {
 }
 
 export interface MutationResult {
+  redirectTo?: string
   error?: string
   id?: string
 }
@@ -105,7 +105,7 @@ export async function createDog(formData: FormData): Promise<MutationResult> {
   revalidatePath("/admin/dogs")
   revalidatePath("/dogs")
   revalidatePath("/")
-  redirect("/admin/dogs")
+  return { redirectTo: "/admin/dogs" }
 }
 
 export async function updateDog(
@@ -133,7 +133,7 @@ export async function updateDog(
   revalidatePath(`/dogs/${id}`)
   revalidatePath("/dogs")
   revalidatePath("/")
-  redirect("/admin/dogs")
+  return { redirectTo: "/admin/dogs" }
 }
 
 export async function updateDogStatus(

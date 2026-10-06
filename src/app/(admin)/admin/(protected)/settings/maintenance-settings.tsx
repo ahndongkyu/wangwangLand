@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useToast } from "@/shared/components/toast"
 import {
   setMaintenanceEta,
   setMaintenanceMessage,
@@ -26,6 +27,7 @@ export function MaintenanceSettings({
   initialMessage,
   initialEta,
 }: Props) {
+  const notifications = useToast()
   const [isOn, setIsOn] = useState(initialEnabled)
   const [message, setMessage] = useState(initialMessage)
   const [savedMessage, setSavedMessage] = useState(initialMessage)
@@ -36,7 +38,20 @@ export function MaintenanceSettings({
   const [toggling, startToggle] = useTransition()
   const [savingMessage, startSaveMessage] = useTransition()
   const [savingEta, startSaveEta] = useTransition()
-  const [toast, setToast] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+  const [toast, setFeedback] = useState<{ type: "ok" | "err"; text: string } | null>(null)
+
+  function setToast(value: { type: "ok" | "err"; text: string } | null) {
+    setFeedback(value)
+    if (value) {
+      if (value.type === "ok") notifications.success(value.text)
+      else notifications.error(value.text)
+    }
+  }
+
+  async function attempt(action: () => Promise<{ error?: string }>) {
+    try { return await action() }
+    catch { return { error: "저장 결과를 확인하지 못했습니다. 현재 설정을 확인한 뒤 다시 시도해 주세요." } }
+  }
 
   const messageDirty = message.trim() !== savedMessage.trim()
   const etaDirty = etaLocal !== savedEtaLocal
@@ -52,7 +67,7 @@ export function MaintenanceSettings({
     const next = !isOn
     setToast(null)
     startToggle(async () => {
-      const res = await setMaintenanceMode(next)
+      const res = await attempt(() => setMaintenanceMode(next))
       if (res?.error) {
         setToast({ type: "err", text: res.error })
       } else {
@@ -70,7 +85,7 @@ export function MaintenanceSettings({
   function handleSaveMessage() {
     setToast(null)
     startSaveMessage(async () => {
-      const res = await setMaintenanceMessage(message)
+      const res = await attempt(() => setMaintenanceMessage(message))
       if (res?.error) {
         setToast({ type: "err", text: res.error })
       } else {
@@ -84,7 +99,7 @@ export function MaintenanceSettings({
     setToast(null)
     startSaveEta(async () => {
       const iso = datetimeLocalToIso(etaLocal)
-      const res = await setMaintenanceEta(iso)
+      const res = await attempt(() => setMaintenanceEta(iso))
       if (res?.error) {
         setToast({ type: "err", text: res.error })
       } else {
@@ -286,7 +301,8 @@ export function MaintenanceSettings({
 
       {toast && (
         <div
-          className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2 text-sm shadow-lg ${
+          role={toast.type === "err" ? "alert" : "status"}
+          className={`rounded-lg px-4 py-2 text-sm ${
             toast.type === "ok"
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white"

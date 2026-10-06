@@ -124,6 +124,7 @@ test("form renders one page with required reason and explicit unchecked qualific
   const stub = tag => function Stub(props) { return React.createElement(tag, props, props.children) }
   const { AdoptionForm } = load("src/features/applications/components/adoption-form.tsx", {
     react: React, "react/jsx-runtime": jsx, "next/image": { default: () => null }, "next/link": { default: stub("a") },
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
     "../api/mutations": {}, "../api/adoption-animals": {}, "@/features/legal": { ConsentSection: () => null },
     "@/shared/components/address-search-input": { AddressSearchInput: () => null },
     "@/shared/components/date-multi-picker": { DateMultiPicker: () => null },

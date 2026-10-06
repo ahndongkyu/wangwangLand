@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState } from "react"
 import { Lock } from "lucide-react"
 
 import { createEvent, updateEvent, type RecurrenceScope } from "../api/mutations"
@@ -22,7 +22,7 @@ import { FormFooter } from "@/shared/components/form-footer"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
-import { useToast } from "@/shared/components/toast"
+import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
@@ -93,8 +93,8 @@ function pickContrast(hex: string): string {
 
 export function EventForm({ event, defaultDate, fromApplication, groupDates = [] }: Props) {
   const router = useRouter()
-  const toast = useToast()
-  const [pending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const { save, pending, completed } = useSaveFeedback(setError)
   const [scopeOpen, setScopeOpen] = useState(false)
   const pendingFormData = useRef<FormData | null>(null)
 
@@ -200,57 +200,33 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
 
   const isRecurringEdit = isEdit && groupDates.length > 1
 
-  function goSuccess(msg: string) {
-    toast.success(msg)
-    router.push("/admin/calendar")
-    router.refresh()
-  }
-
-  function handleSubmit(formData: FormData) {
+  async function handleSubmit(submitEvent: React.FormEvent<HTMLFormElement>) {
+    submitEvent.preventDefault()
+    const formData = new FormData(submitEvent.currentTarget)
     // 반복 일정 수정 → 적용 범위 먼저 선택
     if (isRecurringEdit) {
       pendingFormData.current = formData
       setScopeOpen(true)
       return
     }
-    startTransition(async () => {
-      if (isEdit) {
-        const result = await updateEvent(event!.id, formData, "one")
-        if (result?.error) return toast.error(result.error)
-        goSuccess("일정을 수정했어요.")
-      } else {
-        const result = await createEvent(formData)
-        if (result?.error) return toast.error(result.error)
-        goSuccess(
-          result.count && result.count > 1
-            ? `${result.count}건 일정을 등록했어요.`
-            : "일정을 등록했어요."
-        )
-      }
-    })
+    await save(() => isEdit
+      ? updateEvent(event!.id, formData, "one")
+      : createEvent(formData), "일정이 저장되었습니다.", "/admin/calendar")
   }
 
-  function runScopedUpdate(scope: RecurrenceScope) {
+  async function runScopedUpdate(scope: RecurrenceScope) {
     const fd = pendingFormData.current
     if (!fd) return
-    startTransition(async () => {
-      const result = await updateEvent(event!.id, fd, scope)
-      if (result?.error) {
-        toast.error(result.error)
-        setScopeOpen(false)
-        return
-      }
-      goSuccess(
-        result.count && result.count > 1
-          ? `${result.count}건 일정을 수정했어요.`
-          : "일정을 수정했어요."
-      )
-    })
+    await save(() => updateEvent(event!.id, fd, scope), "일정이 저장되었습니다.", "/admin/calendar")
+    setScopeOpen(false)
   }
+
+  if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
 
   return (
     <>
-    <form action={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
       {fromApplication && (
         <>
           <input
