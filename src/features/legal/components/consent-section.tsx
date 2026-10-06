@@ -16,6 +16,8 @@ interface PrivacyDetail {
 }
 
 interface Props {
+  /** 단일 화면 신청폼용 간결한 동의 표시 */
+  compact?: boolean
   /** 신청별 개인정보 수집·이용 항목 안내 */
   privacy: PrivacyDetail
   /** 개인정보 동의 여부 (controlled) */
@@ -40,6 +42,7 @@ interface Props {
  */
 export function ConsentSection({
   privacy,
+  compact = false,
   privacyAgreed,
   onPrivacyChange,
   termsAgreed,
@@ -51,11 +54,50 @@ export function ConsentSection({
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null)
 
   return (
-    <fieldset className="space-y-3 rounded-lg border border-border bg-card p-4">
-      <legend className="px-1 text-sm font-semibold text-muted-foreground">
+    <fieldset className={compact ? "min-w-0" : "space-y-3 rounded-lg border border-border bg-card p-4"}>
+      <legend className={compact ? "sr-only" : "px-1 text-sm font-semibold text-muted-foreground"}>
         동의 (필수)
       </legend>
 
+      {compact ? (
+        <>
+          <label className="flex min-h-11 cursor-pointer items-start gap-2.5 py-3 text-sm">
+            <input id="privacy_agreed" name="privacy_agreed" type="checkbox" required checked={privacyAgreed}
+              onChange={(e) => onPrivacyChange(e.target.checked)} aria-invalid={Boolean(privacyError)}
+              aria-describedby={privacyError ? "privacy_agreed-error" : "privacy-summary"}
+              className="mt-0.5 size-[18px] shrink-0 accent-primary" />
+            <span><span className="mr-1 text-xs font-semibold text-primary">필수</span>개인정보 수집·이용에 동의합니다.</span>
+          </label>
+          {privacyError && <p id="privacy_agreed-error" role="alert" className="text-xs text-destructive">{privacyError}</p>}
+          <details className="ml-7 text-xs text-muted-foreground">
+            <summary className="min-h-11 cursor-pointer content-center">수집·이용 내용 보기</summary>
+            <div id="privacy-summary" className="space-y-1 leading-relaxed">
+              <p>목적 · {privacy.purpose}</p><p>항목 · {privacy.items}</p><p>보유 · {privacy.retention}</p>
+              <p>동의를 거부할 수 있으며, 거부 시 신청이 어렵습니다.</p>
+              <button type="button" onClick={() => setOpenModal("privacy")} className="min-h-11 text-primary underline">개인정보 처리방침 전문</button>
+            </div>
+          </details>
+          {termsAlreadyAgreed ? (
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              <input type="hidden" name="terms_agreed" value="on" />
+              <span>이용약관은 가입 시 동의한 상태입니다.</span>
+              <button type="button" onClick={() => setOpenModal("terms")} className="min-h-11 underline">약관 보기</button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <label className="flex min-h-11 cursor-pointer items-center gap-2.5">
+                <input id="terms_agreed" name="terms_agreed" type="checkbox" required checked={termsAgreed}
+                  onChange={(e) => onTermsChange(e.target.checked)} aria-invalid={Boolean(termsError)}
+                  aria-describedby={termsError ? "terms_agreed-error" : undefined} className="size-[18px] accent-primary" />
+                <span><span className="mr-1 text-xs font-semibold text-primary">필수</span>이용약관에 동의합니다.</span>
+              </label>
+              <button type="button" onClick={() => setOpenModal("terms")} className="min-h-11 text-xs underline">약관 보기</button>
+            </div>
+          )}
+          {termsError && <p id="terms_agreed-error" role="alert" className="text-xs text-destructive">{termsError}</p>}
+        </>
+      ) : (
+        <>
       {/* 개인정보 수집·이용 동의 */}
       <label className="flex cursor-pointer items-start gap-2 rounded-md border border-border/60 bg-secondary/30 p-3 text-sm">
         <input
@@ -157,6 +199,8 @@ export function ConsentSection({
         )}
       </label>
 
+        </>
+      )}
       {/* 모달 */}
       <AgreementModal
         open={openModal === "privacy"}

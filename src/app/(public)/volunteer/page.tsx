@@ -8,6 +8,7 @@ import { listEventsInRange } from "@/features/events"
 import { dateKey } from "@/features/events/lib/date"
 import { GROUP_BLOCKING_CATEGORIES, GROUP_BLOCK_THRESHOLD } from "@/features/events/types"
 import { listStaffAvailability } from "@/features/staff-schedule"
+import { VOLUNTEER_APPLICATION_TIME_LABEL } from "@/features/applications/lib/volunteer-operating-hours"
 import { SITE } from "@/shared/constants/site"
 
 export const metadata: Metadata = {
@@ -23,20 +24,8 @@ export default async function VolunteerPage() {
   // 비로그인이면 가입 안내
   if (!profile) {
     return (
-      <div className="relative flex min-h-[520px] items-center justify-center overflow-hidden bg-[linear-gradient(135deg,var(--secondary)_0%,var(--accent)_100%)] px-4 py-10 sm:px-6 md:min-h-[620px] md:py-14">
-        <div
-          aria-hidden
-          className="absolute -left-16 top-10 size-44 rounded-full bg-primary/10 blur-2xl"
-        />
-        <div
-          aria-hidden
-          className="absolute -bottom-16 -right-12 size-56 rounded-full bg-brand-sage/25 blur-2xl"
-        />
-
-        <section className="relative w-full max-w-[520px] rounded-[28px] border border-border bg-card/95 px-6 py-9 text-center shadow-[0_18px_48px_rgba(88,76,68,0.12)] backdrop-blur-sm sm:px-10 sm:py-11">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-3xl shadow-sm">
-            <span aria-hidden>🐾</span>
-          </div>
+      <div className="flex min-h-[420px] items-center justify-center bg-background px-4 py-10 sm:px-6 md:min-h-[620px] md:py-14">
+        <section className="w-full max-w-[520px] rounded-2xl border border-border bg-card px-6 py-9 text-center sm:px-10 sm:py-11">
           <h1 className="mt-5 text-2xl font-bold text-foreground md:text-3xl">
             봉사 신청
           </h1>
@@ -125,36 +114,16 @@ export default async function VolunteerPage() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold text-foreground md:text-4xl">
-          봉사 신청
-        </h1>
-        <p className="mt-3 text-muted-foreground">
-          {SITE.name}에서 아이들과 함께할 봉사자를 기다립니다.
-          <br />
-          작은 손길 하나하나가 아이들에겐 큰 위로가 됩니다.
+    <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-6 md:py-12">
+      <header className="mb-6">
+        <p className="text-xs font-semibold text-primary">함께하는 왕왕랜드</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">봉사 신청</h1>
+        <p className="mt-3 text-sm text-muted-foreground">아이들과 함께할 날짜를 알려주세요.</p>
+        <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          <span className="text-muted-foreground">신청 가능 시간</span>
+          <span className="font-semibold">{VOLUNTEER_APPLICATION_TIME_LABEL}</span>
         </p>
       </header>
-
-      <section className="mb-10 grid gap-3 md:grid-cols-2">
-        <ActivityCard
-          title="산책"
-          description="아이들과 함께 산책하며 바깥 공기를 마셔요."
-        />
-        <ActivityCard
-          title="목욕·미용"
-          description="아이들의 위생을 지키고 건강을 돕습니다."
-        />
-        <ActivityCard
-          title="청소·정리"
-          description="보호소 환경을 쾌적하게 유지합니다."
-        />
-        <ActivityCard
-          title="홍보·촬영"
-          description="아이들이 새 가족을 만날 수 있도록 사진과 영상을 만들어요."
-        />
-      </section>
 
       <VolunteerForm
         termsAlreadyAgreed={termsAlreadyAgreed}
@@ -163,21 +132,6 @@ export default async function VolunteerPage() {
         regularVolunteerDates={regularVolunteerDates}
         groupBlockThreshold={GROUP_BLOCK_THRESHOLD}
       />
-    </div>
-  )
-}
-
-function ActivityCard({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="font-semibold text-foreground">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     </div>
   )
 }

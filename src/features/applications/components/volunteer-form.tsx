@@ -1,8 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import React, { useRef, useState, useTransition } from "react"
-import { ChevronLeft, User, Users } from "lucide-react"
 
 import { submitVolunteerApplication } from "../api/mutations"
 import {
@@ -11,15 +9,11 @@ import {
 } from "../lib/volunteer-operating-hours"
 import { normalizeVolunteerGroupName } from "../lib/volunteer-applicant"
 import { VolunteerTimeField } from "./volunteer-time-field"
-import {
-  LargeGroupInquiry,
-  VolunteerApplicationGuide,
-} from "./volunteer-application-guide"
+import { VolunteerPreparationGuide } from "./volunteer-preparation-guide"
+import { SITE } from "@/shared/constants/site"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
-import { FormFooter } from "@/shared/components/form-footer"
 import { PhoneInput } from "@/shared/components/phone-input"
-import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Textarea } from "@/shared/components/ui/textarea"
@@ -33,17 +27,6 @@ import {
   validateOrgOrPersonName,
 } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
-import type { VolunteerActivity } from "@/shared/types/database"
-
-const ACTIVITIES: VolunteerActivity[] = [
-  "산책",
-  "목욕·미용",
-  "청소·정리",
-  "홍보·촬영",
-]
-
-const stepLabels = ["신청자 정보", "활동 일정", "동의 및 제출"]
-
 type VolunteerFieldErrorKey =
   | "group_name"
   | "applicant_name"
@@ -52,6 +35,7 @@ type VolunteerFieldErrorKey =
   | "minor_guardian"
   | "available_dates"
   | "available_time"
+  | "preparation_acknowledged"
   | "safety_acknowledged"
   | "privacy_agreed"
   | "terms_agreed"
@@ -89,14 +73,13 @@ export function VolunteerForm({
   regularVolunteerDates = [],
   groupBlockThreshold = 5,
 }: Props) {
-  const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<VolunteerFieldErrors>({})
   const [success, setSuccess] = useState(false)
-  const [step, setStep] = useState(1)
   const formRef = useRef<HTMLFormElement>(null)
-  const stepAnchorRef = useRef<HTMLDivElement>(null)
+  const submittingRef = useRef(false)
+  const [preparationAcknowledged, setPreparationAcknowledged] = useState(false)
 
   const [visitHour, setVisitHour] = useState("")
   const [visitMinute, setVisitMinute] = useState("")
@@ -131,28 +114,13 @@ export function VolunteerForm({
     focusId?: string
   ) {
     setError(null)
-    const targetStep =
-      field === "available_dates" || field === "available_time"
-        ? 2
-        : field === "safety_acknowledged" || field === "privacy_agreed" || field === "terms_agreed"
-          ? 3
-          : 1
-    setStep(targetStep)
     setFieldErrors((current) => ({ ...current, [field]: message }))
     requestAnimationFrame(() => {
       const target = document.getElementById(
         focusId ?? (field === "available_time" ? "available_hour" : field)
       )
-      target?.scrollIntoView({ behavior: "smooth", block: "center" })
+      target?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" })
       target?.focus({ preventScroll: true })
-    })
-  }
-
-  function moveToStep(nextStep: number) {
-    setError(null)
-    setStep(nextStep)
-    requestAnimationFrame(() => {
-      stepAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     })
   }
 
@@ -179,58 +147,9 @@ export function VolunteerForm({
     }
   }
 
-  function handleNext() {
-    setError(null)
-    setFieldErrors({})
-    if (step === 1) {
-      const fd = new FormData(formRef.current!)
-      if (partyType === "group") {
-        const groupName = normalizeVolunteerGroupName(
-          String(fd.get("group_name") ?? "")
-        )
-        if (groupName) {
-          const groupNameCheck = validateOrgOrPersonName(groupName)
-          if (!groupNameCheck.valid) {
-            showFieldError("group_name", groupNameCheck.error!)
-            return
-          }
-        }
-      }
-      const nameCheck = validateName(String(fd.get("applicant_name") ?? ""))
-      if (!nameCheck.valid) {
-        showFieldError("applicant_name", nameCheck.error!)
-        return
-      }
-      const phoneCheck = validateKoreanPhone(String(fd.get("phone") ?? ""))
-      if (!phoneCheck.valid) {
-        showFieldError("phone", phoneCheck.error!)
-        return
-      }
-      if (partyType === "group") {
-        const partySizeCheck = validateGroupPartySize(String(fd.get("party_size") ?? "1"))
-        if (!partySizeCheck.valid) {
-          showFieldError("party_size", partySizeCheck.error!)
-          return
-        }
-      }
-      if (partyType === "group" && hasMinor && !minorGuardian) {
-        showFieldError("minor_guardian", "미성년자 참여 시 보호자 동의가 필요합니다.")
-        return
-      }
-    }
-    if (step === 2) {
-      const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
-      if (scheduleError) {
-        const field = selectedDates.length === 0 ? "available_dates" : "available_time"
-        showFieldError(field, scheduleError)
-        return
-      }
-    }
-    moveToStep(step + 1)
-  }
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (submittingRef.current) return
     setError(null)
     setFieldErrors({})
 
@@ -262,6 +181,9 @@ export function VolunteerForm({
       const field = selectedDates.length === 0 ? "available_dates" : "available_time"
       return showFieldError(field, scheduleError)
     }
+    if (!preparationAcknowledged) {
+      return showFieldError("preparation_acknowledged", "준비물과 방문 안내를 확인해 주세요.")
+    }
     if (!safetyAcknowledged) {
       return showFieldError("safety_acknowledged", "안전 사항 인지 동의가 필요합니다.")
     }
@@ -273,14 +195,20 @@ export function VolunteerForm({
     }
     if (!termsAgreed) return showFieldError("terms_agreed", "이용약관 동의가 필요합니다.")
 
+    submittingRef.current = true
     startTransition(async () => {
-      const result = await submitVolunteerApplication(formData)
-      if (result.error) {
-        const field = result.field as VolunteerFieldErrorKey | undefined
-        if (field) showFieldError(field, result.error)
-        else setError(result.error)
+      try {
+        const result = await submitVolunteerApplication(formData)
+        if (result.error) {
+          const field = result.field as VolunteerFieldErrorKey | undefined
+          if (field) showFieldError(field, result.error)
+          else setError(result.error)
+        } else setSuccess(true)
+      } catch {
+        setError("접수 결과를 확인하지 못했습니다. 신청 내역을 먼저 확인한 뒤 다시 시도해 주세요.")
+      } finally {
+        submittingRef.current = false
       }
-      else setSuccess(true)
     })
   }
 
@@ -288,21 +216,21 @@ export function VolunteerForm({
     const datesWithStaff = selectedDates.filter((d) => (staffByDate[d] ?? []).length > 0)
     return (
       <div className="rounded-lg border border-primary bg-primary/5 p-8 text-center">
-        <div className="mb-2 text-4xl">🙌</div>
+        <p className="mb-3 text-sm font-semibold text-primary">접수 완료 · 승인 대기</p>
         <h2 className="text-xl font-bold text-foreground">
           봉사 신청이 접수되었습니다
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           운영진이 확인 후 입력하신 연락처로 안내드리겠습니다.
           <br />
-          귀한 마음 감사합니다 💕
+          승인 안내를 받으신 뒤 방문해 주세요.
         </p>
 
         {datesWithStaff.length > 0 && (
           <div className="mt-5 rounded-lg border border-border bg-card p-4 text-left">
-            <p className="text-sm font-semibold text-foreground">📌 방문 안내</p>
+            <p className="text-sm font-semibold text-foreground">방문 예정 운영진</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              도착하시면 아래 운영진을 찾아주세요.
+              선택하신 날짜의 출근 예정이며, 승인된 방문 일정을 확인해 주세요.
             </p>
             <ul className="mt-3 space-y-2 text-sm">
               {datesWithStaff.map((date) => {
@@ -346,93 +274,26 @@ export function VolunteerForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-8">
-      <VolunteerApplicationGuide />
-
-      {/* Mobile step indicator */}
-      <div
-        ref={stepAnchorRef}
-        className="scroll-mt-20 sm:hidden flex items-center justify-between border-b border-border bg-secondary/30 px-3 py-2.5 -mx-4 -mt-5 mb-5 rounded-t-xl"
-      >
-        <div className="flex items-center gap-2">
-          {stepLabels.map((label, i) => {
-            const n = i + 1
-            const done = n < step
-            const active = n === step
-            return (
-              <div key={n} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-border text-xs">›</span>}
-                <span className={cn("flex size-5 items-center justify-center rounded-full text-[10px] font-bold",
-                  done && "bg-primary/30 text-primary",
-                  active && "bg-primary text-primary-foreground",
-                  !done && !active && "bg-secondary text-muted-foreground"
-                )}>
-                  {done ? "✓" : n}
-                </span>
-                <span
-                  aria-current={active ? "step" : undefined}
-                  className={cn("text-[11px] font-medium", active ? "text-foreground" : "text-muted-foreground")}
-                >
-                  {label}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-        <span className="text-[10px] text-muted-foreground">{step}/3</span>
-      </div>
-
-      {/* Step 1: 신청 종류 + 신청자 정보 */}
-      <div className={step === 1 ? "contents" : "hidden sm:contents"}>
-        {/* 1. 신청 종류 */}
-        <Card title="신청 종류" required>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="신청 종류">
-            <TypeOption
-              active={partyType === "individual"}
-              Icon={User}
-              label="개인 신청"
-              onClick={() => handlePartyTypeChange("individual")}
-            />
-            <TypeOption
-              active={partyType === "group"}
-              Icon={Users}
-              label="단체 신청"
-              desc="학교 동아리 단체 등 2인 이상"
-              onClick={() => handlePartyTypeChange("group")}
-            />
+    <form ref={formRef} onSubmit={handleSubmit} noValidate aria-busy={pending}
+      className="rounded-2xl border border-border bg-card p-4 sm:p-7">
+      <fieldset disabled={pending} className="min-w-0 space-y-7 disabled:opacity-70">
+        <section>
+          <div className="mb-5 flex items-baseline justify-between gap-3">
+            <h2 className="text-lg font-semibold">신청자 정보</h2>
+            <span className="text-xs text-muted-foreground">* 필수 입력</span>
           </div>
-        </Card>
-
-        {/* 2. 신청자 정보 */}
-        <Card title={partyType === "group" ? "단체 정보" : "신청자 정보"} required>
+          <div className="mb-5 grid grid-cols-2 gap-3" role="radiogroup" aria-label="신청 종류">
+            <TypeOption active={partyType === "individual"} label="개인" desc="혼자 참여해요" onClick={() => handlePartyTypeChange("individual")} />
+            <TypeOption active={partyType === "group"} label="단체" desc="2명 이상 함께해요" onClick={() => handlePartyTypeChange("group")} />
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {partyType === "group" && (
-              <Field
-                id="group_name"
-                label="단체명 (선택)"
-                className="md:col-span-2"
-              >
-                <Input
-                  id="group_name"
-                  name="group_name"
-                  maxLength={30}
-                  placeholder="예: 왕왕대학교 봉사동아리"
-                  aria-invalid={Boolean(fieldErrors.group_name)}
-                  aria-describedby={fieldErrors.group_name ? "group_name-error" : "group_name-hint"}
-                  onChange={() => clearFieldError("group_name")}
-                />
-                <p id="group_name-hint" className="text-xs text-muted-foreground">
-                  비워두거나 X, 없음으로 입력하면 단체명 없이 접수됩니다.
-                </p>
-                <FieldError id="group_name-error" message={fieldErrors.group_name} />
-              </Field>
-            )}
             <Field
               id="applicant_name"
               label={partyType === "group" ? "인솔자 이름" : "이름"}
               required
             >
               <Input
+                  className="min-h-11 text-base md:text-base"
                 id="applicant_name"
                 name="applicant_name"
                 required
@@ -461,7 +322,7 @@ export function VolunteerForm({
                 aria-invalid={Boolean(fieldErrors.phone)}
                 aria-describedby={fieldErrors.phone ? "phone-error" : "phone-hint"}
                 onValueChange={() => clearFieldError("phone")}
-                className={partyType === "individual" && !!profilePhone ? "cursor-default bg-secondary/50" : ""}
+                className={cn("min-h-11 text-base md:text-base", partyType === "individual" && !!profilePhone && "cursor-default bg-muted/50")}
               />
               {partyType === "individual" && profilePhone ? (
                 <p id="phone-hint" className="text-xs text-muted-foreground">프로필에 등록된 번호입니다.</p>
@@ -474,6 +335,7 @@ export function VolunteerForm({
             {partyType === "group" ? (
               <Field id="party_size" label="인원수" required>
                 <Input
+                  className="min-h-11 text-base md:text-base"
                   id="party_size"
                   name="party_size"
                   type="number"
@@ -492,10 +354,31 @@ export function VolunteerForm({
                   인솔자 포함, 최대 30명
                 </p>
                 <FieldError id="party_size-error" message={fieldErrors.party_size} />
-                <LargeGroupInquiry className="mt-2" />
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">31명 이상은 <a href={SITE.sns.kakaoChannel} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">카카오톡으로 문의해 주세요.</a></p>
               </Field>
             ) : (
               <input type="hidden" name="party_size" value="1" />
+            )}
+            {partyType === "group" && (
+              <Field
+                id="group_name"
+                label="단체명 (선택)"
+              >
+                <Input
+                  className="min-h-11 text-base md:text-base"
+                  id="group_name"
+                  name="group_name"
+                  maxLength={30}
+                  placeholder="예: 왕왕대학교 봉사동아리"
+                  aria-invalid={Boolean(fieldErrors.group_name)}
+                  aria-describedby={fieldErrors.group_name ? "group_name-error" : "group_name-hint"}
+                  onChange={() => clearFieldError("group_name")}
+                />
+                <p id="group_name-hint" className="text-xs text-muted-foreground">
+                  단체명이 없으면 비워두세요.
+                </p>
+                <FieldError id="group_name-error" message={fieldErrors.group_name} />
+              </Field>
             )}
             {partyType === "group" && (
               <CheckRow
@@ -513,7 +396,7 @@ export function VolunteerForm({
               />
             )}
             {partyType === "group" && hasMinor && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 md:col-span-2 dark:border-amber-900/50 dark:bg-amber-900/20">
+              <div className="rounded-lg bg-muted/50 p-3 md:col-span-2">
                 <CheckRow
                   id="minor_guardian"
                   checked={minorGuardian}
@@ -529,40 +412,35 @@ export function VolunteerForm({
               </div>
             )}
           </div>
-        </Card>
-      </div>
-
-      {/* Step 2: 일정 + 자기소개 */}
-      <div className={step === 2 ? "contents" : "hidden sm:contents"}>
-        {/* 3. 일정·활동 */}
-        <Card title="활동 일정 · 희망 활동">
-          <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground">
-              가능한 날짜 <span className="text-destructive">*</span>
-            </Label>
-            <DateMultiPicker
-              id="available_dates"
-              name="available_dates"
-              onChange={handleDatesChange}
-              invalid={Boolean(fieldErrors.available_dates)}
-              disabledDates={blockedDates}
-              disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`}
-            />
-            <p className="text-[11px] text-muted-foreground/80">
-              여러 날짜 선택 가능. 운영진이 확인 후 가능한 날짜로 일정을 조율합니다.
-            </p>
-            <FieldError id="available_dates-error" message={fieldErrors.available_dates} />
-            {groupBlocking && blockedDates.length > 0 && (
-              <p className="rounded-md bg-rose-50 px-3 py-2 text-[11px] font-medium leading-relaxed text-rose-700 dark:bg-rose-950/20 dark:text-rose-300">
-                정기봉사가 있는 날(분홍색·취소선)은 {groupBlockThreshold}명 이상 단체 신청이
-                어려워요. 다른 날짜를 골라주시거나 인원을 조정해 주세요.
-              </p>
-            )}
-
+        </section>
+        <section className="border-t border-border pt-7">
+          <h2 className="mb-5 text-lg font-semibold">언제 방문하시나요?</h2>
+          <div className="grid items-start gap-5 md:grid-cols-[1.15fr_1fr]">
+            <div className="min-w-0 space-y-2">
+              <p className="text-sm font-medium">가능한 날짜 <span className="text-destructive">*</span></p>
+              <DateMultiPicker id="available_dates" name="available_dates" onChange={handleDatesChange}
+                invalid={Boolean(fieldErrors.available_dates)} disabledDates={blockedDates}
+                disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`} />
+              <p className="text-xs leading-relaxed text-muted-foreground">가능한 날짜를 여러 개 선택할 수 있어요.<br />운영진이 확인 후 방문 일정을 조율합니다.</p>
+              <FieldError id="available_dates-error" message={fieldErrors.available_dates} />
+              {groupBlocking && blockedDates.length > 0 && (
+                <p className="rounded-lg bg-muted p-3 text-xs leading-relaxed text-foreground">
+                  취소선으로 표시된 정기봉사일에는 {groupBlockThreshold}명 이상 단체 신청이 어렵습니다. 다른 날짜를 선택해 주세요.
+                </p>
+              )}
+            </div>
+            <div className="min-w-0 space-y-3">
+              <VolunteerTimeField selectedDates={selectedDates} hour={visitHour} minute={visitMinute}
+                onHourChange={(value) => { setVisitHour(value); clearFieldError("available_time") }}
+                onMinuteChange={(value) => { setVisitMinute(value); clearFieldError("available_time") }}
+                error={fieldErrors.available_time} required />
+              <p className="text-xs leading-relaxed text-muted-foreground">12:00~13:00는 점심시간으로 현장 안내가 어렵습니다.</p>
+            </div>
+          </div>
             {/* 선택된 날짜에 출근 예정인 운영진 안내 */}
             {selectedDates.length > 0 && (
-              <div className="mt-3 space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs">
-                <p className="font-semibold text-foreground">선택한 날짜의 운영진 출근 예정</p>
+              <details className="mt-4 text-xs">
+                <summary className="min-h-11 cursor-pointer content-center text-sm text-muted-foreground">선택한 날짜의 운영진 출근 예정</summary>
                 <ul className="space-y-2">
                   {selectedDates.map((date) => {
                     const list = staffByDate[date] ?? []
@@ -595,88 +473,34 @@ export function VolunteerForm({
                     )
                   })}
                 </ul>
-              </div>
+              </details>
             )}
+          <details className="mt-4">
+            <summary className="min-h-11 cursor-pointer content-center text-sm text-muted-foreground">전달할 내용이 있나요? (선택)</summary>
+            <Field id="message" label="메모">
+              <Textarea id="message" name="message" rows={3} className="text-base" placeholder="궁금한 점이나 요청사항을 적어주세요." />
+            </Field>
+          </details>
+        </section>
+        <section className="border-t border-border pt-7">
+          <h2 className="mb-5 text-lg font-semibold">방문 전에 확인해 주세요</h2>
+          <VolunteerPreparationGuide />
+          <CheckRow id="preparation_acknowledged" checked={preparationAcknowledged}
+            onChange={(checked) => { setPreparationAcknowledged(checked); clearFieldError("preparation_acknowledged") }}
+            label="준비물과 방문 안내를 확인했습니다." required invalid={Boolean(fieldErrors.preparation_acknowledged)} />
+          <FieldError id="preparation_acknowledged-error" message={fieldErrors.preparation_acknowledged} />
+          <div className="py-4 text-xs leading-relaxed text-muted-foreground">
+            <p className="mb-1 text-sm font-medium text-foreground">쓰레기봉투 후원은 선택이에요</p>
+            가능하시다면 청소용 100L 쓰레기봉투 한 장도 도움이 됩니다. 필수 준비물이 아니니 부담 없이 마음이 닿을 때만 함께해 주세요.
           </div>
-
-          <div className="mt-3">
-            <VolunteerTimeField
-              selectedDates={selectedDates}
-              hour={visitHour}
-              minute={visitMinute}
-              onHourChange={(value) => {
-                setVisitHour(value)
-                clearFieldError("available_time")
-              }}
-              onMinuteChange={(value) => {
-                setVisitMinute(value)
-                clearFieldError("available_time")
-              }}
-              error={fieldErrors.available_time}
-              required
-            />
-          </div>
-
-          <fieldset className="mt-3 space-y-2">
-            <legend className="text-xs font-medium text-muted-foreground">
-              희망 활동 (여러 개 선택 가능)
-            </legend>
-            <div className="grid grid-cols-2 gap-2">
-              {ACTIVITIES.map((activity) => (
-                <label
-                  key={activity}
-                  className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm"
-                  htmlFor={`act-${activity}`}
-                >
-                  <Checkbox
-                    id={`act-${activity}`}
-                    name="activities"
-                    value={activity}
-                  />
-                  {activity}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </Card>
-
-        {/* 4. 자기소개 */}
-        <Card title="자기소개 · 메모 (선택)">
-          <Field id="message" label="" hideLabel>
-            <Textarea
-              id="message"
-              name="message"
-              rows={3}
-              placeholder="봉사 경험·궁금한 점 등을 자유롭게 적어주세요."
-            />
-          </Field>
-        </Card>
-      </div>
-
-      {/* Step 3: 안전인지 + 동의 */}
-      <div className={step === 3 ? "contents" : "hidden sm:contents"}>
-        {/* 5. 안전 사항 인지 */}
-        <Card title="안전 사항 인지" required>
-          <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-            보호동물·시설 환경 특성상 봉사 활동 중 일부 위험(물림, 스크래치,
-            알레르기 등)이 수반될 수 있습니다.
-          </p>
-          <CheckRow
-            id="safety_acknowledged"
-            checked={safetyAcknowledged}
-            onChange={(checked) => {
-              setSafetyAcknowledged(checked)
-              clearFieldError("safety_acknowledged")
-            }}
-            label="위 위험 가능성을 인지하고 단체의 안전 수칙을 준수하겠습니다"
-            required
-            invalid={Boolean(fieldErrors.safety_acknowledged)}
-          />
-          <FieldError id="safety_acknowledged-error" message={fieldErrors.safety_acknowledged} />
-        </Card>
-
-        {/* 6. 동의 */}
+          <div className="border-t border-border pt-4">
+            <p className="mb-1 text-xs leading-relaxed text-muted-foreground">활동 중 물림·스크래치·알레르기 등의 위험이 있을 수 있습니다.</p>
+            <CheckRow id="safety_acknowledged" checked={safetyAcknowledged}
+              onChange={(checked) => { setSafetyAcknowledged(checked); clearFieldError("safety_acknowledged") }}
+              label="위험 가능성을 이해하고 안전수칙을 준수하겠습니다." required invalid={Boolean(fieldErrors.safety_acknowledged)} />
+            <FieldError id="safety_acknowledged-error" message={fieldErrors.safety_acknowledged} />
         <ConsentSection
+          compact
           privacy={{
             purpose: "봉사 활동 운영 및 안전 관리, 출입 기록 관리",
             items:
@@ -699,65 +523,20 @@ export function VolunteerForm({
           privacyError={fieldErrors.privacy_agreed}
           termsError={fieldErrors.terms_agreed}
         />
-      </div>
-
-      {/* Error: always visible on desktop; on mobile only shown on current step */}
-      {error && (
-        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-
-      {/* Mobile step navigation */}
-      <div className="sm:hidden flex items-center justify-between gap-2">
-        {step > 1 ? (
-          <button type="button" onClick={() => moveToStep(step - 1)} className="flex min-h-11 items-center gap-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground">
-            <ChevronLeft className="size-4" /> 이전
-          </button>
-        ) : (
-          <button type="button" onClick={() => router.back()} className="min-h-11 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-muted-foreground">취소</button>
-        )}
-        {step < 3 ? (
-          <button type="button" onClick={handleNext} className="min-h-11 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
-            다음
-          </button>
-        ) : (
-          <button type="submit" disabled={pending} className="min-h-11 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          </div>
+        </section>
+        <div className="border-t border-border pt-5">
+          <div className="mb-4 flex flex-wrap justify-between gap-2 text-sm" aria-live="polite">
+            <span>{partyType === "group" ? `단체 ${partySize || "—"}명` : "개인 1명"} · {selectedDates.length ? `${selectedDates.length}개 날짜 선택` : "날짜 미선택"}</span>
+            <span>{visitTime || "시간 미선택"}</span>
+          </div>
+          {error && <p className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive" role="alert">{error}</p>}
+          <button type="submit" disabled={pending} className="min-h-12 w-full rounded-xl bg-primary px-4 py-3 text-base font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-50">
             {pending ? "접수 중..." : "봉사 신청하기"}
           </button>
-        )}
-      </div>
-
-      {/* Desktop: keep existing FormFooter */}
-      <div className="hidden sm:block">
-        <FormFooter
-          pending={pending}
-          submitLabel="봉사 신청하기"
-          pendingLabel="접수 중..."
-          onCancel={() => router.back()}
-        />
-      </div>
+        </div>
+      </fieldset>
     </form>
-  )
-}
-
-function Card({
-  title,
-  required,
-  children,
-}: {
-  title: string
-  required?: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-lg border border-border bg-card p-4 md:p-5">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">
-        {title}
-        {required && <span className="ml-1 text-destructive">*</span>}
-      </h3>
-      {children}
-    </section>
   )
 }
 
@@ -808,20 +587,22 @@ function CheckRow({
 }) {
   return (
     <label
-      className={`flex cursor-pointer items-start gap-2 py-1 text-sm ${className ?? ""}`}
+      className={`flex min-h-11 cursor-pointer items-start gap-2.5 py-3 text-sm ${className ?? ""}`}
     >
       <input
         id={id}
+        name={id}
+        required={required}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         aria-invalid={invalid}
         aria-describedby={invalid && id ? `${id}-error` : undefined}
-        className="mt-0.5 size-4 accent-primary"
+        className="mt-0.5 size-[18px] shrink-0 accent-primary"
       />
       <span className="flex-1 leading-relaxed text-foreground">
         {required && (
-          <span className="mr-1 rounded-full bg-destructive/15 px-1.5 text-[10px] font-bold text-destructive">
+          <span className="mr-1 text-xs font-semibold text-primary">
             필수
           </span>
         )}
@@ -831,40 +612,17 @@ function CheckRow({
   )
 }
 
-function TypeOption({
-  active,
-  Icon,
-  label,
-  desc,
-  onClick,
-}: {
+function TypeOption({ active, label, desc, onClick }: {
   active: boolean
-  Icon: typeof User
   label: string
-  desc?: string
+  desc: string
   onClick: () => void
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      role="radio"
-      aria-checked={active}
-      className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all ${
-        active
-          ? "-translate-y-0.5 border-primary bg-primary/10 text-foreground shadow-sm"
-          : "border-border bg-background text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      <span className="flex items-center gap-2">
-        <Icon
-          className={`size-4 ${active ? "text-primary" : "text-muted-foreground"}`}
-          aria-hidden
-        />
-        <span className="text-sm font-semibold text-foreground">{label}</span>
-      </span>
-      {desc && <span className="text-xs">{desc}</span>}
-    </button>
+    <label className={cn("flex min-h-16 cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-3 text-sm", active ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50")}>
+      <input type="radio" name="party_type" value={label === "개인" ? "individual" : "group"} checked={active} onChange={onClick} className="size-4 shrink-0 accent-primary" />
+      <span className="min-w-0"><span className="font-semibold">{label}</span><span className="mt-1 block text-xs text-muted-foreground">{desc}</span></span>
+    </label>
   )
 }
 

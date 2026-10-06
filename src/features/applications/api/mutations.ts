@@ -200,9 +200,21 @@ export async function submitVolunteerApplication(
     }
   }
 
+  for (const [field, message] of [
+    ["preparation_acknowledged", "준비물과 방문 안내를 확인해 주세요."],
+    ["safety_acknowledged", "안전 사항 인지 동의가 필요합니다."],
+    ["terms_agreed", "이용약관 동의가 필요합니다."],
+  ] as const) {
+    if (formData.get(field) !== "on") return { error: message, field }
+  }
+  if (partyType === "group" && formData.get("has_minor") === "on" && formData.get("minor_guardian") !== "on") {
+    return { error: "미성년자 참여 시 보호자 동의가 필요합니다.", field: "minor_guardian" }
+  }
+
   // available_days(요일) 는 폼에서 제거됐지만 컬럼은 유지(legacy). 빈 배열로 저장.
   const availableDays: string[] = []
-  const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
+  // 신규 신청에서는 희망 활동을 받지 않으며, 과거 신청 기록은 유지한다.
+  const activities: VolunteerActivity[] = []
 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()

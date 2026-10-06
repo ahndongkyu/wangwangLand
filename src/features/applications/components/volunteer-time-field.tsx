@@ -59,7 +59,7 @@ export function VolunteerTimeField({
           aria-label="방문 예정 시"
           aria-invalid={Boolean(error)}
           aria-describedby={error ? "available_time-error" : "available_time-hint"}
-          className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
         >
           <option value="">
             {selectedDates.length === 0 ? "날짜 먼저 선택" : "시 선택"}
@@ -85,7 +85,7 @@ export function VolunteerTimeField({
           aria-label="방문 예정 분"
           aria-invalid={Boolean(error)}
           aria-describedby={error ? "available_time-error" : "available_time-hint"}
-          className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
+          className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
         >
           <option value="">분 선택</option>
           {hasInvalidValue && !minuteOptions.includes(minute) && (

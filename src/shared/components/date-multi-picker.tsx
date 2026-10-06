@@ -111,7 +111,7 @@ export function DateMultiPicker({
   function toggle(key: string, isPast: boolean, isOtherMonth: boolean) {
     if (isOtherMonth) return
     if (!allowPast && isPast) return
-    if (blockedSet.has(key)) return
+    if (blockedSet.has(key) && !selected.has(key)) return
     const next = new Set(selected)
     if (next.has(key)) {
       next.delete(key)
@@ -139,7 +139,7 @@ export function DateMultiPicker({
           type="button"
           onClick={() => canPrev && setYm(shiftYm(ym, -1))}
           disabled={!canPrev}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-30"
+          className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-30"
           aria-label="이전 달"
         >
           <ChevronLeft className="size-4" />
@@ -151,7 +151,7 @@ export function DateMultiPicker({
           type="button"
           onClick={() => canNext && setYm(shiftYm(ym, 1))}
           disabled={!canNext}
-          className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-30"
+          className="flex size-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-30"
           aria-label="다음 달"
         >
           <ChevronRight className="size-4" />
@@ -183,7 +183,7 @@ export function DateMultiPicker({
           const dow = i % 7
           const isToday = key === today
           const isBlocked = !isOtherMonth && blockedSet.has(key)
-          const disabled = isOtherMonth || (!allowPast && isPast) || isBlocked
+          const disabled = isOtherMonth || (!allowPast && isPast) || (isBlocked && !isSelected)
 
           return (
             <button
@@ -192,7 +192,7 @@ export function DateMultiPicker({
               onClick={() => toggle(key, isPast, isOtherMonth)}
               disabled={disabled}
               title={isBlocked ? disabledTitle : undefined}
-              aria-label={`${key}${isBlocked ? `, ${disabledTitle}` : ""}`}
+              aria-label={`${key}${isBlocked ? `, ${disabledTitle}${isSelected ? " 선택을 해제해 주세요." : ""}` : ""}`}
               aria-pressed={isSelected}
               className={cn(
                 "relative flex aspect-square items-center justify-center rounded-md text-xs font-medium transition-colors",
