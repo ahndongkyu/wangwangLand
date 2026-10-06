@@ -360,7 +360,9 @@ export default async function AdminApplicationsPage({
                       {formatKoreanPhone(a.phone)}
                     </td>
                     <td className="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
-                      {a.dog?.name ?? a.cat?.name ?? "-"}
+                      <span className="block max-w-48 truncate" title={a.dog?.name ?? a.cat?.name ?? a.preferred_animal ?? "상담 후 결정"}>
+                        {a.dog?.name ?? a.cat?.name ?? a.preferred_animal ?? "상담 후 결정"}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <Link

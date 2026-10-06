@@ -18,6 +18,7 @@ const REST: CtaItem[] = [
 ]
 
 const FOCUSED_ROUTES = [
+  "/adopt",
   "/volunteer",
   "/agreement",
   "/login",

@@ -149,6 +149,12 @@ export default async function AdoptionApplicationDetailPage({
         </section>
       )}
 
+      {!targetAnimal && <section className="mb-6 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold">희망하는 아이</h2>
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm">{app.preferred_animal || "상담 후 결정"}</p>
+        {app.preferred_animal && <p className="mt-2 text-xs text-muted-foreground">신청자가 직접 입력한 내용입니다. 상담 시 대상 아이를 확인해 주세요.</p>}
+      </section>}
+
       {/* 신청자 + 가족·주거 + 반려경험 */}
       <section className="mb-6 grid gap-4 md:grid-cols-2">
         <Card title="신청자 정보">

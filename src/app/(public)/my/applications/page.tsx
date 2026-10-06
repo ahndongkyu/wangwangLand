@@ -13,6 +13,11 @@ import type { ApplicationStatus } from "@/shared/types/database"
 
 export const dynamic = "force-dynamic"
 
+type AnimalRelation = { name: string } | { name: string }[] | null
+function relatedAnimalName(animal: AnimalRelation) {
+  return Array.isArray(animal) ? animal[0]?.name : animal?.name
+}
+
 function statusBadgeClass(status: ApplicationStatus) {
   switch (status) {
     case "접수":
@@ -65,7 +70,7 @@ export default async function MyApplicationsPage() {
   const [adoptionRes, volunteerRes] = await Promise.all([
     admin
       .from("adoption_applications")
-      .select("id, status, submitted_at, admin_note, cancel_reason, dog:dogs(name), cat:cats(name)")
+      .select("id, status, submitted_at, admin_note, cancel_reason, preferred_animal, dog:dogs(name), cat:cats(name)")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
     admin
@@ -81,8 +86,9 @@ export default async function MyApplicationsPage() {
     submitted_at: string
     admin_note: string | null
     cancel_reason: string | null
-    dog: { name: string }[] | null
-    cat: { name: string }[] | null
+    dog: AnimalRelation
+    preferred_animal: string | null
+    cat: AnimalRelation
   }>
 
   const volunteers = (volunteerRes.data ?? []) as Array<{
@@ -243,13 +249,13 @@ export default async function MyApplicationsPage() {
               <h2 className="mb-3 text-base font-semibold text-foreground">입양 신청</h2>
               <div className="space-y-2">
                 {activeAdoptions.map((a) => {
-                  const animalName = a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                  const animalName = relatedAnimalName(a.dog) ?? relatedAnimalName(a.cat) ?? a.preferred_animal
                   return (
                     <details key={a.id} className="group overflow-hidden rounded-lg border border-border bg-card">
                       {/* ── 요약 행: 신청 항목 + 상태 ── */}
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="break-words text-sm font-medium text-foreground">
                             {animalName ? `${animalName} 입양 신청` : "입양 신청"}
                           </p>
                           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -306,7 +312,7 @@ export default async function MyApplicationsPage() {
                   ? `${volunteerDateLabel((item as typeof cancelledVolunteers[0]).available_dates, (item as typeof cancelledVolunteers[0]).available_days)} 봉사`
                   : (() => {
                       const a = item as typeof cancelledAdoptions[0]
-                      const name = a.dog?.[0]?.name ?? a.cat?.[0]?.name
+                      const name = relatedAnimalName(a.dog) ?? relatedAnimalName(a.cat) ?? a.preferred_animal
                       return name ? `${name} 입양 신청` : "입양 신청"
                     })()
 

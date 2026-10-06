@@ -149,6 +149,7 @@ export interface AdoptionApplication {
   id: string
   dog_id: string | null
   cat_id: string | null
+  preferred_animal: string | null
   applicant_name: string
   phone: string
   email: string | null

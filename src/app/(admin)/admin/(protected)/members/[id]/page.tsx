@@ -301,6 +301,7 @@ export default async function AdminMemberDetailPage({
                   <span className="truncate text-sm text-foreground">
                     {(a as { dog?: { name?: string } | null }).dog?.name ??
                       (a as { cat?: { name?: string } | null }).cat?.name ??
+                      a.preferred_animal ??
                       "—"}
                   </span>
                 </span>

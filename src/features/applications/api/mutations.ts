@@ -41,6 +41,12 @@ export async function submitAdoptionApplication(
   formData: FormData
 ): Promise<SubmitResult> {
   const dogId = String(formData.get("dog_id") ?? "").trim()
+  const catId = String(formData.get("cat_id") ?? "").trim()
+  const animalMode = String(formData.get("animal_mode") ?? "")
+  const preferredAnimal = String(formData.get("preferred_animal") ?? "").trim()
+  if (!["select", "manual", "consult"].includes(animalMode)) return { error: "희망하는 아이 선택 방법을 확인해 주세요.", field: "animal_mode" }
+  if (animalMode === "select" && (!dogId === !catId)) return { error: "신청할 아이를 한 마리 선택해 주세요.", field: "animal_mode" }
+  if (animalMode === "manual" && (!preferredAnimal || preferredAnimal.length > 300)) return { error: "희망하는 아이의 이름이나 특징을 300자 이내로 적어주세요.", field: "preferred_animal" }
   const applicant_name = String(formData.get("applicant_name") ?? "").trim()
   const phone = formatKoreanPhone(String(formData.get("phone") ?? "").trim())
   const address = String(formData.get("address") ?? "").trim()
@@ -59,7 +65,7 @@ export async function submitAdoptionApplication(
     return { error: "주소는 최소 시/도까지 입력해주세요." }
   }
   if (reason.length < 10) {
-    return { error: "입양을 결심하신 이유를 10자 이상 적어주세요." }
+    return { error: "입양을 결심하신 이유를 10자 이상 적어주세요.", field: "reason" }
   }
   if (!currentPets) {
     return { error: "현재 반려동물 정보를 입력해 주세요. 없으면 ‘없음’으로 입력해 주세요." }
@@ -91,30 +97,45 @@ export async function submitAdoptionApplication(
   if (!(["자가", "전세", "월세"] as OwnershipType[]).some((type) => type === ownershipType)) {
     return { error: "소유 형태를 선택해 주세요." }
   }
+  for (const [field, message] of [
+    ["adult", "만 19세 이상의 성인 확인이 필요합니다."],
+    ["family_consent", "동거 가족 전원의 동의 확인이 필요합니다."],
+    ["readiness", "평생 양육 여건 확인이 필요합니다."],
+    ["terms_agreed", "이용약관 동의가 필요합니다."],
+    ...(["전세", "월세"].includes(ownershipType) ? [["landlord_consent", "임대인의 양육 동의 확인이 필요합니다."]] : []),
+  ]) {
+    if (formData.get(field) !== "on") return { error: message, field }
+  }
   if (visitAvailableDates.length === 0 || visitAvailableDates.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
     return { error: "방문 가능한 날짜를 하나 이상 선택해 주세요." }
   }
-  if (!/^\d{2}:\d{2}$/.test(visitAvailableTime)) {
+  if (!/^(10|11|13|14|15|16|17):(00|10|20|30|40|50)$/.test(visitAvailableTime)) {
     return { error: "방문 가능한 시간을 선택해 주세요." }
   }
 
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
-
-  // 비회원도 INSERT 가능하지만, RLS 의 SELECT 정책은 운영진만 허용.
-  // 따라서 .select() returning 시 RLS 차단 → admin client(service role)로 우회.
-  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인 후 입양 신청을 진행해 주세요." }
+  const { data: profile } = await supabase.from("profiles").select("status, is_banned").eq("id", user.id).maybeSingle()
+  if (!profile || profile.status !== "approved" || profile.is_banned) return { error: "현재 계정으로 신청할 수 없습니다. 회원 상태를 확인해 주세요." }
   const admin = createAdminClient()
+  if (animalMode === "select") {
+    const { data: animal, error } = await admin.from(dogId ? "dogs" : "cats")
+      .select("id, status").eq("id", dogId || catId).maybeSingle()
+    if (error || !animal || !["보호중", "임시보호중"].includes(animal.status)) {
+      return { error: "현재 입양 신청이 가능한 아이를 다시 선택해 주세요.", field: "animal_mode" }
+    }
+  }
 
   const { data, error } = await admin
     .from("adoption_applications")
     .insert({
-      dog_id: dogId || null,
+      dog_id: animalMode === "select" ? dogId || null : null,
+      cat_id: animalMode === "select" ? catId || null : null,
+      preferred_animal: animalMode === "manual" ? preferredAnimal : null,
       applicant_name,
       phone,
-      // 회원이면 카카오 이메일 자동 저장. 비회원은 null.
-      email: user?.email ?? null,
+      email: user.email ?? null,
       address,
       reason,
       family_size: familySize,
@@ -126,7 +147,7 @@ export async function submitAdoptionApplication(
       visit_available_dates: visitAvailableDates,
       visit_available_time: visitAvailableTime,
       privacy_agreed: true,
-      created_by: user?.id ?? null,
+      created_by: user.id,
     })
     .select("id")
     .single()
