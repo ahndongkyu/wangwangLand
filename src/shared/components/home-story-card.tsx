@@ -3,6 +3,7 @@ import Link from "next/link"
 import { UserName } from "@/shared/components/user-name"
 import { formatShortDate } from "@/shared/lib/utils"
 import { SITE } from "@/shared/constants/site"
+import { NewPostBadge } from "./new-post-badge"
 
 interface Props {
   href: string
@@ -30,7 +31,10 @@ export function HomeStoryCard({ href, title, category, thumbnail, author, date, 
       </span>
       <span className="flex min-w-0 flex-1 flex-col md:p-4">
         <span className="mb-1 text-xs font-medium text-primary md:mb-2">{category}</span>
-        <span className="mb-3 line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-foreground group-hover:text-primary md:min-h-12 md:text-base md:leading-6" title={title}>{title}{commentCount > 0 && <span className="ml-1 text-xs font-medium text-primary">({commentCount})</span>}</span>
+        <span className="mb-3 flex min-h-10 min-w-0 items-start gap-1.5 md:min-h-12">
+          <NewPostBadge date={date} />
+          <span className="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-foreground group-hover:text-primary md:text-base md:leading-6" title={title}>{title}{commentCount > 0 && <span className="ml-1 text-xs font-medium text-primary">({commentCount})</span>}</span>
+        </span>
         <span className="mt-auto grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[11px] text-muted-foreground md:text-xs">
           <span className="min-w-0 overflow-hidden" title={author?.nickname ?? "왕왕랜드"}><span className="sr-only">작성자 </span><UserName nickname={author?.nickname ?? "왕왕랜드"} role={author?.role} className="[&>span]:truncate [&>span]:break-normal" /></span>
           <span className="whitespace-nowrap tabular-nums"><span className="sr-only">작성일 </span>{formatShortDate(date)}</span>

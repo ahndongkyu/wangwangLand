@@ -253,7 +253,20 @@
   }
 }
 
-/* NEW 뱃지 반짝거리는 효과 — 하이라이트 + 약간의 펄스 */
+/* 홈 새 글 표시: 글자만 은은하게 밝아지고 크기·배치는 유지한다. */
+@keyframes home-new-post-glow {
+  0%, 100% { text-shadow: 0 0 0 transparent; filter: brightness(1); }
+  50% { text-shadow: 0 0 5px color-mix(in srgb, var(--primary) 24%, transparent); filter: brightness(1.12); }
+}
+
+.home-new-post-badge {
+  animation: home-new-post-glow 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-new-post-badge { animation: none; text-shadow: none; filter: none; }
+}
+
 @keyframes volunteer-menu-text-glow {
   0%, 65%, 100% { text-shadow: 0 0 0 transparent; }
   82% { text-shadow: 0 0 8px color-mix(in srgb, var(--primary) 40%, transparent); }

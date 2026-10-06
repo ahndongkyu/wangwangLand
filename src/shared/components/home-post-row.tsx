@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Paperclip, Pin } from "lucide-react"
 import { UserName } from "@/shared/components/user-name"
 import { cn, formatShortDate } from "@/shared/lib/utils"
+import { NewPostBadge } from "./new-post-badge"
 
 const textColumns = "sm:grid-cols-[minmax(0,1fr)_4rem_4rem_2.25rem]"
 const photoColumns = "sm:grid-cols-[3rem_minmax(0,1fr)_4rem_4rem_2.25rem]"
@@ -36,6 +37,7 @@ export function HomePostRow({ href, title, category, thumbnails = false, thumbna
     <span className="flex min-w-0 items-center gap-1.5">
       {category && <span className="shrink-0 text-xs text-primary">{category}</span>}
       {pinned && <Pin className="size-3 shrink-0 text-primary" aria-label="상단 고정" />}
+      <NewPostBadge date={date} />
       <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">{title}</span>
       {commentCount > 0 && <span className="shrink-0 text-xs text-primary">({commentCount})</span>}
       {attachmentCount > 0 && <Paperclip className="size-3 shrink-0 text-muted-foreground" aria-label={`첨부파일 ${attachmentCount}개`} />}
