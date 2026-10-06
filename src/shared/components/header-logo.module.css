@@ -1,0 +1,19 @@
+/* 3:1 원본의 심볼과 글자 사이 투명 여백을 기준으로 나눈다. */
+.darkSymbol {
+  clip-path: inset(0 49% 0 0);
+  filter: drop-shadow(0.65px 0 0 #f6f2e9) drop-shadow(-0.65px 0 0 #f6f2e9)
+    drop-shadow(0 0.65px 0 #f6f2e9) drop-shadow(0 -0.65px 0 #f6f2e9);
+}
+
+.darkWordmark {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 51%);
+  background: #f6f2e9;
+  mask-size: 100% 100%;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+}

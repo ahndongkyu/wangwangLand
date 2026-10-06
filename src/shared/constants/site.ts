@@ -12,8 +12,7 @@ export const SITE = {
   subtitle: "영종도 유기견 보호소",
   description: "안락사 없는 따뜻한 유기견 보호소, 왕왕랜드입니다.",
   logo: "/images/wangwang_logo.png",
-  headerLogo: "/images/wangwang-logo-a-lightweight.png",
-  headerLogoDark: "/images/wangwang-logo-a-lightweight-dark.png",
+  headerLogo: "/images/wangwang-logo-cream-gray.png",
   headerLogoMono: "/images/wangwang-logo-a-lightweight-mono.png",
   /** SNS 공유 시 사용되는 대표 이미지 (1200x630 권장). 없으면 배너 대체. */
   ogImage: "/images/banner.jpeg",
