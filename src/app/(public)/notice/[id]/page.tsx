@@ -10,6 +10,7 @@ import { RichTextContent } from "@/shared/components/rich-text-content"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
 import { ShareButton } from "@/shared/components/share-button"
+import { formatPostDateTime } from "@/shared/lib/utils"
 
 export const revalidate = 60
 
@@ -73,11 +74,7 @@ export default async function NoticeDetailPage({
           )}
           <span className="text-xs text-muted-foreground">
             {notice.published_at &&
-              new Date(notice.published_at).toLocaleDateString("ko-KR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              formatPostDateTime(notice.published_at)}
           </span>
           <span className="text-xs text-muted-foreground">·</span>
           <span className="text-xs text-muted-foreground">조회 {notice.view_count}</span>

@@ -4,8 +4,8 @@ import { Paperclip, Pin } from "lucide-react"
 import { UserName } from "@/shared/components/user-name"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 
-const textColumns = "sm:grid-cols-[minmax(0,1fr)_4rem_2.75rem_2.25rem]"
-const photoColumns = "sm:grid-cols-[3rem_minmax(0,1fr)_4rem_2.75rem_2.25rem]"
+const textColumns = "sm:grid-cols-[minmax(0,1fr)_4rem_4rem_2.25rem]"
+const photoColumns = "sm:grid-cols-[3rem_minmax(0,1fr)_4rem_4rem_2.25rem]"
 
 export function HomePostHeader({ thumbnails = false }: { thumbnails?: boolean }) {
   return <div aria-hidden="true" className={cn("hidden min-h-9 items-center gap-2 border-b border-border bg-muted/50 px-3 text-center text-xs text-muted-foreground sm:grid", thumbnails ? photoColumns : textColumns)}>

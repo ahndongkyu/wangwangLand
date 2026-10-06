@@ -6,6 +6,7 @@ import { ChevronRight, PenLine } from "lucide-react"
 import { fetchCommentCounts } from "@/features/comments"
 import { listCommunityPosts } from "@/features/daily/api/community-queries"
 import { HomePostRow, HomePostHeader } from "@/shared/components/home-post-row"
+import { HomeStoryCard } from "@/shared/components/home-story-card"
 import { listDogsForHome } from "@/features/dogs"
 import { getCurrentProfile } from "@/features/members"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
@@ -126,7 +127,7 @@ export default async function HomePage({
                 <div>
                   <h2
                     id="recent-community-heading"
-                    className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+                    className="scroll-mt-28 text-xl font-bold tracking-tight text-foreground sm:text-2xl"
                   >
                     왕왕랜드 이야기
                   </h2>
@@ -143,9 +144,9 @@ export default async function HomePage({
                 </Link>
               </div>
               <div className="grid gap-6">
-                <article className="overflow-hidden rounded-xl border border-border bg-card">
-                  <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4"><h3 className="font-semibold">일상 · 자유 · 후기 · 후원</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
-                  <HomePostHeader thumbnails /><div className="divide-y divide-border">{dailyResult.posts.map(post => <HomePostRow thumbnails key={`${post.source}-${post.id}`} href={post.href} title={post.title} category={post.category} thumbnail={post.images[0]} author={post.author} date={post.date} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
+                <article>
+                  <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-sm text-muted-foreground">일상 · 자유 · 후기 · 후원</h3><Link href="/daily" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 보기 →</Link></div>
+                  <div className="grid gap-4 md:grid-cols-3">{dailyResult.posts.map(post => <HomeStoryCard key={`${post.source}-${post.id}`} href={post.href} title={post.title} category={post.category} thumbnail={post.images[0]} author={post.author} date={post.date} viewCount={post.viewCount} commentCount={post.source === "thanks" ? 0 : (post.source === "daily" ? dailyCommentCounts : storyCommentCounts)[post.id] ?? 0} />)}</div>
                   {dailyResult.posts.length === 0 && <p className="p-8 text-center text-sm text-muted-foreground">나누고 싶은 이야기가 있다면 편하게 남겨주세요.</p>}
                 </article>
                 <div className="grid gap-6 xl:grid-cols-2">

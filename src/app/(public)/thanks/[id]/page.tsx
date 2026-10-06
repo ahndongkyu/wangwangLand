@@ -5,7 +5,7 @@ import { Heart, Package } from "lucide-react"
 
 import { getDonationThanks } from "@/features/thanks"
 import { RichTextContent } from "@/shared/components/rich-text-content"
-import { formatShortDate, stripHtml } from "@/shared/lib/utils"
+import { formatPostDateTime, stripHtml } from "@/shared/lib/utils"
 
 export const revalidate = 60
 
@@ -54,7 +54,7 @@ export default async function ThanksDetailPage({
             <Heart className="size-3" aria-hidden />
             후원 감사
           </span>
-          <span>{formatShortDate(post.published_at!)}</span>
+          <span>{formatPostDateTime(post.published_at)}</span>
         </div>
         <h1 className="mt-3 text-2xl font-bold text-foreground md:text-3xl">
           {post.title}

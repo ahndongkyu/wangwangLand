@@ -12,7 +12,7 @@ import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
 import { ShareButton } from "@/shared/components/share-button"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
+import { cn, formatPostDateTime } from "@/shared/lib/utils"
 
 export const revalidate = 60
 
@@ -112,11 +112,7 @@ export default async function StoryDetailPage({
           )}
           {story.published_at && (
             <span>
-              {new Date(story.published_at).toLocaleDateString("ko-KR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              {formatPostDateTime(story.published_at)}
             </span>
           )}
           <span>·</span>

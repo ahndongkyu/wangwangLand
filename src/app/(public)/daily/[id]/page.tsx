@@ -11,6 +11,7 @@ import { UserName } from "@/shared/components/user-name"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
 import { ShareButton } from "@/shared/components/share-button"
+import { formatPostDateTime } from "@/shared/lib/utils"
 
 export const revalidate = 60
 
@@ -102,12 +103,7 @@ export default async function DailyDetailPage({
             />
           )}
           <span>
-            {new Date(post.posted_at).toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-              weekday: "short",
-            })}
+            {formatPostDateTime(post.posted_at)}
           </span>
           <span>·</span>
           <span>조회 {post.view_count}</span>

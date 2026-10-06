@@ -3,7 +3,7 @@ import { Paperclip, Pin } from "lucide-react"
 import { UserName } from "@/shared/components/user-name"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 
-const columns = "grid grid-cols-[2.5rem_minmax(0,1fr)_3.25rem_2.5rem_2rem] items-center gap-1 px-2 sm:grid-cols-[4rem_minmax(0,1fr)_6rem_4rem_3.5rem] sm:gap-3 sm:px-4"
+const columns = "grid grid-cols-[2.5rem_minmax(0,1fr)_3.25rem_3.75rem_2rem] items-center gap-1 px-2 sm:grid-cols-[4rem_minmax(0,1fr)_6rem_4rem_3.5rem] sm:gap-3 sm:px-4"
 
 export function BoardListHeader() {
   return <div aria-hidden="true" className={cn(columns, "min-h-10 border-b border-border bg-muted text-center text-xs font-medium text-muted-foreground")}>

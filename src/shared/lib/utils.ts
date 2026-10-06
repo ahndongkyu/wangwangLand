@@ -5,12 +5,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** 게시글 리스트용 짧은 날짜 포맷: "04.28" (한국 로케일 기본의 trailing dot 제거) */
+const postDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+})
+
+function postDateParts(date: string | Date) {
+  const value = typeof date === "string" ? new Date(date) : date
+  if (Number.isNaN(value.getTime())) return null
+  return Object.fromEntries(postDateFormatter.formatToParts(value).map(({ type, value }) => [type, value]))
+}
+
+/** 게시글 목록용 한국 시간 날짜: "26.10.06" */
 export function formatShortDate(date: string | Date): string {
-  const d = typeof date === "string" ? new Date(date) : date
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${m}.${day}`
+  const parts = postDateParts(date)
+  return parts ? `${parts.year.slice(-2)}.${parts.month}.${parts.day}` : "—"
+}
+
+/** 게시글 상세용 한국 시간 날짜·시각: "2026.10.06 14:30" */
+export function formatPostDateTime(date: string | Date): string {
+  const parts = postDateParts(date)
+  return parts ? `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}` : "—"
 }
 
 /** HTML 콘텐츠에서 모든 <img src> URL 추출 (썸네일·갤러리 자동 생성용) */

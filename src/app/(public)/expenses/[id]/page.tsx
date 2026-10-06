@@ -9,6 +9,7 @@ import { CommentSection } from "@/features/comments"
 import { RichTextContent } from "@/shared/components/rich-text-content"
 import { ViewCounter } from "@/shared/components/view-counter"
 import { PostNavigation } from "@/shared/components/post-navigation"
+import { formatPostDateTime } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 export const metadata: Metadata = { title: "지출 내역" }
@@ -24,7 +25,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
       <ViewCounter table="notices" postId={post.id} authorId={post.created_by} currentUserId={profile.id} />
       <nav className="mb-4 text-sm text-muted-foreground"><Link href="/expenses" className="hover:text-foreground">← 지출 내역</Link></nav>
       <header className="mb-8 border-b border-border pb-6">
-        <p className="mb-2 text-xs text-muted-foreground">{post.author?.nickname ?? "왕왕랜드"} · {new Date(post.published_at ?? post.created_at).toLocaleDateString("ko-KR")} · 조회 {post.view_count ?? 0}</p>
+        <p className="mb-2 text-xs text-muted-foreground">{post.author?.nickname ?? "왕왕랜드"} · <span className="whitespace-nowrap">{formatPostDateTime(post.published_at ?? post.created_at)}</span> · 조회 {post.view_count ?? 0}</p>
         <h1 className="break-words text-2xl font-bold md:text-3xl">{post.title}</h1>
       </header>
       <article><RichTextContent html={post.content} /></article>

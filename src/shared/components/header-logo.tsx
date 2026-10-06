@@ -10,9 +10,9 @@ export function HeaderLogo({ className, variant = "color" }: {
 }) {
   if (variant === "color") {
     return <span role="img" aria-label={`${SITE.name} 유기견 보호소`} className={cn("relative block aspect-[3/1] shrink-0", className)}>
-      <Image src={SITE.headerLogo} alt="" aria-hidden width={2172} height={724} sizes="(min-width: 1024px) 234px, 162px" className="block h-auto w-full dark:hidden" />
+      <Image src={SITE.headerLogo} alt="" aria-hidden width={2172} height={724} sizes="(min-width: 1024px) 216px, 150px" className="block h-auto w-full dark:hidden" />
       <span aria-hidden className="absolute inset-0 hidden dark:block">
-        <Image src={SITE.headerLogo} alt="" width={2172} height={724} sizes="(min-width: 1024px) 234px, 162px" className={cn("block h-auto w-full", styles.darkSymbol)} />
+        <Image src={SITE.headerLogo} alt="" width={2172} height={724} sizes="(min-width: 1024px) 216px, 150px" className={cn("block h-auto w-full", styles.darkSymbol)} />
         <span className={styles.darkWordmark} style={{ maskImage: `url("${SITE.headerLogo}")`, WebkitMaskImage: `url("${SITE.headerLogo}")` }} />
       </span>
     </span>
