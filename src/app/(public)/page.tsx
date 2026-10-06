@@ -15,6 +15,7 @@ import { listNotices } from "@/features/notices"
 import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
+import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
 
 export const revalidate = 60
 
@@ -33,7 +34,7 @@ export default async function HomePage({
       : yearMonthKst(todayKst())
   const scheduleRange = monthRange(scheduleYearMonth)
 
-  const [dogs, noticeResult, dailyResult, scheduleEvents, expenseResult, profile] = await Promise.all([
+  const [dogs, noticeResult, dailyResult, scheduleEvents, expenseResult, profile, homepage] = await Promise.all([
     listDogsForHome(4),
     listNotices({ limit: RECENT_POST_COUNT }),
     listCommunityPosts({ limit: 3 }),
@@ -44,6 +45,7 @@ export default async function HomePage({
     }),
     listNotices({ boardType: "expense", publicOnly: true, limit: RECENT_POST_COUNT }),
     getCurrentProfile(),
+    getHomepageSettings(),
   ])
 
   const dailyPostIds = dailyResult.posts.filter(post => post.source === "daily").map((post) => post.id)
@@ -66,11 +68,12 @@ export default async function HomePage({
       <section className="grid gap-4 md:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <div className="relative isolate min-h-[260px] overflow-hidden rounded-2xl bg-muted sm:min-h-[320px]">
               <Image
-                src="/images/banner.jpeg"
-                alt="왕왕랜드 아이들"
+                src={homepage.photos.banner.src}
+                alt={homepage.photos.banner.alt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 1050px"
                 className="object-cover object-center"
+                style={{ objectPosition: `${homepage.photos.banner.x}% ${homepage.photos.banner.y}%` }}
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />

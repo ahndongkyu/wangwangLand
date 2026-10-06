@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { QuickAnimalPhoto } from "@/features/settings/components/animal-photo-picker"
 import Link from "next/link"
 
 import { getCurrentAdmin } from "@/features/auth"
@@ -280,6 +281,7 @@ export default async function AdminCatsPage({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <CatRowActions id={cat.id} name={cat.name} canDelete={canDelete} />
+                        <QuickAnimalPhoto kind="cats" id={cat.id} name={cat.name} images={cat.images} index={cat.thumbnail_index} />
                       </td>
                     </tr>
                   )

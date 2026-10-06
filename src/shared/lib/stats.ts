@@ -2,9 +2,9 @@ import { createAdminClient } from "@/shared/lib/supabase/admin"
 
 export interface SiteStats {
   /** 입양 완료된 아이 수 */
-  adopted: number
+  adopted: number | null
   /** 누적 봉사 신청자 수 */
-  volunteers: number
+  volunteers: number | null
 }
 
 /**
@@ -25,7 +25,8 @@ export async function getSiteStats(): Promise<SiteStats> {
   const totalVolunteers = (volRes.data ?? []).reduce((sum, r) => sum + (r.party_size ?? 1), 0)
 
   return {
-    adopted: (dogAdoptedRes.count ?? 0) + (catAdoptedRes.count ?? 0),
-    volunteers: totalVolunteers,
+    adopted: dogAdoptedRes.error || catAdoptedRes.error || dogAdoptedRes.count === null || catAdoptedRes.count === null
+      ? null : dogAdoptedRes.count + catAdoptedRes.count,
+    volunteers: volRes.error ? null : totalVolunteers,
   }
 }

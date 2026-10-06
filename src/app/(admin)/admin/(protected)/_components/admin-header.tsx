@@ -71,14 +71,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
           : []),
       ],
     },
-    ...(isTopAdmin
-      ? [
-          {
-            label: "시스템",
-            items: [{ label: "사이트 설정", href: "/admin/settings" }],
-          },
-        ]
-      : []),
+    { label: "시스템", items: [{ label: "홈페이지 관리", href: "/admin/settings" }] },
   ]
 }
 

@@ -1,30 +1,18 @@
 import Image from "next/image"
 import Link from "next/link"
 import type { Metadata } from "next"
-import {
-  Calendar,
-  ChevronDown,
-  Heart,
-  MapPin,
-  MoonStar,
-  ShieldCheck,
-  Stethoscope,
-  Sun,
-  Sunrise,
-} from "lucide-react"
-
+import { ChevronDown } from "lucide-react"
 import { CopyButton } from "@/shared/components/copy-button"
 import { buttonVariants } from "@/shared/components/ui/button"
 import { SITE } from "@/shared/constants/site"
 import { getSiteStats } from "@/shared/lib/stats"
 import { cn } from "@/shared/lib/utils"
+import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
 
 export const metadata: Metadata = {
   title: "센터 소개",
-  description: `${SITE.name}는 어떤 단체이며, 어떤 가치로 활동하는지 소개합니다.`,
+  description: "영종도 유기견 보호소 왕왕랜드의 활동과 운영, 방문 방법을 안내합니다.",
 }
-
-// 센터 현황은 페이지를 열 때마다 최신 운영 데이터를 조회한다.
 export const revalidate = 0
 
 const FAQ_ITEMS = [
@@ -55,416 +43,112 @@ const FAQ_ITEMS = [
   },
 ] as const
 
+
 export default async function AboutPage() {
-  const stats = await getSiteStats()
-
+  const [stats, homepage] = await Promise.all([getSiteStats(), getHomepageSettings()])
+  const photo = homepage.photos.about
+  const links = "inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
   return (
-    <div className="min-w-0 p-3 text-foreground sm:p-4 lg:p-5">
-      <section className="overflow-hidden rounded-[26px] border border-border bg-card shadow-[0_16px_42px_rgba(88,76,68,0.09)] md:grid md:grid-cols-[1.08fr_0.92fr]">
-        <div className="relative min-h-64 overflow-hidden bg-muted sm:min-h-72 md:min-h-[360px]">
-          <Image
-            src="/images/banner.jpeg"
-            alt="왕왕랜드 보호소에서 함께 지내는 강아지들"
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1440px) 48vw, 540px"
-            className="object-cover object-center"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
-          <span className="absolute bottom-5 left-5 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-6 sm:left-6">
-            <MapPin className="size-3.5" aria-hidden />
-            영종도 유기견 보호소
-          </span>
-        </div>
-
-        <div className="flex flex-col justify-center px-6 py-9 sm:px-9 sm:py-10 lg:px-11">
-          <span className="text-[11px] font-bold tracking-[0.18em] text-primary uppercase">
-            About Wangwangland
-          </span>
-          <h1 className="mt-3 text-3xl font-bold leading-tight tracking-[-0.04em] text-foreground sm:text-4xl">
-            기다림이 가족을
-            <br />
-            만나는 순간까지
-          </h1>
-          <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground sm:text-base">
-            왕왕랜드는 구조된 아이들이 안전하게 회복하고 평생 가족을 만날
-            때까지 함께합니다.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-2.5">
-            <Link
-              href="/dogs"
-              className={cn(buttonVariants({ size: "lg" }), "h-11 px-4")}
-            >
-              아이들 만나기
-            </Link>
-            <Link
-              href="/volunteer"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "lg" }),
-                "h-11 px-4"
-              )}
-            >
-              봉사로 함께하기
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-8" aria-label="센터 현황">
-        <ShelterImpactPanel adopted={stats.adopted} volunteers={stats.volunteers} />
-      </section>
-
-      <section className="mt-12" aria-labelledby="mission-heading">
-        <SectionHeading
-          eyebrow="What we do"
-          id="mission-heading"
-          title="아이의 내일을 준비하는 일"
-          description="구조 이후의 하루부터 평생 가족을 만나는 순간까지 책임집니다."
-        />
-        <div className="grid gap-5 md:grid-cols-3 md:gap-7">
-          <MissionStep
-            icon={<ShieldCheck className="size-5" aria-hidden />}
-            title="구조와 보호"
-            description="도움이 필요한 아이를 구조하고 안전한 보금자리에서 돌봅니다."
-          />
-          <MissionStep
-            icon={<Stethoscope className="size-5" aria-hidden />}
-            title="회복과 사회화"
-            description="건강을 회복하고 사람과 다시 가까워질 수 있도록 기다려 줍니다."
-          />
-          <MissionStep
-            icon={<Heart className="size-5" aria-hidden />}
-            title="평생 가족 연결"
-            description="아이에게 맞는 가족을 만나고 입양 후에도 꾸준히 소통합니다."
-          />
-        </div>
-      </section>
-
-      <section className="mt-12" aria-labelledby="day-heading">
-        <SectionHeading
-          eyebrow="A day at the shelter"
-          id="day-heading"
-          title="왕왕랜드의 하루"
-          description="매일 반복되는 작은 돌봄이 아이들에게 평온한 하루를 만듭니다."
-        />
-        <div className="overflow-hidden rounded-2xl border border-border bg-secondary/30 lg:grid lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="relative min-h-64 overflow-hidden bg-muted sm:min-h-80 lg:min-h-[350px]">
-            <Image
-              src="/images/about.jpg"
-              alt="왕왕랜드에서 보호 중인 강아지"
-              fill
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
-              <p className="text-lg font-bold sm:text-xl">
-                작은 돌봄이 모여 평온한 하루가 됩니다
-              </p>
-              <p className="mt-1 text-sm text-white/75">
-                오늘도 아이들의 속도에 맞춰 천천히 돌봅니다.
-              </p>
-            </div>
-          </div>
-          <div className="divide-y divide-border px-6 py-2 sm:px-8 lg:flex lg:flex-col lg:justify-center lg:py-6">
-            <DailyStep
-              icon={<Sunrise className="size-4.5" aria-hidden />}
-              period="아침"
-              title="식사와 건강 확인"
-              description="아이마다 필요한 사료와 약을 챙깁니다."
-            />
-            <DailyStep
-              icon={<Sun className="size-4.5" aria-hidden />}
-              period="낮"
-              title="산책과 생활 공간 관리"
-              description="함께 움직이고 머무는 곳을 정돈합니다."
-            />
-            <DailyStep
-              icon={<MoonStar className="size-4.5" aria-hidden />}
-              period="저녁"
-              title="휴식과 교감"
-              description="하루를 마무리하며 아이들의 상태를 살핍니다."
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-10 grid gap-5 rounded-2xl border border-border border-l-[5px] border-l-brand-sage bg-accent/70 p-6 shadow-[0_10px_28px_rgba(88,76,68,0.06)] sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+    <div className="min-w-0 px-4 py-8 text-foreground sm:px-6 md:py-10">
+      <section className="grid items-center gap-6 lg:grid-cols-[1fr_1.05fr] lg:gap-10">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-            한 아이의 내일에 함께해 주세요
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            입양, 봉사, 후원. 가능한 방식으로 왕왕랜드 가족이 되어주세요.
-          </p>
+          <p className="mb-4 text-xs font-semibold text-primary">센터 소개</p>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl">영종도 유기견 보호소,<br /><span className="mt-1 inline-block">왕왕랜드</span></h1>
+          <p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground sm:text-base">구조된 아이들을 돌보고, 새로운 가족을 만날 수 있도록 입양과 봉사를 연결합니다.</p>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">아이들이 안심하고 지낼 수 있는 하루를 함께 만듭니다.</p>
+          <a href="#about-visit" className={cn(links, "mt-5")}>처음 방문하시나요? 방문 안내 →</a>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Link
-            href="/adopt"
-            className={cn(buttonVariants({ variant: "outline" }), "h-10 px-3.5")}
-          >
-            입양 문의
-          </Link>
-          <Link
-            href="/volunteer"
-            className={cn(buttonVariants(), "h-10 px-3.5")}
-          >
-            봉사 신청
-          </Link>
-          <Link
-            href="/donate"
-            className={cn(buttonVariants({ variant: "secondary" }), "h-10 px-3.5")}
-          >
-            후원하기
-          </Link>
+        <figure className="overflow-hidden rounded-2xl">
+          <div className="relative aspect-[4/3] bg-muted">
+            <Image src={photo.src} alt={photo.alt} fill sizes="(max-width: 1024px) 100vw, 540px" className="object-cover" style={{ objectPosition: `${photo.x}% ${photo.y}%` }} priority />
+          </div>
+          <figcaption className="mt-2 text-xs text-muted-foreground">왕왕랜드에서 함께하는 일상</figcaption>
+        </figure>
+      </section>
+
+      <section className="mt-12 rounded-2xl bg-muted/55 p-5 sm:p-8 md:mt-16 dark:bg-muted/65" aria-labelledby="about-work">
+        <Heading id="about-work" title="왕왕랜드가 하는 일" description="구조 이후의 돌봄부터 새로운 가족과의 만남까지 함께합니다." />
+        <div className="grid gap-6 sm:grid-cols-3">
+          {[
+            ["01", "구조와 보호", "도움이 필요한 아이를 구조하고 안전하게 지낼 공간을 마련합니다."],
+            ["02", "회복과 돌봄", "식사와 건강을 챙기고, 사람과 가까워질 수 있도록 돌봅니다."],
+            ["03", "입양 연결", "아이에게 맞는 가족을 찾고, 입양 후에도 소식을 나눕니다."],
+          ].map(([number, title, desc]) => <div key={number}><p className="mb-2 text-xs font-semibold tracking-widest text-primary">{number}</p><h3 className="text-base font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{desc}</p></div>)}
+        </div>
+        <div className="mx-auto mt-8 max-w-2xl">
+          <dl className="grid grid-cols-2 divide-x divide-border/60 overflow-hidden rounded-2xl bg-background/80 text-center">
+            <Impact label="입양 완료" value={stats.adopted} unit="마리" />
+            <Impact label="누적 봉사자" value={stats.volunteers} unit="명" />
+          </dl>
+          <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">입양 완료는 등록된 강아지·고양이 기준입니다.<br />누적 봉사자는 승인된 신청 인원 합계이며, 반복 참여를 포함합니다.</p>
         </div>
       </section>
 
-      <section className="mt-12 grid gap-8 border-t border-border pt-10 lg:grid-cols-2 lg:gap-12">
-        <div aria-labelledby="visit-heading">
-          <SectionHeading
-            eyebrow="Visit us"
-            id="visit-heading"
-            title="오시는 길"
-            description="방문 전 봉사 신청 또는 입양 문의를 먼저 작성해 주세요."
-          />
-          <div className="rounded-2xl border border-border bg-secondary/25 p-5 sm:p-6">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <MapPin className="size-4.5" aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">
-                  {SITE.contact.address}
-                </p>
-                {SITE.contact.addressNote && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {SITE.contact.addressNote}
-                  </p>
-                )}
-                <CopyButton
-                  value={SITE.contact.address}
-                  label="주소"
-                  className="mt-3"
-                />
-              </div>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <a
-                href={`https://map.naver.com/v5/search/${encodeURIComponent(SITE.contact.mapQuery || SITE.contact.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-              >
-                네이버 지도
-              </a>
-              <a
-                href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery || SITE.contact.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-              >
-                카카오 지도
-              </a>
+      <section className="mt-12 md:mt-16" aria-labelledby="about-life">
+        <Heading id="about-life" title="일상과 운영을 기록합니다" description="아이들의 소식과 후원금 사용 내역을 게시판에서 확인하실 수 있습니다." />
+        <div className="grid gap-4 md:grid-cols-2">
+          <RecordLink href="/daily?category=일상" title="보호소의 일상" description="식사와 건강 확인, 산책과 공간 관리. 아이들과 함께하는 하루를 나눕니다." action="일상 보기" />
+          <RecordLink href="/expenses" title="후원금 사용 내역" description="아이들의 치료와 생활, 보호소 운영에 사용한 지출 내역을 공개합니다." action="지출내역 보기" note="회원 로그인 후 확인할 수 있습니다." />
+        </div>
+      </section>
+
+      <section id="about-visit" className="mt-12 scroll-mt-28 rounded-2xl bg-secondary/45 p-5 sm:p-8 md:mt-16 dark:bg-secondary/65" aria-labelledby="about-visit-heading">
+        <Heading id="about-visit-heading" title="방문 전 확인해 주세요" description="봉사 신청 또는 입양 문의 후, 운영진의 안내에 따라 방문해 주세요." />
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+          <div>
+            <h3 className="text-sm font-semibold">보호소 위치</h3>
+            <p className="mt-3 text-base font-semibold leading-7">{SITE.contact.address}</p>
+            {SITE.contact.addressNote && <p className="mt-2 text-sm text-muted-foreground">{SITE.contact.addressNote}</p>}
+            <div className="mt-3"><CopyButton value={SITE.contact.address} label="주소" /></div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href={`https://map.naver.com/v5/search/${encodeURIComponent(SITE.contact.mapQuery || SITE.contact.address)}`} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>네이버 지도</a>
+              <a href={`https://map.kakao.com/?q=${encodeURIComponent(SITE.contact.mapQuery || SITE.contact.address)}`} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>카카오 지도</a>
             </div>
           </div>
-        </div>
-
-        <div aria-labelledby="trust-heading">
-          <SectionHeading
-            eyebrow="Transparency"
-            id="trust-heading"
-            title="믿을 수 있는 단체 정보"
-            description="왕왕랜드의 등록 정보와 운영 형태를 투명하게 안내합니다."
-          />
-          <dl className="divide-y divide-border rounded-2xl border border-border bg-card px-5 sm:px-6">
-            {SITE.registration.taxId && (
-              <RegistrationRow label="고유번호">
-                {SITE.registration.taxId}
-              </RegistrationRow>
-            )}
-            {SITE.registration.shelterNumber && (
-              <RegistrationRow label="동물보호센터 등록번호">
-                {SITE.registration.shelterNumber}
-              </RegistrationRow>
-            )}
-            {SITE.registration.representativeName && (
-              <RegistrationRow label="대표자">
-                {SITE.registration.representativeName}
-              </RegistrationRow>
-            )}
-            <RegistrationRow label="설립 형태">
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-muted-foreground" aria-hidden />
-                비영리 동물 보호 단체
-              </span>
-            </RegistrationRow>
-          </dl>
+          <div>
+            <h3 className="mb-3 text-sm font-semibold">단체 정보</h3>
+            <dl className="space-y-3 text-sm">
+              {SITE.registration.representativeName && <Info label="대표자" value={SITE.registration.representativeName} />}
+              {SITE.registration.taxId && <Info label="고유번호" value={SITE.registration.taxId} />}
+              {SITE.registration.shelterNumber && <Info label="등록번호" value={SITE.registration.shelterNumber} />}
+              <Info label="운영 형태" value="비영리 동물 보호 단체" />
+            </dl>
+          </div>
         </div>
       </section>
 
-      <section className="mt-12" aria-labelledby="faq-heading">
-        <SectionHeading
-          eyebrow="FAQ"
-          id="faq-heading"
-          title="자주 묻는 질문"
-          description="입양과 봉사, 후원 전에 많이 궁금해하시는 내용을 모았습니다."
-        />
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          {FAQ_ITEMS.map((item) => (
-            <FaqItem
-              key={item.question}
-              question={item.question}
-              answer={item.answer}
-            />
-          ))}
+      <section className="mt-12 md:mt-16" aria-labelledby="about-faq">
+        <Heading id="about-faq" title="자주 묻는 질문" />
+        <div className="divide-y divide-border/60">
+          {FAQ_ITEMS.map(item => <details key={item.question} className="group">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 rounded-lg px-5 py-4 text-sm font-semibold transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span>{item.question}</span><ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden /></summary>
+            <p className="px-5 pb-5 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+          </details>)}
+        </div>
+      </section>
+
+      <section className="mt-12 rounded-2xl bg-muted/55 p-5 sm:p-8 md:mt-16 dark:bg-muted/65">
+        <h2 className="text-xl font-bold tracking-tight">가능한 방식으로 함께해 주세요</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">봉사로 시간을 나누고, 입양과 후원으로 아이들의 생활을 함께 지켜주세요.</p>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Link href="/volunteer" className={cn(buttonVariants(), "min-h-11")}>봉사 신청</Link>
+          <Link href="/adopt" className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>입양 문의</Link>
+          <Link href="/donate" className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}>후원하기</Link>
         </div>
       </section>
     </div>
   )
 }
 
-function ShelterImpactPanel({ adopted, volunteers }: { adopted: number; volunteers: number }) {
-  return (
-    <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-border bg-card shadow-[0_10px_28px_rgba(88,76,68,0.06)]">
-      <div className="grid grid-cols-2 divide-x divide-border">
-        <div className="px-5 py-5 text-center sm:px-8 sm:py-6">
-          <p className="text-xs font-semibold tracking-wide text-muted-foreground">입양 완료</p>
-          <p className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {adopted.toLocaleString()}
-            <span className="ml-1 text-sm font-medium text-muted-foreground">마리</span>
-          </p>
-        </div>
-        <div className="px-5 py-5 text-center sm:px-8 sm:py-6">
-          <p className="text-xs font-semibold tracking-wide text-muted-foreground">누적 봉사자</p>
-          <p className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {volunteers.toLocaleString()}
-            <span className="ml-1 text-sm font-medium text-muted-foreground">명</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+function Heading({ id, title, description }: { id: string; title: string; description?: string }) {
+  return <header className="mb-6"><h2 id={id} className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h2>{description && <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>}</header>
 }
-
-function SectionHeading({
-  eyebrow,
-  id,
-  title,
-  description,
-}: {
-  eyebrow: string
-  id: string
-  title: string
-  description: string
-}) {
-  return (
-    <header className="mb-5">
-      <span className="text-[11px] font-bold tracking-[0.16em] text-primary uppercase">
-        {eyebrow}
-      </span>
-      <h2
-        id={id}
-        className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-      >
-        {title}
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-        {description}
-      </p>
-    </header>
-  )
+function Impact({ label, value, unit }: { label: string; value: number | null; unit: string }) {
+  return <div className="px-3 py-5 sm:py-6"><dt className="text-xs font-medium text-muted-foreground">{label}</dt><dd className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{value === null ? <span className="text-base font-medium">확인 중</span> : <>{value.toLocaleString()}<span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span></>}</dd></div>
 }
-
-function MissionStep({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="border-t border-border pt-5">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          {icon}
-        </span>
-        <h3 className="font-bold text-foreground">{title}</h3>
-      </div>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        {description}
-      </p>
-    </div>
-  )
+function RecordLink({ href, title, description, action, note }: { href: string; title: string; description: string; action: string; note?: string }) {
+  return <Link href={href} className="group flex flex-col rounded-2xl border border-border/60 bg-card p-5 transition-colors hover:border-primary/50 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-6"><h3 className="text-base font-bold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>{note && <p className="mt-2 text-xs text-muted-foreground">{note}</p>}<span className="mt-auto pt-5 text-sm font-semibold text-primary">{action} <span aria-hidden>→</span></span></Link>
 }
-
-function DailyStep({
-  icon,
-  period,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  period: string
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex gap-3 py-5">
-      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </span>
-      <div>
-        <p className="text-sm font-bold text-foreground">
-          <span className="mr-1.5 text-primary">{period}</span>
-          {title}
-        </p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground sm:text-sm">
-          {description}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function RegistrationRow({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="grid gap-1 py-4 text-sm sm:grid-cols-[140px_minmax(0,1fr)] sm:items-baseline sm:gap-4">
-      <dt className="text-xs font-semibold text-muted-foreground">{label}</dt>
-      <dd className="text-foreground">{children}</dd>
-    </div>
-  )
-}
-
-function FaqItem({
-  question,
-  answer,
-}: {
-  question: string
-  answer: string
-}) {
-  return (
-    <details className="group border-b border-border last:border-0">
-      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-5 py-4 transition-colors hover:bg-secondary/40 sm:px-6 sm:py-5">
-        <span className="text-sm font-semibold text-foreground sm:text-base">
-          {question}
-        </span>
-        <ChevronDown
-          className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-          aria-hidden
-        />
-      </summary>
-      <div className="px-5 pb-5 text-sm leading-7 text-muted-foreground sm:px-6">
-        {answer}
-      </div>
-    </details>
-  )
+function Info({ label, value }: { label: string; value: string }) {
+  return <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-3"><dt className="text-muted-foreground">{label}</dt><dd className="break-words">{value}</dd></div>
 }

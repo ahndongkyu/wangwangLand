@@ -1,4 +1,5 @@
 import Image from "next/image"
+import { QuickAnimalPhoto } from "@/features/settings/components/animal-photo-picker"
 import Link from "next/link"
 import { Pin } from "lucide-react"
 
@@ -338,6 +339,7 @@ export default async function AdminDogsPage({
                       </td>
                       <td className="px-4 py-3 text-right">
                         <DogRowActions id={dog.id} name={dog.name} canDelete={canDelete} />
+                        <QuickAnimalPhoto kind="dogs" id={dog.id} name={dog.name} images={dog.images} index={dog.thumbnail_index} />
                       </td>
                     </tr>
                   )

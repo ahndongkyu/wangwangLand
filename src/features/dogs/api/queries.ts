@@ -1,5 +1,6 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
+import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
 
 export type DogSort = "latest" | "name" | "pinned"
 
@@ -207,10 +208,11 @@ export async function listSimilarDogs(
  * 홈 "새 가족을 기다려요" 섹션용 쿼리.
  * 1순위: is_pinned = true (pin_order ASC)
  * 2순위: 나머지 슬롯 → 보호 중 최신 입소순 자동 채움
- * 총 limit 개 (기본 8) 반환.
+ * 총 limit 개 (기본 4) 반환.
  */
-export async function listDogsForHome(limit = 8): Promise<Dog[]> {
+export async function listDogsForHome(limit = 4): Promise<Dog[]> {
   const supabase = await createClient()
+  const { autoFill } = await getHomepageSettings()
 
   // 사진 등록된 아이만 노출하기 위해 여유 있게 가져온 후 필터.
   // (images 가 빈 배열인 row 도 같이 오므로 클라이언트에서 거른다)
@@ -229,6 +231,7 @@ export async function listDogsForHome(limit = 8): Promise<Dog[]> {
   const pinnedDogs = ((pinned ?? []) as Dog[]).filter(hasImages)
 
   if (pinnedDogs.length >= limit) return pinnedDogs.slice(0, limit)
+  if (!autoFill) return pinnedDogs
 
   const remaining = limit - pinnedDogs.length
   const pinnedIds = pinnedDogs.map((d) => d.id)
@@ -237,9 +240,11 @@ export async function listDogsForHome(limit = 8): Promise<Dog[]> {
     .from("dogs")
     .select(DOG_CARD_COLS)
     .eq("is_pinned", false)
+    .neq("images", "{}")
     .in("status", ["보호중", "임시보호중"])
     .order("rescue_date", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
+    .order("id", { ascending: true })
     .limit(fetchLimit)
 
   if (pinnedIds.length > 0) {

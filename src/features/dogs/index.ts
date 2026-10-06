@@ -15,4 +15,4 @@ export {
   countPinnedDogs,
   getMonthlyRescueStats,
 } from "./api/queries"
-export { createDog, updateDog, deleteDog, updateDogStatus, toggleDogPin } from "./api/mutations"
+export { createDog, updateDog, deleteDog, updateDogStatus } from "./api/mutations"
