@@ -14,6 +14,7 @@ import { MobileCtaBar } from "@/shared/components/mobile-cta-bar"
 import { ScrollToTopButton } from "@/shared/components/kakao-channel-button"
 import { HomeSidebar } from "@/shared/components/home-sidebar"
 import { AutoPushPrompt } from "@/features/push"
+import { HomepagePopups } from "@/features/settings/components/homepage-popup"
 
 // 헤더의 NEW 뱃지·알림 등은 1분 캐시 허용 — 첫 페이지 로드 빨라짐.
 export const revalidate = 60
@@ -123,6 +124,7 @@ export default async function PublicLayout({
       <div className="hidden md:block"><Footer /></div>
       <ScrollToTopButton />
       <MobileCtaBar />
+      <HomepagePopups />
       {/* 마케팅 동의자에게 자동 푸시 권한 요청 (UI 없음) */}
       <AutoPushPrompt marketingAgreed={!!profile?.marketing_agreed_at} />
     </div>

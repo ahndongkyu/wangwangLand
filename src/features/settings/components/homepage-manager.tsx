@@ -9,7 +9,7 @@ import { DEFAULT_PHOTOS, eligibleAnimal, type ManagedAnimal, type SitePhotos } f
 import { saveHomeAnimals, saveSitePhotos } from "../api/homepage-actions"
 
 const inputClass = "mt-2 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-export function HomepageManager({ initialPhotos, initialAutoFill, animals, maintenance, loadError }: { initialPhotos: SitePhotos; initialAutoFill: boolean; animals: ManagedAnimal[]; maintenance: ReactNode; loadError: string | null }) {
+export function HomepageManager({ initialPhotos, initialAutoFill, animals, maintenance, popups, loadError }: { initialPhotos: SitePhotos; initialAutoFill: boolean; animals: ManagedAnimal[]; maintenance: ReactNode; popups?: ReactNode; loadError: string | null }) {
   const router = useRouter()
   const [tab, setTab] = useState("photos")
   const [photos, setPhotos] = useState(initialPhotos)
@@ -43,7 +43,7 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
     catch { setError("저장에 실패했습니다. 다시 시도해 주세요.") } finally { setBusy(false) }
   }
   return <div className="[&_button]:min-h-11">
-    <nav aria-label="홈페이지 관리 분류" className="mb-6 flex flex-wrap gap-2">{[["photos","사이트 사진"],["animals","홈 노출 아이들"],["settings","사이트 설정"]].map(([value,label]) => <Button key={value} disabled={busy} type="button" variant={tab===value ? "default" : "outline"} aria-current={tab===value ? "page" : undefined} className="min-h-11" onClick={() => { setTab(value); setMessage(""); setError("") }}>{label}{(value === "photos" && photosDirty || value === "animals" && homeDirty) ? " · 변경됨" : ""}</Button>)}</nav>
+    <nav aria-label="홈페이지 관리 분류" className="mb-6 flex flex-wrap gap-2">{[["photos","사이트 사진"],["animals","홈 노출 아이들"],["popups","팝업 관리"],["settings","사이트 설정"]].map(([value,label]) => <Button key={value} disabled={busy} type="button" variant={tab===value ? "default" : "outline"} aria-current={tab===value ? "page" : undefined} className="min-h-11" onClick={() => { setTab(value); setMessage(""); setError("") }}>{label}{(value === "photos" && photosDirty || value === "animals" && homeDirty) ? " · 변경됨" : ""}</Button>)}</nav>
     {loadError && <p role="alert" className="mb-5 rounded-lg bg-destructive/10 p-4 text-destructive">{loadError}</p>}
     {error && <p role="alert" className="mb-5 text-destructive">{error}</p>}
     <p role="status" className="mb-4 text-sm text-muted-foreground">{message}</p>
@@ -86,6 +86,7 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
       <p className="mt-2 text-xs text-muted-foreground">검색 결과는 최대 30마리씩 표시합니다. 입양 대기 상태이고 사진이 있는 아이만 추가할 수 있습니다.</p>
       <div className="mt-5 rounded-xl border border-border bg-card p-4"><p role={error ? "alert" : "status"} className="mb-3 text-sm">{busy ? "저장 중입니다…" : error || (homeDirty ? "저장 전 변경사항이 있습니다." : message || "현재 저장된 노출 설정입니다.")}</p><div className="flex flex-wrap gap-2"><Button disabled={busy || !!loadError || !homeDirty || ids.length>4 || selected.some(a=>!eligibleAnimal(a))} onClick={()=>run(()=>saveHomeAnimals(ids,autoFill,choices),()=>{setSavedHome(JSON.stringify({ids,autoFill})); setChoices({});setReplacement(null)})}>{busy?"저장 중…":"노출·대표사진 저장"}</Button><Button variant="outline" disabled={busy||!homeDirty} onClick={()=>{const previous=JSON.parse(savedHome);setIds(previous.ids);setAutoFill(previous.autoFill);setChoices({});setReplacement(null);setError("");setMessage("")}}>변경 취소</Button></div></div>
     </fieldset>
+    <div hidden={tab!=="popups"}>{popups}</div>
     <div hidden={tab!=="settings"}>{maintenance ?? <p className="rounded-xl bg-muted p-5 text-sm">점검 설정은 최고 관리자만 변경할 수 있습니다.</p>}</div>
   </div>
 }
