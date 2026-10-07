@@ -133,6 +133,23 @@ test("approve and continue dispatches only one save and uses server-selected des
   assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
   assert.equal(form.errors[0].href, undefined)
 })
+test("compact volunteer approval uses one submit button and optional continue checkbox", async () => {
+  const form = formHarness({ compactVolunteer: true })
+  assert.equal(nodes(form.render()).filter(n => n.type === "button" && n.props.type === "submit").length, 1)
+  assert.equal(nodes(form.render()).some(n => n.props?.children === "승인 후 다음 접수 보기"), false)
+  form.confirm()
+  await form.submit()
+  assert.equal(form.writes.length, 1)
+  assert.equal(form.writes[0].next, true)
+  assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
+})
+test("compact completed applications have no submit until processing is explicitly edited", () => {
+  for (const currentStatus of ["승인", "반려", "취소"]) {
+    const form = formHarness({ compactVolunteer: true, currentStatus, linkedEventCount: 1 })
+    assert.equal(nodes(form.render()).some(n => n.type === "form"), false)
+    assert.ok(nodes(form.render()).some(n => n.props?.children === "처리 수정"))
+  }
+})
 test("reschedule approval replaces schedules; rejection keeps them and does not permit accidental review reset", async () => {
   const props = { currentStatus: "일정변경요청", linkedEventCount: 1, rescheduleInfo: { dates: ["2026-10-20"], time: "11:00" } }
   const accepted = formHarness(props)

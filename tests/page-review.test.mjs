@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { load, renderMembers, renderStaff, renderMemberDetail, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
+import { load, renderMembers, renderStaff, renderMemberDetail, renderVolunteer, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
 
 test("member list returns preserve only validated internal filters", () => {
   const { memberListReturnHref: back } = load("src/features/members/lib/list-navigation.ts")
@@ -81,4 +81,18 @@ test("adoption detail uses independent columns and early mobile processing", asy
   assert.match(html, /contents xl:flex/)
   assert.match(html, /id="application-processing" class="order-2/)
   assert.match(html, /<details[^>]*>.*신청 시 동의/s)
+})
+test("volunteer summary distinguishes approved without schedule and shows application data before processing", async () => {
+  const pending = await renderVolunteer()
+  assert.match(pending, /접수 · 승인 대기/)
+  assert.ok(pending.indexOf("010-0000-1201") < pending.indexOf('id="application-processing"'))
+  assert.ok(pending.indexOf("신청 일시") > pending.indexOf('id="application-processing"'))
+  const approved = await renderVolunteer({ status: "승인", registered: true })
+  assert.match(approved, /승인 완료/)
+  assert.match(approved, /캘린더에 봉사 일정 1건이 등록/)
+  assert.doesNotMatch(approved, /type="submit"/)
+  const missing = await renderVolunteer({ status: "승인" })
+  assert.match(missing, /신청은 승인됐지만 캘린더 일정은 없습니다/)
+  assert.match(missing, /일정 등록<\/a>/)
+  await assert.rejects(() => renderVolunteer({ eventError: true }), /불러오지 못했습니다/)
 })

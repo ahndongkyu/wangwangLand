@@ -21,7 +21,11 @@ test("volunteer detail uses independent desktop columns and retains mobile card 
   assert.match(source, /contents xl:flex xl:min-w-0 xl:flex-\[1\.4\] xl:flex-col xl:gap-4/)
   assert.match(source, /<section className=\{cn\(panel, "order-1"\)\}/)
   assert.match(source, /id="application-processing" className="order-2/)
-  assert.match(source, /<section className=\{cn\(panel, "order-3"\)\}/)
+  assert.match(source, /<details className=\{cn\(panel, "order-3"\)\}/)
+  assert.ok(source.indexOf('label="연락처"') < source.indexOf('id="application-processing"'))
+  assert.ok(source.indexOf('label="신청 일시"') > source.indexOf('id="application-processing"'))
+  assert.match(source, /승인 완료/)
+  assert.match(source, /신청은 승인됐지만 캘린더 일정은 없습니다/)
 })
 
 test("return navigation is internal and restores calendar month, selected date and category", () => {

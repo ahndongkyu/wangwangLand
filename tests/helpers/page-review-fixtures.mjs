@@ -86,6 +86,24 @@ export async function renderDonate() {
 }
 export function renderContact() { return renderToStaticMarkup(React.createElement(load("src/app/(public)/contact/page.tsx", base).default)) }
 const filters = load("src/features/applications/lib/admin-list.ts")
+export async function renderVolunteer({ status = "접수", registered = false, eventError = false } = {}) {
+  const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
+  const Status = load("src/features/applications/components/status-form.tsx", {
+    ...base, "../api/mutations": {}, "../api/processing": {}, "../lib/detail-navigation": navigation, "../lib/admin-list": filters,
+    "@/shared/components/ui/button": { Button: ({ children, variant, size, ...props }) => React.createElement("button", props, children) },
+    "@/shared/components/ui/textarea": { Textarea: props => React.createElement("textarea", props) },
+    "@/shared/lib/use-save-feedback": { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => {} }) },
+  }).ApplicationStatusForm
+  const query = { select() { return this }, eq() { return this }, order: async () => ({ error: eventError ? { message: "offline" } : null, data: registered ? [{ id: "event", starts_at: "2026-10-24T06:00:00Z", ends_at: null, location: null }] : [] }) }
+  const Page = load("src/app/(admin)/admin/(protected)/applications/volunteer/[id]/page.tsx", {
+    ...base, "@/features/applications/lib/admin-list": filters, "@/features/applications/lib/detail-navigation": navigation,
+    "@/features/applications": { ApplicationStatusForm: Status, formatVolunteerApplicantName: name => name, getVolunteerApplication: async () => ({ id: "volunteer", applicant_name: "김소연", group_name: null, party_size: 2, phone: "010-0000-1201", status, available_dates: ["2026-10-24"], available_time: "15:00", available_days: [], reschedule_dates: ["2026-10-25"], reschedule_time: "15:00", message: "봉사는 처음입니다. 친구와 함께 방문할 예정입니다.", submitted_at: "2026-10-07T00:42:00Z", created_by: "member", signup_provider: "kakao", admin_note: status === "승인" ? "준비물 안내" : null, approved_at: status === "승인" || status === "일정변경요청" ? "2026-10-07T01:05:00Z" : null, approved_by_profile: { nickname: "왕왕관리자", role: "admin" } }) },
+    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) },
+    "@/features/staff-schedule": { listStaffOnDates: async () => ({}), StaffAvailabilityDisplay: element("p", "출근 예정 확인 중") },
+    "@/features/events/components/delete-event-button": { DeleteEventButton: element("button", "일정 삭제") },
+  }).default
+  return renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "volunteer" }), searchParams: Promise.resolve({}) }))
+}
 export async function renderAdoption() {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx").ApplicationBadge
   const Status = load("src/features/applications/components/status-form.tsx", {
