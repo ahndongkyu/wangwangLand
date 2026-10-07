@@ -75,7 +75,7 @@ export default async function MyApplicationsPage() {
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, activities, reschedule_dates, reschedule_time")
+      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, reschedule_dates, reschedule_time")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
   ])
@@ -99,7 +99,6 @@ export default async function MyApplicationsPage() {
     cancel_reason: string | null
     available_days: string[]
     available_dates: string[]
-    activities: string[]
     reschedule_dates: string[] | null
     reschedule_time: string | null
   }>

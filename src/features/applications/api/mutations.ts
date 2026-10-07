@@ -382,8 +382,6 @@ export async function updateMyVolunteerApplication(
     }
   }
 
-  const activities = formData.getAll("activities").map(String) as VolunteerActivity[]
-
   const { error } = await admin
     .from("volunteer_applications")
     .update({
@@ -393,7 +391,6 @@ export async function updateMyVolunteerApplication(
       party_size: partyCheck.partySize!,
       available_dates: availableDates,
       available_time: availableTime,
-      activities,
       message: String(formData.get("message") ?? "").trim() || null,
       updated_at: new Date().toISOString(),
     })

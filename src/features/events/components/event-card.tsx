@@ -3,7 +3,6 @@ import { Calendar, MapPin, Users } from "lucide-react"
 
 import {
   CATEGORY_COLOR,
-  CATEGORY_LABEL,
   customColorStyle,
   eventDisplayLabel,
   getEventTitle,
@@ -11,6 +10,7 @@ import {
   type EventWithSignupCount,
 } from "../types"
 import { formatKoreanDayLabel } from "../lib/date"
+import { eventDescriptionForDisplay } from "../lib/description"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
@@ -25,6 +25,7 @@ export function EventCard({ event, basePath = "/calendar", maskNames = false }: 
   const isCustom = event.category === "custom"
   const color = CATEGORY_COLOR[event.category]
   const customStyle = isCustom ? customColorStyle(event.custom_color) : null
+  const description = eventDescriptionForDisplay(event)
 
   return (
     <Link
@@ -67,9 +68,9 @@ export function EventCard({ event, basePath = "/calendar", maskNames = false }: 
         )}
       </div>
 
-      {event.description && (
+      {description && (
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/90">
-          {event.description}
+          {description}
         </p>
       )}
     </Link>

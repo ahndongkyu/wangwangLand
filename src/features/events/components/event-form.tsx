@@ -7,6 +7,7 @@ import { Lock } from "lucide-react"
 import { createEvent, updateEvent, type RecurrenceScope } from "../api/mutations"
 import { RecurringScopeDialog } from "./recurring-scope-dialog"
 import { isoToLocalKstInput, todayKstDate } from "../lib/date"
+import { eventDescriptionForDisplay } from "../lib/description"
 import {
   generateOccurrenceDates,
   type RecurrenceMode,
@@ -40,7 +41,6 @@ interface Props {
     partySize: number
     availableDates: string[]
     availableTime: string | null
-    activities: string[]
     message: string | null
   }
   /** 수정 모드에서 이 일정이 반복 그룹이면, 같은 그룹 일정 목록 (범위 선택용) */
@@ -181,12 +181,9 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
   })()
 
   const defaultDescription = (() => {
-    if (event) return event.description ?? ""
+    if (event) return eventDescriptionForDisplay(event) ?? ""
     if (fromApplication) {
       return [
-        fromApplication.activities.length > 0
-          ? `희망 활동: ${fromApplication.activities.join(", ")}`
-          : null,
         fromApplication.availableTime
           ? `요청 시간대: ${fromApplication.availableTime}`
           : null,

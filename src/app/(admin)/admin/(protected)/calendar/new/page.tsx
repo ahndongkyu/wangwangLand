@@ -15,7 +15,6 @@ interface FromApp {
   partySize: number
   availableDates: string[]
   availableTime: string | null
-  activities: string[]
   message: string | null
 }
 
@@ -25,7 +24,7 @@ async function loadApplication(id: string): Promise<FromApp | null> {
   const { data } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, status"
+      "id, applicant_name, group_name, party_size, available_dates, available_time, message, status"
     )
     .eq("id", id)
     .maybeSingle()
@@ -39,7 +38,6 @@ async function loadApplication(id: string): Promise<FromApp | null> {
     partySize: data.party_size ?? 1,
     availableDates: (data.available_dates ?? []) as string[],
     availableTime: data.available_time,
-    activities: (data.activities ?? []) as string[],
     message: data.message,
   }
 }

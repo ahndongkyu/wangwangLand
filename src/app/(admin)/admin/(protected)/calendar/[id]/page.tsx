@@ -12,6 +12,7 @@ import {
 } from "@/features/events"
 import { DeleteEventButton } from "@/features/events/components/delete-event-button"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
+import { eventDescriptionForDisplay } from "@/features/events/lib/description"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { cn } from "@/shared/lib/utils"
 
@@ -25,6 +26,7 @@ export default async function AdminEventDetailPage({
   const { id } = await params
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
+  const description = eventDescriptionForDisplay(event)
 
   const creator = event.created_by
     ? await getEventCreator(event.created_by)
@@ -108,11 +110,11 @@ export default async function AdminEventDetailPage({
         </Row>
       </section>
 
-      {event.description && (
+      {description && (
         <section className="mb-6 rounded-lg border border-border bg-card p-5">
           <h2 className="mb-2 text-sm font-semibold text-foreground">상세 안내</h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-            {event.description}
+            {description}
           </p>
         </section>
       )}

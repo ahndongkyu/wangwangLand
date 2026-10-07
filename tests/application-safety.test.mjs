@@ -15,6 +15,14 @@ function load(file, imports = {}) {
 }
 
 const hours = load("src/features/applications/lib/volunteer-operating-hours.ts")
+const descriptions = load("src/features/events/lib/description.ts")
+test("retired activities are hidden in linked calendar descriptions without changing other notes", () => {
+  const description = "희망 활동: 산책, 청소·정리\r\n요청 시간대: 10:00\r\n메모: 행사 지원\r\n준비물 안내"
+  assert.equal(descriptions.eventDescriptionForDisplay({ source_application_type: "volunteer", description }), "요청 시간대: 10:00\n메모: 행사 지원\n준비물 안내")
+  assert.equal(descriptions.eventDescriptionForDisplay({ source_application_type: null, description }), description)
+  assert.equal(descriptions.eventDescriptionForDisplay({ source_application_type: "volunteer", description: "희망 활동: 산책" }), null)
+  assert.equal(descriptions.eventDescriptionForDisplay({ source_application_type: "volunteer", description: null }), null)
+})
 test("KST today handles midnight, month and year boundaries", () => {
   for (const [instant, expected] of [
     ["2026-10-01T14:59:59Z", "2026-10-01"],

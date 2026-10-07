@@ -17,7 +17,6 @@ import { VolunteerTimeField } from "./volunteer-time-field"
 import { LargeGroupInquiry } from "./volunteer-application-guide"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { Button } from "@/shared/components/ui/button"
-import { Checkbox } from "@/shared/components/ui/checkbox"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { PhoneInput } from "@/shared/components/phone-input"
@@ -31,9 +30,7 @@ import {
   validateOrgOrPersonName,
   validatePartySize,
 } from "@/shared/lib/validation"
-import type { VolunteerActivity, VolunteerApplication } from "@/shared/types/database"
-
-const ACTIVITIES: VolunteerActivity[] = ["산책", "목욕·미용", "청소·정리", "홍보·촬영"]
+import type { VolunteerApplication } from "@/shared/types/database"
 
 interface Props {
   application: VolunteerApplication
@@ -59,7 +56,6 @@ export function VolunteerEditForm({
     ? (application.reschedule_dates ?? application.available_dates ?? [])
     : (application.available_dates ?? [])
   const [selectedDates, setSelectedDates] = useState<string[]>(initialDates)
-  const [activities, setActivities] = useState<string[]>(application.activities ?? [])
 
   const defaultTime = isReschedule
     ? (application.reschedule_time ?? application.available_time ?? "")
@@ -77,12 +73,6 @@ export function VolunteerEditForm({
     } else if (visitTime && !nextOptions.includes(visitTime)) {
       setVisitMinute("")
     }
-  }
-
-  function toggleActivity(name: string) {
-    setActivities((prev) =>
-      prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
-    )
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -211,28 +201,6 @@ export function VolunteerEditForm({
 
       {!isReschedule && (
         <>
-          <div className="space-y-2">
-            <Label>희망 활동</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {ACTIVITIES.map((act) => (
-                <label
-                  key={act}
-                  className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-secondary"
-                >
-                  <Checkbox
-                    checked={activities.includes(act)}
-                    onCheckedChange={() => toggleActivity(act)}
-                  />
-                  <span>{act}</span>
-                  {/* 폼 전송용 hidden input */}
-                  {activities.includes(act) && (
-                    <input type="hidden" name="activities" value={act} />
-                  )}
-                </label>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-1.5">
             <Label htmlFor="message">메모 (선택)</Label>
             <Textarea

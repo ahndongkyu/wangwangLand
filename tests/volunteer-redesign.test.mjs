@@ -25,7 +25,8 @@ const events = load("src/features/events/types.ts")
 const date = load("src/features/events/lib/date.ts")
 
 function harness({ user = true, approved = true, blocked = false, failure = false } = {}) {
-  const inserts = [], pushes = []
+  const inserts = [], pushes = [], updates = []
+  const historical = { activities: ["산책", "청소·정리"] }
   const api = load("src/features/applications/api/mutations.ts", {
     "next/cache": { revalidatePath() {} }, "next/navigation": {},
     "@/shared/lib/auth": {},
@@ -37,7 +38,14 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
       from(table) {
         if (table === "events") return { select() { return this }, in() { return this }, gte() { return this }, lte: async () => ({ data: blocked ? [{ starts_at: "2099-10-10T01:00:00Z" }] : [] }) }
         assert.equal(table, "volunteer_applications")
-        return { insert(value) { inserts.push(value); return this }, select() { return this }, single: async () => ({ data: failure ? null : { id: "application" }, error: failure ? { message: "save failed" } : null }) }
+        return {
+          insert(value) { inserts.push(value); return this },
+          update(value) { updates.push(value); Object.assign(historical, value); return this },
+          eq() { return this }, select() { return this },
+          maybeSingle: async () => ({ data: { id: "application", created_by: "member", status: "접수" } }),
+          single: async () => ({ data: failure ? null : { id: "application" }, error: failure ? { message: "save failed" } : null }),
+          then(resolve) { resolve({ error: null }) },
+        }
       },
     }) },
     "@/features/push": { sendPushToStaff: async (value) => pushes.push(value) },
@@ -45,7 +53,7 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
     "../lib/volunteer-applicant": applicant, "../lib/volunteer-operating-hours": hours,
     "@/shared/lib/validation": validation,
   })
-  return { submit: api.submitVolunteerApplication, inserts, pushes }
+  return { submit: api.submitVolunteerApplication, update: api.updateMyVolunteerApplication, inserts, pushes, updates, historical }
 }
 function form(overrides = {}) {
   const data = new FormData()
@@ -77,6 +85,16 @@ test("personal submission keeps dates and stores no new activity preferences", a
   assert.equal(h.pushes.length, 1)
   assert.equal("preparation_acknowledged" in h.inserts[0], false, "No new database column required")
 })
+test("editing a historical application preserves activities and ignores retired form values", async () => {
+  for (const overrides of [{}, { activities: "홍보·촬영" }]) {
+    const h = harness()
+    assert.equal((await h.update("application", form(overrides))).id, "application")
+    assert.equal(h.updates.length, 1)
+    assert.equal("activities" in h.updates[0], false)
+    assert.deepEqual(h.historical.activities, ["산책", "청소·정리"])
+    assert.equal(h.updates[0].available_time, "17:00")
+  }
+})
 test("group sizes and optional group names retain existing rules", async () => {
   for (const size of ["2", "30"]) for (const name of ["", "X", "없음", "봉사모임"]) {
     const h = harness()
@@ -106,7 +124,7 @@ test("unauthenticated/restricted submissions and failed saves do not notify staf
   }
 })
 test("initial form shows the whole flow and unchecked required preparation, without activity choices", () => {
-  const stub = name => props => React.createElement(name, props, props.children)
+  const stub = name => function FormControlStub(props) { return React.createElement(name, props, props.children) }
   const imports = {
     "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
     react: React, "react/jsx-runtime": jsx, "../api/mutations": {},

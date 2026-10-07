@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { ApplicationBadge } from "@/features/applications/components/application-detail-layout"
+import { applicationReturnHref } from "@/features/applications/lib/admin-list"
 import { notFound } from "next/navigation"
 import { KeyRound, MessageSquare, Phone, User } from "lucide-react"
 
@@ -32,28 +34,15 @@ function providerLabel(provider: string | null): string {
   }
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  접수: "bg-primary/15 text-primary",
-  검토중: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
-  승인: "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
-  반려: "bg-muted text-muted-foreground",
-  취소: "bg-muted text-muted-foreground/60",
-}
-
-const STATUS_HEADER_BG: Record<string, string> = {
-  접수: "border-primary/30 bg-primary/5",
-  검토중: "border-amber-300 bg-amber-50/60 dark:border-amber-700/50 dark:bg-amber-950/20",
-  승인: "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/50 dark:bg-emerald-950/20",
-  반려: "border-border bg-muted/30",
-  취소: "border-border bg-muted/20",
-}
-
 export default async function AdoptionApplicationDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ returnTo?: string | string[] }>
 }) {
   const { id } = await params
+  const returnHref = applicationReturnHref((await searchParams).returnTo, "adoption")
   const app = await getAdoptionApplication(id)
 
   if (!app) notFound()
@@ -67,10 +56,10 @@ export default async function AdoptionApplicationDetailPage({
   const isMember = !!app.created_by
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
-      <div className={`mb-6 rounded-xl border p-5 ${STATUS_HEADER_BG[app.status] ?? "border-border bg-card"}`}>
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
         <nav className="mb-4 text-sm text-muted-foreground">
-          <Link href="/admin/applications" className="hover:text-foreground">
+          <Link href={returnHref} className="hover:text-foreground">
             ← 신청 목록
           </Link>
         </nav>
@@ -78,15 +67,11 @@ export default async function AdoptionApplicationDetailPage({
         {/* 헤더 */}
         <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">
               입양 신청 상세
             </h1>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLOR[app.status] ?? "bg-secondary"}`}
-            >
-              {app.status}
-            </span>
+            <ApplicationBadge status={app.status} />
           </div>
           <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <span>
@@ -101,7 +86,7 @@ export default async function AdoptionApplicationDetailPage({
           </p>
           {app.status === "취소" ? (
             <div className="mt-3 space-y-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <p>신청자가 직접 취소한 신청입니다.</p>
+              <p>취소된 신청입니다.</p>
               {(app as typeof app & { cancel_reason?: string }).cancel_reason && (
                 <p>
                   <span className="font-semibold">취소 사유 · </span>
@@ -118,6 +103,7 @@ export default async function AdoptionApplicationDetailPage({
 
         {/* 빠른 연락 버튼 */}
         <div className="flex flex-wrap gap-2">
+          <a href="#application-processing" className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm xl:hidden">신청 처리로 이동</a>
           <ContactButton href={`tel:${app.phone}`} icon={Phone} label="전화" />
           <ContactButton
             href={`sms:${app.phone}`}
@@ -128,9 +114,11 @@ export default async function AdoptionApplicationDetailPage({
         </header>
       </div>
 
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.85fr)]">
+      <div className="min-w-0 [overflow-wrap:anywhere]">
       {/* 대상 아이 — 헤드라인 카드 */}
       {targetAnimal && (
-        <section className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5">
+      <section className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5">
           <div>
             <p className="text-xs text-muted-foreground">대상 아이</p>
             <p className="mt-1 text-lg font-bold text-foreground">
@@ -221,7 +209,7 @@ export default async function AdoptionApplicationDetailPage({
       </section>
 
       {/* 자격 확인 / 동의 (신청 시 폼에서 강제) */}
-      <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-900/40 dark:bg-emerald-900/10">
+      <section className="mb-6 rounded-xl border border-border bg-card p-5">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
           신청 시 동의·확인 사항
         </h2>
@@ -240,15 +228,20 @@ export default async function AdoptionApplicationDetailPage({
         </p>
       </section>
 
+      </div>
+      <aside id="application-processing" className="min-w-0 scroll-mt-20">
       {/* 처리 */}
-      <h2 className="mb-3 text-lg font-semibold text-foreground">처리</h2>
       <ApplicationStatusForm
         id={app.id}
+        returnHref={returnHref}
+        currentCancelReason={(app as typeof app & { cancel_reason?: string | null }).cancel_reason}
         kind="adoption"
         currentStatus={app.status}
         currentNote={app.admin_note}
         applicantName={app.applicant_name}
       />
+      </aside>
+      </div>
     </div>
   )
 }
@@ -263,7 +256,7 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <div className={`rounded-xl border border-border bg-card p-5 ${className ?? ""}`}>
+    <div className={`rounded-xl border border-border bg-card p-4 sm:p-5 ${className ?? ""}`}>
       <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
       <dl className="space-y-2 text-sm">{children}</dl>
     </div>

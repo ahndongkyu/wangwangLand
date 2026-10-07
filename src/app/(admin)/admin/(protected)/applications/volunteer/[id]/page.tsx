@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { ApplicationBadge } from "@/features/applications/components/application-detail-layout"
+import { applicationDate, applicationReturnHref } from "@/features/applications/lib/admin-list"
 import { notFound } from "next/navigation"
 import { KeyRound, MessageSquare, Phone, Users } from "lucide-react"
 
@@ -30,41 +32,26 @@ function providerLabel(provider: string | null): string {
   }
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  접수: "bg-primary/15 text-primary",
-  검토중: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
-  승인: "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400",
-  반려: "bg-muted text-muted-foreground",
-  취소: "bg-muted text-muted-foreground/60",
-  일정변경요청: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
-}
-
-const STATUS_HEADER_BG: Record<string, string> = {
-  접수: "border-primary/30 bg-primary/5",
-  검토중: "border-amber-300 bg-amber-50/60 dark:border-amber-700/50 dark:bg-amber-950/20",
-  승인: "border-emerald-300 bg-emerald-50/60 dark:border-emerald-700/50 dark:bg-emerald-950/20",
-  반려: "border-border bg-muted/30",
-  취소: "border-border bg-muted/20",
-  일정변경요청: "border-blue-300 bg-blue-50/60 dark:border-blue-700/50 dark:bg-blue-950/20",
-}
-
 export default async function VolunteerApplicationDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ returnTo?: string | string[] }>
 }) {
   const { id } = await params
+  const returnHref = applicationReturnHref((await searchParams).returnTo, "volunteer")
   const app = await getVolunteerApplication(id)
 
   if (!app) notFound()
 
   // 봉사 신청 날짜에 출근 예정 운영진 조회
-  const staffByDate = app.available_dates.length > 0
-    ? await listStaffOnDates(app.available_dates)
+  const requestedDates = app.status === "일정변경요청" ? app.reschedule_dates ?? [] : app.available_dates
+  const staffByDate = requestedDates.length > 0
+    ? await listStaffOnDates(requestedDates)
     : {}
 
-  // 자동 등록된 캘린더 이벤트들 (다중 날짜 신청 지원으로 여러 개 가능).
-  // status form 의 단일 날짜 입력에는 첫 번째만 prefill, 나머지는 별도 카드로 표시.
+  // 연결된 전체 일정을 읽어 변경 요청 비교와 중복 등록 안내에 사용합니다.
   let linkedEvents: Array<{
     id: string
     title: string
@@ -75,22 +62,23 @@ export default async function VolunteerApplicationDetailPage({
   {
     const { createAdminClient } = await import("@/shared/lib/supabase/admin")
     const admin = createAdminClient()
-    const { data } = await admin
+    const { data, error } = await admin
       .from("events")
       .select("id, title, starts_at, ends_at, source_application_id")
       .eq("source_application_type", "volunteer")
       .eq("source_application_id", id)
       .order("starts_at", { ascending: true })
+    if (error) throw new Error("등록된 일정을 불러오지 못했습니다. 새로고침해 주세요.")
     linkedEvents = data ?? []
   }
   const isMember = !!app.created_by
   const isGroup = app.party_size > 1
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
-      <div className={`mb-6 rounded-xl border p-5 ${STATUS_HEADER_BG[app.status] ?? "border-border bg-card"}`}>
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
         <nav className="mb-4 text-sm text-muted-foreground">
-          <Link href="/admin/applications" className="hover:text-foreground">
+          <Link href={returnHref} className="hover:text-foreground">
             ← 신청 목록
           </Link>
         </nav>
@@ -98,15 +86,11 @@ export default async function VolunteerApplicationDetailPage({
         {/* 헤더 */}
         <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">
               봉사 신청 상세
             </h1>
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLOR[app.status] ?? "bg-secondary"}`}
-            >
-              {app.status}
-            </span>
+            <ApplicationBadge status={app.status} />
           </div>
           <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <span>
@@ -141,7 +125,7 @@ export default async function VolunteerApplicationDetailPage({
           </p>
           {app.status === "취소" ? (
             <div className="mt-3 space-y-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <p>신청자가 직접 취소한 신청입니다.</p>
+              <p>취소된 신청입니다.</p>
               {(app as typeof app & { cancel_reason?: string }).cancel_reason && (
                 <p>
                   <span className="font-semibold">취소 사유 · </span>
@@ -162,6 +146,7 @@ export default async function VolunteerApplicationDetailPage({
 
         {/* 빠른 연락 */}
         <div className="flex flex-wrap gap-2">
+          <a href="#application-processing" className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm xl:hidden">신청 처리로 이동</a>
           <ContactButton href={`tel:${app.phone}`} icon={Phone} label="전화" />
           <ContactButton
             href={`sms:${app.phone}`}
@@ -172,6 +157,19 @@ export default async function VolunteerApplicationDetailPage({
         </header>
       </div>
 
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.85fr)]">
+      <div className="min-w-0 [overflow-wrap:anywhere]">
+      {app.status === "일정변경요청" && <section className="mb-6 rounded-xl border border-border bg-card p-4 sm:p-5">
+        <h2 className="mb-4 text-sm font-semibold">일정변경 요청 비교</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div><h3 className="mb-2 text-xs text-muted-foreground">현재 캘린더 일정 · {linkedEvents.length}건</h3>
+            {linkedEvents.length ? <ul className="space-y-1 text-sm">{linkedEvents.map(event => <li key={event.id}>{applicationDate(event.starts_at, true)}</li>)}</ul> : <p className="text-sm">등록된 일정 없음</p>}
+          </div>
+          <div><h3 className="mb-2 text-xs text-muted-foreground">변경 요청 일정 · {requestedDates.length}건</h3>
+            {requestedDates.length ? <ul className="space-y-1 text-sm">{requestedDates.map(date => <li key={date}>{applicationDate(date)} · {app.reschedule_time || "시간 미입력"}</li>)}</ul> : <p className="text-sm">요청 날짜 없음</p>}
+          </div>
+        </div>
+      </section>}
       <section className="mb-6 grid gap-4 md:grid-cols-2">
         <Card title={isGroup ? "단체 / 인솔자 정보" : "신청자 정보"}>
           {isGroup && (
@@ -229,13 +227,13 @@ export default async function VolunteerApplicationDetailPage({
           </div>
           <Row label="시간대" value={app.available_time ?? "—"} />
 
-          {app.available_dates.length > 0 && (
+          {requestedDates.length > 0 && (
             <details className="mt-3 rounded-md border border-border bg-secondary/30">
               <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary/50 rounded-md">
-                날짜별 출근 예정 운영진 ({app.available_dates.length}일)
+                날짜별 출근 예정 운영진 ({requestedDates.length}일)
               </summary>
               <div className="space-y-2 px-3 pb-3 pt-1">
-                {app.available_dates.map((date) => {
+                {requestedDates.map((date) => {
                   const list = staffByDate[date] ?? []
                   const dt = new Date(date)
                   const wd = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()]
@@ -255,22 +253,6 @@ export default async function VolunteerApplicationDetailPage({
           )}
         </Card>
 
-        <Card title="희망 활동" className="md:col-span-2">
-          <div className="flex flex-wrap gap-2">
-            {app.activities.length === 0 ? (
-              <span className="text-sm text-muted-foreground">—</span>
-            ) : (
-              app.activities.map((a) => (
-                <span
-                  key={a}
-                  className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                >
-                  {a}
-                </span>
-              ))
-            )}
-          </div>
-        </Card>
       </section>
 
       {/* 자기소개 / 메모 */}
@@ -286,7 +268,7 @@ export default async function VolunteerApplicationDetailPage({
       )}
 
       {/* 신청 시 동의 사항 */}
-      <section className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 dark:border-emerald-900/40 dark:bg-emerald-900/10">
+      <section className="mb-6 rounded-xl border border-border bg-card p-5">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
           신청 시 동의·확인 사항
         </h2>
@@ -352,10 +334,13 @@ export default async function VolunteerApplicationDetailPage({
         )}
       </section>
 
+      </div>
+      <aside id="application-processing" className="min-w-0 scroll-mt-20">
       {/* 처리 */}
-      <h2 className="mb-3 text-lg font-semibold text-foreground">처리</h2>
       <ApplicationStatusForm
         id={app.id}
+        returnHref={returnHref}
+        currentCancelReason={(app as typeof app & { cancel_reason?: string | null }).cancel_reason}
         kind="volunteer"
         currentStatus={app.status}
         currentNote={app.admin_note}
@@ -364,6 +349,7 @@ export default async function VolunteerApplicationDetailPage({
           app.group_name
         )}
         linkedEventCount={linkedEvents.length}
+        linkedEvents={linkedEvents}
         hint={{
           availableDates: app.status === "일정변경요청" && app.reschedule_dates?.length
             ? app.reschedule_dates
@@ -387,6 +373,8 @@ export default async function VolunteerApplicationDetailPage({
             : null
         }
       />
+      </aside>
+      </div>
     </div>
   )
 }
@@ -401,7 +389,7 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <div className={`rounded-xl border border-border bg-card p-5 ${className ?? ""}`}>
+    <div className={`rounded-xl border border-border bg-card p-4 sm:p-5 ${className ?? ""}`}>
       <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
       <div className="space-y-2 text-sm">{children}</div>
     </div>

@@ -5,7 +5,7 @@ export default function AdminApplicationsLoading() {
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       <header className="mb-6 space-y-2">
         <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-80" />
+        <Skeleton className="h-4 w-full max-w-80" />
       </header>
       <div className="mb-6 flex gap-4">
         <Skeleton className="h-8 w-20" />
@@ -19,7 +19,7 @@ export default function AdminApplicationsLoading() {
           <Skeleton className="h-9 w-16" />
         </div>
       </div>
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-6 w-16 rounded-full" />
         ))}

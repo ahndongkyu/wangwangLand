@@ -333,7 +333,7 @@ export default async function AdminMemberDetailPage({
                     {v.status}
                   </Badge>
                   <span className="truncate text-sm text-foreground">
-                    {(v.activities ?? []).join(", ") || "—"}
+                    {v.party_size}명 · {v.available_time || "시간 미입력"}
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
