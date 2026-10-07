@@ -19,11 +19,11 @@ export function parseApplicationFilters(params: AdminApplicationParams) {
   if ((from && !validDate(from)) || (to && !validDate(to))) error = "올바른 조회 날짜를 입력해 주세요."
   else if (from && to && from > to) error = "종료일은 시작일 이후로 선택해 주세요."
   else if (dateBy === "activity" && (from || to) && (!from || !to || (Date.parse(to) - Date.parse(from)) / 86400000 > 365)) error = "희망 일정 조회는 시작일과 종료일을 모두 선택해 주세요. 최대 1년까지 조회할 수 있습니다."
-  return { type, status, q: value("q").trim().slice(0, 100), from, to, dateBy, sort: value("sort") === "latest" ? "latest" as const : "oldest" as const, page: Number.isSafeInteger(page) && page > 0 && page <= 100000 ? page : 1, error }
+  return { type, status, q: value("q").trim().slice(0, 100), from, to, dateBy, sort: "latest" as const, page: Number.isSafeInteger(page) && page > 0 && page <= 100000 ? page : 1, error }
 }
 export type ApplicationFilters = ReturnType<typeof parseApplicationFilters>
 export function applicationParams(filters: ApplicationFilters): Record<string, string> {
-  return { type: filters.type, status: filters.status, q: filters.q, from: filters.from, to: filters.to, dateBy: filters.dateBy, sort: filters.sort, page: String(filters.page) }
+  return { type: filters.type, status: filters.status, q: filters.q, from: filters.from, to: filters.to, dateBy: filters.dateBy, page: String(filters.page) }
 }
 export function applicationHref(params: Record<string, string | undefined>) {
   const query = new URLSearchParams()

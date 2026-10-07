@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { load, renderMembers, renderStaff, renderMemberDetail, renderVolunteer, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
+import { load, renderMembers, renderStaff, renderMemberDetail, renderVolunteer, renderApplicationList, renderHome, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
 
 test("member list returns preserve only validated internal filters", () => {
   const { memberListReturnHref: back } = load("src/features/members/lib/list-navigation.ts")
@@ -11,6 +11,26 @@ test("member list returns preserve only validated internal filters", () => {
   assert.equal(url.searchParams.get("q"), "모임")
   assert.equal(url.searchParams.get("page"), "3")
   assert.equal(url.searchParams.get("extra"), null)
+})
+test("application filter toolbar is always visible, latest-first and keeps date inputs", () => {
+  for (const type of ["volunteer", "adoption"]) {
+    const html = renderApplicationList({ type, sort: "oldest", from: "2026-10-01", to: "2026-10-07", q: "김" })
+    assert.doesNotMatch(html, /<details|기간·정렬|name="sort"|오래된 신청|일정변경 요청을 먼저/)
+    assert.match(html, /접수 최신순/)
+    assert.match(html, /name="q"[^>]*value="김"/)
+    assert.match(html, /<input(?=[^>]*type="date")(?=[^>]*name="from")(?=[^>]*value="2026-10-01")[^>]*>/)
+    assert.match(html, /<input(?=[^>]*type="date")(?=[^>]*name="to")(?=[^>]*value="2026-10-07")[^>]*>/)
+    assert.match(html, /name="dateBy"/)
+  }
+})
+test("home volunteer actions use matching buttons without arrow and retain first-visit guidance", async () => {
+  const html = await renderHome()
+  const banner = html.slice(html.indexOf("함께하는 방법"), html.indexOf('aria-label="후원 계좌 안내"'))
+  assert.match(banner, /href="\/volunteer"[^>]*>봉사 신청하기<\/a>/)
+  assert.match(banner, /href="#volunteer-calendar"[^>]*>봉사 일정 확인<\/a>/)
+  assert.match(banner, /href="\/about"[^>]*>첫 방문 안내<\/a>/)
+  assert.doesNotMatch(banner, /↗|일정 먼저 보기/)
+  assert.match(html, /id="volunteer-calendar"/)
 })
 test("member list renders visible state, contact and detail links without a forced wide table", async () => {
   const html = await renderMembers({ q: "모임", status: "pending", page: "3" })

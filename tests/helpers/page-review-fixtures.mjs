@@ -20,7 +20,7 @@ export function load(path, imports = {}) {
 }
 const element = (tag, text) => () => React.createElement(tag, null, text)
 const Link = ({ children, ...props }) => React.createElement("a", props, children)
-const Image = ({ fill, sizes, ...props }) => React.createElement("img", { ...props, width: 40, height: 40 })
+const Image = ({ fill, sizes, priority, ...props }) => React.createElement("img", { ...props, width: 40, height: 40 })
 const site = load("src/shared/constants/site.ts").SITE
 const base = {
   "next/link": { default: Link }, "next/image": { default: Image },
@@ -86,6 +86,30 @@ export async function renderDonate() {
 }
 export function renderContact() { return renderToStaticMarkup(React.createElement(load("src/app/(public)/contact/page.tsx", base).default)) }
 const filters = load("src/features/applications/lib/admin-list.ts")
+export function renderApplicationList(params = {}) {
+  const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge
+  const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge } }).AdminApplicationList
+  return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows: [], counts: {}, total: 0, error: "", eventsError: false }))
+}
+export async function renderHome() {
+  const Page = load("src/app/(public)/page.tsx", {
+    ...base,
+    "@/features/notices/components/notice-type-badge": { parseNoticePrefix: () => null, stripNoticePrefix: title => title },
+    "@/features/comments": { fetchCommentCounts: async () => ({}) },
+    "@/features/daily/api/community-queries": { listCommunityPosts: async () => ({ posts: [] }) },
+    "@/shared/components/home-post-row": { HomePostRow: () => null, HomePostHeader: () => null },
+    "@/shared/components/home-story-card": { HomeStoryCard: () => null },
+    "@/features/dogs": { DogCard: () => null, listDogsForHome: async () => [] },
+    "@/features/members": { getCurrentProfile: async () => null },
+    "@/features/events": { listEventsInRange: async () => [], MonthGrid: () => null, MonthNav: () => null },
+    "@/features/events/lib/date": { monthRange: () => ({ from: "2026-10-01", to: "2026-11-01" }), todayKst: () => "2026-10-07", yearMonthKst: () => "2026-10" },
+    "@/features/notices": { listNotices: async () => ({ notices: [] }) },
+    "@/features/settings/api/homepage-queries": { getHomepageSettings: async () => ({ photos: { banner: { src: "/images/wangwang_logo.png", alt: "보호소 사진", x: 50, y: 50 } } }) },
+    "@/features/events/api/calendar-links": { getCalendarApplicationLinks: async () => ({}) },
+    "@/features/applications/lib/admin-list": filters,
+  }).default
+  return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }))
+}
 export async function renderVolunteer({ status = "접수", registered = false, eventError = false } = {}) {
   const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
   const Status = load("src/features/applications/components/status-form.tsx", {

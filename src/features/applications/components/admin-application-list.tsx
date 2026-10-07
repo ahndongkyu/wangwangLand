@@ -21,23 +21,21 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
     <div className={`mb-5 grid gap-2 sm:gap-3 ${volunteer ? "grid-cols-3" : "grid-cols-2"}`}>
       {statuses.map(status => <Link key={status} href={href({ status, q: "", from: "", to: "" })} aria-current={filters.status === status ? "true" : undefined} className={`min-w-0 rounded-xl border bg-card p-3 transition-colors hover:border-primary sm:p-4 ${filters.status === status ? "border-primary ring-1 ring-primary" : "border-border"}`}><span className="text-xs sm:text-sm">{status}</span><strong className="mt-1 block text-2xl font-semibold tabular-nums">{error ? "—" : (counts[status] ?? 0).toLocaleString()}</strong><span className="text-xs text-muted-foreground">전체 기간</span></Link>)}
     </div>
-    <form action="/admin/applications" method="get" className="mb-4 space-y-3">
+    <form action="/admin/applications" method="get" className="mb-4">
       <input type="hidden" name="type" value={filters.type} /><input type="hidden" name="status" value={filters.status} />
-      <div className="flex gap-2"><label className="min-w-0 flex-1"><span className="sr-only">이름·단체명·연락처 검색</span><input key={filters.q} name="q" defaultValue={filters.q} placeholder={volunteer ? "이름·단체명·연락처 검색" : "이름·연락처 검색"} className={`${control} w-full`} /></label><button type="submit" className={`${control} shrink-0 hover:bg-muted`}>검색</button></div>
-      <details key={`${filters.dateBy}-${filters.from}-${filters.to}-${filters.sort}`} open={!!(filters.from || filters.to)} className="rounded-xl border border-border bg-card px-4">
-        <summary className="min-h-11 cursor-pointer py-3 text-sm focus-visible:outline-2 focus-visible:outline-ring">기간·정렬 설정 <span className="ml-1 text-xs text-muted-foreground">{filters.from || filters.to ? `${filters.from || "이전 전체"} ~ ${filters.to || "이후 전체"}` : "기간 제한 없음"}</span></summary>
-        <div className="grid gap-3 border-t border-border py-4 sm:grid-cols-2">
-          <label className="space-y-2 text-xs text-muted-foreground"><span className="block">조회 기준</span><select name="dateBy" defaultValue={filters.dateBy} className={`${control} w-full`}><option value="submitted">신청일</option><option value="activity">{volunteer ? "봉사 희망일 (변경 요청 포함)" : "방문 희망일"}</option></select></label>
-          <label className="space-y-2 text-xs text-muted-foreground"><span className="block">접수 순서</span><select name="sort" defaultValue={filters.sort} className={`${control} w-full`}><option value="oldest">오래된 신청부터</option><option value="latest">최근 신청부터</option></select></label>
-          <label className="space-y-2 text-xs text-muted-foreground"><span className="block">시작일</span><input type="date" name="from" defaultValue={filters.from} className={`${control} w-full`} /></label>
-          <label className="space-y-2 text-xs text-muted-foreground"><span className="block">종료일</span><input type="date" name="to" defaultValue={filters.to} className={`${control} w-full`} /></label>
-          <p className="text-xs leading-5 text-muted-foreground sm:col-span-2">희망 일정 기준은 시작일·종료일을 모두 선택해야 하며 최대 1년까지 조회합니다. 봉사 전체·처리 필요 목록에서는 일정변경 요청을 먼저 표시합니다.</p>
-          <div className="flex gap-2 sm:col-span-2"><button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground">적용</button><Link href={href({ from: "", to: "", dateBy: "submitted", q: "" })} className="inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground">초기화</Link></div>
+      <div className="grid min-w-0 items-end gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_130px_145px_145px_auto]">
+        <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">{volunteer ? "이름·단체명·전화번호" : "이름·전화번호"}</span><input key={filters.q} name="q" defaultValue={filters.q} placeholder={volunteer ? "이름·단체명·전화번호 검색" : "이름·전화번호 검색"} className={`${control} w-full`} /></label>
+        <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">날짜 기준</span><select key={filters.dateBy} name="dateBy" defaultValue={filters.dateBy} className={`${control} w-full`}><option value="submitted">신청일</option><option value="activity">{volunteer ? "봉사 희망일" : "방문 희망일"}</option></select></label>
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:col-span-2 xl:col-span-2">
+          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">시작일</span><input key={filters.from} type="date" name="from" defaultValue={filters.from} className={`${control} w-full`} /></label>
+          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">종료일</span><input key={filters.to} type="date" name="to" defaultValue={filters.to} className={`${control} w-full`} /></label>
         </div>
-      </details>
+        <div className="flex gap-2 sm:col-span-2 xl:col-span-1"><button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand-action-hover">검색</button><Link href={href({ from: "", to: "", dateBy: "submitted", q: "" })} className="inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground">초기화</Link></div>
+      </div>
+      {filters.dateBy === "activity" && <p className="mt-2 text-xs leading-5 text-muted-foreground">희망 일정은 시작일·종료일을 모두 선택해야 하며 최대 1년까지 조회합니다.{volunteer ? " 일정변경 요청은 변경 희망일로 조회합니다." : ""}</p>}
     </form>
     <nav aria-label="처리 상태" className="mb-5 flex flex-wrap gap-1.5">{["처리 필요", "전체", ...statuses, "승인", "반려·취소"].map(status => <Link key={status} href={href({ status })} aria-current={status === filters.status ? "true" : undefined} className={`inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium transition-colors ${status === filters.status ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{status}</Link>)}</nav>
-    <div className="mb-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground"><p role="status">{filters.status} <strong className="text-foreground">{total.toLocaleString()}건</strong></p><p>{filters.dateBy === "submitted" ? "신청일 기준" : "희망 일정 기준"} · {filters.sort === "oldest" ? "접수 오래된 순" : "접수 최신순"}</p></div>
+    <div className="mb-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground"><p role="status">{filters.status} <strong className="text-foreground">{total.toLocaleString()}건</strong></p><p>{filters.dateBy === "submitted" ? "신청일 기준" : "희망 일정 기준"} · 접수 최신순</p></div>
     {error ? <p role="alert" className="rounded-xl border border-destructive/30 bg-card p-5 text-sm text-destructive">{error}</p> : <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div aria-hidden className={`hidden ${listColumns} gap-4 bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid`}>
         <span>신청정보</span>

@@ -89,8 +89,11 @@ export default async function HomePage({
           <p className="text-xs text-muted-foreground">함께하는 방법</p>
           <h2 className="mt-3 text-2xl font-bold leading-snug">아이들과 함께할<br className="hidden md:block" /> 시간을 내어주세요</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">처음 방문하시는 분도 함께할 수 있어요.<br />가능한 날짜와 시간을 확인해 주세요.</p>
-          <Link href="/volunteer" className="mt-6 flex min-h-12 items-center justify-between rounded-lg bg-primary px-4 font-semibold text-primary-foreground hover:bg-brand-action-hover">봉사 신청하기 <span aria-hidden>↗</span></Link>
-          <div className="mt-2 flex flex-wrap gap-x-5 text-xs text-muted-foreground"><Link href="#volunteer-calendar" className="inline-flex min-h-11 items-center hover:text-primary">일정 먼저 보기</Link><Link href="/about" className="inline-flex min-h-11 items-center hover:text-primary">첫 방문 안내</Link></div>
+          <div className="mt-6 grid grid-cols-2 gap-2">
+            <Link href="/volunteer" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-brand-action-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">봉사 신청하기</Link>
+            <Link href="#volunteer-calendar" className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">봉사 일정 확인</Link>
+          </div>
+          <Link href="/about" className="mt-2 inline-flex min-h-11 w-fit items-center text-xs text-muted-foreground hover:text-primary">첫 방문 안내</Link>
         </div>
       </section>
 

@@ -21,7 +21,9 @@ test("application filters default to all-time pending, validate dates, and const
   const initial = filters.parseApplicationFilters({})
   assert.equal(initial.status, "처리 필요")
   assert.equal(initial.from, "")
-  assert.equal(initial.sort, "oldest")
+  assert.equal(initial.sort, "latest")
+  assert.equal(filters.parseApplicationFilters({ sort: "oldest" }).sort, "latest")
+  assert.equal(filters.applicationParams(initial).sort, undefined)
   for (const page of ["0", "-2", "Infinity", "2.3", ["2"]]) assert.equal(filters.parseApplicationFilters({ page }).page, 1)
   assert.ok(filters.parseApplicationFilters({ from: "2026-02-29" }).error)
   assert.ok(filters.parseApplicationFilters({ from: "2026-10-09", to: "2026-10-01" }).error)
@@ -37,14 +39,14 @@ test("application filters default to all-time pending, validate dates, and const
 
 function queryHarness(requestCount = 21, authorized = true, eventError = false) {
   const calls = []
-  const request = Array.from({ length: requestCount }, (_, i) => ({ id: `request-${i}` }))
-  const rest = Array.from({ length: 40 }, (_, i) => ({ id: `rest-${i}` }))
+  const request = Array.from({ length: requestCount }, (_, i) => ({ id: `request-${i}`, status: "일정변경요청", submitted_at: `2026-09-${String(1 + i % 28).padStart(2, "0")}T10:00:00Z` }))
+  const rest = Array.from({ length: 40 }, (_, i) => ({ id: `rest-${i}`, status: "접수", submitted_at: `2026-10-${String(1 + i % 28).padStart(2, "0")}T10:00:00Z` }))
   const client = { from(table) {
     const steps = []; calls.push({ table, steps })
     const q = { then(resolve) {
       if (table === "events") return resolve({ count: 1200, error: eventError ? "failure" : null })
       if (steps.some(s => s[0] === "select" && s[2]?.head)) return resolve({ count: 10, error: null })
-      const set = steps.some(s => s[0] === "eq" && s[2] === "일정변경요청") ? request : rest
+      const set = [...request, ...rest].sort((a, b) => b.submitted_at.localeCompare(a.submitted_at) || a.id.localeCompare(b.id))
       const range = steps.find(s => s[0] === "range")
       resolve({ data: set.slice(range[1], range[2] + 1), count: set.length, error: null })
     } }
@@ -58,7 +60,7 @@ function queryHarness(requestCount = 21, authorized = true, eventError = false) 
   })
   return { calls, list: api.getAdminApplicationList }
 }
-test("priority pagination has no skipped or duplicated rows at the request boundary", async () => {
+test("latest-first pagination has no skipped or duplicated rows and no status priority", async () => {
   for (const count of [0, 19, 20, 21, 40]) {
     const api = queryHarness(count)
     const first = await api.list(filters.parseApplicationFilters({}))
@@ -67,10 +69,14 @@ test("priority pagination has no skipped or duplicated rows at the request bound
     assert.equal(second.rows.length, 20)
     const ids = [...first.rows, ...second.rows].map(row => row.id)
     assert.equal(new Set(ids).size, 40)
-    const expected = [...Array.from({ length: count }, (_, i) => `request-${i}`), ...Array.from({ length: 40 }, (_, i) => `rest-${i}`)].slice(0, 40)
+    const expected = Array.from({ length: 40 }, (_, i) => ({ id: `rest-${i}`, day: 1 + i % 28 })).sort((a, b) => b.day - a.day || a.id.localeCompare(b.id)).map(row => row.id)
     assert.deepEqual(ids, expected)
     assert.equal(first.total, count + 40)
     assert.equal(first.rows[0].linkedCount, 1200)
+    const queries = api.calls.filter(call => call.steps.some(step => step[0] === "range"))
+    assert.equal(queries.length, 2)
+    assert.ok(queries.every(call => call.steps.some(step => step[0] === "order" && step[1] === "submitted_at" && step[2].ascending === false)))
+    assert.ok(queries.every(call => !call.steps.some(step => step[0] === "neq" || (step[0] === "eq" && step[1] === "status"))))
   }
 })
 test("admin list authorizes first; count queries are independent; event failure never means zero", async () => {
