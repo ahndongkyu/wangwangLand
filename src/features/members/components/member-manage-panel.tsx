@@ -99,16 +99,16 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
   }
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="space-y-5">
       {/* 권한 */}
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="border-b border-border pb-5 last:border-b-0 last:pb-0">
         <p className="text-xs font-semibold text-muted-foreground">권한</p>
         <select
           value={role}
           onChange={(e) => handleRoleChange(e.target.value as Profile["role"])}
           disabled={pending || status === "rejected"}
           className={cn(
-            "mt-2 h-9 w-full rounded-md border border-input bg-background px-2 text-sm font-medium",
+            "mt-2 min-h-11 w-full rounded-md border border-input bg-background px-2 text-sm font-medium",
             "disabled:cursor-not-allowed disabled:opacity-60"
           )}
           aria-label="권한"
@@ -125,13 +125,14 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
       </div>
 
       {/* 상태 */}
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="border-b border-border pb-5 last:border-b-0 last:pb-0">
         <p className="text-xs font-semibold text-muted-foreground">가입 상태</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {status === "pending" && (
             <>
               <Button
                 size="sm"
+                className="min-h-11"
                 onClick={() => handleRoleChange(role)}
                 disabled={pending}
               >
@@ -139,6 +140,7 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
               </Button>
               <Button
                 size="sm"
+                className="min-h-11"
                 variant="outline"
                 onClick={handleReject}
                 disabled={pending}
@@ -150,6 +152,7 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
           {status === "approved" && (
             <Button
               size="sm"
+                className="min-h-11"
               variant="outline"
               onClick={handleReject}
               disabled={pending}
@@ -158,7 +161,8 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
             </Button>
           )}
           {status === "rejected" && (
-            <Button size="sm" onClick={handleReApprove} disabled={pending}>
+            <Button size="sm"
+                className="min-h-11" onClick={handleReApprove} disabled={pending}>
               재승인
             </Button>
           )}
@@ -166,12 +170,13 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
       </div>
 
       {/* 차단 */}
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="border-b border-border pb-5 last:border-b-0 last:pb-0">
         <p className="text-xs font-semibold text-muted-foreground">접근 제어</p>
         <div className="mt-2">
           {status === "approved" ? (
             <Button
               size="sm"
+                className="min-h-11"
               variant={isBanned ? "outline" : "destructive"}
               onClick={() => handleBan(!isBanned)}
               disabled={pending}

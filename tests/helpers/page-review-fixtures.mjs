@@ -48,6 +48,35 @@ export async function renderMembers(params = {}) {
   const Page = load("src/app/(admin)/admin/(protected)/members/page.tsx", { ...base, "@/features/members": { listProfiles: async () => ({ profiles, total: 22, pendingCount: 4, approvedCount: 28, rejectedCount: 2 }), AdminMembersTable: Table }, "@/features/auth": { getCurrentAdmin: async () => ({ role: "admin" }) } }).default
   return renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }))
 }
+export async function renderStaff() {
+  const Table = load("src/features/members/components/admin-members-table.tsx", base).AdminMembersTable
+  const query = { select: () => query, in: () => query, order: () => query, then: resolve => resolve({ data: profiles.filter(p => p.role === "staff") }) }
+  const Page = load("src/app/(admin)/admin/(protected)/admins/page.tsx", { ...base, "@/features/auth": { getCurrentAdmin: async () => ({ id: "me", role: "admin" }) }, "@/features/members": { AdminMembersTable: Table }, "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) } }).default
+  return renderToStaticMarkup(await Page())
+}
+export async function renderMemberDetail({ staff = false, self = false } = {}) {
+  const profile = { ...profiles[0], id: self ? "me" : "member", role: staff ? "staff" : "member", signup_provider: "kakao", terms_agreed_at: null, privacy_agreed_at: null, marketing_agreed_at: null }
+  const Panel = load("src/features/auth/components/admin-manage-row.tsx", {
+    ...base,
+    "next/navigation": { useRouter: () => ({ refresh() {} }) },
+    "../api/mutations": { updateAdminRole() {}, removeAdmin() {} },
+    "@/shared/components/confirm-dialog": { useConfirm: () => async () => false },
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
+    "@/shared/components/ui/button": { Button: ({ children, ...props }) => React.createElement("button", props, children) },
+  }).AdminManagePanel
+  const Page = load("src/app/(admin)/admin/(protected)/members/[id]/page.tsx", {
+    ...base,
+    "@/features/members/lib/list-navigation": load("src/features/members/lib/list-navigation.ts"),
+    "@/features/auth": { AdminManagePanel: Panel, getCurrentAdmin: async () => ({ id: "me", role: "admin" }) },
+    "@/features/members": { getProfileDetail: async () => profile, MemberManagePanel: element("div", "회원 권한·승인·차단") },
+    "@/features/daily": { listDailyPostsByUser: async () => [], countDailyPostsByUser: async () => 0 },
+    "@/features/stories": { listAdoptionStoriesByUser: async () => [], countAdoptionStoriesByUser: async () => 0 },
+    "@/features/applications": { listApplicationsByEmail: async () => ({ adoption: [], volunteer: [] }) },
+    "@/features/donations": { listDonationsByUser: async () => [], DonationStatusBadge },
+    "@/shared/components/ui/badge": { Badge: element("span", "승인") },
+  }).default
+  return renderToStaticMarkup(await Page({ params: Promise.resolve({ id: profile.id }), searchParams: Promise.resolve({ returnTo: staff ? "/admin/admins" : "/admin/members?q=모임&page=3" }) }))
+}
 export async function renderDonations(params = {}) {
   const Page = load("src/app/(admin)/admin/(protected)/donations/page.tsx", { ...base, "@/features/donations": donations }).default
   return renderToStaticMarkup(await Page({ searchParams: Promise.resolve(params) }))

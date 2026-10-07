@@ -1,10 +1,12 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { load, renderMembers, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
+import { load, renderMembers, renderStaff, renderMemberDetail, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
 
 test("member list returns preserve only validated internal filters", () => {
   const { memberListReturnHref: back } = load("src/features/members/lib/list-navigation.ts")
   for (const value of ["https://evil.test", "//evil.test", "/admin/members/../admins", "/admin/members/other", "/admin/members\\other"]) assert.equal(back(value), "/admin/members")
+  assert.equal(back("/admin/admins"), "/admin/admins")
+  assert.equal(back("/admin/admins?unsafe=1"), "/admin/members")
   const url = new URL(back("/admin/members?q=모임&status=pending&sort=joined&page=3&extra=unsafe"), "https://example.test")
   assert.equal(url.searchParams.get("q"), "모임")
   assert.equal(url.searchParams.get("page"), "3")
@@ -14,7 +16,8 @@ test("member list renders visible state, contact and detail links without a forc
   const html = await renderMembers({ q: "모임", status: "pending", page: "3" })
   assert.match(html, /차단됨/)
   assert.match(html, /가입 미완료/)
-  assert.match(html, /상세 관리/)
+  assert.doesNotMatch(html, /상세 관리/)
+  assert.match(html, /xl:col-start-2 xl:row-start-1/)
   assert.doesNotMatch(html, /min-w-\[600px\]|<select[^>]*권한/)
   assert.match(html, /returnTo=/)
   assert.match(html, /page%3D3/)
@@ -27,6 +30,30 @@ test("donation filters retain search and mobile rows retain status and type", as
   assert.match(html, /현금/)
   assert.match(html, /물품/)
   assert.doesNotMatch(html, /hidden text-right sm:block/)
+})
+test("staff list shares member layout, has no inline management and returns to staff list", async () => {
+  const html = await renderStaff()
+  assert.match(html, /returnTo=%2Fadmin%2Fadmins/)
+  assert.match(html, /전화번호/)
+  assert.doesNotMatch(html, /<table|<select|상세 관리|운영진 제거/)
+  assert.match(html, /xl:col-start-2 xl:row-start-1/)
+})
+test("member details retain information and management in independent desktop columns", async () => {
+  const html = await renderMemberDetail()
+  assert.match(html, /기본 정보/)
+  assert.match(html, /회원 권한·승인·차단/)
+  assert.match(html, /contents xl:flex/)
+  assert.doesNotMatch(html, /row-span-/)
+  assert.match(html, /<details[^>]*>.*약관 동의 정보/s)
+  assert.match(html, /href="\/admin\/members\?page=3&amp;q=/)
+})
+test("staff detail preserves role and confirmed removal controls; own role stays disabled", async () => {
+  const html = await renderMemberDetail({ staff: true })
+  assert.match(html, /href="\/admin\/admins"/)
+  assert.match(html, /운영진 해제/)
+  const self = await renderMemberDetail({ staff: true, self: true })
+  assert.match(self, /<select[^>]*disabled/)
+  assert.doesNotMatch(self, />운영진 해제<\/button>/)
 })
 test("own application schedules are scoped to owned IDs and display actual calendar time", async () => {
   const { html, calls } = await renderMyApplications()

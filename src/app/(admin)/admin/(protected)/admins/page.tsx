@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation"
 
-import { AdminManageRow, getCurrentAdmin } from "@/features/auth"
+import { getCurrentAdmin } from "@/features/auth"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { AdminMembersTable } from "@/features/members"
 import type { Profile } from "@/features/members/api/queries"
 
 export const dynamic = "force-dynamic"
@@ -24,7 +25,7 @@ export default async function AdminAdminsPage() {
   const staffCount = list.filter((p) => p.role === "staff").length
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 md:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">운영진 관리</h1>
@@ -56,30 +57,8 @@ export default async function AdminAdminsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[480px]">
-          <thead className="border-b border-border bg-secondary/30 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            <tr>
-              <th className="px-4 py-3">닉네임</th>
-              <th className="px-4 py-3">역할</th>
-              <th className="hidden px-4 py-3 md:table-cell">가입일</th>
-              <th className="px-4 py-3 text-right">작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((p) => (
-              <AdminManageRow key={p.id} profile={p} currentProfileId={me.id} />
-            ))}
-            {list.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  운영진이 없습니다.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AdminMembersTable profiles={list} isTopAdmin currentProfileId={me.id} returnHref="/admin/admins" />
+      {list.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">운영진이 없습니다.</p>}
     </div>
   )
 }

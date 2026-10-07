@@ -1,15 +1,13 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
-import Image from "next/image"
-import { Trash2, User } from "lucide-react"
 
 import { removeAdmin, updateAdminRole } from "../api/mutations"
 import type { StaffRole } from "../api/mutations"
 import { useConfirm } from "@/shared/components/confirm-dialog"
 import { useToast } from "@/shared/components/toast"
 import { Button } from "@/shared/components/ui/button"
-import { cn } from "@/shared/lib/utils"
 import type { Profile } from "@/features/members/api/queries"
 
 interface Props {
@@ -17,15 +15,11 @@ interface Props {
   currentProfileId: string
 }
 
-const ROLE_LABEL: Record<StaffRole, string> = {
-  admin: "관리자",
-  staff: "운영진",
-}
-
-export function AdminManageRow({ profile, currentProfileId }: Props) {
+export function AdminManagePanel({ profile, currentProfileId }: Props) {
   const [pending, startTransition] = useTransition()
   const [role, setRole] = useState<StaffRole>(profile.role as StaffRole)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
   const confirm = useConfirm()
   const toast = useToast()
 
@@ -44,6 +38,7 @@ export function AdminManageRow({ profile, currentProfileId }: Props) {
         setRole(prev)
       } else {
         toast.success(`${profile.nickname} 역할을 변경했습니다.`)
+        router.refresh()
       }
     })
   }
@@ -64,70 +59,21 @@ export function AdminManageRow({ profile, currentProfileId }: Props) {
         toast.error(result.error)
       } else {
         toast.success(`${profile.nickname}을(를) 운영진에서 제거했습니다.`)
+        router.refresh()
       }
     })
   }
 
   return (
-    <tr className={cn("border-b border-border last:border-0 transition-colors", isSelf ? "bg-primary/5" : "hover:bg-secondary/20")}>
-      {/* 아바타 + 닉네임 */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="relative size-8 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-            {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt={profile.nickname} fill className="object-cover" />
-            ) : (
-              <User className="size-full p-1.5 text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-medium text-foreground">{profile.nickname}</span>
-            {isSelf && <span className="text-xs text-muted-foreground">(나)</span>}
-          </div>
-        </div>
-      </td>
-
-      {/* 역할 */}
-      <td className="px-4 py-3">
-        <select
-          value={role}
-          onChange={(e) => handleRoleChange(e.target.value as StaffRole)}
-          disabled={pending || isSelf}
-          className={cn(
-            "h-8 rounded-md border border-input bg-background px-2 text-xs font-medium",
-            "disabled:cursor-not-allowed disabled:opacity-60"
-          )}
-          aria-label={`${profile.nickname} 역할`}
-        >
-          <option value="admin">{ROLE_LABEL.admin}</option>
-          <option value="staff">{ROLE_LABEL.staff}</option>
+    <div className="space-y-5">
+      <div>
+        <label htmlFor="staff-role" className="text-sm text-muted-foreground">권한</label>
+        <select id="staff-role" value={role} onChange={e => handleRoleChange(e.target.value as StaffRole)} disabled={pending || isSelf} className="mt-2 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm disabled:opacity-60">
+          <option value="admin">관리자</option><option value="staff">운영진</option>
         </select>
-      </td>
-
-      {/* 가입일 */}
-      <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
-        {new Date(profile.created_at).toLocaleDateString("ko-KR")}
-      </td>
-
-      {/* 작업 */}
-      <td className="px-4 py-3 text-right">
-        {error && (
-          <p className="mb-1 text-xs text-destructive" role="alert">
-            {error}
-          </p>
-        )}
-        {!isSelf && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRemove}
-            disabled={pending}
-            aria-label="운영진 제거"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        )}
-      </td>
-    </tr>
+      </div>
+      {isSelf ? <p className="text-sm text-muted-foreground">본인의 권한은 여기서 변경할 수 없습니다.</p> : <div><p className="mb-2 text-sm text-muted-foreground">운영진 해제 시 회원으로 변경됩니다.</p><Button variant="outline" className="min-h-11" onClick={handleRemove} disabled={pending}>운영진 해제</Button></div>}
+      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+    </div>
   )
 }

@@ -1,5 +1,6 @@
 export function memberListReturnHref(value?: string | string[]): string {
   const raw = Array.isArray(value) ? value[0] : value
+  if (raw === "/admin/admins") return raw
   if (!raw || !raw.startsWith("/admin/members") || raw.includes("\\")) return "/admin/members"
   try {
     const url = new URL(raw, "https://internal.invalid")
