@@ -16,6 +16,8 @@ import { BrandIcon } from "@/shared/components/brand-icon"
 import { CopyButton } from "@/shared/components/copy-button"
 import { SITE } from "@/shared/constants/site"
 import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
+import { getCalendarApplicationLinks } from "@/features/events/api/calendar-links"
+import { validDate } from "@/features/applications/lib/admin-list"
 
 export const revalidate = 60
 
@@ -25,7 +27,7 @@ const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string }>
+  searchParams: Promise<{ ym?: string; date?: string }>
 }) {
   const params = await searchParams
   const scheduleYearMonth =
@@ -48,6 +50,7 @@ export default async function HomePage({
     getHomepageSettings(),
   ])
 
+  const applicationLinks = await getCalendarApplicationLinks(scheduleEvents, "/", scheduleYearMonth)
   const dailyPostIds = dailyResult.posts.filter(post => post.source === "daily").map((post) => post.id)
   const [dailyCommentCounts, noticeCommentCounts, expenseCommentCounts, storyCommentCounts] = await Promise.all([
     fetchCommentCounts("daily", dailyPostIds),
@@ -223,11 +226,15 @@ export default async function HomePage({
         <div className="rounded-2xl border border-border bg-secondary/35 p-3 shadow-[0_10px_28px_rgba(88,76,68,0.06)] sm:p-5">
           <MonthNav yearMonth={scheduleYearMonth} basePath="/" />
           <MonthGrid
+            key={`${scheduleYearMonth}-${params.date ?? ""}`}
             yearMonth={scheduleYearMonth}
             events={scheduleEvents}
             hrefBase="/calendar"
             maskNames
             readOnly
+            returnPath="/"
+            initialSelectedDate={params.date && validDate(params.date) ? params.date : undefined}
+            applicationLinks={applicationLinks}
           />
         </div>
       </section>

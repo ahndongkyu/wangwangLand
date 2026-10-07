@@ -86,7 +86,7 @@ function deltaBadge(current: number, prev: number) {
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string }>
+  searchParams: Promise<{ ym?: string; date?: string }>
 }) {
   const params = await searchParams
   const now = new Date()
@@ -170,12 +170,13 @@ export default async function AdminDashboardPage({
         <div className="rounded-xl border border-border bg-secondary/30 p-3 shadow-sm sm:p-5">
           <MonthNav yearMonth={calendarYearMonth} basePath="/admin" />
           <MonthGrid
-            key={calendarYearMonth}
+            key={`${calendarYearMonth}-${params.date ?? ""}`}
             yearMonth={calendarYearMonth}
             events={calendarEvents}
             hrefBase="/admin/calendar"
             addHrefBase="/admin/calendar/new"
-            initialSelectedDate={yearMonthKst(now) === calendarYearMonth ? new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) : `${calendarYearMonth}-01`}
+            returnPath="/admin"
+            initialSelectedDate={params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : yearMonthKst(now) === calendarYearMonth ? new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) : `${calendarYearMonth}-01`}
           />
         </div>
       </section>

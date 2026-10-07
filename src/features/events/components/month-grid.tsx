@@ -23,6 +23,7 @@ import {
 } from "../lib/date"
 import { getHolidayName } from "../lib/holidays"
 import { cn } from "@/shared/lib/utils"
+import { calendarEventHref, calendarReturnHref } from "../lib/navigation"
 
 interface Props {
   yearMonth: string
@@ -32,6 +33,9 @@ interface Props {
   maskNames?: boolean
   readOnly?: boolean
   initialSelectedDate?: string
+  returnPath?: string
+  categoryFilter?: string
+  applicationLinks?: Record<string, { href: string; label: string }>
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -44,6 +48,7 @@ export function MonthGrid({
   maskNames = false,
   readOnly = false,
   initialSelectedDate,
+  returnPath = hrefBase, categoryFilter, applicationLinks = {},
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
@@ -58,6 +63,7 @@ export function MonthGrid({
   }
 
   const selectedEvents = selectedKey ? (byDate.get(selectedKey) ?? []) : []
+  const eventHref = (event: CalendarEvent, day: string) => calendarEventHref(event, hrefBase, calendarReturnHref(returnPath, yearMonth, day, categoryFilter))
 
   // "5월 9일(금)" 형식
   function fullDayLabel(key: string) {
@@ -224,7 +230,7 @@ export function MonthGrid({
                         return
                       }
                       e.stopPropagation()
-                      router.push(`${hrefBase}/${ev.id}`)
+                      router.push(eventHref(ev, cellKey))
                     }}
                   />
                 ))}
@@ -296,10 +302,10 @@ export function MonthGrid({
               return (
                 <li key={ev.id}>
                   {readOnly ? (
-                    <div>{content}</div>
+                    <div>{content}{applicationLinks[ev.id] && <div className="px-3 pb-3 sm:px-4"><Link href={applicationLinks[ev.id].href} className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm text-primary hover:bg-primary/5">{applicationLinks[ev.id].label}</Link></div>}</div>
                   ) : (
                     <Link
-                      href={`${hrefBase}/${ev.id}`}
+                      href={eventHref(ev, selectedKey)}
                       className="block transition-colors hover:bg-secondary/40 active:bg-secondary/60"
                     >
                       {content}

@@ -17,6 +17,7 @@ import {
 import { buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
 import { MonthShareButton } from "./_components/month-share-button"
+import { validDate } from "@/features/applications/lib/admin-list"
 
 export const metadata: Metadata = { title: "일정 관리" }
 export const dynamic = "force-dynamic"
@@ -41,7 +42,7 @@ function parseCategories(raw: string | undefined): EventCategory[] {
 export default async function AdminCalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string; cat?: string }>
+  searchParams: Promise<{ ym?: string; cat?: string; date?: string }>
 }) {
   const params = await searchParams
   const yearMonth =
@@ -97,10 +98,13 @@ export default async function AdminCalendarPage({
 
       <div id="admin-month-grid-capture" className="bg-background">
         <MonthGrid
+          key={`${yearMonth}-${params.date ?? ""}`}
           yearMonth={yearMonth}
           events={events}
           hrefBase="/admin/calendar"
           addHrefBase="/admin/calendar/new"
+          initialSelectedDate={params.date && validDate(params.date) ? params.date : undefined}
+          categoryFilter={categories.join(",")}
         />
       </div>
 
@@ -141,10 +145,10 @@ export default async function AdminCalendarPage({
                     (app.available_time ? ` · ${app.available_time}` : "")}
                 </span>
                 <Link
-                  href={`/admin/calendar/new?from=${app.id}`}
+                  href={`/admin/applications/volunteer/${app.id}`}
                   className="ml-auto rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/15"
                 >
-                  캘린더에 등록 →
+                  신청 확인
                 </Link>
               </li>
             ))}

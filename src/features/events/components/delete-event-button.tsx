@@ -8,6 +8,7 @@ import { RecurringScopeDialog } from "./recurring-scope-dialog"
 import { useToast } from "@/shared/components/toast"
 
 interface Props {
+  returnHref?: string
   id: string
   /** 반복 일정이면 같은 그룹 일정 목록 (id, starts_at). 단건이면 빈 배열/미전달. */
   groupDates?: { id: string; starts_at: string }[]
@@ -15,7 +16,7 @@ interface Props {
   currentStartsAt?: string
 }
 
-export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "" }: Props) {
+export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", returnHref = "/admin/calendar" }: Props) {
   const toast = useToast()
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
@@ -38,7 +39,7 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "" }:
           ? `${res.count}건 일정을 삭제했어요.`
           : "일정을 삭제했어요."
       )
-      router.push("/admin/calendar")
+      router.push(returnHref)
       router.refresh()
     })
   }
@@ -80,20 +81,20 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "" }:
     )
   }
   return (
-    <div className="flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs">
+    <div className="flex max-w-full flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs">
       <span className="text-destructive">정말 삭제할까요? 신청자 전원에게 알림이 갑니다.</span>
       <button
         type="button"
         onClick={() => runDelete("one")}
         disabled={pending}
-        className="font-semibold text-destructive hover:underline disabled:opacity-50"
+        className="min-h-11 px-2 font-semibold text-destructive hover:underline disabled:opacity-50"
       >
         {pending ? "삭제 중..." : "삭제"}
       </button>
       <button
         type="button"
         onClick={() => setConfirming(false)}
-        className="text-muted-foreground hover:underline"
+        className="min-h-11 px-2 text-muted-foreground hover:underline"
       >
         취소
       </button>

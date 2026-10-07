@@ -188,6 +188,7 @@ export interface VolunteerApplication {
   privacy_agreed: boolean
   status: ApplicationStatus
   admin_note: string | null
+  cancel_reason?: string | null
   submitted_at: string
   updated_at: string
   created_by: string | null

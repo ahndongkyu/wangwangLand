@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { Calendar, History, MapPin, Users } from "lucide-react"
 
 import {
@@ -15,17 +15,26 @@ import { formatKoreanDayLabel } from "@/features/events/lib/date"
 import { eventDescriptionForDisplay } from "@/features/events/lib/description"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { cn } from "@/shared/lib/utils"
+import { volunteerDetailHref, volunteerReturnHref } from "@/features/applications/lib/detail-navigation"
+import { dateKey } from "@/features/events/lib/date"
 
 export const dynamic = "force-dynamic"
 
 export default async function AdminEventDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ returnTo?: string | string[] }>
 }) {
   const { id } = await params
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
+  if (event.source_application_type === "volunteer" && event.source_application_id) {
+    const day = dateKey(new Date(event.starts_at))
+    const returnHref = volunteerReturnHref((await searchParams).returnTo ?? `/admin/calendar?ym=${day.slice(0, 7)}&date=${day}`)
+    redirect(volunteerDetailHref(event.source_application_id, returnHref, event.id))
+  }
   const description = eventDescriptionForDisplay(event)
 
   const creator = event.created_by

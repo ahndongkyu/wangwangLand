@@ -16,6 +16,7 @@ function load(path, imports = {}) {
   return exports
 }
 const filters = load("src/features/applications/lib/admin-list.ts")
+const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
 test("application filters default to all-time pending, validate dates, and constrain return paths", () => {
   const initial = filters.parseApplicationFilters({})
   assert.equal(initial.status, "처리 필요")
@@ -100,6 +101,8 @@ function formHarness(props = {}) {
     },
     "next/link": { default: "a" },
     "../api/mutations": { updateVolunteerApplication: async (id, data) => { writes.push({ id, data }); return {} }, updateAdoptionApplication: async (id, data) => { writes.push({ id, data }); return {} } },
+    "../api/processing": { approveVolunteerAndContinue: async (id, data, href) => { writes.push({ id, data, next: true, href }); return { redirectTo: "/next" } } },
+    "../lib/detail-navigation": navigation,
     "@/shared/components/ui/button": { Button: "button" },
     "@/shared/components/ui/textarea": { Textarea: "textarea" },
     "@/shared/lib/use-save-feedback": { useSaveFeedback: onError => ({ pending: false, completed: false, save: async (action, message, href) => { onError(null); await action(); errors.push({ message, href }) } }) },
@@ -112,15 +115,23 @@ function formHarness(props = {}) {
   const submit = async () => { const form = nodes(render()).find(n => n.type === "form"); await form.props.onSubmit({ preventDefault() {} }); await Promise.resolve(); await Promise.resolve() }
   return { render, change, choose, confirm, submit, writes, errors, state }
 }
-test("new approval requires calendar confirmation, preserves return filters and defaults to schedule creation", async () => {
+test("new volunteer approval is one click, preserves return filters and defaults to schedule creation", async () => {
   const form = formHarness()
-  form.change("application-status", "승인")
   await form.submit()
-  assert.equal(form.writes.length, 0)
-  form.confirm(); await form.submit()
+  assert.equal(form.writes.length, 1)
+  assert.equal(form.writes[0].data.get("status"), "승인")
   assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
   assert.match(form.writes[0].data.get("admin_note"), /100L/)
   assert.equal(form.errors[0].href, "/admin/applications?status=접수&page=2")
+})
+test("approve and continue dispatches only one save and uses server-selected destination", async () => {
+  const form = formHarness()
+  await nodes(form.render()).find(node => node.props?.children === "승인 후 다음 접수 보기").props.onClick()
+  await Promise.resolve(); await Promise.resolve()
+  assert.equal(form.writes.length, 1)
+  assert.equal(form.writes[0].next, true)
+  assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
+  assert.equal(form.errors[0].href, undefined)
 })
 test("reschedule approval replaces schedules; rejection keeps them and does not permit accidental review reset", async () => {
   const props = { currentStatus: "일정변경요청", linkedEventCount: 1, rescheduleInfo: { dates: ["2026-10-20"], time: "11:00" } }
@@ -136,7 +147,7 @@ test("reschedule approval replaces schedules; rejection keeps them and does not 
 })
 test("missing schedule blocks automatic approval; explicit approval-only remains available", async () => {
   const form = formHarness({ hint: { availableDates: [], availableTime: null } })
-  form.change("application-status", "승인"); form.confirm(); await form.submit()
+  await form.submit()
   assert.equal(form.writes.length, 0)
   form.choose("approval-mode", 1); await form.submit()
   assert.equal(form.writes[0].data.get("schedule_mode"), "approval_only")

@@ -56,7 +56,8 @@ function volunteerDateLabel(dates: string[], days: string[]): string {
   return "봉사 신청"
 }
 
-export default async function MyApplicationsPage() {
+export default async function MyApplicationsPage({ searchParams }: { searchParams: Promise<{ application?: string }> }) {
+  const selectedApplication = (await searchParams).application
   const supabase = await createClient()
   const {
     data: { session },
@@ -155,7 +156,7 @@ export default async function MyApplicationsPage() {
                   const editBtnLabel = isRescheduleMode ? "일정변경 요청" : "일정 변경"
 
                   return (
-                    <details key={v.id} className="group overflow-hidden rounded-lg border border-border bg-card">
+                    <details key={v.id} id={`volunteer-${v.id}`} open={selectedApplication === v.id} className="group scroll-mt-24 overflow-hidden rounded-lg border border-border bg-card">
                       {/* ── 요약 행: 날짜 + 상태 ── */}
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 hover:bg-secondary/30 [&::-webkit-details-marker]:hidden">
                         <div className="min-w-0">

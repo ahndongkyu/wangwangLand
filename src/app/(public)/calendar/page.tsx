@@ -12,6 +12,8 @@ import {
 } from "@/features/events"
 import { monthRange, yearMonthKst, todayKst } from "@/features/events/lib/date"
 import { createClient } from "@/shared/lib/supabase/server"
+import { getCalendarApplicationLinks } from "@/features/events/api/calendar-links"
+import { validDate } from "@/features/applications/lib/admin-list"
 
 export const metadata: Metadata = {
   title: "일정",
@@ -39,7 +41,7 @@ function parseCategories(raw: string | undefined): EventCategory[] {
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ym?: string; cat?: string }>
+  searchParams: Promise<{ ym?: string; cat?: string; date?: string }>
 }) {
   const params = await searchParams
   const yearMonth =
@@ -68,6 +70,7 @@ export default async function CalendarPage({
     includeInternal: isStaff,
   })
 
+  const applicationLinks = await getCalendarApplicationLinks(events, "/calendar", yearMonth)
   return (
     <div className="mx-auto w-full max-w-5xl px-3 py-7 sm:px-4 sm:py-12 md:py-16">
       <header className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:flex-wrap">
@@ -104,11 +107,16 @@ export default async function CalendarPage({
       />
 
       <MonthGrid
+        key={`${yearMonth}-${params.date ?? ""}`}
         yearMonth={yearMonth}
         events={events}
         hrefBase={isStaff ? "/admin/calendar" : "/calendar"}
-        maskNames={false}
+        maskNames={!isStaff}
         readOnly={!isStaff}
+        returnPath="/calendar"
+        categoryFilter={categories.join(",")}
+        initialSelectedDate={params.date && validDate(params.date) ? params.date : undefined}
+        applicationLinks={applicationLinks}
       />
     </div>
   )

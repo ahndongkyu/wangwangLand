@@ -27,6 +27,7 @@ import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
+  returnHref?: string
   /** 수정 모드면 기존 이벤트 */
   event?: CalendarEvent
   /** 신규 등록 시 선택된 날짜 (YYYY-MM-DD). 캘린더 셀 클릭에서 채워짐. */
@@ -91,7 +92,7 @@ function pickContrast(hex: string): string {
   return lum > 0.6 ? "#1F1B16" : "#FFFFFF"
 }
 
-export function EventForm({ event, defaultDate, fromApplication, groupDates = [] }: Props) {
+export function EventForm({ event, defaultDate, fromApplication, groupDates = [], returnHref = "/admin/calendar" }: Props) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const { save, pending, completed } = useSaveFeedback(setError)
@@ -208,13 +209,13 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
     }
     await save(() => isEdit
       ? updateEvent(event!.id, formData, "one")
-      : createEvent(formData), "일정이 저장되었습니다.", "/admin/calendar")
+      : createEvent(formData), "일정이 저장되었습니다.", returnHref)
   }
 
   async function runScopedUpdate(scope: RecurrenceScope) {
     const fd = pendingFormData.current
     if (!fd) return
-    await save(() => updateEvent(event!.id, fd, scope), "일정이 저장되었습니다.", "/admin/calendar")
+    await save(() => updateEvent(event!.id, fd, scope), "일정이 저장되었습니다.", returnHref)
     setScopeOpen(false)
   }
 
