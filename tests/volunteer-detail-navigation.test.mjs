@@ -15,6 +15,15 @@ const nav = load("src/features/applications/lib/detail-navigation.ts", { "./admi
 const date = load("src/features/events/lib/date.ts")
 const calendar = load("src/features/events/lib/navigation.ts", { "@/features/applications/lib/detail-navigation": nav, "./date": date })
 
+test("volunteer detail uses independent desktop columns and retains mobile card order", () => {
+  const source = readFileSync("src/app/(admin)/admin/(protected)/applications/volunteer/[id]/page.tsx", "utf8")
+  assert.doesNotMatch(source, /xl:row-span|xl:row-start|xl:col-start/)
+  assert.match(source, /contents xl:flex xl:min-w-0 xl:flex-\[1\.4\] xl:flex-col xl:gap-4/)
+  assert.match(source, /<section className=\{cn\(panel, "order-1"\)\}/)
+  assert.match(source, /id="application-processing" className="order-2/)
+  assert.match(source, /<section className=\{cn\(panel, "order-3"\)\}/)
+})
+
 test("return navigation is internal and restores calendar month, selected date and category", () => {
   for (const path of ["/", "/calendar", "/admin", "/admin/calendar"]) {
     const href = calendar.calendarReturnHref(path, "2026-10", "2026-10-24", "volunteer,event")
