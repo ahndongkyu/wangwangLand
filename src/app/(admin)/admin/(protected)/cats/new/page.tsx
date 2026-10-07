@@ -4,7 +4,7 @@ import { CatForm } from "@/features/cats"
 
 export default function AdminCatNewPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/admin/cats" className="hover:text-foreground">
           ← 고양이 목록

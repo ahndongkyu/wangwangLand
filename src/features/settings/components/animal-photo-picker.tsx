@@ -5,15 +5,16 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { changeAnimalPhoto } from "../api/homepage-actions"
 import { Button } from "@/shared/components/ui/button"
+import { useToast } from "@/shared/components/toast"
 
-type Props = { name: string; images: string[]; index: number; onChoose: (image: string) => Promise<string | undefined>; draft?: boolean; disabled?: boolean }
-export function AnimalPhotoPicker({ name, images, index, onChoose, draft, disabled }: Props) {
+type Props = { name: string; images: string[]; index: number; onChoose: (image: string) => Promise<string | undefined>; draft?: boolean; disabled?: boolean; compact?: boolean }
+export function AnimalPhotoPicker({ name, images, index, onChoose, draft, disabled, compact }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const [selected, setSelected] = useState(index)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   return <>
-    <Button type="button" variant="outline" disabled={disabled || !images.length} className="min-h-11 text-xs" onClick={() => { setSelected(index); setError(""); dialog.current?.showModal() }} aria-label={`${name} 대표사진 변경`}>대표사진 변경</Button>
+    <Button type="button" variant={compact ? "ghost" : "outline"} disabled={disabled || !images.length} className="min-h-11 px-3 text-xs" onClick={() => { setSelected(images[index] ? index : 0); setError(""); dialog.current?.showModal() }} aria-label={`${name} 대표사진 변경`}>{compact ? "대표사진" : "대표사진 변경"}</Button>
     <dialog ref={dialog} onCancel={e => { if (busy) e.preventDefault() }} aria-label={`${name} 대표사진 선택`} className="fixed inset-0 m-auto max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-xl overflow-auto rounded-2xl border border-border bg-card p-5 text-foreground backdrop:bg-black/50 [&_button]:min-h-11">
       <h2 className="text-lg font-bold">{name} 대표사진</h2>
       <p className="mt-2 text-sm text-muted-foreground">홈·목록·상세에 함께 반영됩니다.{draft && " 선택 후 홈페이지 관리에서 저장해 주세요."}</p>
@@ -30,12 +31,13 @@ export function AnimalPhotoPicker({ name, images, index, onChoose, draft, disabl
   </>
 }
 
-export function QuickAnimalPhoto({ kind, id, name, images, index }: { kind: "dogs" | "cats"; id: string; name: string; images: string[]; index: number }) {
+export function QuickAnimalPhoto({ kind, id, name, images, index, compact }: { kind: "dogs" | "cats"; id: string; name: string; images: string[]; index: number; compact?: boolean }) {
   const router = useRouter()
+  const toast = useToast()
   const [message, setMessage] = useState("")
-  return <div className="mt-2"><AnimalPhotoPicker name={name} images={images} index={index} onChoose={async image => {
+  return <div className={compact ? "" : "mt-2"}><AnimalPhotoPicker name={name} images={images} index={index} compact={compact} onChoose={async image => {
     const result = await changeAnimalPhoto(kind, id, image)
     if (result.error) return result.error
-    setMessage("대표사진 저장됨"); router.refresh()
-  }} /><span role="status" className="block text-xs text-muted-foreground">{message}</span></div>
+    setMessage("대표사진 저장됨"); toast.success(`${name} 대표사진이 저장되었습니다.`); router.refresh()
+  }} /><span role="status" className={compact ? "sr-only" : "block text-xs text-muted-foreground"}>{message}</span></div>
 }

@@ -1,8 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { useRef, useState, useTransition } from "react"
-import { Loader2, Upload, X } from "lucide-react"
+import { useRef, useState } from "react"
+import { ImageIcon, Loader2, Upload, X } from "lucide-react"
 
 import { ImageCropModal } from "@/shared/components/image-crop-modal"
 import { cn } from "@/shared/lib/utils"
@@ -15,6 +15,8 @@ interface Props {
   initialImages?: string[]
   initialThumbnailIndex?: number
   maxImages?: number
+  onBusyChange?: (busy: boolean) => void
+  disabled?: boolean
 }
 
 export function AnimalImageUploader({
@@ -22,56 +24,69 @@ export function AnimalImageUploader({
   initialImages = [],
   initialThumbnailIndex = 0,
   maxImages = MAX_IMAGES,
+  onBusyChange,
+  disabled = false,
 }: Props) {
   const [images, setImages] = useState<string[]>(initialImages)
-  const [thumbIdx, setThumbIdx] = useState(initialThumbnailIndex)
-  const [pending, startTransition] = useTransition()
+  const [thumbIdx, setThumbIdx] = useState(initialImages[initialThumbnailIndex] ? initialThumbnailIndex : 0)
+  const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const thumbInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
-  const pendingFileRef = useRef<File | null>(null)
+  const busyRef = useRef(false)
 
   function setThumb(idx: number) {
     setThumbIdx(idx)
-    if (thumbInputRef.current) thumbInputRef.current.value = String(idx)
   }
 
   const remaining = Math.max(0, maxImages - images.length)
   const isFull = remaining === 0
 
   async function uploadFile(file: File) {
-    const filename = `${folder}/${crypto.randomUUID()}.jpg`
-    const res = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
-      method: "POST",
-      body: file,
-    })
-    if (!res.ok) {
-      const { error } = await res.json().catch(() => ({ error: "업로드 실패" }))
-      setError(`업로드 실패: ${error}`)
-      return
+    setPending(true)
+    try {
+      const filename = `${folder}/${crypto.randomUUID()}.jpg`
+      const res = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
+        method: "POST",
+        body: file,
+      })
+      const result = await res.json().catch(() => null)
+      if (!res.ok || typeof result?.url !== "string") throw new Error(result?.error || "사진을 업로드하지 못했습니다. 다시 시도해 주세요.")
+      setImages((prev) => [...prev, result.url].slice(0, maxImages))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "사진을 업로드하지 못했습니다.")
+    } finally {
+      setPending(false)
+      busyRef.current = false
+      onBusyChange?.(false)
     }
-    const { url } = await res.json()
-    setImages((prev) => [...prev, url].slice(0, maxImages))
   }
 
-  function handleCropDone(file: File, _previewUrl: string) {
+  function handleCropDone(file: File) {
     setCropSrc(null)
-    pendingFileRef.current = null
-    startTransition(() => uploadFile(file))
+    void uploadFile(file)
   }
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ""
+    if (busyRef.current || disabled) return
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      setError("JPG·PNG·WebP·GIF 사진을 10MB 이하로 선택해 주세요.")
+      return
+    }
     if (images.length >= maxImages) {
       setError(`사진은 최대 ${maxImages}장까지 가능합니다.`)
       e.target.value = ""
       return
     }
     setError(null)
-    pendingFileRef.current = file
+    busyRef.current = true
+    onBusyChange?.(true)
     const reader = new FileReader()
     reader.onload = () => setCropSrc(reader.result as string)
+    reader.onerror = () => { setError("사진을 읽지 못했습니다. 다시 선택해 주세요."); busyRef.current = false; onBusyChange?.(false) }
     reader.readAsDataURL(file)
     e.target.value = ""
   }
@@ -88,13 +103,18 @@ export function AnimalImageUploader({
         <ImageCropModal
           imageSrc={cropSrc}
           onDone={handleCropDone}
-          onCancel={() => { setCropSrc(null); pendingFileRef.current = null }}
+          onCancel={() => { setCropSrc(null); busyRef.current = false; onBusyChange?.(false) }}
         />
       )}
       <input type="hidden" name="images" value={images.join(",")} />
-      <input type="hidden" name="thumbnail_index" ref={thumbInputRef} defaultValue={thumbIdx} />
+      <input type="hidden" name="thumbnail_index" value={thumbIdx} />
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-muted">
+        {images[thumbIdx] ? <Image src={images[thumbIdx]} alt="선택한 대표사진" fill sizes="(min-width:1280px) 340px, (min-width:768px) 600px, 100vw" className="object-contain" /> : <div className="text-center text-muted-foreground"><ImageIcon className="mx-auto mb-3 size-8" aria-hidden /><p className="text-sm">사진을 등록해 주세요.</p></div>}
+        {images.length > 0 && <span className="absolute bottom-3 left-3 rounded-md bg-card px-2 py-1 text-xs font-semibold text-foreground shadow-sm">대표사진</span>}
+      </div>
+
+      <div className="flex items-start justify-between gap-3 text-xs leading-5 text-muted-foreground">
         <span>
           사진을 클릭하면 <strong className="text-foreground">대표 사진</strong>으로
           지정돼요. 대표 사진이 목록·상세의 메인 이미지로 노출됩니다.
@@ -109,12 +129,12 @@ export function AnimalImageUploader({
         </span>
       </div>
 
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {images.map((src, idx) => (
           <div
             key={src}
             className={cn(
-              "group relative h-24 w-24 overflow-hidden rounded-lg border-2 transition-colors",
+              "group relative min-w-0 overflow-hidden rounded-lg border-2 transition-colors",
               idx === thumbIdx
                 ? "border-primary"
                 : "border-border hover:border-primary/50"
@@ -122,22 +142,25 @@ export function AnimalImageUploader({
           >
             <button
               type="button"
+              disabled={disabled || pending || !!cropSrc}
               onClick={() => setThumb(idx)}
-              className="block h-full w-full"
+              className="relative block aspect-square w-full focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-4 disabled:opacity-50"
               aria-label={`${idx + 1}번 이미지를 대표로 선택`}
+              aria-pressed={idx === thumbIdx}
             >
-              <Image src={src} alt="" fill className="object-cover" />
+              <Image src={src} alt="" fill sizes="120px" className="object-cover" />
             </button>
             <button
               type="button"
+              disabled={disabled || pending || !!cropSrc}
               onClick={() => removeImage(idx)}
-              className="absolute right-1 top-1 rounded-full bg-destructive/90 p-1 text-destructive-foreground opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+              className="flex min-h-11 w-full items-center justify-center gap-1 border-t border-border bg-card text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
               aria-label={`${idx + 1}번 이미지 삭제`}
             >
-              <X className="size-3" />
+              <X className="size-3" aria-hidden /> 삭제
             </button>
             {idx === thumbIdx && (
-              <span className="absolute bottom-0 left-0 right-0 bg-primary/80 py-0.5 text-center text-[10px] font-bold text-primary-foreground">
+              <span className="pointer-events-none absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
                 대표
               </span>
             )}
@@ -145,9 +168,12 @@ export function AnimalImageUploader({
         ))}
 
         {!isFull && (
-          <label
+          <button
+            type="button"
+            disabled={disabled || pending || !!cropSrc}
+            onClick={() => fileInputRef.current?.click()}
             className={cn(
-              "flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary",
+              "flex min-h-28 min-w-0 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-1 text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50",
               pending && "opacity-50"
             )}
           >
@@ -159,16 +185,10 @@ export function AnimalImageUploader({
             <span className="text-xs">
               {pending ? "업로드 중" : `사진 추가 (${remaining})`}
             </span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileSelect}
-              disabled={pending}
-            />
-          </label>
+          </button>
         )}
       </div>
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFileSelect} disabled={disabled || pending || !!cropSrc} />
 
       {error && (
         <p className="text-sm text-destructive" role="alert">

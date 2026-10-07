@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { requireAdmin } from "@/shared/lib/auth"
 import type { Cat, DogStatus } from "@/shared/types/database"
 
 export type CatSort = "latest" | "name"
@@ -7,6 +8,8 @@ const CAT_CARD_COLS =
   "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, neutered, rescue_date, updated_at" as const
 
 export interface ListCatsOptions {
+  /** 관리자 목록에서만 보호 위치를 조회합니다. */
+  includeLocation?: boolean
   status?: DogStatus | "전체"
   gender?: "수컷" | "암컷" | "미상" | "전체"
   neutered?: "true" | "false" | "전체"
@@ -60,6 +63,7 @@ export interface PaginatedCats {
 }
 
 export async function listCatsWithCount({
+  includeLocation = false,
   status,
   gender,
   neutered,
@@ -70,7 +74,13 @@ export async function listCatsWithCount({
 }: ListCatsOptions = {}): Promise<PaginatedCats> {
   const supabase = await createClient()
 
-  let query = supabase.from("cats").select(CAT_CARD_COLS, { count: "exact" })
+  if (includeLocation) {
+    const auth = await requireAdmin()
+    if (!auth.ok) return { cats: [], total: 0 }
+  }
+  let query = includeLocation
+    ? supabase.from("cats").select(`${CAT_CARD_COLS},kennel_location`, { count: "exact" })
+    : supabase.from("cats").select(CAT_CARD_COLS, { count: "exact" })
 
   if (sort === "name") {
     query = query.order("name", { ascending: true }).order("id", { ascending: true })

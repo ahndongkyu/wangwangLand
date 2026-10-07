@@ -16,7 +16,7 @@ export default async function AdminDogEditPage({
   if (!dog) notFound()
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/admin/dogs" className="hover:text-foreground">
           ← 유기견 목록

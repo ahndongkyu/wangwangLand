@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { requireAdmin } from "@/shared/lib/auth"
 import type { Dog, DogGender, DogSize, DogStatus } from "@/shared/types/database"
 import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
 
@@ -9,6 +10,8 @@ const DOG_CARD_COLS =
   "id, name, images, thumbnail_index, status, breed, gender, birth_date, age_months, size, neutered, rescue_date, updated_at, is_pinned, pin_order" as const
 
 export interface ListDogsOptions {
+  /** 관리자 목록에서만 보호 위치를 조회합니다. */
+  includeLocation?: boolean
   adoptableOnly?: boolean
   status?: DogStatus | "전체"
   size?: DogSize | "전체"
@@ -74,6 +77,7 @@ export interface PaginatedDogs {
 }
 
 export async function listDogsWithCount({
+  includeLocation = false,
   adoptableOnly = false,
   status,
   size,
@@ -86,7 +90,13 @@ export async function listDogsWithCount({
 }: ListDogsOptions = {}): Promise<PaginatedDogs> {
   const supabase = await createClient()
 
-  let query = supabase.from("dogs").select(DOG_CARD_COLS, { count: "exact" })
+  if (includeLocation) {
+    const auth = await requireAdmin()
+    if (!auth.ok) return { dogs: [], total: 0 }
+  }
+  let query = includeLocation
+    ? supabase.from("dogs").select(`${DOG_CARD_COLS},kennel_location`, { count: "exact" })
+    : supabase.from("dogs").select(DOG_CARD_COLS, { count: "exact" })
   if (adoptableOnly) query = query.in("status", ["보호중", "임시보호중"])
 
   if (sort === "name") {

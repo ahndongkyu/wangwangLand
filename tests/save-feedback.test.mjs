@@ -79,7 +79,7 @@ test("double click cannot create duplicate writes while pending or completed", a
 })
 
 test("editing forms prevent automatic action resets on failed saves", () => {
-  for (const name of ["dogs/dog", "cats/cat", "thanks/thanks", "events/event"]) {
+  for (const name of ["animals/animal", "thanks/thanks", "events/event"]) {
     const [feature, form] = name.split("/")
     const source = readFileSync(`src/features/${feature}/components/${form}-form.tsx`, "utf8")
     assert.match(source, /onSubmit=\{handleSubmit\}/)
