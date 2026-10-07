@@ -39,7 +39,7 @@ export default async function EventDetailPage({
         .eq("id", event.source_application_id)
         .eq("created_by", session.user.id)
         .maybeSingle()
-      if (myApp) redirect("/my/applications")
+      if (myApp) redirect(`/my/applications?application=${myApp.id}#volunteer-${myApp.id}`)
     }
     redirect("/calendar")
   }

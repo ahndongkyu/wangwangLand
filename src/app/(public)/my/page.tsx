@@ -197,7 +197,7 @@ export default async function MyPage() {
           <p className="mt-2 text-sm text-muted-foreground">{formatKoreanDayLabel(nextEvent.starts_at, nextEvent.all_day)}{nextApplication ? ` · ${nextApplication.party_size}명` : ""}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href={`/calendar/${nextEvent.id}`} className={buttonClass + " border-primary bg-primary text-primary-foreground hover:bg-primary/90"}>일정 상세 보기</Link>
-            <Link href="/my/applications" className={buttonClass}>신청 확인·변경</Link>
+            <Link href={nextEvent.source_application_id ? `/my/applications?application=${nextEvent.source_application_id}#volunteer-${nextEvent.source_application_id}` : "/my/applications"} className={buttonClass}>신청 확인·변경</Link>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">방문 전 준비물과 안내사항을 확인해주세요.</p>
         </> : <>

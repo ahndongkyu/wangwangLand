@@ -21,31 +21,19 @@ export default async function DonatePage() {
   const recentThanks = await listRecentApprovedDonations(8)
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-12">
       <header className="mb-10">
-        <h1 className="text-3xl font-bold text-foreground md:text-4xl">
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">
           후원 안내
         </h1>
         <p className="mt-3 text-muted-foreground">
-          {SITE.name}은 여러분의 후원으로 아이들을 돌보고 있어요.
+          {SITE.name}는 여러분의 후원으로 아이들을 돌보고 있어요.
           <br />
           보내주신 후원은 사료와 치료비, 보호소 운영에 쓰입니다.
         </p>
       </header>
 
-      <section className="mb-10">
-        <h2 className="mb-4 text-xl font-semibold text-foreground">
-          후원금은 이렇게 쓰여요
-        </h2>
-        <ul className="grid gap-3 md:grid-cols-2">
-          <UsageItem Icon={UtensilsCrossed} title="사료 · 간식" desc="아이들의 한 끼" />
-          <UsageItem Icon={Stethoscope} title="의료비" desc="예방 접종, 치료, 수술" />
-          <UsageItem Icon={Home} title="보호 환경" desc="시설 유지 및 개선" />
-          <UsageItem Icon={Heart} title="구조 활동" desc="버려진 아이들을 찾아가는 비용" />
-        </ul>
-      </section>
-
-      <section className="mb-10 rounded-xl border border-primary/40 bg-primary/5 p-6">
+      <section className="mb-6 rounded-xl border border-primary/25 bg-card p-5 sm:p-7">
         <div className="mb-5 flex items-baseline justify-between gap-2">
           <h2 className="text-xl font-semibold text-foreground">계좌 후원</h2>
           <span className="text-xs text-muted-foreground">일시·정기 후원 공용</span>
@@ -84,7 +72,7 @@ export default async function DonatePage() {
         </div>
       </section>
 
-      <section className="mb-10 rounded-xl border border-border bg-card p-6">
+      <section className="mb-6 rounded-xl border border-border bg-card p-5 sm:p-7">
         <h2 className="mb-3 text-xl font-semibold text-foreground">
           후원품 택배
         </h2>
@@ -118,7 +106,7 @@ export default async function DonatePage() {
       {/* 후원 등록 안내 */}
       <section className="mb-6 rounded-xl border border-primary/40 bg-card p-6 text-center">
         <p className="text-sm font-semibold text-foreground">
-          🌱 후원해주신 분, 잠시만요!
+          입금·물품 발송 후 후원 내역을 등록해주세요.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           입금/물품 발송 후 아래 폼에 등록해주시면
@@ -138,6 +126,20 @@ export default async function DonatePage() {
         </div>
       </section>
 
+      <section className="mb-10">
+        <h2 className="mb-4 text-xl font-semibold text-foreground">
+          후원금은 이렇게 쓰여요
+        </h2>
+        <ul className="grid gap-3 md:grid-cols-2">
+          <UsageItem Icon={UtensilsCrossed} title="사료 · 간식" desc="아이들의 한 끼" />
+          <UsageItem Icon={Stethoscope} title="의료비" desc="예방 접종, 치료, 수술" />
+          <UsageItem Icon={Home} title="보호 환경" desc="시설 유지 및 개선" />
+          <UsageItem Icon={Heart} title="구조 활동" desc="버려진 아이들을 찾아가는 비용" />
+        </ul>
+      </section>
+
+      <section className="mb-8 rounded-xl border border-border bg-card p-5"><h2 className="text-lg font-semibold">후원금 사용 내역</h2><p className="mt-2 text-sm text-muted-foreground">공개된 지출 내역에서 보호소 운영에 사용된 내용을 확인할 수 있습니다.</p><Link href="/expenses" className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline">지출 내역 보기</Link></section>
+
       <p className="text-center text-xs text-muted-foreground">
         * 카드·간편 결제 연동은 추후 지원 예정입니다.
       </p>
@@ -146,7 +148,7 @@ export default async function DonatePage() {
       {recentThanks.length > 0 && (
         <section className="mt-12">
           <p className="mb-2 text-xs font-semibold text-muted-foreground">
-            💛 최근 후원해주신 분들
+            최근 후원해주신 분들
           </p>
           <DonationTicker items={recentThanks} />
         </section>

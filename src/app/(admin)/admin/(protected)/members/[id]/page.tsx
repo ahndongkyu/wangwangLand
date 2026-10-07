@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { memberListReturnHref } from "@/features/members/lib/list-navigation"
 import Image from "next/image"
 import { notFound } from "next/navigation"
 import {
@@ -71,10 +72,13 @@ function providerLabel(provider: string | null): string {
 
 export default async function AdminMemberDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ returnTo?: string | string[] }>
 }) {
   const { id } = await params
+  const returnHref = memberListReturnHref((await searchParams).returnTo)
 
   const me = await getCurrentAdmin()
   const isTopAdmin = me?.role === "admin"
@@ -111,7 +115,7 @@ export default async function AdminMemberDetailPage({
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 md:px-6">
       <nav className="mb-4 text-sm text-muted-foreground">
-        <Link href="/admin/members" className="hover:text-foreground">
+        <Link href={returnHref} className="inline-flex min-h-11 items-center hover:text-foreground">
           ← 회원 관리
         </Link>
       </nav>

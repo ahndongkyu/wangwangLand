@@ -76,7 +76,7 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {/* 1. 후원 종류 */}
-      <Card title="후원 종류" required>
+      <Card title="1. 후원 종류" required>
         <div className="grid grid-cols-2 gap-2">
           <TypeOption
             active={type === "cash"}
@@ -96,7 +96,7 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
       </Card>
 
       {/* 2. 후원 내용 */}
-      <Card title="후원 내용" required>
+      <Card title="2. 후원 내용" required>
         {type === "cash" ? (
           <Field id="amount" label="후원 금액" required>
             <div className="relative">
@@ -119,9 +119,9 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
                   key={v}
                   type="button"
                   onClick={() => setQuickAmount(v)}
-                  className="rounded-md border border-border bg-background py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
+                  className="min-h-11 rounded-lg border border-border bg-background py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
-                  +{(v / 10000).toLocaleString()}만
+                  {(v / 10000).toLocaleString()}만원
                 </button>
               ))}
             </div>
@@ -149,7 +149,7 @@ export function DonationForm({ defaultDonor, termsAlreadyAgreed = false }: Props
 
       {/* 3. 후원자 정보 — 이름 + 핸드폰만 (이메일은 회원이면 자동, 비회원은 미수집) */}
       <Card
-        title="후원자 정보"
+        title="3. 후원자 정보"
         required
         badge={isMember ? "회원 정보 자동 채움" : undefined}
       >
@@ -295,12 +295,12 @@ function Card({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4 md:p-5">
+    <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-foreground">
           {title}
           {required && <span className="ml-1 text-destructive">*</span>}
-        </h3>
+        </h2>
         {badge && (
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
             {badge}
@@ -350,11 +350,12 @@ function TypeOption({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all",
+        "flex min-h-20 flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring",
         active
-          ? "-translate-y-0.5 border-primary bg-primary/10 text-foreground shadow-sm"
+          ? "border-primary/40 bg-primary/5 text-foreground"
           : "border-border bg-background text-muted-foreground hover:text-foreground"
       )}
     >

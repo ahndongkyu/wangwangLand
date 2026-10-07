@@ -57,7 +57,7 @@ export default async function AdoptionApplicationDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
-      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+      <div className="mb-6">
         <nav className="mb-4 text-sm text-muted-foreground">
           <Link href={returnHref} className="hover:text-foreground">
             ← 신청 목록
@@ -69,11 +69,12 @@ export default async function AdoptionApplicationDetailPage({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">
-              입양 신청 상세
+              {app.applicant_name}
             </h1>
             <ApplicationBadge status={app.status} />
           </div>
-          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-muted-foreground">입양 신청 상세</p>
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <span>
               {new Date(app.submitted_at).toLocaleString("ko-KR", {
                 timeZone: "Asia/Seoul",
@@ -114,11 +115,11 @@ export default async function AdoptionApplicationDetailPage({
         </header>
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.85fr)]">
-      <div className="min-w-0 [overflow-wrap:anywhere]">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+      <div className="contents xl:flex xl:min-w-0 xl:flex-[1.3] xl:flex-col xl:gap-4 [overflow-wrap:anywhere]">
       {/* 대상 아이 — 헤드라인 카드 */}
       {targetAnimal && (
-      <section className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/5 p-5">
+      <section className="order-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5">
           <div>
             <p className="text-xs text-muted-foreground">대상 아이</p>
             <p className="mt-1 text-lg font-bold text-foreground">
@@ -137,14 +138,14 @@ export default async function AdoptionApplicationDetailPage({
         </section>
       )}
 
-      {!targetAnimal && <section className="mb-6 rounded-xl border border-border bg-card p-5">
+      {!targetAnimal && <section className="order-1 rounded-xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold">희망하는 아이</h2>
         <p className="mt-2 whitespace-pre-wrap break-words text-sm">{app.preferred_animal || "상담 후 결정"}</p>
         {app.preferred_animal && <p className="mt-2 text-xs text-muted-foreground">신청자가 직접 입력한 내용입니다. 상담 시 대상 아이를 확인해 주세요.</p>}
       </section>}
 
       {/* 신청자 + 가족·주거 + 반려경험 */}
-      <section className="mb-6 grid gap-4 md:grid-cols-2">
+      <section className="order-3 grid gap-4 md:grid-cols-2">
         <Card title="신청자 정보">
           <Row icon={User} label="이름" value={app.applicant_name} />
           <Row
@@ -199,7 +200,7 @@ export default async function AdoptionApplicationDetailPage({
       </section>
 
       {/* 입양 결심 이유 */}
-      <section className="mb-6 rounded-xl border border-border bg-card p-5">
+      <section className="order-3 rounded-xl border border-border bg-card p-5">
         <h2 className="mb-2 text-sm font-semibold text-foreground">
           입양을 결심한 이유
         </h2>
@@ -209,10 +210,10 @@ export default async function AdoptionApplicationDetailPage({
       </section>
 
       {/* 자격 확인 / 동의 (신청 시 폼에서 강제) */}
-      <section className="mb-6 rounded-xl border border-border bg-card p-5">
-        <h2 className="mb-2 text-sm font-semibold text-foreground">
+      <details className="order-3 rounded-xl border border-border bg-card p-5">
+        <summary className="min-h-11 cursor-pointer text-sm font-semibold text-foreground">
           신청 시 동의·확인 사항
-        </h2>
+        </summary>
         <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
           <li>• 만 19세 이상 성인</li>
           <li>• 동거 가족 전원의 입양 동의</li>
@@ -226,10 +227,10 @@ export default async function AdoptionApplicationDetailPage({
         <p className="mt-2 text-[11px] text-muted-foreground/80">
           신청 폼에서 위 항목을 모두 체크해야 제출이 가능합니다.
         </p>
-      </section>
+      </details>
 
       </div>
-      <aside id="application-processing" className="min-w-0 scroll-mt-20">
+      <aside id="application-processing" className="order-2 min-w-0 scroll-mt-20 xl:min-w-[300px] xl:flex-[.85]">
       {/* 처리 */}
       <ApplicationStatusForm
         id={app.id}
@@ -288,7 +289,7 @@ function Row({
         {Icon && <Icon className="size-3" aria-hidden />}
         {label}
       </dt>
-      <dd className="font-medium text-foreground">{value}</dd>
+      <dd className="min-w-0 break-words font-medium text-foreground">{value}</dd>
     </div>
   )
 }
@@ -305,7 +306,7 @@ function ContactButton({
   return (
     <a
       href={href}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
     >
       <Icon className="size-3.5" aria-hidden />
       {label}

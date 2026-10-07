@@ -1,0 +1,57 @@
+import test from "node:test"
+import assert from "node:assert/strict"
+import { load, renderMembers, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
+
+test("member list returns preserve only validated internal filters", () => {
+  const { memberListReturnHref: back } = load("src/features/members/lib/list-navigation.ts")
+  for (const value of ["https://evil.test", "//evil.test", "/admin/members/../admins", "/admin/members/other", "/admin/members\\other"]) assert.equal(back(value), "/admin/members")
+  const url = new URL(back("/admin/members?q=모임&status=pending&sort=joined&page=3&extra=unsafe"), "https://example.test")
+  assert.equal(url.searchParams.get("q"), "모임")
+  assert.equal(url.searchParams.get("page"), "3")
+  assert.equal(url.searchParams.get("extra"), null)
+})
+test("member list renders visible state, contact and detail links without a forced wide table", async () => {
+  const html = await renderMembers({ q: "모임", status: "pending", page: "3" })
+  assert.match(html, /차단됨/)
+  assert.match(html, /가입 미완료/)
+  assert.match(html, /상세 관리/)
+  assert.doesNotMatch(html, /min-w-\[600px\]|<select[^>]*권한/)
+  assert.match(html, /returnTo=/)
+  assert.match(html, /page%3D3/)
+})
+test("donation filters retain search and mobile rows retain status and type", async () => {
+  const html = await renderDonations({ q: "모임", type: "cash", page: "3" })
+  assert.match(html, /status=pending&amp;type=cash&amp;q=/)
+  assert.match(html, /검토중/)
+  assert.match(html, /기록완료/)
+  assert.match(html, /현금/)
+  assert.match(html, /물품/)
+  assert.doesNotMatch(html, /hidden text-right sm:block/)
+})
+test("own application schedules are scoped to owned IDs and display actual calendar time", async () => {
+  const { html, calls } = await renderMyApplications()
+  assert.ok(calls.some(([table, key, value]) => table === "volunteer_applications" && key === "created_by" && value === "member"))
+  assert.ok(calls.some(([table, key, value]) => table === "events" && key === "source_application_id" && value[0] === "own"))
+  assert.match(html, /26\. 10\. 19\. 15:00/)
+  assert.match(html, /승인 전까지 기존 확정 일정/)
+  assert.match(html, /id="volunteer-own" open=""/)
+  assert.match(html, /준비물 · 운영진 안내/)
+  const failed = await renderMyApplications({ eventError: true })
+  assert.match(failed.html, /확정 일정을 불러오지 못했습니다/)
+  assert.doesNotMatch(failed.html, /href="\/my\/applications\/volunteer\/own\/edit"/)
+})
+test("public guidance puts account and directions first and preserves expense access", async () => {
+  const donate = await renderDonate()
+  assert.ok(donate.indexOf("계좌 후원") < donate.indexOf("후원금은 이렇게"))
+  assert.match(donate, /href="\/expenses"/)
+  assert.doesNotMatch(donate, /🌱|💛/)
+  const contact = renderContact()
+  assert.ok(contact.indexOf("보호소 주소") < contact.indexOf(">문의 방법</h2>"))
+  assert.match(contact, /카카오톡 상담/)
+})
+test("adoption detail uses independent columns and early mobile processing", async () => {
+  const html = await renderAdoption()
+  assert.match(html, /contents xl:flex/)
+  assert.match(html, /id="application-processing" class="order-2/)
+  assert.match(html, /<details[^>]*>.*신청 시 동의/s)
+})

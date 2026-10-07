@@ -30,7 +30,7 @@ export default async function DonateRegisterPage() {
     : undefined
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-12 md:px-6 md:py-16">
+    <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 md:py-12">
       <nav className="mb-4 text-sm text-muted-foreground">
         <Link href="/donate" className="hover:text-foreground">
           ← 후원 안내

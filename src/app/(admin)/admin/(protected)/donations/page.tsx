@@ -34,8 +34,8 @@ export default async function AdminDonationsPage({
   searchParams: Promise<{ status?: string; type?: string; page?: string; q?: string }>
 }) {
   const params = await searchParams
-  const filterStatus = (params.status ?? "") as DonationStatus | ""
-  const filterType = (params.type ?? "") as DonationType | ""
+  const filterStatus = STATUS_TABS.some(t => t.value === params.status) ? params.status as DonationStatus : ""
+  const filterType = TYPE_TABS.some(t => t.value === params.type) ? params.type as DonationType : ""
   const activeQuery = (params.q ?? "").trim()
   const pageNum = Math.max(1, Number(params.page ?? 1) || 1)
   const offset = (pageNum - 1) * PAGE_SIZE
@@ -58,6 +58,7 @@ export default async function AdminDonationsPage({
     const t = next.type ?? filterType
     if (s) sp.set("status", s)
     if (t) sp.set("type", t)
+    if (activeQuery) sp.set("q", activeQuery)
     const qs = sp.toString()
     return qs ? `/admin/donations?${qs}` : "/admin/donations"
   }
@@ -68,19 +69,20 @@ export default async function AdminDonationsPage({
         <div>
           <h1 className="text-2xl font-bold text-foreground md:text-3xl">후원 관리</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            전체 <span className="font-semibold text-foreground">{total}</span>건
+            검색 결과 <span className="font-semibold tabular-nums text-foreground">{total}</span>건 · 입금·물품 내역을 확인하고 기록하세요.
           </p>
         </div>
         <Link
           href="/admin/donations/new"
-          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           + 직접 등록
         </Link>
       </header>
 
       {/* 통계 */}
-      <section className="mb-6 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+      <p className="mb-2 text-xs font-medium text-muted-foreground">전체 기간 집계 · 아래 검색 조건과 별도</p>
+      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="기록완료 현금 총액" value={`${stats.approvedCashTotal.toLocaleString()}원`} />
         <Stat label="기록완료 물품" value={`${stats.approvedGoodsCount}건`} />
         <Stat label="기록완료 합계" value={`${stats.approvedCount}건`} />
@@ -94,7 +96,7 @@ export default async function AdminDonationsPage({
           <a
             key={t.value}
             href={buildHref({ status: t.value })}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            className={`inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
               filterStatus === t.value
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary text-muted-foreground hover:text-foreground"
@@ -110,7 +112,7 @@ export default async function AdminDonationsPage({
           <a
             key={t.value}
             href={buildHref({ type: t.value })}
-            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+            className={`inline-flex min-h-11 items-center rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
               filterType === t.value
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -130,11 +132,11 @@ export default async function AdminDonationsPage({
       ) : (
         <>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="grid grid-cols-[56px_1fr_auto_auto_90px] gap-2 border-b border-border bg-secondary/40 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+            <div className="hidden gap-3 border-b border-border bg-secondary/40 px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid lg:grid-cols-[40px_minmax(0,1fr)_90px_60px_85px]">
               <span className="text-center">번호</span>
               <span>후원자 / 내용</span>
-              <span className="hidden text-right sm:block">상태</span>
-              <span className="hidden text-right sm:block">종류</span>
+              <span className="text-right">상태</span>
+              <span className="text-right">종류</span>
               <span className="text-right">후원일</span>
             </div>
             <ul className="divide-y divide-border">
@@ -148,24 +150,24 @@ export default async function AdminDonationsPage({
                   <li key={d.id}>
                     <Link
                       href={`/admin/donations/${d.id}`}
-                      className="grid grid-cols-[56px_1fr_auto_auto_90px] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-secondary/50"
+                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-4 transition-colors hover:bg-secondary/50 focus-visible:outline-2 focus-visible:outline-ring lg:grid-cols-[40px_minmax(0,1fr)_90px_60px_85px]"
                     >
-                      <span className="text-center text-xs text-muted-foreground">{num}</span>
+                      <span className="hidden text-center text-xs tabular-nums text-muted-foreground lg:block">{num}</span>
                       <span className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate text-sm font-semibold text-foreground">
+                        <span title={d.donor_name} className="truncate text-sm font-semibold text-foreground">
                           {d.donor_name}
                         </span>
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span title={summary} className="truncate text-sm tabular-nums text-muted-foreground">
                           {summary}
                         </span>
                       </span>
-                      <span className="hidden text-right sm:block">
+                      <span className="text-right">
                         <DonationStatusBadge status={d.status} />
                       </span>
-                      <span className="hidden text-right text-xs text-muted-foreground sm:block">
+                      <span className="text-xs text-muted-foreground lg:text-right">
                         {d.type === "cash" ? "현금" : "물품"}
                       </span>
-                      <span className="text-right text-xs text-muted-foreground">
+                      <span className="text-right text-xs tabular-nums text-muted-foreground">
                         {formatShortDate(d.donated_at)}
                       </span>
                     </Link>
@@ -195,7 +197,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <div className={`rounded-lg border bg-card p-4 ${highlight ? "border-primary" : "border-border"}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
+      <p className={`mt-2 break-words font-bold tabular-nums text-foreground ${value.endsWith("원") ? "text-base sm:text-xl" : "text-xl"}`}>{value}</p>
     </div>
   )
 }
