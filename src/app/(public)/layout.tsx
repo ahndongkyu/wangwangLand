@@ -58,10 +58,11 @@ export default async function PublicLayout({
   if (profile && profile.status === "approved" && !profile.is_banned) {
     const h = await headers()
     const pathname = h.get("x-pathname") ?? h.get("x-invoke-path") ?? "/"
+    const isAccountSettings = pathname === "/my" && h.get("x-mypage-settings") === "true"
 
     // 핸드폰번호 없는 회원 → 프로필 설정으로 강제 redirect
-    if (!profile.phone && !isExemptPath(pathname)) {
-      redirect("/profile")
+    if (!profile.phone && !isExemptPath(pathname) && !isAccountSettings) {
+      redirect("/my?tab=settings")
     }
 
     // 약관 가드 — 약관/개인정보 미동의 또는 버전 불일치 시 /agreement 로 강제 redirect
@@ -70,7 +71,7 @@ export default async function PublicLayout({
     const privacyOk =
       !!profile.privacy_agreed_at && profile.privacy_version === PRIVACY_VERSION
     if (!termsOk || !privacyOk) {
-      if (!isExemptPath(pathname)) {
+      if (!isExemptPath(pathname) && !isAccountSettings) {
         redirect("/agreement")
       }
     }

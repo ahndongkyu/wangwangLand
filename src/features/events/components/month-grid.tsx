@@ -35,7 +35,7 @@ interface Props {
   initialSelectedDate?: string
   returnPath?: string
   categoryFilter?: string
-  applicationLinks?: Record<string, { href: string; label: string }>
+  applicationLinks?: Record<string, { href: string; label: string; wholeRow?: boolean }>
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -301,7 +301,15 @@ export function MonthGrid({
 
               return (
                 <li key={ev.id}>
-                  {readOnly ? (
+                  {readOnly && applicationLinks[ev.id]?.wholeRow ? (
+                    <Link
+                      href={applicationLinks[ev.id].href}
+                      aria-label={`${displayTitle} · ${applicationLinks[ev.id].label}`}
+                      className="block transition-colors hover:bg-secondary/40 active:bg-secondary/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                    >
+                      {content}
+                    </Link>
+                  ) : readOnly ? (
                     <div>{content}{applicationLinks[ev.id] && <div className="px-3 pb-3 sm:px-4"><Link href={applicationLinks[ev.id].href} className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm text-primary hover:bg-primary/5">{applicationLinks[ev.id].label}</Link></div>}</div>
                   ) : (
                     <Link

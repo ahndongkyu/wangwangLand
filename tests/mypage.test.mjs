@@ -45,7 +45,9 @@ export async function renderMyPage({ confirmed = true, loggedIn = true } = {}) {
     },
   }
   const api = load("src/app/(public)/my/page.tsx", {
-    "@/features/members": { getCurrentProfile: async () => loggedIn ? ({ nickname: "아이들과함께하는봄날긴닉네임도모두보여요", role: "member", status: "approved" }) : null, DeleteAccountButton: () => React.createElement("button", { type: "button" }, "회원 탈퇴") },
+    "@/features/members": { getCurrentProfile: async () => loggedIn ? ({ id: "fixture-member", phone: "010-0000-0000", terms_agreed_at: "2026-10-01", terms_version: "current", privacy_agreed_at: "2026-10-01", privacy_version: "current", nickname: "아이들과함께하는봄날긴닉네임도모두보여요", role: "member", status: "approved" }) : null, DeleteAccountButton: () => React.createElement("button", { type: "button" }, "회원 탈퇴"), MarketingConsentToggle: () => null },
+    "@/features/members/components/profile-form": { ProfileForm: () => null },
+    "@/features/legal": { TERMS_VERSION: "current", PRIVACY_VERSION: "current" },
     "@/features/members/api/actions": { signOut: "/fixture-only" },
     "@/features/donations": { listMyDonations: async () => [] },
     "@/features/events": { listMyUpcomingEvents: async () => confirmed ? [event] : [] },
@@ -56,7 +58,7 @@ export async function renderMyPage({ confirmed = true, loggedIn = true } = {}) {
     "@/shared/lib/supabase/admin": { createAdminClient: () => client },
     "./_components/mypage-tabs": tabs,
   })
-  return renderToStaticMarkup(await api.default())
+  return renderToStaticMarkup(await api.default({ searchParams: Promise.resolve({}) }))
 }
 
 if (process.env.MYPAGE_FIXTURE === "1") {

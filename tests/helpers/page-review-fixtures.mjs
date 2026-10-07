@@ -5,6 +5,7 @@ import React from "react"
 import * as jsx from "react/jsx-runtime"
 import { renderToStaticMarkup } from "react-dom/server"
 import * as icons from "lucide-react"
+import { cva } from "class-variance-authority"
 
 export function load(path, imports = {}) {
   const exports = {}
@@ -18,7 +19,7 @@ export function load(path, imports = {}) {
   } })
   return exports
 }
-const element = (tag, text) => () => React.createElement(tag, null, text)
+const element = (tag, text) => function FixtureElement() { return React.createElement(tag, null, text) }
 const Link = ({ children, ...props }) => React.createElement("a", props, children)
 const Image = ({ fill, sizes, priority, ...props }) => React.createElement("img", { ...props, width: 40, height: 40 })
 const site = load("src/shared/constants/site.ts").SITE
@@ -41,6 +42,40 @@ export const profiles = [
   { id: "member-two", nickname: "가입중인회원", role: "member", status: "pending", phone: null, created_at: "2026-10-06", avatar_url: null, is_banned: false },
   { id: "member-three", nickname: "차단회원", role: "staff", status: "approved", phone: "010-0000-0000", created_at: "2026-09-06", avatar_url: null, is_banned: true },
 ]
+export async function renderMyPage({ tab, edit, phone = "010-0000-0000", status = "approved", loggedIn = true, agreed = true } = {}) {
+  const validation = load("src/shared/lib/validation.ts")
+  const profile = { ...profiles[0], phone, status, terms_agreed_at: agreed ? "2026-10-01" : null, terms_version: "current", privacy_agreed_at: "2026-10-01", privacy_version: "current", marketing_agreed_at: null }
+  const controls = {
+    ...base,
+    "next/navigation": { ...base["next/navigation"], useRouter: () => ({ refresh() {}, replace() {} }) },
+    "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
+    "@/shared/components/ui/button": { Button: ({ children, variant, size, ...props }) => React.createElement("button", props, children) },
+    "@/shared/components/ui/input": { Input: props => React.createElement("input", props) },
+    "@/shared/components/image-crop-modal": { ImageCropModal: () => null },
+    "@/shared/lib/validation": validation,
+  }
+  controls["@/shared/components/ui/input"] = load("src/shared/components/ui/input.tsx", { ...controls, "@base-ui/react/input": { Input: props => React.createElement("input", props) } })
+  controls["@/shared/components/ui/button"] = load("src/shared/components/ui/button.tsx", { ...controls, "class-variance-authority": { cva }, "@base-ui/react/button": { Button: ({ children, ...props }) => React.createElement("button", props, children) } })
+  const ProfileForm = load("src/features/members/components/profile-form.tsx", { ...controls, "../api/actions": {}, "@/shared/components/phone-input": load("src/shared/components/phone-input.tsx", controls) }).ProfileForm
+  const MarketingConsentToggle = load("src/features/members/components/marketing-consent-toggle.tsx", { ...controls, "../api/actions": {} }).MarketingConsentToggle
+  const query = { select() { return this }, eq() { return this }, order() { return this }, limit() { return this }, not() { return this }, in() { return this }, then(resolve) { resolve({ data: [], error: null }) } }
+  const Page = load("src/app/(public)/my/page.tsx", {
+    ...base,
+    "@/features/members": { getCurrentProfile: async () => loggedIn ? profile : null, DeleteAccountButton: element("button", "회원 탈퇴"), MarketingConsentToggle },
+    "@/features/members/components/profile-form": { ProfileForm },
+    "@/features/members/api/actions": { signOut() {} },
+    "@/features/legal": { TERMS_VERSION: "current", PRIVACY_VERSION: "current" },
+    "@/features/donations": { listMyDonations: async () => [] },
+    "@/features/events": { listMyUpcomingEvents: async () => [] },
+    "@/features/events/lib/date": load("src/features/events/lib/date.ts"),
+    "@/features/applications/api/volunteer-history": { getVolunteerCountBreakdown: async () => ({ total: 0, yearly: 0, monthly: 0 }) },
+    "@/features/daily/lib/community-category": { communityType: () => "일상" },
+    "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: profile.id } } } }) } }) },
+    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) },
+    "./_components/mypage-tabs": { MyPageTabs: element("div", "신청 내역 · 내 글 · 후원 기록 · 관심 동물") },
+  }).default
+  return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ tab, edit }) }))
+}
 const DonationStatusBadge = ({ status }) => React.createElement("span", { className: "rounded-md bg-muted px-2 py-1 text-xs" }, ({ approved: "기록완료", pending: "검토중", rejected: "반려" })[status])
 const donations = { listDonations: async () => ({ donations: [{ id: "cash", donor_name: "후원단체명이길어질경우확인하는예시", type: "cash", amount: 30000, status: "pending", donated_at: "2026-10-07" }, { id: "goods", donor_name: "물품후원자", type: "goods", item_description: "사료와담요등긴물품이름", item_quantity: "3박스", status: "approved", donated_at: "2026-10-06" }], total: 22 }), getDonationStats: async () => ({ approvedCashTotal: 123456789, approvedGoodsCount: 12, approvedCount: 40, pendingCount: 3 }), DonationStatusBadge, listRecentApprovedDonations: async () => [], DonationTicker: () => null }
 export async function renderMembers(params = {}) {
@@ -86,6 +121,19 @@ export async function renderDonate() {
 }
 export function renderContact() { return renderToStaticMarkup(React.createElement(load("src/app/(public)/contact/page.tsx", base).default)) }
 const filters = load("src/features/applications/lib/admin-list.ts")
+export function renderCalendar({ wholeRow = true, linked = true, readOnly = true } = {}) {
+  const date = load("src/features/events/lib/date.ts")
+  const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
+  const calendarNavigation = load("src/features/events/lib/navigation.ts", { "./date": date, "@/features/applications/lib/detail-navigation": navigation })
+  const Grid = load("src/features/events/components/month-grid.tsx", {
+    ...base,
+    "next/navigation": { useRouter: () => ({ push() {} }) },
+    "../types": load("src/features/events/types.ts"), "../lib/date": date,
+    "../lib/holidays": { getHolidayName: () => null }, "../lib/navigation": calendarNavigation,
+  }).MonthGrid
+  const event = { id: "event", title: "김소연", category: "volunteer", source_application_type: "volunteer", source_application_id: "application", starts_at: "2026-10-24T06:00:00Z", ends_at: "2026-10-24T06:00:00Z", all_day: false, location: null }
+  return renderToStaticMarkup(React.createElement(Grid, { yearMonth: "2026-10", events: [event], initialSelectedDate: "2026-10-24", readOnly, maskNames: true, applicationLinks: linked ? { event: { href: wholeRow ? "/admin/applications/volunteer/application" : "/my/applications?application=application", label: wholeRow ? "봉사 신청 상세 보기" : "내 신청 보기", wholeRow } } : {} }))
+}
 export function renderApplicationList(params = {}) {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge
   const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge } }).AdminApplicationList

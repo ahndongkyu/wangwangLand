@@ -4,7 +4,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { User } from "lucide-react"
 
-import { DeleteAccountButton, getCurrentProfile } from "@/features/members"
+import { DeleteAccountButton, getCurrentProfile, MarketingConsentToggle } from "@/features/members"
+import { ProfileForm } from "@/features/members/components/profile-form"
+import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
 import { signOut } from "@/features/members/api/actions"
 import { listMyDonations } from "@/features/donations"
 import { listMyUpcomingEvents } from "@/features/events"
@@ -14,6 +16,7 @@ import {
 } from "@/features/applications/api/volunteer-history"
 import { communityType } from "@/features/daily/lib/community-category"
 import { createClient } from "@/shared/lib/supabase/server"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import type { ApplicationStatus } from "@/shared/types/database"
 
 import { MyPageTabs, type MyPostItem } from "./_components/mypage-tabs"
@@ -22,22 +25,49 @@ export const metadata: Metadata = { title: "마이페이지" }
 export const dynamic = "force-dynamic"
 
 
-export default async function MyPage() {
+export default async function MyPage({ searchParams }: { searchParams: Promise<{ tab?: string; edit?: string }> }) {
   const profile = await getCurrentProfile()
   if (!profile) redirect("/login")
   if (profile.status === "pending") redirect("/pending")
   if (profile.status === "rejected") redirect("/rejected")
 
-  const isStaff = profile.role === "staff" || profile.role === "admin"
+  const query = await searchParams
+  const settings = query.tab === "settings"
+  if (!settings && !profile.phone) redirect("/my?tab=settings")
+  if (!settings && (!profile.terms_agreed_at || profile.terms_version !== TERMS_VERSION || !profile.privacy_agreed_at || profile.privacy_version !== PRIVACY_VERSION)) redirect("/agreement")
+
+  const buttonClass = "inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
+  return (
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-10">
+      <header className="mb-5"><h1 className="text-2xl font-bold tracking-tight md:text-3xl">마이페이지</h1><p className="mt-1 text-sm text-muted-foreground">내 활동과 계정 정보를 한곳에서 확인하세요.</p></header>
+      <section aria-label="내 프로필" className="mb-5 flex items-center gap-3 rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <div className="relative size-12 shrink-0 overflow-hidden rounded-full bg-secondary">
+          {profile.avatar_url ? <Image src={profile.avatar_url} alt="" fill sizes="48px" className="object-cover" /> : <User aria-hidden="true" className="size-full p-3 text-muted-foreground" />}
+        </div>
+        <div className="min-w-0 flex-1"><p className="font-semibold [overflow-wrap:anywhere]">{profile.nickname} 님</p><p className="mt-0.5 text-xs text-muted-foreground">{profile.role === "admin" ? "관리자" : profile.role === "staff" ? "운영진" : "회원"}</p></div>
+        <Link href="/my?tab=settings&edit=1" className={buttonClass + " shrink-0 px-3"}>프로필 수정</Link>
+      </section>
+      <nav aria-label="마이페이지 메뉴" className="mb-6 flex border-b border-border">
+        {[{ href: "/my", label: "내 활동", active: !settings }, { href: "/my?tab=settings", label: "계정 설정", active: settings }].map(tab => <Link key={tab.href} href={tab.href} aria-current={tab.active ? "page" : undefined} className={`min-h-12 flex-1 border-b-2 px-4 py-3 text-center text-sm font-semibold transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring ${tab.active ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>{tab.label}</Link>)}
+      </nav>
+      {settings ? <div className="space-y-5">
+        <ProfileForm key={query.edit ?? "view"} profile={profile} startEditing={query.edit === "1"} />
+        <MarketingConsentToggle agreedAt={profile.marketing_agreed_at} />
+        <section aria-label="계정 관리" className="flex items-center gap-6 border-t border-border pt-3 text-sm text-muted-foreground"><form action={signOut}><button type="submit" className="min-h-11 cursor-pointer hover:text-foreground">로그아웃</button></form><DeleteAccountButton /></section>
+      </div> : await MyActivity(profile.id)}
+    </div>
+  )
+}
+
+async function MyActivity(userId: string) {
 
   const supabase = await createClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
   if (!session) redirect("/login")
-  const userId = session.user.id
+  if (session.user.id !== userId) redirect("/login")
 
-  const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
 
   const [
@@ -171,22 +201,8 @@ export default async function MyPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-12">
-      <header className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">마이페이지</h1>
-        <p className="text-sm text-muted-foreground">내 일정과 활동 기록</p>
-      </header>
+    <>
       {queryFailed && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 p-4 text-sm text-destructive">일부 기록을 불러오지 못했습니다. 잠시 후 다시 확인해주세요.</p>}
-      <section aria-label="내 프로필" className="mb-6 grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-border bg-card p-5 sm:grid-cols-[3.5rem_minmax(0,1fr)_auto] sm:p-6">
-        <div className="relative size-14 overflow-hidden rounded-full bg-secondary">
-          {profile.avatar_url ? <Image src={profile.avatar_url} alt="" fill sizes="56px" className="object-cover" /> : <User aria-hidden="true" className="size-full p-3 text-muted-foreground" />}
-        </div>
-        <div className="min-w-0">
-          <p className="text-lg font-semibold [overflow-wrap:anywhere]">{profile.nickname} 님</p>
-          <p className="mt-1 text-sm text-muted-foreground">{profile.role === "admin" ? "관리자" : profile.role === "staff" ? "운영진" : "회원"}</p>
-        </div>
-        <Link href="/profile" className={buttonClass + " col-start-2 justify-self-start sm:col-start-auto"}>프로필 수정</Link>
-      </section>
       <section aria-labelledby="upcoming-title" className="mb-8 rounded-2xl border border-primary/25 bg-primary/5 p-5 sm:p-7">
         <div className="flex items-center justify-between gap-3">
           <h2 id="upcoming-title" className="text-lg font-semibold">다가오는 봉사</h2>
@@ -212,12 +228,6 @@ export default async function MyPage() {
         <p className="mt-2">누적 {volunteerCount}건 · 올해 {volunteerYearly}건 · 이번 달 {volunteerMonthly}건</p>
         <p className="mt-2 text-xs text-muted-foreground">첫 희망 날짜가 지난 승인 신청 기준입니다. 실제 참석 여부를 집계한 수치는 아닙니다.</p>
       </details>
-      <section aria-label="계정 관리" className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
-        {isStaff && <Link href="/admin" className="inline-flex min-h-11 items-center hover:text-primary">관리자 페이지</Link>}
-        <Link href="/profile" className="inline-flex min-h-11 items-center hover:text-primary">계정 설정</Link>
-        <form action={signOut}><button type="submit" className="min-h-11 cursor-pointer hover:text-foreground">로그아웃</button></form>
-        <DeleteAccountButton />
-      </section>
-    </div>
+    </>
   )
 }

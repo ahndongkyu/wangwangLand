@@ -4,7 +4,7 @@ import type { CalendarEvent } from "../types"
 import { calendarReturnHref, calendarEventHref, eventReturnDay } from "../lib/navigation"
 
 export async function getCalendarApplicationLinks(events: CalendarEvent[], path: string, ym: string) {
-  const links: Record<string, { href: string; label: string }> = {}
+  const links: Record<string, { href: string; label: string; wholeRow?: boolean }> = {}
   const client = await createClient()
   const { data: { user } } = await client.auth.getUser()
   if (!user) return links
@@ -18,7 +18,7 @@ export async function getCalendarApplicationLinks(events: CalendarEvent[], path:
     ownIds = new Set((data ?? []).map(row => row.id))
   }
   for (const event of linked) {
-    if (staff) links[event.id] = { label: "관리하기", href: calendarEventHref(event, "/admin/calendar", calendarReturnHref(path, ym, eventReturnDay(event))) }
+    if (staff) links[event.id] = { label: "봉사 신청 상세 보기", wholeRow: true, href: calendarEventHref(event, "/admin/calendar", calendarReturnHref(path, ym, eventReturnDay(event))) }
     else if (ownIds.has(event.source_application_id!)) links[event.id] = { label: "내 신청 보기", href: `/my/applications?application=${encodeURIComponent(event.source_application_id!)}#volunteer-${event.source_application_id}` }
   }
   return links

@@ -5,6 +5,7 @@ export async function updateSession(request: NextRequest) {
   // server component(layout 등)에서 현재 경로 사용 가능하도록 요청 헤더에 주입
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
+  requestHeaders.set("x-mypage-settings", String(request.nextUrl.pathname === "/my" && request.nextUrl.searchParams.getAll("tab").length === 1 && request.nextUrl.searchParams.get("tab") === "settings"))
 
   let supabaseResponse = NextResponse.next({
     request: { headers: requestHeaders },

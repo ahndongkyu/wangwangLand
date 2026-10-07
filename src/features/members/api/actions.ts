@@ -189,6 +189,7 @@ export async function updateProfile(
   if (error) return { error: "저장에 실패했습니다." }
 
   revalidatePath("/profile")
+  revalidatePath("/my")
   revalidatePath("/", "layout")
   return { error: null, success: true, avatarUrl: avatarUrl ?? null }
 }

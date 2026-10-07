@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { load, renderMembers, renderStaff, renderMemberDetail, renderVolunteer, renderApplicationList, renderHome, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
+import { load, renderMembers, renderStaff, renderMemberDetail, renderVolunteer, renderApplicationList, renderHome, renderCalendar, renderDonations, renderDonate, renderContact, renderAdoption, renderMyApplications } from "./helpers/page-review-fixtures.mjs"
 
 test("member list returns preserve only validated internal filters", () => {
   const { memberListReturnHref: back } = load("src/features/members/lib/list-navigation.ts")
@@ -31,6 +31,17 @@ test("home volunteer actions use matching buttons without arrow and retain first
   assert.match(banner, /href="\/about"[^>]*>첫 방문 안내<\/a>/)
   assert.doesNotMatch(banner, /↗|일정 먼저 보기/)
   assert.match(html, /id="volunteer-calendar"/)
+})
+test("staff calendar selected event is a whole-row detail link without a separate management button", () => {
+  const html = renderCalendar()
+  assert.match(html, /<a href="\/admin\/applications\/volunteer\/application" aria-label="김\*\* · 봉사 신청 상세 보기"[^>]*><div[^>]*>.*김\*\*/s)
+  assert.doesNotMatch(html, />관리하기<|>봉사 신청 상세 보기<|>내 신청 보기</)
+  assert.match(html, /focus-visible:outline-ring/)
+  const member = renderCalendar({ wholeRow: false })
+  assert.match(member, />내 신청 보기<\/a>/)
+  assert.doesNotMatch(member, /href="\/admin\/applications/)
+  const guest = renderCalendar({ linked: false })
+  assert.doesNotMatch(guest, /href="\/admin\/applications|>내 신청 보기<\/a>/)
 })
 test("member list renders visible state, contact and detail links without a forced wide table", async () => {
   const html = await renderMembers({ q: "모임", status: "pending", page: "3" })

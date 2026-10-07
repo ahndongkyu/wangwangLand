@@ -35,7 +35,7 @@ export function MarketingConsentToggle({ agreedAt }: Props) {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div className="w-full rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1.5 text-base font-semibold text-foreground">
@@ -54,20 +54,20 @@ export function MarketingConsentToggle({ agreedAt }: Props) {
         <button
           type="button"
           role="switch"
+          aria-label="마케팅·알림 수신 동의"
           aria-checked={agreed}
           onClick={handleToggle}
           disabled={pending}
           className={cn(
-            "relative shrink-0 inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50",
-            agreed ? "bg-primary" : "bg-secondary"
+            "relative shrink-0 inline-flex min-h-11 w-12 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
           )}
         >
-          <span
+          <span className={cn("flex h-7 w-12 items-center rounded-full transition-colors", agreed ? "bg-primary" : "bg-secondary")}><span
             className={cn(
               "inline-block size-5 rounded-full bg-white shadow transition-transform",
               agreed ? "translate-x-6" : "translate-x-1"
             )}
-          />
+          /></span>
         </button>
       </div>
     </div>

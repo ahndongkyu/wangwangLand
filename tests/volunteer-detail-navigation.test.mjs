@@ -111,11 +111,13 @@ test("homepage calendar actions expose only own applications to members and mana
     else if (role === "member") {
       assert.equal(Object.keys(links).length, 1)
       assert.equal(links["event-own"].label, "내 신청 보기")
+      assert.equal(links["event-own"].wholeRow, undefined)
       assert.equal(links["event-other"], undefined)
       assert.ok(calls.some(call => call[0] === "created_by" && call[1] === "user"))
     } else {
       assert.equal(Object.keys(links).length, 2)
-      assert.equal(links["event-other"].label, "관리하기")
+      assert.equal(links["event-other"].label, "봉사 신청 상세 보기")
+      assert.equal(links["event-other"].wholeRow, true)
       assert.match(links["event-other"].href, /^\/admin\/applications\/volunteer\/other\?/)
       assert.equal(calls.length, 0)
     }
