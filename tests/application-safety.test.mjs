@@ -40,7 +40,7 @@ test("past dates fail while today/future dates retain strict 17:00 cutoff", () =
     for (const time of ["09:50", "11:10", "12:00", "17:10", "17:50"]) assert.ok(hours.validateVolunteerSchedule([date], time, now))
   }
   for (const date of ["2026-02-30", "2026-13-01", "invalid"]) assert.ok(hours.validateVolunteerSchedule([date], "10:00", now))
-  assert.ok(hours.getVolunteerTimeOptions(["2020-01-01"]).includes("10:00"), "Historical display options stay available")
+  assert.equal(hours.getVolunteerTimeOptions(["2020-01-01"], now).length, 0, "Past dates have no selectable visit times")
 })
 
 function actions({ authorized = false, rpcError = null } = {}) {

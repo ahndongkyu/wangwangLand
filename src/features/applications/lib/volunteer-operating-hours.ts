@@ -53,12 +53,14 @@ export function isValidVolunteerDate(date: string): boolean {
 }
 
 /** 유효한 날짜를 선택했을 때 가능한 방문 시간을 반환합니다. */
-export function getVolunteerTimeOptions(dates: string[]): string[] {
+export function getVolunteerTimeOptions(dates: string[], now = new Date()): string[] {
   const uniqueDates = [...new Set(dates)]
   if (uniqueDates.length === 0 || uniqueDates.some((date) => !isValidVolunteerDate(date))) {
     return []
   }
-  return REGULAR_TIME_OPTIONS
+  return REGULAR_TIME_OPTIONS.filter((time) =>
+    uniqueDates.every((date) => new Date(`${date}T${time}:00+09:00`).getTime() > now.getTime())
+  )
 }
 
 export function volunteerToday(now = new Date()): string {
@@ -73,8 +75,11 @@ export function validateVolunteerSchedule(dates: string[], time: string, now = n
   if (dates.some((date) => date < volunteerToday(now))) {
     return "지난 날짜에는 봉사를 신청할 수 없습니다."
   }
-  if (!getVolunteerTimeOptions(dates).includes(time)) {
+  if (!REGULAR_TIME_OPTIONS.includes(time)) {
     return "선택한 날짜의 운영시간 안에서 방문 예정 시간을 선택해주세요."
+  }
+  if (dates.some((date) => new Date(`${date}T${time}:00+09:00`).getTime() <= now.getTime())) {
+    return "이미 지난 시간에는 봉사를 신청할 수 없습니다. 방문 시간을 다시 선택해주세요."
   }
   return null
 }
