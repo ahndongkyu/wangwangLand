@@ -137,9 +137,9 @@ test("volunteer approval retains append, approval-only keep and reschedule repla
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({
         from(table) {
           assert.equal(table, "volunteer_applications")
-          return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { id: "app", status: previousStatus, available_dates: ["2099-10-10", "2099-10-10"], available_time: "17:00", reschedule_dates: ["2099-10-11"], reschedule_time: "10:00", created_by: null } }) }
+          return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { id: "app", status: previousStatus, updated_at: "2026-10-08T00:00:00+00:00", available_dates: ["2099-10-10", "2099-10-10"], available_time: "17:00", reschedule_dates: ["2099-10-11"], reschedule_time: "10:00", created_by: null } }) }
         },
-        rpc: async (name, input) => { assert.equal(name, "process_volunteer_application"); rpcInput = input; return { error: null } },
+        rpc: async (name, input) => { assert.equal(name, "process_volunteer_application_checked"); assert.equal(input.p_expected_status, previousStatus); assert.equal(input.p_expected_updated_at, "2026-10-08T00:00:00+00:00"); rpcInput = input; return { error: null } },
       }) },
       "@/features/events/lib/date": load("src/features/events/lib/date.ts"),
       "@/features/events/types": {}, "../lib/volunteer-applicant": {},

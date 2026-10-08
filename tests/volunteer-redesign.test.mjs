@@ -24,7 +24,7 @@ const validation = load("src/shared/lib/validation.ts")
 const events = load("src/features/events/types.ts")
 const date = load("src/features/events/lib/date.ts")
 
-function harness({ user = true, approved = true, blocked = false, failure = false } = {}) {
+function harness({ user = true, approved = true, blocked = false, failure = false, status = "접수", changedDuringSave = false, owner = "member" } = {}) {
   const inserts = [], pushes = [], updates = []
   const historical = { activities: ["산책", "청소·정리"] }
   const api = load("src/features/applications/api/mutations.ts", {
@@ -38,11 +38,22 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
       from(table) {
         if (table === "events") return { select() { return this }, in() { return this }, gte() { return this }, lte: async () => ({ data: blocked ? [{ starts_at: "2099-10-10T01:00:00Z" }] : [] }) }
         assert.equal(table, "volunteer_applications")
+        let patch = null
+        const filters = {}
         return {
           insert(value) { inserts.push(value); return this },
-          update(value) { updates.push(value); Object.assign(historical, value); return this },
-          eq() { return this }, select() { return this },
-          maybeSingle: async () => ({ data: { id: "application", created_by: "member", status: "접수" } }),
+          update(value) { patch = value; return this },
+          eq(key, value) { filters[key] = value; return this }, select() { return this },
+          maybeSingle: async () => {
+            if (!patch) return { data: { id: "application", created_by: owner, status, updated_at: "2026-10-08T00:00:00+00:00" } }
+            assert.equal(filters.created_by, "member")
+            assert.equal(filters.status, status)
+            assert.equal(filters.updated_at, "2026-10-08T00:00:00+00:00")
+            if (failure) return { data: null, error: { message: "save failed" } }
+            if (changedDuringSave) return { data: null, error: null }
+            updates.push(patch); Object.assign(historical, patch)
+            return { data: { id: "application" }, error: null }
+          },
           single: async () => ({ data: failure ? null : { id: "application" }, error: failure ? { message: "save failed" } : null }),
           then(resolve) { resolve({ error: null }) },
         }
@@ -61,6 +72,7 @@ function form(overrides = {}) {
     party_type: "individual", applicant_name: "테스트", phone: "01012345678", party_size: "1",
     available_dates: "2099-10-10", available_time: "17:00", preparation_acknowledged: "on",
     safety_acknowledged: "on", privacy_agreed: "on", terms_agreed: "on", ...overrides,
+    expected_updated_at: "2026-10-08T00:00:00+00:00",
   })) if (value !== null) data.append(key, value)
   return data
 }
@@ -106,6 +118,36 @@ test("group sizes and optional group names retain existing rules", async () => {
     assert.equal((await h.submit(form({ party_type: "group", party_size: size }))).field, "party_size")
     assert.equal(h.inserts.length, 0)
   }
+})
+
+test("ordinary editing permits only pending/review and rejects other owners", async () => {
+  for (const status of ["승인", "일정변경요청", "반려", "취소"]) {
+    const h = harness({ status })
+    assert.match((await h.update("application", form())).error, /접수·검토중/)
+    assert.equal(h.updates.length, 0)
+  }
+  const review = harness({ status: "검토중" })
+  assert.equal((await review.update("application", form())).id, "application")
+  const other = harness({ owner: "someone-else" })
+  assert.match((await other.update("application", form())).error, /본인/)
+  assert.equal(other.updates.length, 0)
+})
+
+test("stale forms and concurrent processing never report a successful ordinary edit", async () => {
+  for (const token of [null, "2026-10-07T00:00:00+00:00"]) {
+    const h = harness(), data = form()
+    if (token === null) data.delete("expected_updated_at")
+    else data.set("expected_updated_at", token)
+    assert.match((await h.update("application", data)).error, /새로 확인/)
+    assert.equal(h.updates.length, 0)
+  }
+  const h = harness({ changedDuringSave: true })
+  const result = await h.update("application", form())
+  assert.match(result.error, /저장 중/)
+  assert.equal(result.id, undefined)
+  assert.equal(h.updates.length, 0)
+  const failed = harness({ failure: true })
+  assert.equal((await failed.update("application", form())).error, "save failed")
 })
 test("minor guardian, time cutoff and regular-group restrictions are retained", async () => {
   const h = harness({ blocked: true })

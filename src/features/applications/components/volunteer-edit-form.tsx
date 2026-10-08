@@ -79,6 +79,7 @@ export function VolunteerEditForm({
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
+    fd.set("expected_updated_at", application.updated_at)
 
     const scheduleError = validateVolunteerSchedule(selectedDates, visitTime)
     if (scheduleError) return setError(scheduleError)

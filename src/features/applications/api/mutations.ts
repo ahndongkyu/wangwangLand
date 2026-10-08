@@ -366,12 +366,18 @@ export async function updateMyVolunteerApplication(
   const admin = createAdminClient()
   const { data: prev } = await admin
     .from("volunteer_applications")
-    .select("id, created_by, status")
+    .select("id, created_by, status, updated_at")
     .eq("id", id)
     .maybeSingle()
   if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
   if (prev.created_by !== user.id) return { error: "본인 신청만 수정할 수 있습니다." }
-  if (prev.status === "취소") return { error: "취소된 신청은 수정할 수 없습니다." }
+  if (!["접수", "검토중"].includes(prev.status)) {
+    return { error: "접수·검토중인 신청만 수정할 수 있습니다. 승인된 신청은 일정 변경을 요청해주세요." }
+  }
+  const expectedUpdatedAt = String(formData.get("expected_updated_at") ?? "")
+  if (!expectedUpdatedAt || expectedUpdatedAt !== prev.updated_at) {
+    return { error: "신청 내용이 변경되었습니다. 신청 내역을 새로 확인한 뒤 수정해주세요." }
+  }
 
   const availableDates = formData.getAll("available_dates").map(String)
   const availableTime = String(formData.get("available_time") ?? "").trim()
@@ -383,7 +389,7 @@ export async function updateMyVolunteerApplication(
     }
   }
 
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("volunteer_applications")
     .update({
       applicant_name: applicantName,
@@ -396,11 +402,17 @@ export async function updateMyVolunteerApplication(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("created_by", user.id)
+    .eq("status", prev.status)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("id")
+    .maybeSingle()
 
   if (error) {
     console.error("[updateMyVolunteerApplication]", error)
     return { error: error.message }
   }
+  if (!updated) return { error: "저장 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
 
   revalidatePath("/my/applications")
   return { id }
@@ -626,7 +638,7 @@ export async function updateVolunteerApplication(
   const { data: prev } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time"
+      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, updated_at"
     )
     .eq("id", id)
     .maybeSingle()
@@ -675,7 +687,7 @@ export async function updateVolunteerApplication(
       ? "append"
       : "keep"
 
-  const { error } = await admin.rpc("process_volunteer_application", {
+  const { error } = await admin.rpc("process_volunteer_application_checked", {
     p_application_id: id,
     p_status: status,
     p_admin_note: adminNote || null,
@@ -684,6 +696,8 @@ export async function updateVolunteerApplication(
     p_schedule_starts: scheduleStarts,
     p_clear_reschedule: isRescheduleRequest,
     p_created_by: auth.userId,
+    p_expected_status: prev.status,
+    p_expected_updated_at: prev.updated_at,
   })
 
   if (error) {
