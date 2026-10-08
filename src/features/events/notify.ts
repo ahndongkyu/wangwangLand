@@ -1,4 +1,4 @@
-"use server"
+import "server-only"
 
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 
@@ -13,6 +13,44 @@ interface DispatchOpts {
   type: EventNotificationType
   /** 특정 유저에게만 보낼 때. 없으면 해당 이벤트 신청자 전원. */
   targetUserId?: string
+  snapshot?: EventNotificationSnapshot
+}
+
+export interface EventNotificationSnapshot {
+  eventId: string
+  title: string
+  userIds: string[]
+}
+
+/** 삭제로 신청 정보가 사라지기 전에 수신 대상과 제목을 보관한다. */
+export async function prepareEventNotification(eventId: string, targetUserId?: string): Promise<EventNotificationSnapshot> {
+  const admin = createAdminClient()
+  const { data: event, error } = await admin.from("events")
+    .select("title, source_application_type, source_application_id").eq("id", eventId).maybeSingle()
+  if (error || !event) throw new Error("일정 알림 정보를 확인할 수 없습니다.")
+  const userIds = new Set<string>()
+  if (targetUserId) {
+    userIds.add(targetUserId)
+  } else {
+    // 많은 신청자가 있어도 조회 제한으로 누락되지 않도록 나누어 조회한다.
+    for (let offset = 0; ; offset += 500) {
+      const { data, error: signupError } = await admin.from("event_signups")
+        .select("user_id").eq("event_id", eventId).eq("status", "접수")
+        .order("id").range(offset, offset + 499)
+      if (signupError) throw new Error("일정 신청자를 확인할 수 없습니다.")
+      for (const row of data ?? []) if (row.user_id) userIds.add(row.user_id)
+      if (!data || data.length < 500) break
+    }
+    if (event.source_application_id &&
+      (event.source_application_type === "volunteer" || event.source_application_type === "adoption")) {
+      const table = event.source_application_type === "volunteer" ? "volunteer_applications" : "adoption_applications"
+      const { data: application, error: applicationError } = await admin.from(table)
+        .select("created_by").eq("id", event.source_application_id).maybeSingle()
+      if (applicationError) throw new Error("연결된 신청자를 확인할 수 없습니다.")
+      if (application?.created_by) userIds.add(application.created_by)
+    }
+  }
+  return { eventId, title: event.title ?? "일정", userIds: [...userIds] }
 }
 
 /**
@@ -21,21 +59,21 @@ interface DispatchOpts {
  * - 카카오 알림톡은 추후 추가 (sendKakaoAlimtalk hook 미리 분리).
  */
 export async function dispatchEventNotification(opts: DispatchOpts) {
+  try {
+    await sendEventNotification(opts)
+  } catch (error) {
+    // 일정 저장 성공을 알림 실패로 뒤집어 재처리를 유도하지 않는다.
+    console.error("[dispatchEventNotification]", error)
+  }
+}
+
+async function sendEventNotification(opts: DispatchOpts) {
   const { eventId, type, targetUserId } = opts
   const admin = createAdminClient()
 
-  // 대상 유저 결정
-  let userIds: string[] = []
-  if (targetUserId) {
-    userIds = [targetUserId]
-  } else {
-    const { data } = await admin
-      .from("event_signups")
-      .select("user_id")
-      .eq("event_id", eventId)
-      .eq("status", "접수")
-    userIds = (data ?? []).map((r: { user_id: string }) => r.user_id)
-  }
+  const snapshot = opts.snapshot ?? await prepareEventNotification(eventId, targetUserId)
+  if (snapshot.eventId !== eventId) throw new Error("일정 알림 대상이 일치하지 않습니다.")
+  const userIds = [...new Set(snapshot.userIds)]
   if (userIds.length === 0) return
 
   // 인앱 알림
@@ -50,12 +88,7 @@ export async function dispatchEventNotification(opts: DispatchOpts) {
   if (error) console.error("[dispatchEventNotification] in-app:", error)
 
   // 이벤트 제목 조회 (Push 메시지용)
-  const { data: ev } = await admin
-    .from("events")
-    .select("title, starts_at")
-    .eq("id", eventId)
-    .maybeSingle()
-  const evTitle = (ev as { title?: string } | null)?.title ?? "일정"
+  const evTitle = snapshot.title
 
   // Push 메시지 결정
   const pushConfig: Record<EventNotificationType, { title: string; body: string }> = {
@@ -85,7 +118,7 @@ export async function dispatchEventNotification(opts: DispatchOpts) {
     await Promise.all(
       userIds.map((uid) =>
         sendPushToUser(
-          { title, body, url: `/calendar/${eventId}`, tag: `event-${type}-${eventId}` },
+          { title, body, url: type === "event_canceled" ? "/my/applications" : `/calendar/${eventId}`, tag: `event-${type}-${eventId}` },
           uid
         )
       )

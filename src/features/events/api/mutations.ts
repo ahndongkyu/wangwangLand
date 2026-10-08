@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { requireAdmin } from "@/shared/lib/auth"
-import { dispatchEventNotification } from "../notify"
+import { dispatchEventNotification, prepareEventNotification } from "../notify"
 import { localKstToIso, dateKey, KST_OFFSET_MS } from "../lib/date"
 import { generateOccurrenceDates } from "../lib/recurrence"
 import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
@@ -388,18 +388,20 @@ async function resolveScopeIds(
   scope: RecurrenceScope
 ): Promise<string[]> {
   if (scope === "one") return [id]
-  const { data: ev } = await admin
+  const { data: ev, error } = await admin
     .from("events")
     .select("recurrence_group_id, starts_at")
     .eq("id", id)
     .maybeSingle()
+  if (error || !ev) throw new Error("삭제할 일정을 확인할 수 없습니다.")
   if (!ev?.recurrence_group_id) return [id]
   let q = admin
     .from("events")
     .select("id")
     .eq("recurrence_group_id", ev.recurrence_group_id)
   if (scope === "after") q = q.gte("starts_at", ev.starts_at)
-  const { data: group } = await q
+  const { data: group, error: groupError } = await q
+  if (groupError) throw new Error("반복 일정을 확인할 수 없습니다.")
   const ids = (group ?? []).map((g) => g.id as string)
   return ids.length > 0 ? ids : [id]
 }
@@ -494,22 +496,30 @@ export async function deleteEvent(
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
   const admin = createAdminClient()
-  const targetIds = await resolveScopeIds(admin, id, scope)
-
-  // 삭제 전 알림 (각 일정 신청자)
-  for (const tid of targetIds) {
-    await dispatchEventNotification({ eventId: tid, type: "event_canceled" })
+  let snapshots
+  try {
+    const targetIds = await resolveScopeIds(admin, id, scope)
+    snapshots = await Promise.all(targetIds.map((tid) => prepareEventNotification(tid)))
+  } catch {
+    return { error: "일정과 알림 수신자를 확인하지 못했습니다. 다시 시도해주세요." }
   }
 
-  const { error } = await admin.from("events").delete().in("id", targetIds)
+  const { data: deleted, error } = await admin.from("events").delete()
+    .in("id", snapshots.map((snapshot) => snapshot.eventId)).select("id")
   if (error) {
     console.error("[deleteEvent]", error)
     return { error: error.message }
   }
+  const deletedIds = new Set((deleted ?? []).map((event) => event.id))
+  for (const snapshot of snapshots) {
+    if (deletedIds.has(snapshot.eventId)) {
+      await dispatchEventNotification({ eventId: snapshot.eventId, type: "event_canceled", snapshot })
+    }
+  }
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: targetIds.length }
+  return { count: deletedIds.size }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
