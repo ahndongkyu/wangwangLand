@@ -8,7 +8,7 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { requireAdmin } from "@/shared/lib/auth"
 import { dispatchEventNotification, prepareEventNotification } from "../notify"
-import { localKstToIso, dateKey, KST_OFFSET_MS } from "../lib/date"
+import { localKstToIso } from "../lib/date"
 import { generateOccurrenceDates } from "../lib/recurrence"
 import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
 
@@ -434,59 +434,21 @@ export async function updateEvent(
 
   // 반복 일괄 수정 — 날짜는 각자 유지, 시간/제목/장소/메모/카테고리 등만 일괄 적용
   const admin = createAdminClient()
-  const { data: ev } = await admin
-    .from("events")
-    .select("recurrence_group_id, starts_at")
-    .eq("id", id)
-    .maybeSingle()
-  if (!ev?.recurrence_group_id) {
-    const { error } = await admin.from("events").update(parsed).eq("id", id)
-    if (error) return { error: error.message }
-    await dispatchEventNotification({ eventId: id, type: "event_changed" })
-    revalidatePath("/admin/calendar")
-    revalidatePath("/calendar")
-    return {}
+  const { data, error } = await admin.rpc("update_recurring_events_atomic", {
+    p_event_id: id, p_scope: scope, p_fields: parsed,
+  })
+  if (error) {
+    console.error("[updateEvent recurring]", error)
+    return { error: "반복 일정을 저장하지 못했습니다. 변경사항은 적용되지 않았습니다. 다시 시도해주세요." }
   }
-
-  let q = admin
-    .from("events")
-    .select("id, starts_at")
-    .eq("recurrence_group_id", ev.recurrence_group_id)
-  if (scope === "after") q = q.gte("starts_at", ev.starts_at)
-  const { data: group } = await q
-  const targets = group ?? []
-
-  const newAllDay = parsed.all_day ?? false
-  const k = new Date(new Date(parsed.starts_at).getTime() + KST_OFFSET_MS)
-  const newTime = `${String(k.getUTCHours()).padStart(2, "0")}:${String(k.getUTCMinutes()).padStart(2, "0")}`
-  const seriesFields = {
-    category: parsed.category,
-    custom_label: parsed.custom_label,
-    custom_color: parsed.custom_color,
-    title: parsed.title,
-    description: parsed.description ?? null,
-    location: parsed.location ?? null,
-    signup_enabled: parsed.signup_enabled,
-    visibility: parsed.visibility,
-    all_day: newAllDay,
-  }
-
-  for (const g of targets) {
-    const date = dateKey(new Date(g.starts_at as string))
-    const local = newAllDay ? date : `${date}T${newTime}`
-    const sIso = localKstToIso(local, { allDay: newAllDay })
-    const eIso = localKstToIso(local, { allDay: newAllDay, isEnd: true })
-    if (!sIso || !eIso) continue
-    await admin
-      .from("events")
-      .update({ ...seriesFields, starts_at: sIso, ends_at: eIso })
-      .eq("id", g.id as string)
-    await dispatchEventNotification({ eventId: g.id as string, type: "event_changed" })
+  const changedIds = (data ?? []) as string[]
+  for (const eventId of changedIds) {
+    await dispatchEventNotification({ eventId, type: "event_changed" })
   }
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: targets.length }
+  return { count: changedIds.length }
 }
 
 export async function deleteEvent(

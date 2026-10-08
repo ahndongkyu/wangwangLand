@@ -2,6 +2,33 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { load } from "./helpers/page-review-fixtures.mjs"
 
+test("recurring edits use one atomic RPC and notify only committed IDs", async () => {
+  for (const scope of ["after", "all"]) for (const fail of [false, true]) {
+    const sent = [], calls = []
+    const api = load("src/features/events/api/mutations.ts", {
+      crypto: {}, "next/cache": { revalidatePath() {} },
+      "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true }) },
+      "@/shared/lib/supabase/server": {},
+      "@/shared/lib/supabase/admin": { createAdminClient: () => ({
+        rpc: async (name, args) => { calls.push({ name, args }); return { data: fail ? null : ["one", "two"], error: fail ? { message: "rollback" } : null } },
+        from() { throw Error("No per-row writes") },
+      }) },
+      "../notify": { dispatchEventNotification: async ({ eventId }) => sent.push(eventId) },
+      "../lib/date": load("src/features/events/lib/date.ts"), "../lib/recurrence": {}, "../types": { INTERNAL_CATEGORIES: [] },
+    })
+    const form = new FormData()
+    form.set("title", "행사"); form.set("category", "event"); form.set("starts_at", "2026-10-20T15:30")
+    const result = await api.updateEvent("anchor", form, scope)
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].name, "update_recurring_events_atomic")
+    assert.equal(calls[0].args.p_scope, scope)
+    assert.equal(calls[0].args.p_fields.starts_at, "2026-10-20T06:30:00.000Z")
+    assert.deepEqual(sent, fail ? [] : ["one", "two"])
+    if (fail) assert.ok(result.error)
+    else assert.equal(result.count, 2)
+  }
+})
+
 function notificationApi({ kind = "volunteer", owner = "owner", fail, explicit = false } = {}) {
   const reads = []
   const rows = []
