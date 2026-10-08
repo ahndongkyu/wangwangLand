@@ -114,6 +114,15 @@ test("SMS history renders delivery status, content, application link and distinc
       assert.match(html, /문자 본문/)
       assert.match(html, /\/admin\/applications\/volunteer\/app/)
       assert.match(html, /\/admin\/sms\?page=2/)
+      assert.match(html, /name="sms-history"/)
+      assert.doesNotMatch(html, /<details[^>]*\sopen(?:=""|\s|>)/)
+      assert.match(html, /<span>수신자<\/span><span>전화번호<\/span><span>발송 일시<\/span><span>발송 상태<\/span>/)
+      const summary = html.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)[1]
+      const labels = ["수신자 ", "전화번호 ", "발송 일시 ", "발송 상태 ", "펼치기"]
+      const positions = labels.map(label => summary.indexOf(label))
+      assert.ok(positions.every((position, index) => position >= 0 && (index === 0 || position > positions[index - 1])))
+      assert.match(summary, /group-open:hidden/)
+      assert.match(summary, /group-open:inline/)
     }
   }
 })

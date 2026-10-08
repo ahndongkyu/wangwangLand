@@ -32,23 +32,31 @@ export default async function SmsHistoryPage({ searchParams }: { searchParams: P
     </header>
     {result.error && <p role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive">{result.error}</p>}
     {!error && logs.length === 0 && <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">기록된 문자 발송 내역이 없습니다.</p>}
-    <div className="space-y-3">{logs.map(row => {
+    <div className="@container">
+    {logs.length > 0 && <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_8rem_9rem_8rem_3.5rem] gap-3 border-b border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground @min-[640px]:grid">
+        <span>수신자</span><span>전화번호</span><span>발송 일시</span><span>발송 상태</span><span className="text-right">펼치기</span>
+      </div>
+      {logs.map(row => {
       const report = reports[row.provider_message_id]
       const code = report?.statusCode
       const status = code === "4000" ? "전달 완료" : code === "2000" || code === "3000" ? "발송 진행 중" : code ? `제공업체 결과 ${code}` : labels[row.state] ?? "결과 확인 필요"
-      return <article key={row.id} className="min-w-0 rounded-xl border border-border bg-card p-4 md:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0"><p className="break-words font-medium">{row.recipient_name || "수신자"} <span className="ml-2 inline-block text-sm font-normal tabular-nums text-muted-foreground">{row.recipient_phone}</span></p>
-            <p className="mt-1 text-xs tabular-nums text-muted-foreground">{formatPostDateTime(row.created_at)}</p></div>
-          <span className="text-sm font-medium">{status}</span>
-        </div>
-        <details className="mt-3"><summary className="flex min-h-11 cursor-pointer items-center text-sm text-primary focus-visible:outline-2 focus-visible:outline-ring">문자 내용 및 결과 보기</summary>
-          <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-muted p-4 text-sm leading-relaxed">{row.message}</p>
+      return <details key={row.id} name="sms-history" className="group border-b border-border last:border-b-0">
+        <summary className="grid min-h-16 cursor-pointer list-none grid-cols-[minmax(0,1fr)_minmax(0,8rem)] items-center gap-x-3 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring group-open:bg-muted/50 [&::-webkit-details-marker]:hidden @min-[640px]:grid-cols-[minmax(0,1fr)_8rem_9rem_8rem_3.5rem] @min-[640px]:gap-y-0">
+          <span className="col-start-1 row-start-1 min-w-0 break-words font-medium @min-[640px]:col-auto @min-[640px]:row-auto"><span className="sr-only">수신자 </span>{row.recipient_name || "수신자"}</span>
+          <span className="col-start-1 row-start-2 min-w-0 break-all text-xs tabular-nums text-muted-foreground @min-[640px]:col-auto @min-[640px]:row-auto"><span className="sr-only">전화번호 </span>{row.recipient_phone}</span>
+          <span className="col-start-1 row-start-3 text-xs tabular-nums text-muted-foreground @min-[640px]:col-auto @min-[640px]:row-auto"><span className="sr-only">발송 일시 </span><time dateTime={row.created_at}>{formatPostDateTime(row.created_at)}</time></span>
+          <span className="col-start-2 row-start-1 min-w-0 break-words text-right text-xs font-medium @min-[640px]:col-auto @min-[640px]:row-auto @min-[640px]:text-left"><span className="sr-only">발송 상태 </span>{status}</span>
+          <span className="col-start-2 row-span-2 row-start-2 text-right text-xs text-primary @min-[640px]:col-auto @min-[640px]:row-span-1 @min-[640px]:row-auto"><span className="group-open:hidden">펼치기</span><span className="hidden group-open:inline">접기</span></span>
+        </summary>
+        <div className="border-t border-border p-4 sm:px-6">
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{row.message}</p>
           {(report?.reason || row.error_message) && <p className="mt-3 break-words text-sm text-muted-foreground">{report?.reason || row.error_message}{code ? ` (${code})` : ""}</p>}
           {row.application_id && ["volunteer", "adoption"].includes(row.application_type) && <Link href={`/admin/applications/${row.application_type}/${row.application_id}`} className="mt-2 inline-flex min-h-11 items-center text-sm text-primary hover:underline">관련 신청 보기</Link>}
-        </details>
-      </article>
-    })}</div>
+        </div>
+      </details>
+    })}</div>}
+    </div>
     <nav aria-label="발송 내역 페이지" className="mt-6 flex items-center justify-center gap-6 text-sm">
       {page > 1 && <Link className="inline-flex min-h-11 items-center hover:underline" href={`/admin/sms?page=${page - 1}`}>이전</Link>}
       <span>{page} / {Math.max(1, Math.ceil((count ?? 0) / 20))}</span>
