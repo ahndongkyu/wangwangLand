@@ -33,6 +33,7 @@ import type {
 
 export interface SubmitResult {
   error?: string
+  warning?: string
   field?: string
   id?: string
 }
@@ -418,6 +419,7 @@ export async function updateAdoptionApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
+  let warning: string | undefined
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
   const status = String(formData.get("status") ?? "") as ApplicationStatus
@@ -496,8 +498,10 @@ export async function updateAdoptionApplication(
       if (smsText) {
         try {
           const { sendSms } = await import("@/features/sms")
-          await sendSms(prev.phone, smsText)
+          const delivery = await sendSms(prev.phone, smsText, { applicationId: id, applicationType: "adoption", recipientName: prev.applicant_name ?? "" })
+          if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
         } catch (e) {
+          warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
           console.error("[sms adoption-status]", e)
         }
       }
@@ -506,7 +510,7 @@ export async function updateAdoptionApplication(
 
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/adoption/${id}`)
-  return { id }
+  return { id, ...(warning ? { warning } : {}) }
 }
 
 function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"): string {
@@ -540,8 +544,13 @@ function pushBodyForStatus(status: ApplicationStatus): string {
   }
 }
 
-function buildVolunteerSmsText(applicantName: string): string {
-  return `왕왕랜드\n${applicantName}님, 봉사 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
+function buildVolunteerSmsText(applicantName: string, starts: string[], partySize: number): string {
+  const weekdays = ["일", "월", "화", "수", "목", "금", "토"]
+  const visits = [...new Set(starts)].sort().map(start => {
+    const local = new Date(new Date(start).getTime() + 9 * 60 * 60 * 1000)
+    return `${local.toISOString().slice(0, 10).replaceAll("-", ".")}(${weekdays[local.getUTCDay()]}) ${local.toISOString().slice(11, 16)}`
+  })
+  return `[왕왕랜드 봉사 안내]\n${applicantName}님, 봉사 신청이 승인되었습니다.\n\n방문 일정: ${visits.length ? visits.join("\n") : "별도 안내 예정"}\n참여 인원: ${partySize}명\n\n준비물과 신청 내역은 마이페이지에서 확인해 주세요.\n일정 변경이나 취소가 필요한 경우 미리 알려주세요.`
 }
 
 function buildAdoptionSmsText(applicantName: string): string {
@@ -583,6 +592,7 @@ export async function updateVolunteerApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
+  let warning: string | undefined
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
 
@@ -733,7 +743,13 @@ export async function updateVolunteerApplication(
       } else if (status === "승인" && prev.status === "일정변경요청") {
         smsText = buildRescheduleSmsText(volunteerApplicantName)
       } else if (status === "승인" && prev.status !== "일정변경요청") {
-        smsText = buildVolunteerSmsText(volunteerApplicantName)
+        let confirmedStarts = scheduleStarts
+        if (!shouldCreateSchedule) {
+          const { data: events, error: scheduleError } = await admin.from("events")
+            .select("starts_at").eq("source_application_type", "volunteer").eq("source_application_id", id)
+          if (!scheduleError) confirmedStarts = (events ?? []).map(event => event.starts_at)
+        }
+        smsText = buildVolunteerSmsText(volunteerApplicantName, confirmedStarts, prev.party_size ?? 1)
       } else if (prev.status === "일정변경요청" && status !== "승인") {
         smsText = buildRescheduleRejectedSmsText(volunteerApplicantName)
       } else if (status === "검토중" && prev.status !== "검토중") {
@@ -744,8 +760,10 @@ export async function updateVolunteerApplication(
       if (smsText) {
         try {
           const { sendSms } = await import("@/features/sms")
-          await sendSms(prev.phone, smsText)
+          const delivery = await sendSms(prev.phone, smsText, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName })
+          if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
         } catch (e) {
+          warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
           console.error("[sms volunteer-status]", e)
         }
       }
@@ -756,7 +774,7 @@ export async function updateVolunteerApplication(
   revalidatePath(`/admin/applications/volunteer/${id}`)
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { id }
+  return { id, ...(warning ? { warning } : {}) }
 }
 
 export async function deleteAdoptionApplication(
@@ -828,17 +846,11 @@ export async function cancelOwnVolunteerApplication(
   const reason = cancelReason.trim()
   if (!reason) return { error: "취소 사유를 입력해주세요." }
 
-  // 캘린더 일정만 삭제 (신청 행은 보존)
-  await admin
-    .from("events")
-    .delete()
-    .eq("source_application_type", "volunteer")
-    .eq("source_application_id", id)
-
-  const { error } = await admin
-    .from("volunteer_applications")
-    .update({ status: "취소", cancel_reason: reason })
-    .eq("id", id)
+  const { error } = await supabase.rpc("cancel_own_application_with_events", {
+    p_application_id: id,
+    p_application_type: "volunteer",
+    p_cancel_reason: reason,
+  })
 
   if (error) {
     console.error("[cancelOwnVolunteerApplication]", error)
@@ -959,16 +971,11 @@ export async function cancelOwnAdoptionApplication(
   const reason = cancelReason.trim()
   if (!reason) return { error: "취소 사유를 입력해주세요." }
 
-  await admin
-    .from("events")
-    .delete()
-    .eq("source_application_type", "adoption")
-    .eq("source_application_id", id)
-
-  const { error } = await admin
-    .from("adoption_applications")
-    .update({ status: "취소", cancel_reason: reason })
-    .eq("id", id)
+  const { error } = await supabase.rpc("cancel_own_application_with_events", {
+    p_application_id: id,
+    p_application_type: "adoption",
+    p_cancel_reason: reason,
+  })
 
   if (error) {
     console.error("[cancelOwnAdoptionApplication]", error)
@@ -977,5 +984,7 @@ export async function cancelOwnAdoptionApplication(
 
   revalidatePath("/my/applications")
   revalidatePath("/admin/applications")
+  revalidatePath("/calendar")
+  revalidatePath("/admin/calendar")
   return { id }
 }

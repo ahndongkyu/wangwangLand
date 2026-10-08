@@ -4,7 +4,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/shared/components/toast"
 
-type SaveResult = { error?: string | null; redirectTo?: string }
+type SaveResult = { error?: string | null; warning?: string; redirectTo?: string }
 
 /** 서버 저장 결과를 확인한 뒤에만 완료 처리하고 화면을 전환합니다. */
 export function useSaveFeedback(onError: (message: string | null) => void) {
@@ -34,7 +34,8 @@ export function useSaveFeedback(onError: (message: string | null) => void) {
       return
     }
     setCompleted(true)
-    toast.success(message)
+    if (result.warning) toast.warning(`${message} ${result.warning}`, { duration: 10000 })
+    else toast.success(message)
     const destination = href ?? result.redirectTo
     if (destination) router.replace(destination)
     router.refresh()

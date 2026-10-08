@@ -409,6 +409,8 @@ export async function updateEvent(
   formData: FormData,
   scope: RecurrenceScope = "one"
 ): Promise<ActionResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   const parsed = parseEventInput(formData)
   if ("error" in parsed) return parsed
 
@@ -489,6 +491,8 @@ export async function deleteEvent(
   id: string,
   scope: RecurrenceScope = "one"
 ): Promise<ActionResult> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
   const admin = createAdminClient()
   const targetIds = await resolveScopeIds(admin, id, scope)
 

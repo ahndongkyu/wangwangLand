@@ -22,6 +22,7 @@ function harness() {
     }) },
     "@/shared/components/toast": { useToast: () => ({
       success: text => calls.push(["success", text]), error: text => calls.push(["error", text]),
+      warning: text => calls.push(["warning", text]),
     }) },
   }
   const code = ts.transpileModule(readFileSync("src/shared/lib/use-save-feedback.ts", "utf8"), {
@@ -45,6 +46,15 @@ test("explicit list destination overrides a detail destination", async () => {
   const h = harness()
   await h.render().save(async () => ({ redirectTo: "/daily/1" }), "저장 완료", "/daily")
   assert.ok(h.calls.some(([type, value]) => type === "replace" && value === "/daily"))
+})
+
+test("saved approval with SMS warning navigates without offering duplicate approval", async () => {
+  const h = harness()
+  await h.render().save(async () => ({ warning: "문자 결과 확인 필요" }), "승인 완료", "/admin/applications")
+  assert.equal(h.render().completed, true)
+  assert.ok(h.calls.some(([type, text]) => type === "warning" && text === "승인 완료 문자 결과 확인 필요"))
+  assert.ok(h.calls.some(([type]) => type === "replace"))
+  assert.equal(h.calls.some(([type]) => type === "success"), false)
 })
 
 test("server errors and interrupted responses keep the editor open and allow retry", async () => {

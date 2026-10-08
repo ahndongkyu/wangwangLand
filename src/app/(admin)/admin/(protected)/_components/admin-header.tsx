@@ -66,6 +66,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
       label: "회원",
       items: [
         { label: "회원", href: "/admin/members" },
+        { label: "SMS 발송 내역", href: "/admin/sms" },
         ...(isTopAdmin
           ? [{ label: "운영진", href: "/admin/admins" }]
           : []),
