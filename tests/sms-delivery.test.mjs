@@ -183,7 +183,8 @@ test("SMS history renders delivery status, content, application link and distinc
       "@/features/sms/auto-refresh": { SmsAutoRefresh: () => null },
       "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
       "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true }) },
-      "@/shared/lib/utils": { formatPostDateTime: value => value },
+      "@/shared/lib/utils": { formatShortDateTime: () => "26.10.08 09:00" },
+      "@/features/sms/presentation": load("src/features/sms/presentation.ts"),
       "@/features/sms": { getSmsDeliveryReports: async () => ({ reports: { message: { statusCode: "4000", reason: "정상 처리" } } }) },
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from() {
         return { select() { return this }, order() { return this }, range: async () => ({ error: failed ? {} : null, count: failed ? 0 : 21,
@@ -196,14 +197,15 @@ test("SMS history renders delivery status, content, application link and distinc
       assert.match(html, /role="alert"/)
       assert.doesNotMatch(html, /기록된 문자 발송 내역이 없습니다/)
     } else {
-      assert.match(html, /전달 완료/)
+      assert.match(html, />완료<\/span>/)
+      assert.match(html, /26\.10\.08 09:00/)
       assert.match(html, /<details/)
       assert.match(html, /문자 본문/)
       assert.match(html, /\/admin\/applications\/volunteer\/app/)
       assert.match(html, /\/admin\/sms\?page=2/)
       assert.match(html, /name="sms-history"/)
       assert.doesNotMatch(html, /<details[^>]*\sopen(?:=""|\s|>)/)
-      assert.match(html, /<span>수신자<\/span><span>전화번호<\/span><span>발송 일시<\/span><span>발송 상태<\/span>/)
+      assert.match(html, /<span>수신자<\/span><span class="text-center">전화번호<\/span><span class="text-center">발송 일시<\/span><span class="text-center">발송 상태<\/span>/)
       const summary = html.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)[1]
       const labels = ["수신자 ", "전화번호 ", "발송 일시 ", "발송 상태 ", "펼치기"]
       const positions = labels.map(label => summary.indexOf(label))

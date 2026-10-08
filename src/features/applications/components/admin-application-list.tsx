@@ -40,8 +40,8 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
       <div aria-hidden className={`hidden ${listColumns} gap-4 bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid`}>
         <span>신청정보</span>
         <span>{volunteer ? "희망 일정" : "희망하는 아이 · 방문 일정"}</span>
-        <span>신청일시</span>
-        <span>처리 상태</span>
+        <span className="text-center">신청일시</span>
+        <span className="text-center">처리 상태</span>
         <span className="text-center">확인</span>
       </div>
       <ul className="divide-y divide-border">{rows.map(row => {
@@ -73,11 +73,11 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
             {dates.length > 1 && <details className="mt-1 text-xs text-muted-foreground"><summary className="cursor-pointer py-1">외 {dates.length - 1}일 · 전체 날짜</summary><ul className="space-y-1 pt-1">{dates.slice(1).map(date => <li key={date}>{applicationDate(date)} {time}</li>)}</ul></details>}
             {v?.message && <p className="mt-1 text-xs text-muted-foreground">신청 메모 있음</p>}
           </div>
-          <div className="col-start-1 row-start-3 min-w-0 text-xs text-muted-foreground xl:col-auto xl:row-auto">
+          <div className="col-start-1 row-start-3 min-w-0 text-xs text-muted-foreground xl:col-auto xl:row-auto xl:text-center">
             <p className="mb-1 xl:sr-only">신청일시</p>
             <time dateTime={row.submitted_at} className="tabular-nums"><span className="block">{applicationDate(row.submitted_at)}</span><span className="mt-1 block">{submittedTime}</span></time>
           </div>
-          <div className="col-start-2 row-start-1 text-right xl:col-auto xl:row-auto xl:text-left"><ApplicationBadge status={row.status} />{v && <p className={`mt-2 text-xs ${row.status === "승인" && row.linkedCount === 0 ? "font-medium text-primary" : "text-muted-foreground"}`}>{eventsError ? "일정 조회 실패" : row.linkedCount ? `캘린더 등록 ${row.linkedCount}건` : "일정 미등록"}</p>}</div>
+          <div className="col-start-2 row-start-1 text-right xl:col-auto xl:row-auto xl:text-center"><ApplicationBadge status={row.status} />{v && <p className={`mt-2 text-xs ${row.status === "승인" && row.linkedCount === 0 ? "font-medium text-primary" : "text-muted-foreground"}`}>{eventsError ? "일정 조회 실패" : row.linkedCount ? `캘린더 등록 ${row.linkedCount}건` : "일정 미등록"}</p>}</div>
           <Link href={detail} aria-label={`${row.applicant_name} 신청 확인`} className="col-start-2 row-start-3 inline-flex min-h-11 items-center justify-center self-end rounded-lg border border-border px-3 text-xs font-medium hover:bg-muted xl:col-auto xl:row-auto xl:self-center">확인</Link>
         </li>
       })}</ul>

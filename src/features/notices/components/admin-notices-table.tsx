@@ -78,7 +78,7 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boa
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[600px] text-sm">
+        <table className="w-full min-w-[600px] text-center text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <th className="w-10 px-3 py-3 text-center">
@@ -92,20 +92,20 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boa
               </th>
               {isExpense ? (
                 <>
-                  <th className="px-3 py-3 text-left">첨부</th>
-                  <th className="px-3 py-3 text-left">공개</th>
+                  <th className="px-3 py-3 text-center">첨부</th>
+                  <th className="px-3 py-3 text-center">공개</th>
                 </>
               ) : (
                 <>
-                  <th className="px-3 py-3 text-left">카테고리</th>
+                  <th className="px-3 py-3 text-center">카테고리</th>
                   <th className="w-8 px-2 py-3 text-center">핀</th>
                 </>
               )}
               <th className="px-3 py-3 text-left">제목</th>
-              {!isExpense && <th className="px-3 py-3 text-left">상태</th>}
-              <th className="hidden sm:table-cell px-3 py-3 text-left">작성자</th>
-              <th className="px-3 py-3 text-left">작성일</th>
-              {!isExpense && <th className="hidden sm:table-cell px-3 py-3 text-right">조회</th>}
+              {!isExpense && <th className="px-3 py-3 text-center">상태</th>}
+              <th className="hidden sm:table-cell px-3 py-3 text-center">작성자</th>
+              <th className="px-3 py-3 text-center">작성일</th>
+              {!isExpense && <th className="hidden sm:table-cell px-3 py-3 text-center">조회</th>}
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
@@ -151,7 +151,7 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boa
                       </td>
                     </>
                   )}
-                  <td className="px-3 py-3 max-w-xs">
+                  <td className="px-3 py-3 max-w-xs text-left">
                     <a
                       href={`${basePath}/${n.id}/edit`}
                       className="line-clamp-1 font-medium text-foreground hover:underline"
@@ -177,7 +177,7 @@ export function AdminNoticesTable({ notices, deleteAction, bulkDeleteAction, boa
                   <td className="px-3 py-3 text-muted-foreground whitespace-nowrap text-xs">
                     {new Date(n.created_at).toLocaleDateString("ko-KR")}
                   </td>
-                  {!isExpense && <td className="hidden sm:table-cell px-3 py-3 text-right text-muted-foreground text-xs">
+                  {!isExpense && <td className="hidden sm:table-cell px-3 py-3 text-center text-muted-foreground text-xs">
                     {n.view_count.toLocaleString()}
                   </td>}
                   <td className="px-3 py-3">

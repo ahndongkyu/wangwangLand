@@ -79,7 +79,7 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[600px] text-sm">
+        <table className="w-full min-w-[600px] text-center text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               <th className="w-10 px-3 py-3 text-center">
@@ -91,12 +91,12 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
                   aria-label="전체 선택"
                 />
               </th>
-              <th className="w-12 px-3 py-3 text-left">썸네일</th>
-              <th className="px-3 py-3 text-left">카테고리</th>
+              <th className="w-12 px-3 py-3 text-center">썸네일</th>
+              <th className="px-3 py-3 text-center">카테고리</th>
               <th className="px-3 py-3 text-left">제목</th>
-              <th className="px-3 py-3 text-left">상태</th>
-              <th className="hidden sm:table-cell px-3 py-3 text-left">작성자</th>
-              <th className="px-3 py-3 text-left">작성일</th>
+              <th className="px-3 py-3 text-center">상태</th>
+              <th className="hidden sm:table-cell px-3 py-3 text-center">작성자</th>
+              <th className="px-3 py-3 text-center">작성일</th>
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
@@ -122,7 +122,7 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
                     />
                   </td>
                   <td className="px-3 py-3">
-                    <div className="relative size-10 flex-shrink-0 overflow-hidden rounded bg-muted">
+                    <div className="relative mx-auto size-10 flex-shrink-0 overflow-hidden rounded bg-muted">
                       {thumb ? (
                         <Image
                           src={thumb}
@@ -141,7 +141,7 @@ export function AdminDailyTable({ posts, deleteAction, bulkDeleteAction }: Props
                   <td className="px-3 py-3">
                     <DailyCategoryBadge category={p.category} />
                   </td>
-                  <td className="px-3 py-3 max-w-xs">
+                  <td className="px-3 py-3 max-w-xs text-left">
                     <a
                       href={`/admin/daily/${p.id}/edit`}
                       className="font-medium text-foreground hover:underline line-clamp-1"

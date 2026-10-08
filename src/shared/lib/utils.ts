@@ -28,6 +28,12 @@ export function formatPostDateTime(date: string | Date): string {
   return parts ? `${parts.year}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}` : "—"
 }
 
+/** 목록용 한국 시간 날짜·시각: "26.10.08 13:13" */
+export function formatShortDateTime(date: string | Date): string {
+  const parts = postDateParts(date)
+  return parts ? `${parts.year.slice(-2)}.${parts.month}.${parts.day} ${parts.hour}:${parts.minute}` : "—"
+}
+
 /** HTML 콘텐츠에서 모든 <img src> URL 추출 (썸네일·갤러리 자동 생성용) */
 export function extractImagesFromHtml(html: string): string[] {
   const matches = [...html.matchAll(/<img[^>]+src="([^"]+)"/g)]

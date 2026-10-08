@@ -135,9 +135,9 @@ export default async function AdminDonationsPage({
             <div className="hidden gap-3 border-b border-border bg-secondary/40 px-4 py-3 text-xs font-semibold text-muted-foreground lg:grid lg:grid-cols-[40px_minmax(0,1fr)_90px_60px_85px]">
               <span className="text-center">번호</span>
               <span>후원자 / 내용</span>
-              <span className="text-right">상태</span>
-              <span className="text-right">종류</span>
-              <span className="text-right">후원일</span>
+              <span className="text-center">상태</span>
+              <span className="text-center">종류</span>
+              <span className="text-center">후원일</span>
             </div>
             <ul className="divide-y divide-border">
               {donations.map((d, i) => {
@@ -161,13 +161,13 @@ export default async function AdminDonationsPage({
                           {summary}
                         </span>
                       </span>
-                      <span className="text-right">
+                      <span className="text-right lg:text-center">
                         <DonationStatusBadge status={d.status} />
                       </span>
-                      <span className="text-xs text-muted-foreground lg:text-right">
+                      <span className="text-xs text-muted-foreground lg:text-center">
                         {d.type === "cash" ? "현금" : "물품"}
                       </span>
-                      <span className="text-right text-xs tabular-nums text-muted-foreground">
+                      <span className="text-right text-xs tabular-nums lg:text-center text-muted-foreground">
                         {formatShortDate(d.donated_at)}
                       </span>
                     </Link>

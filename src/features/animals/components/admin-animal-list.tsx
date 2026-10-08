@@ -46,7 +46,7 @@ export function AdminAnimalList({ kind, animals, total, filters, canDelete }: {
       <div className="flex flex-wrap gap-3"><AnimalQuerySelect label="정렬" name="sort" value={filters.sort} options={[{ value: "latest", label: "최근 수정순" }, { value: "name", label: "이름순" }, ...(kind === "dogs" ? [{ value: "pinned", label: "고정순" }] : [])]} /><AnimalQuerySelect label="표시" name="pageSize" value={String(filters.pageSize)} options={[20, 50, 100].map(n => ({ value: String(n), label: `${n}개` }))} /></div>
     </div>
     <div className="rounded-xl border border-border bg-card">
-      <div aria-hidden className="hidden grid-cols-[minmax(0,1.6fr)_120px_minmax(80px,0.7fr)_220px] gap-4 rounded-t-xl bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid"><span>아이 정보</span><span>보호 상태</span><span>보호 위치</span><span className="text-right">관리</span></div>
+      <div aria-hidden className="hidden grid-cols-[minmax(0,1.6fr)_120px_minmax(80px,0.7fr)_220px] gap-4 rounded-t-xl bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid"><span>아이 정보</span><span className="text-center">보호 상태</span><span className="text-center">보호 위치</span><span className="text-center">관리</span></div>
       <ul className="divide-y divide-border">
         {animals.map(animal => {
           const image = animal.images[animal.thumbnail_index] ?? animal.images[0]
@@ -58,9 +58,9 @@ export function AdminAnimalList({ kind, animals, total, filters, canDelete }: {
               </div>
               <div className="min-w-0"><h2 className="break-words text-sm font-semibold [overflow-wrap:anywhere] sm:text-base">{animal.name}</h2><p className="mt-1 break-words text-xs text-muted-foreground">{animal.breed || "품종 미상"}</p><p className="mt-0.5 text-xs text-muted-foreground">{animal.gender}{"size" in animal && animal.size ? ` · ${animal.size}` : ""}{animal.neutered === true ? " · 중성화 완료" : ""}</p>{"is_pinned" in animal && animal.is_pinned && <p className="mt-1 text-[11px] text-primary">홈 고정 설정</p>}</div>
             </Link>
-            <AnimalStatusSelect kind={kind} id={animal.id} name={animal.name} status={animal.status} />
-            <p className="max-w-32 break-words text-right text-xs text-muted-foreground xl:max-w-none xl:text-left"><span className="sr-only">보호 위치: </span>{animal.kennel_location || "위치 미입력"}</p>
-            <div className="col-span-2 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3 xl:col-span-1 xl:justify-end xl:border-0 xl:pt-0">
+            <div className="xl:flex xl:justify-center"><AnimalStatusSelect kind={kind} id={animal.id} name={animal.name} status={animal.status} /></div>
+            <p className="max-w-32 break-words text-right text-xs text-muted-foreground xl:max-w-none xl:text-center"><span className="sr-only">보호 위치: </span>{animal.kennel_location || "위치 미입력"}</p>
+            <div className="col-span-2 flex flex-wrap items-center gap-1.5 border-t border-border/70 pt-3 xl:col-span-1 xl:justify-center xl:border-0 xl:pt-0">
               <Link href={edit} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-3 text-xs font-medium transition-colors hover:bg-muted">정보 수정</Link>
               {image ? <QuickAnimalPhoto kind={kind} id={animal.id} name={animal.name} images={animal.images} index={animal.thumbnail_index} compact /> : <Link href={edit} className="inline-flex min-h-11 items-center px-3 text-xs text-muted-foreground hover:text-foreground">사진 등록</Link>}
               {canDelete && <AnimalRowMenu kind={kind} id={animal.id} name={animal.name} />}

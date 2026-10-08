@@ -135,10 +135,10 @@ export function renderCalendar({ wholeRow = true, linked = true, readOnly = true
   const event = { id: "event", title: "김소연", category: "volunteer", source_application_type: "volunteer", source_application_id: "application", starts_at: "2026-10-24T06:00:00Z", ends_at: "2026-10-24T06:00:00Z", all_day: false, location: null }
   return renderToStaticMarkup(React.createElement(Grid, { yearMonth: "2026-10", events: [event], initialSelectedDate: "2026-10-24", readOnly, maskNames: true, applicationLinks: linked ? { event: { href: wholeRow ? "/admin/applications/volunteer/application" : "/my/applications?application=application", label: wholeRow ? "봉사 신청 상세 보기" : "내 신청 보기", wholeRow } } : {} }))
 }
-export function renderApplicationList(params = {}) {
+export function renderApplicationList(params = {}, rows = []) {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge
   const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge } }).AdminApplicationList
-  return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows: [], counts: {}, total: 0, error: "", eventsError: false }))
+  return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows, counts: {}, total: rows.length, error: "", eventsError: false }))
 }
 export async function renderHome() {
   const Page = load("src/app/(public)/page.tsx", {
