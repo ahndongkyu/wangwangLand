@@ -8,12 +8,14 @@ import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { requireAdmin } from "@/shared/lib/auth"
 import { dispatchEventNotification, prepareEventNotification } from "../notify"
+import { snapshotVolunteerVisits, snapshotEventVisits, notifyVolunteerVisitChanges } from "../volunteer-notice"
 import { localKstToIso } from "../lib/date"
 import { generateOccurrenceDates } from "../lib/recurrence"
 import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from "../types"
 
 export interface ActionResult {
   error?: string
+  warning?: string
   id?: string
   /** 생성/수정/삭제된 건수 (반복 일괄 처리 시). */
   count?: number
@@ -296,6 +298,9 @@ async function createMultiDateEvents(opts: {
   }
 
   // 한 번의 INSERT 문으로 처리해 일부 날짜만 저장되는 상태를 막는다.
+  let before
+  try { before = await snapshotVolunteerVisits([approveAppId]) }
+  catch { return { error: "기존 확정 일정을 확인하지 못했습니다. 다시 시도해주세요." } }
   const { error } = await admin.from("events").insert(rows)
   if (error) {
     if (error.code === "23505" || /duplicate key/i.test(error.message)) {
@@ -310,7 +315,9 @@ async function createMultiDateEvents(opts: {
   revalidatePath(`/admin/applications/volunteer/${approveAppId}`)
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: rows.length }
+  const warning = await notifyVolunteerVisitChanges(before, true)
+  revalidatePath("/my/applications")
+  return { count: rows.length, warning }
 }
 
 async function createSingleEvent(formData: FormData): Promise<ActionResult> {
@@ -353,6 +360,9 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
     insertPayload.signup_enabled = false
   }
 
+  let before
+  try { before = await snapshotVolunteerVisits(approveAppId ? [approveAppId] : []) }
+  catch { return { error: "기존 확정 일정을 확인하지 못했습니다. 다시 시도해주세요." } }
   const { data, error } = await supabase
     .from("events")
     .insert(insertPayload)
@@ -378,7 +388,9 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { id: data.id }
+  const warning = await notifyVolunteerVisitChanges(before, true)
+  revalidatePath("/my/applications")
+  return { id: data.id, warning }
 }
 
 /** 반복 그룹에서 scope 에 해당하는 이벤트 id 들. 단건이면 [id]. */
@@ -416,24 +428,30 @@ export async function updateEvent(
   const parsed = parseEventInput(formData)
   if ("error" in parsed) return parsed
 
+  const admin = createAdminClient()
+  let before
+  try { before = await snapshotEventVisits(await resolveScopeIds(admin, id, scope)) }
+  catch { return { error: "기존 확정 일정을 확인하지 못했습니다. 다시 시도해주세요." } }
   // 단건 수정
   if (scope === "one") {
     const supabase = await createClient()
-    const { error } = await supabase.from("events").update(parsed).eq("id", id)
+    const { data: updated, error } = await supabase.from("events").update(parsed).eq("id", id).select("id").maybeSingle()
     if (error) {
       console.error("[updateEvent]", error)
       return { error: error.message }
     }
+    if (!updated) return { error: "수정할 일정이 없습니다. 새로고침 후 확인해주세요." }
     await dispatchEventNotification({ eventId: id, type: "event_changed" })
     revalidatePath("/admin/calendar")
     revalidatePath(`/admin/calendar/${id}`)
     revalidatePath("/calendar")
     revalidatePath(`/calendar/${id}`)
-    return {}
+    const warning = await notifyVolunteerVisitChanges(before)
+    revalidatePath("/my/applications")
+    return { warning }
   }
 
   // 반복 일괄 수정 — 날짜는 각자 유지, 시간/제목/장소/메모/카테고리 등만 일괄 적용
-  const admin = createAdminClient()
   const { data, error } = await admin.rpc("update_recurring_events_atomic", {
     p_event_id: id, p_scope: scope, p_fields: parsed,
   })
@@ -448,7 +466,9 @@ export async function updateEvent(
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: changedIds.length }
+  const warning = await notifyVolunteerVisitChanges(before)
+  revalidatePath("/my/applications")
+  return { count: changedIds.length, warning }
 }
 
 export async function deleteEvent(
@@ -459,9 +479,11 @@ export async function deleteEvent(
   if (!auth.ok) return { error: auth.error }
   const admin = createAdminClient()
   let snapshots
+  let before
   try {
     const targetIds = await resolveScopeIds(admin, id, scope)
     snapshots = await Promise.all(targetIds.map((tid) => prepareEventNotification(tid)))
+    before = await snapshotEventVisits(targetIds)
   } catch {
     return { error: "일정과 알림 수신자를 확인하지 못했습니다. 다시 시도해주세요." }
   }
@@ -481,7 +503,9 @@ export async function deleteEvent(
 
   revalidatePath("/admin/calendar")
   revalidatePath("/calendar")
-  return { count: deletedIds.size }
+  const warning = deletedIds.size ? await notifyVolunteerVisitChanges(before) : undefined
+  revalidatePath("/my/applications")
+  return { count: deletedIds.size, warning }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

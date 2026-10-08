@@ -11,9 +11,10 @@ test("recurring edits use one atomic RPC and notify only committed IDs", async (
       "@/shared/lib/supabase/server": {},
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({
         rpc: async (name, args) => { calls.push({ name, args }); return { data: fail ? null : ["one", "two"], error: fail ? { message: "rollback" } : null } },
-        from() { throw Error("No per-row writes") },
+        from() { return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { recurrence_group_id: null } }) } },
       }) },
       "../notify": { dispatchEventNotification: async ({ eventId }) => sent.push(eventId) },
+      "../volunteer-notice": { snapshotEventVisits: async () => [], notifyVolunteerVisitChanges: async () => undefined },
       "../lib/date": load("src/features/events/lib/date.ts"), "../lib/recurrence": {}, "../types": { INTERNAL_CATEGORIES: [] },
     })
     const form = new FormData()
@@ -103,6 +104,7 @@ test("deletion sends only after successful deletion and only for returned delete
         dispatchEventNotification: async (opts) => { assert.equal(opts.snapshot.title, "일정"); calls.push("send") },
       },
       "../lib/date": {}, "../lib/recurrence": {}, "../types": {},
+      "../volunteer-notice": { snapshotEventVisits: async () => [], notifyVolunteerVisitChanges: async () => undefined },
     })
     const result = await api.deleteEvent("event")
     if (mode === "success") {

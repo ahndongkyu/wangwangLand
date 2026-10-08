@@ -64,7 +64,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
     data: { session },
   } = await supabase.auth.getSession()
 
-  if (!session) redirect("/login")
+  if (!session) redirect("/login?next=%2Fmy%2Fapplications")
 
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()

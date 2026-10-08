@@ -9,6 +9,11 @@ export type NotificationType =
   | "application_under_review"
   | "volunteer_reschedule_approved"
   | "volunteer_reschedule_rejected"
+  | "application_cancelled"
+  | "event_signup_confirmed"
+  | "event_changed"
+  | "event_canceled"
+  | "event_reminder"
 
 export interface UserNotification {
   id: string

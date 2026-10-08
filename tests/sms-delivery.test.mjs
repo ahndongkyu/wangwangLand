@@ -84,16 +84,21 @@ test("provider result lookup requires staff and does not write or send", async (
 })
 
 test("approval template uses confirmed KST visits and the approved copy", () => {
-  const exports = {}
-  const source = ts.transpileModule(fs.readFileSync("src/features/applications/api/mutations.ts", "utf8") + "\nexports.template = buildVolunteerSmsText;", { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  vm.runInNewContext(source, { exports, Date, require: () => ({}) })
-  assert.equal(exports.template("홍길동", ["2026-10-18T04:00:00Z"], 3), "[왕왕랜드 봉사 안내]\n홍길동님, 봉사 신청이 승인되었습니다.\n\n방문 일정: 2026.10.18(일) 13:00\n참여 인원: 3명\n\n준비물과 신청 내역은 마이페이지에서 확인해 주세요.\n일정 변경이나 취소가 필요한 경우 미리 알려주세요.")
-  assert.match(exports.template("신청자", [], 1), /별도 안내 예정/)
+  const { buildVolunteerSms } = load("src/features/applications/lib/volunteer-sms.ts")
+  const message = buildVolunteerSms("confirmed", "홍길동", ["2026-10-18T04:00:00Z"], 3)
+  assert.equal(message.type, "LMS")
+  assert.match(message.text, /2026\.10\.18\(일\) 13:00/)
+  assert.match(message.text, /참여 인원: 3명/)
+  assert.match(message.text, /마이페이지에서 요청하실 수 있습니다/)
+  assert.match(message.text, /https:\/\/wangwangland.kr\/my\/applications$/)
+  assert.throws(() => buildVolunteerSms("confirmed", "신청자", [], 1))
 })
 
 test("SMS history renders delivery status, content, application link and distinct query errors", async () => {
   for (const failed of [false, true]) {
     const page = load("src/app/(admin)/admin/(protected)/sms/page.tsx", {
+      "@/features/sms/auto-refresh": { SmsAutoRefresh: () => null },
+      "@/features/sms/diagnostic-panel": { SmsDiagnosticPanel: () => null },
       "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
       "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true }) },
       "@/shared/lib/utils": { formatPostDateTime: value => value },

@@ -5,6 +5,8 @@ import { isAssignableMemberRole, type MemberRole } from "@/shared/lib/member-rol
 import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+import { LOGIN_RETURN_COOKIE, loginReturnPath } from "../lib/login-return"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createServiceClient } from "@/shared/lib/supabase/service"
 import {
@@ -19,7 +21,12 @@ import {
 } from "@/shared/constants/home-navigation"
 
 /** 카카오 OAuth URL 반환 — Supabase를 거치지 않고 카카오 직접 연동 */
-export async function getKakaoLoginUrl(): Promise<string | null> {
+export async function getKakaoLoginUrl(returnTo?: string): Promise<string | null> {
+  const cookieStore = await cookies()
+  cookieStore.set(LOGIN_RETURN_COOKIE, loginReturnPath(returnTo), {
+    httpOnly: true, secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", path: "/", maxAge: 600,
+  })
   const params = new URLSearchParams({
     client_id: process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY!,
     redirect_uri: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/kakao/callback`,

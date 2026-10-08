@@ -3,12 +3,12 @@
 import { useTransition } from "react"
 import { getKakaoLoginUrl } from "../api/actions"
 
-export function KakaoLoginButton() {
+export function KakaoLoginButton({ returnTo }: { returnTo?: string }) {
   const [pending, startTransition] = useTransition()
 
   function handleClick() {
     startTransition(async () => {
-      const url = await getKakaoLoginUrl()
+      const url = await getKakaoLoginUrl(returnTo)
       if (url) window.location.href = url
     })
   }

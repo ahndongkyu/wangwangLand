@@ -39,6 +39,20 @@ export interface SubmitResult {
   id?: string
 }
 
+async function notifyStaffCancellation(id: string, type: "volunteer" | "adoption", userId: string) {
+  try {
+    const { sendPushToStaff } = await import("@/features/push")
+    await sendPushToStaff({
+      title: `${type === "volunteer" ? "봉사" : "입양"} 신청 취소`,
+      body: "신청자가 신청을 취소했습니다. 신청 내역에서 사유를 확인해주세요.",
+      url: `/admin/applications/${type}/${id}`,
+      tag: `application-cancelled-${id}`,
+    }, userId)
+  } catch (error) {
+    console.error("[notifyStaffCancellation]", error)
+  }
+}
+
 function validateVolunteerParty(partyType: string, value: string) {
   const result = partyType === "group" ? validateGroupPartySize(value) : validatePartySize(value)
   if (result.valid && partyType === "individual" && result.partySize !== 1) {
@@ -815,6 +829,8 @@ export async function cancelOwnVolunteerApplication(
     return { error: error.message }
   }
 
+  await notifyStaffCancellation(id, "volunteer", session.user.id)
+
   revalidatePath("/my/applications")
   revalidatePath("/calendar")
   revalidatePath("/admin/applications")
@@ -953,6 +969,8 @@ export async function cancelOwnAdoptionApplication(
     console.error("[cancelOwnAdoptionApplication]", error)
     return { error: error.message }
   }
+
+  await notifyStaffCancellation(id, "adoption", session.user.id)
 
   revalidatePath("/my/applications")
   revalidatePath("/admin/applications")

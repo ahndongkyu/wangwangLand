@@ -11,6 +11,7 @@ test("every schedule mutation scope rejects unauthorized callers before DB acces
     "@/shared/lib/supabase/admin": { createAdminClient: forbidden },
     "@/shared/lib/auth": { requireAdmin: async () => { checks++; return { ok: false, error: "운영진 권한이 없습니다." } } },
     "../notify": {}, "../lib/date": {}, "../lib/recurrence": {}, "../types": {},
+    "../volunteer-notice": {},
   })
   for (const scope of ["one", "after", "all"]) {
     assert.match((await api.updateEvent("event", new FormData(), scope)).error, /권한/)
@@ -24,6 +25,11 @@ test("own cancellation uses authenticated atomic RPC, never separate writes", as
     const calls = []
     const api = load("src/features/applications/api/mutations.ts", {
       "next/cache": { revalidatePath() {} }, "next/navigation": {}, "@/shared/lib/auth": {},
+      "@/features/push": { sendPushToStaff: async (message, userId) => {
+        assert.equal(calls.length, 1)
+        assert.equal(userId, "owner")
+        assert.equal(message.url, `/admin/applications/${type}/application`)
+      } },
       "@/shared/lib/supabase/server": { createClient: async () => ({
         auth: { getSession: async () => ({ data: { session: { user: { id: "owner" } } } }) },
         rpc: async (name, args) => { calls.push({ name, args }); return { error: null } },

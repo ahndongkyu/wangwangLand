@@ -67,6 +67,7 @@ for (const [file, name, url] of [
 test("role mutations cannot recreate full_member or run as an ordinary member", async () => {
   for (const authorized of [true, false]) {
     const api = load("src/features/members/api/actions.ts", {
+      "next/headers": {}, "../lib/login-return": load("src/features/members/lib/login-return.ts"),
       "@vercel/blob": {}, "next/cache": {}, "next/navigation": {},
       "@/shared/lib/auth": { requireAdmin: async () => authorized ? { ok: true, role: "admin" } : { ok: false, error: "권한 없음" } },
       "@/shared/lib/member-role": roles,

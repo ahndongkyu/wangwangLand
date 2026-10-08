@@ -20,6 +20,11 @@ function notifLabel(n: UserNotification): string {
   if (n.type === "application_approved") return `${t} 신청이 승인되었습니다 🎉`
   if (n.type === "application_rejected") return `${t} 신청이 반려되었습니다. 사유는 신청 내역에서 확인하세요.`
   if (n.type === "application_under_review") return `${t} 신청이 검토 중입니다`
+  if (n.type === "application_cancelled") return `${t} 신청이 취소되었습니다. 신청 내역을 확인해주세요.`
+  if (n.type === "event_signup_confirmed") return "일정 신청이 접수되었습니다"
+  if (n.type === "event_changed") return "신청한 일정이 변경되었습니다. 변경 내용을 확인해주세요."
+  if (n.type === "event_canceled") return "신청한 일정이 취소되었습니다"
+  if (n.type === "event_reminder") return "내일 예정된 일정을 확인해주세요"
   if (n.type === "volunteer_reschedule_approved") return "봉사 일정변경이 승인되었습니다 🗓️"
   if (n.type === "volunteer_reschedule_rejected") return "봉사 일정변경이 거절되어 기존 일정이 유지됩니다"
   if (n.type === "application_status_changed") {
@@ -27,7 +32,8 @@ function notifLabel(n: UserNotification): string {
   }
   const actor = n.actor?.nickname ?? "누군가"
   if (n.type === "reply_to_comment") return `${actor}님이 내 댓글에 답글을 달았어요`
-  return `${actor}님이 내 게시글에 댓글을 달았어요`
+  if (n.type === "comment_on_post") return `${actor}님이 내 게시글에 댓글을 달았어요`
+  return "새 알림이 있습니다"
 }
 
 const APPLICATION_STATUS_TYPES = new Set([
@@ -35,14 +41,17 @@ const APPLICATION_STATUS_TYPES = new Set([
   "application_approved",
   "application_rejected",
   "application_under_review",
+  "application_cancelled",
   "volunteer_reschedule_approved",
   "volunteer_reschedule_rejected",
 ])
 
 function notifPath(n: UserNotification): string {
   if (APPLICATION_STATUS_TYPES.has(n.type)) return "/my/applications"
+  if (n.type === "event_canceled") return "/my/applications"
+  if (n.post_type === "event") return `/calendar/${n.post_id}`
   if (n.postPath) return n.postPath
-  return `${POST_PATH[n.post_type] ?? ""}/${n.post_id}`
+  return POST_PATH[n.post_type] ? `${POST_PATH[n.post_type]}/${n.post_id}` : "/my"
 }
 
 interface Props {

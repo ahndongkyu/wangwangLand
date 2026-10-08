@@ -34,7 +34,8 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", r
         setScopeOpen(false)
         return
       }
-      toast.success(
+      if (res.warning) toast.warning(res.warning)
+      else toast.success(
         res.count && res.count > 1
           ? `${res.count}건 일정을 삭제했어요.`
           : "일정을 삭제했어요."

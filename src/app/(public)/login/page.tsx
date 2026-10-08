@@ -3,19 +3,21 @@ import type { Metadata } from "next"
 import { getCurrentProfile } from "@/features/members"
 import { KakaoLoginButton } from "@/features/members"
 import { SITE } from "@/shared/constants/site"
+import { loginReturnPath } from "@/features/members/lib/login-return"
 
 export const metadata: Metadata = { title: "로그인" }
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; next?: string }>
 }) {
+  const { error, next } = await searchParams
+  const returnTo = loginReturnPath(next)
   const profile = await getCurrentProfile()
-  if (profile?.status === "approved") redirect("/")
+  if (profile?.status === "approved") redirect(returnTo)
   if (profile?.status === "pending") redirect("/pending")
 
-  const { error } = await searchParams
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center px-4 py-20">
@@ -43,7 +45,7 @@ export default async function LoginPage({
           </p>
         )}
 
-        <KakaoLoginButton />
+        <KakaoLoginButton returnTo={returnTo} />
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           카카오 로그인 후 닉네임·연락처와 필수 동의를 등록하시면 이용 가능합니다.

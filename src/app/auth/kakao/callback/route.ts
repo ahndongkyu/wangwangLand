@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { LOGIN_RETURN_COOKIE, loginReturnPath } from "@/features/members/lib/login-return"
 import { createServerClient } from "@supabase/ssr"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies"
@@ -192,7 +194,7 @@ export async function GET(request: Request) {
     }
 
     // 리다이렉트 목적지 결정
-    let redirectPath = "/"
+    let redirectPath = loginReturnPath((await cookies()).get(LOGIN_RETURN_COOKIE)?.value)
     if (profile?.is_banned) {
       redirectPath = "/login?error=banned"
     } else if (isNewUser) {
@@ -210,6 +212,7 @@ export async function GET(request: Request) {
 
     // 7. 쿠키를 redirect 응답에 직접 붙여서 반환
     const response = NextResponse.redirect(new URL(redirectPath, origin))
+    response.cookies.delete(LOGIN_RETURN_COOKIE)
     cookiesToSet.forEach(({ name, value, options }) => {
       response.cookies.set({ name, value, ...options })
     })
