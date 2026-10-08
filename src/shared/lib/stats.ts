@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { sumApprovedVolunteerPeople } from "./volunteer-stats"
 
 export interface SiteStats {
   /** 입양 완료된 아이 수 */
@@ -19,14 +20,12 @@ export async function getSiteStats(): Promise<SiteStats> {
   const [dogAdoptedRes, catAdoptedRes, volRes] = await Promise.all([
     supabase.from("dogs").select("*", { count: "exact", head: true }).eq("status", "입양완료"),
     supabase.from("cats").select("*", { count: "exact", head: true }).eq("status", "입양완료"),
-    supabase.from("volunteer_applications").select("party_size").eq("status", "승인"),
+    sumApprovedVolunteerPeople().catch(() => null),
   ])
-
-  const totalVolunteers = (volRes.data ?? []).reduce((sum, r) => sum + (r.party_size ?? 1), 0)
 
   return {
     adopted: dogAdoptedRes.error || catAdoptedRes.error || dogAdoptedRes.count === null || catAdoptedRes.count === null
       ? null : dogAdoptedRes.count + catAdoptedRes.count,
-    volunteers: volRes.error ? null : totalVolunteers,
+    volunteers: volRes,
   }
 }

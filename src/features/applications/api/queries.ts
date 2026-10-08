@@ -1,5 +1,6 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import { recentMonthWindows } from "@/shared/lib/month-windows"
+import { sumApprovedVolunteerPeople } from "@/shared/lib/volunteer-stats"
 import type {
   AdoptionApplication,
   ApplicationStatus,
@@ -432,17 +433,7 @@ export interface MonthlyVolunteerStat {
 
 /** 승인된 신청의 동반 인원 합계. 실제 참석이나 고유 봉사자 수와는 다르다. */
 export async function getApprovedVolunteerPeople(): Promise<number> {
-  const supabase = await createClient()
-  let total = 0
-  for (let offset = 0; ; offset += 500) {
-    const { data, error } = await supabase.from("volunteer_applications")
-      .select("id, party_size").eq("status", "승인")
-      .order("id", { ascending: true }).range(offset, offset + 499)
-    if (error) throw new Error("승인 인원을 불러오지 못했습니다.", { cause: error })
-    for (const row of data ?? []) total += row.party_size ?? 0
-    if (!data || data.length < 500) break
-  }
-  return total
+  return sumApprovedVolunteerPeople()
 }
 
 /** 최근 N개월 봉사 신청 추이 */
