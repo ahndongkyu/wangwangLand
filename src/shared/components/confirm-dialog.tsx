@@ -6,7 +6,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useRef,
   useState,
 } from "react"
 
@@ -186,7 +185,7 @@ function ConfirmBody({
       {variant === "critical" && (
         <div className="mt-4">
           <p className="mb-1.5 text-xs text-muted-foreground">
-            확인을 위해 <span className="font-semibold text-foreground">"{phrase}"</span>를 입력해 주세요
+            확인을 위해 <span className="font-semibold text-foreground">&quot;{phrase}&quot;</span>를 입력해 주세요
           </p>
           <input
             type="text"

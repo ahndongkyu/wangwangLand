@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useHydrated } from "@/shared/hooks/use-hydrated"
 
 import { useLastNoticeSeenAt } from "../hooks/use-notice-seen"
 import type { RecentNoticeMeta } from "../types"
@@ -15,9 +15,7 @@ interface Props {
 
 export function NoticeBadge({ notices, dbLastSeenAt, className }: Props) {
   const localLastSeen = useLastNoticeSeenAt()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => { setMounted(true) }, [])
+  const mounted = useHydrated()
   if (!mounted) return null
 
   // 로그인 유저: DB 값 / 비로그인: localStorage 값

@@ -1,6 +1,6 @@
 /* 왕왕랜드 Service Worker - 푸시 알림 처리 */
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   // 새 SW 즉시 활성화
   self.skipWaiting()
 })

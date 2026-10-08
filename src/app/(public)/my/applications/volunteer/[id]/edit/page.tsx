@@ -10,14 +10,7 @@ import { getCurrentProfile } from "@/features/members"
 
 export const dynamic = "force-dynamic"
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}): Promise<Metadata> {
-  const { id } = await params
-  return { title: "봉사 일정 변경" }
-}
+export const metadata: Metadata = { title: "봉사 일정 변경" }
 
 export default async function VolunteerApplicationEditPage({
   params,

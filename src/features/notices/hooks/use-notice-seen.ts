@@ -23,12 +23,13 @@ function subscribe(callback: () => void) {
   const onChange = () => callback()
   window.addEventListener(EVENT, onChange)
   // 다른 탭에서 바뀐 경우도 반영
-  window.addEventListener("storage", (e) => {
+  const onStorage = (e: StorageEvent) => {
     if (e.key === STORAGE_KEY) callback()
-  })
+  }
+  window.addEventListener("storage", onStorage)
   return () => {
     window.removeEventListener(EVENT, onChange)
-    // storage 핸들러는 익명이라 정확한 제거 불가하지만 페이지 언마운트 시 같이 사라짐
+    window.removeEventListener("storage", onStorage)
   }
 }
 

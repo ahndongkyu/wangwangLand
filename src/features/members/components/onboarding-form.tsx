@@ -36,7 +36,7 @@ export function OnboardingForm({
   const [terms, setTerms] = useState(false)
   const [privacy, setPrivacy] = useState(false)
   const [marketing, setMarketing] = useState(false)
-  const [agreeAll, setAgreeAll] = useState(false)
+  const agreeAll = age && terms && privacy && marketing
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null)
 
   useEffect(() => {
@@ -44,17 +44,11 @@ export function OnboardingForm({
   }, [])
 
   function handleAgreeAll(checked: boolean) {
-    setAgreeAll(checked)
     setAge(checked)
     setTerms(checked)
     setPrivacy(checked)
     setMarketing(checked)
   }
-
-  // 개별 변경 시 전체 동의 자동 갱신
-  useEffect(() => {
-    setAgreeAll(age && terms && privacy && marketing)
-  }, [age, terms, privacy, marketing])
 
   const requiredOk = age && terms && privacy
 

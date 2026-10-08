@@ -22,7 +22,7 @@ export function load(path, imports = {}) {
 }
 const element = (tag, text) => function FixtureElement() { return React.createElement(tag, null, text) }
 const Link = ({ children, ...props }) => React.createElement("a", props, children)
-const Image = ({ fill, sizes, priority, ...props }) => React.createElement("img", { ...props, width: 40, height: 40 })
+const Image = props => React.createElement("img", { ...Object.fromEntries(Object.entries(props).filter(([key]) => !["fill", "sizes", "priority"].includes(key))), width: 40, height: 40 })
 const site = load("src/shared/constants/site.ts").SITE
 const base = {
   "next/link": { default: Link }, "next/image": { default: Image },
@@ -50,7 +50,7 @@ export async function renderMyPage({ tab, edit, phone = "010-0000-0000", status 
     ...base,
     "next/navigation": { ...base["next/navigation"], useRouter: () => ({ refresh() {}, replace() {} }) },
     "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
-    "@/shared/components/ui/button": { Button: ({ children, variant, size, ...props }) => React.createElement("button", props, children) },
+    "@/shared/components/ui/button": { Button: ({ children, ...props }) => React.createElement("button", Object.fromEntries(Object.entries(props).filter(([key]) => !["variant", "size"].includes(key))), children) },
     "@/shared/components/ui/input": { Input: props => React.createElement("input", props) },
     "@/shared/components/image-crop-modal": { ImageCropModal: () => null },
     "@/shared/lib/validation": validation,
@@ -163,7 +163,7 @@ export async function renderVolunteer({ status = "접수", registered = false, e
   const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
   const Status = load("src/features/applications/components/status-form.tsx", {
     ...base, "../api/mutations": {}, "../api/processing": {}, "../lib/detail-navigation": navigation, "../lib/admin-list": filters,
-    "@/shared/components/ui/button": { Button: ({ children, variant, size, ...props }) => React.createElement("button", props, children) },
+    "@/shared/components/ui/button": { Button: ({ children, ...props }) => React.createElement("button", Object.fromEntries(Object.entries(props).filter(([key]) => !["variant", "size"].includes(key))), children) },
     "@/shared/components/ui/textarea": { Textarea: props => React.createElement("textarea", props) },
     "@/shared/lib/use-save-feedback": { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => {} }) },
   }).ApplicationStatusForm
@@ -181,7 +181,7 @@ export async function renderAdoption() {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx").ApplicationBadge
   const Status = load("src/features/applications/components/status-form.tsx", {
     ...base, "../api/mutations": {}, "../api/processing": {}, "../lib/detail-navigation": load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters }), "../lib/admin-list": filters,
-    "@/shared/components/ui/button": { Button: ({ children, variant, size, ...props }) => React.createElement("button", props, children) },
+    "@/shared/components/ui/button": { Button: ({ children, ...props }) => React.createElement("button", Object.fromEntries(Object.entries(props).filter(([key]) => !["variant", "size"].includes(key))), children) },
     "@/shared/components/ui/textarea": { Textarea: props => React.createElement("textarea", props) },
     "@/shared/lib/use-save-feedback": { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => {} }) },
   }).ApplicationStatusForm

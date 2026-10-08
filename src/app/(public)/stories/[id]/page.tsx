@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Pencil } from "lucide-react"
@@ -96,7 +97,7 @@ export default async function StoryDetailPage({
       <header className="mb-8 border-b border-border pb-6">
         {story.dog && (
           <p className="flex items-center gap-1 text-sm font-semibold text-primary">
-            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-4" />
+            <Image src="/images/icons/status/dog-happy.svg" alt="" width={16} height={16} className="size-4" />
             {story.dog.name}의 이야기
           </p>
         )}
@@ -141,7 +142,7 @@ export default async function StoryDetailPage({
         <div className="mt-10 rounded-lg border border-border bg-secondary/30 p-6 text-center">
           <p className="text-sm text-muted-foreground">이 이야기의 주인공</p>
           <p className="mt-1 flex items-center justify-center gap-1.5 text-lg font-bold text-foreground">
-            <img src="/images/icons/status/dog-happy.svg" alt="" className="size-5" />
+            <Image src="/images/icons/status/dog-happy.svg" alt="" width={20} height={20} className="size-5" />
             {story.dog.name}
           </p>
           <Link

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, Heart, Banknote, Package } from "lucide-react"
+import { ChevronLeft, ChevronRight, Banknote, Package } from "lucide-react"
 
 import type { Donation } from "../api/queries"
 import { maskName } from "@/shared/lib/utils"
@@ -93,7 +93,7 @@ function DonationCard({ item }: { item: Donation }) {
         {/* 메시지 */}
         {item.message && (
           <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-            "{item.message}"
+            &quot;{item.message}&quot;
           </p>
         )}
 

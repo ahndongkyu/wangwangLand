@@ -37,7 +37,8 @@ export function CommentItem({ comment, postType, postId, currentUserId, currentU
   useEffect(() => {
     if (editing && textareaRef.current) {
       textareaRef.current.focus()
-      textareaRef.current.setSelectionRange(editContent.length, editContent.length)
+      const length = textareaRef.current.value.length
+      textareaRef.current.setSelectionRange(length, length)
     }
   }, [editing])
 

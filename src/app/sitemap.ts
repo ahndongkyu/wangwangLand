@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next"
 
-import { createClient } from "@/shared/lib/supabase/server"
+import { createPublicClient } from "@/shared/lib/supabase/public"
 import { SITE } from "@/shared/constants/site"
 
 // 매 24시간마다 재생성. 필요시 revalidatePath('/sitemap.xml') 로 수동 갱신 가능.
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 동적 엔트리는 실패해도 정적 entry 는 반드시 반환되도록 감싼다.
   const dynamicEntries: MetadataRoute.Sitemap = []
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
 
     const [dogsRes, catsRes, dailyRes, storiesRes, noticesRes] =
       await Promise.all([
@@ -63,9 +63,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         supabase
           .from("notices")
           .select("id, updated_at")
+          .eq("board_type", "notice")
           .not("published_at", "is", null)
           .order("updated_at", { ascending: false }),
       ])
+
+    for (const [index, result] of [dogsRes, catsRes, dailyRes, storiesRes, noticesRes].entries()) {
+      if (result.error) console.error(`[sitemap] ${["dogs", "cats", "daily_posts", "adoption_stories", "notices"][index]} 조회 실패`, result.error.message)
+    }
 
     for (const d of dogsRes.data ?? []) {
       dynamicEntries.push({

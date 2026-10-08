@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useState } from "react"
 
 import { acceptAgreements } from "../api/actions"
 import {
@@ -28,19 +28,14 @@ export function AgreementForm({
   const [terms, setTerms] = useState(false)
   const [privacy, setPrivacy] = useState(false)
   const [marketing, setMarketing] = useState(marketingPrechecked)
-  const [agreeAll, setAgreeAll] = useState(false)
+  const agreeAll = terms && privacy && marketing
   const [openModal, setOpenModal] = useState<null | "terms" | "privacy">(null)
 
   function handleAgreeAll(checked: boolean) {
-    setAgreeAll(checked)
     setTerms(checked)
     setPrivacy(checked)
     setMarketing(checked)
   }
-
-  useEffect(() => {
-    setAgreeAll(terms && privacy && marketing)
-  }, [terms, privacy, marketing])
 
   const requiredOk = terms && privacy
 

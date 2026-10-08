@@ -1,7 +1,8 @@
 "use client"
 
 import { Heart } from "lucide-react"
-import { useEffect, useState, useTransition } from "react"
+import { useCallback, useState, useSyncExternalStore, useTransition } from "react"
+import { useHydrated } from "@/shared/hooks/use-hydrated"
 
 import { useToast } from "@/shared/components/toast"
 import { createClient } from "@/shared/lib/supabase/client"
@@ -22,6 +23,12 @@ interface Props {
   className?: string
 }
 
+function subscribeStorage(callback: () => void) {
+  window.addEventListener("storage", callback)
+  return () => window.removeEventListener("storage", callback)
+}
+const getServerLiked = () => false
+
 /**
  * 관심 하트 버튼.
  * - 로그인(initialLiked가 boolean): DB 기반 토글 RPC 사용. localStorage 미사용.
@@ -38,24 +45,19 @@ export function LikeButton({
   const isLoggedIn = initialLiked !== undefined
 
   const [count, setCount] = useState(initialCount)
-  const [liked, setLiked] = useState(isLoggedIn ? initialLiked : false)
-  const [mounted, setMounted] = useState(false)
+  const [likedOverride, setLiked] = useState<boolean | null>(null)
+  const mounted = useHydrated()
   const [pending, startTransition] = useTransition()
   const toast = useToast()
 
   const storageKey = `liked:${kind}:${id}`
 
-  useEffect(() => {
-    setMounted(true)
-    // 비로그인 시에만 localStorage에서 초기 상태 읽기
-    if (!isLoggedIn) {
-      try {
-        setLiked(localStorage.getItem(storageKey) === "1")
-      } catch {
-        // 무시
-      }
-    }
+  const getStoredLiked = useCallback(() => {
+    if (isLoggedIn) return false
+    try { return localStorage.getItem(storageKey) === "1" } catch { return false }
   }, [storageKey, isLoggedIn])
+  const storedLiked = useSyncExternalStore(subscribeStorage, getStoredLiked, getServerLiked)
+  const liked = likedOverride ?? (isLoggedIn ? initialLiked : storedLiked)
 
   function handleClick() {
     if (isLoggedIn) {

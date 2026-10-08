@@ -25,8 +25,8 @@ export function PhotoGallery({
   const main = ordered[0] ?? null
   const others = ordered.slice(1)
 
-  const openAt = useCallback((idx: number) => setLightboxIndex(idx), [])
-  const close = useCallback(() => setLightboxIndex(null), [])
+  const openAt = (idx: number) => setLightboxIndex(idx)
+  const close = () => setLightboxIndex(null)
 
   if (!main) {
     return (

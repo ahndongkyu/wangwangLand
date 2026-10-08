@@ -24,7 +24,6 @@ export function monthRange(yearMonth: string): { from: string; to: string } {
 
 /** 월간 그리드: 해당 월이 보이는 7×6 = 42 칸을 일요일 시작으로 채움 */
 export function monthGridDays(yearMonth: string): Date[] {
-  const [y, m] = yearMonth.split("-").map(Number)
   // 해당 월 1일 KST 자정
   const first = new Date(`${yearMonth}-01T00:00:00+09:00`)
   // 그리드 시작: 같은 주의 일요일

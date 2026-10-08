@@ -1,10 +1,8 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { X, ChevronLeft, ChevronRight } from "lucide-react"
-
-import { cn } from "@/shared/lib/utils"
 
 interface Props {
   images: string[]
@@ -14,8 +12,8 @@ export function ImageLightbox({ images }: Props) {
   const [open, setOpen] = useState(false)
   const [idx, setIdx] = useState(0)
 
-  const prev = () => setIdx((i) => (i - 1 + images.length) % images.length)
-  const next = () => setIdx((i) => (i + 1) % images.length)
+  const prev = useCallback(() => setIdx((i) => (i - 1 + images.length) % images.length), [images.length])
+  const next = useCallback(() => setIdx((i) => (i + 1) % images.length), [images.length])
 
   // ESC 닫기, 좌우 화살표
   useEffect(() => {
@@ -27,7 +25,7 @@ export function ImageLightbox({ images }: Props) {
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [open, idx])
+  }, [open, prev, next])
 
   // 열려 있을 때 스크롤 잠금
   useEffect(() => {
@@ -103,6 +101,8 @@ export function ImageLightbox({ images }: Props) {
             className="relative max-h-[90vh] max-w-[90vw]"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* 원본 확대는 이미지 고유 비율과 원본 해상도를 유지한다. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={images[idx]}
               alt={`공지 이미지 ${idx + 1}`}

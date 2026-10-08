@@ -97,7 +97,6 @@ export function CancelMyApplicationButton({ id, kind, triggerClassName }: Props)
                   placeholder="예: 개인 사정으로 일정이 변경되었습니다"
                   rows={4}
                   className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
                 />
               ) : (

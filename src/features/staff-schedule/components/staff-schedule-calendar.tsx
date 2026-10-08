@@ -367,7 +367,7 @@ function ScheduleEditModal({ date, items, staff, currentUserId, onClose }: Modal
                         </span>
                       )}
                       {it.note && (
-                        <p className="mt-0.5 truncate text-muted-foreground">"{it.note}"</p>
+                        <p className="mt-0.5 truncate text-muted-foreground">&quot;{it.note}&quot;</p>
                       )}
                     </div>
                     {!isPermanent && (

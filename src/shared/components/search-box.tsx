@@ -13,7 +13,13 @@ interface Props {
   className?: string
 }
 
-export function SearchBox({
+export function SearchBox(props: Props) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  return <SearchBoxInput key={`${pathname}?${searchParams.toString()}`} {...props} />
+}
+
+function SearchBoxInput({
   placeholder = "이름으로 검색",
   paramName = "q",
   className,
@@ -26,9 +32,9 @@ export function SearchBox({
   const [, startTransition] = useTransition()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    setValue(searchParams.get(paramName) ?? "")
-  }, [searchParams, paramName])
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+  }, [])
 
   function navigate(next: string) {
     const params = new URLSearchParams(searchParams.toString())

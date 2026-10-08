@@ -6,6 +6,7 @@ import { Bell, BellOff } from "lucide-react"
 import { subscribePush, unsubscribePush } from "../api/actions"
 import { useToast } from "@/shared/components/toast"
 import { cn } from "@/shared/lib/utils"
+import { useHydrated } from "@/shared/hooks/use-hydrated"
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
@@ -25,25 +26,23 @@ interface Props {
 }
 
 export function PushSubscribeButton({ className }: Props) {
-  const [supported, setSupported] = useState(false)
+  const hydrated = useHydrated()
+  const supported = hydrated && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
   const [subscribed, setSubscribed] = useState(false)
   const [pending, setPending] = useState(false)
   const toast = useToast()
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setSupported(false)
-      return
-    }
-    setSupported(true)
+    if (!supported) return
+    let active = true
 
     // 현재 구독 상태 확인
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setSubscribed(!!sub))
+      .then((sub) => { if (active) setSubscribed(!!sub) })
       .catch(() => {})
-  }, [])
+    return () => { active = false }
+  }, [supported])
 
   async function handleSubscribe() {
     if (!VAPID_PUBLIC_KEY) {

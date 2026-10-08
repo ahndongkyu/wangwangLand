@@ -37,7 +37,7 @@ export function StaffAvailabilityDisplay({ items, showNote = true }: Props) {
               <span className="ml-2 text-xs text-muted-foreground">{timeLabel}</span>
             </span>
             {showNote && it.note && (
-              <span className="pl-1 text-xs text-muted-foreground">"{it.note}"</span>
+              <span className="pl-1 text-xs text-muted-foreground">&quot;{it.note}&quot;</span>
             )}
           </li>
         )

@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   creator: SITE.name,
   publisher: SITE.name,
   icons: {
-    icon: SITE.logo,
-    shortcut: SITE.logo,
-    apple: SITE.logo,
+    icon: { url: "/images/wangwang-symbol-32.png", sizes: "32x32", type: "image/png" },
+    shortcut: "/images/wangwang-symbol-32.png",
+    apple: { url: "/images/wangwang-symbol-180.png", sizes: "180x180", type: "image/png" },
   },
   alternates: {
     canonical: SITE.url,
