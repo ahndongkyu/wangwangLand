@@ -43,12 +43,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, deleted: 0, message: "정리 대상 없음" })
   }
 
-  // 3. profile 행 + auth.users 명시적으로 삭제
-  //    (FK CASCADE 설정 불확실하므로 둘 다 삭제. profile FK 가 set null/cascade 어느 쪽이든 안전)
+  // 인증 계정 삭제 실패 시 프로필은 보존한다. CASCADE 여부와 관계없이
+  // 잔여 프로필 정리까지 성공한 경우만 완료로 집계한다.
   const results = await Promise.allSettled(
     targets.map(async (t) => {
-      await admin.from("profiles").delete().eq("id", t.id)
-      await admin.auth.admin.deleteUser(t.id)
+      const { error: authError } = await admin.auth.admin.deleteUser(t.id)
+      if (authError) throw authError
+      const { error: profileError } = await admin.from("profiles").delete().eq("id", t.id)
+      if (profileError) throw profileError
     })
   )
 
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: failed.length === 0,
     deleted: succeeded,
     failed: failed.length,
     cutoff,
