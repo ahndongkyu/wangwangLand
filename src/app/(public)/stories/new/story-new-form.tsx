@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useRef, useState } from "react"
 import Link from "next/link"
 import { createStoryAsUser } from "@/features/stories/api/user-actions"
 import { RichTextEditor } from "@/shared/components/rich-text-editor"
@@ -11,10 +11,12 @@ import { Label } from "@/shared/components/ui/label"
 const initial = { error: null as string | null }
 
 export function StoryNewForm() {
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const imagesUploadingRef = useRef(false)
   const [state, action, pending] = useActionState(createStoryAsUser, initial)
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} onSubmit={(event) => { if (imagesUploadingRef.current) event.preventDefault() }} className="space-y-6">
       {/* 제목 */}
       <div className="space-y-1.5">
         <Label htmlFor="title">제목 *</Label>
@@ -34,6 +36,7 @@ export function StoryNewForm() {
           name="content"
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
+          onUploadingChange={(value) => { imagesUploadingRef.current = value; setImagesUploading(value) }}
         />
         <p className="text-xs text-muted-foreground">
           💡 본문에 삽입된 첫 번째 이미지가 목록 썸네일로 자동 사용됩니다.
@@ -53,8 +56,8 @@ export function StoryNewForm() {
         >
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "등록 중..." : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "등록 중..." : "등록"}
         </Button>
       </div>
     </form>

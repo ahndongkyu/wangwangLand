@@ -52,6 +52,7 @@ interface Props {
   maxFileSizeMB?: number
   /** 콘텐츠가 변경될 때마다 호출되는 콜백 */
   onChange?: (html: string) => void
+  onUploadingChange?: (uploading: boolean) => void
   /**
    * 임시저장 키. 지정하면 LocalStorage에 자동 저장 + 복원 배너를 표시.
    * 형식: "draft:notices:new" 처럼 충돌 없는 고유 키 권장.
@@ -68,12 +69,14 @@ export function RichTextEditor({
   maxImages = 10,
   maxFileSizeMB = 10,
   onChange,
+  onUploadingChange,
   draftKey,
   privateUpload = false,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const activeUploads = useRef(0)
   const [moreOpen, setMoreOpen] = useState(false)
   const [imageCount, setImageCount] = useState(
     () => (defaultValue.match(/<img/g) ?? []).length
@@ -170,7 +173,9 @@ export function RichTextEditor({
       }
       if (!editor) return
 
+      activeUploads.current += 1
       setUploading(true)
+      onUploadingChange?.(true)
       try {
         // 업로드 전 자동 압축 (PNG / 큰 사진 → 1920px JPG 로 재인코딩)
         // 클립보드 PNG 가 무손실이라 쉽게 10MB 넘는 이슈 해결.
@@ -226,10 +231,13 @@ export function RichTextEditor({
       } catch (error) {
         alert(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다.")
       } finally {
-        setUploading(false)
+        activeUploads.current -= 1
+        const stillUploading = activeUploads.current > 0
+        setUploading(stillUploading)
+        onUploadingChange?.(stillUploading)
       }
     },
-    [editor, folder, imageCount, maxImages, maxFileSizeMB, privateUpload]
+    [editor, folder, imageCount, maxImages, maxFileSizeMB, privateUpload, onUploadingChange]
   )
 
   // editorProps.handlePaste / handleDrop 이 stale closure 안 되게 ref 로 감싸기

@@ -39,6 +39,8 @@ export function DailyForm({
   defaultCategory,
 }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(post)
   const contentRef = useRef<string>(post?.content ?? "")
@@ -47,6 +49,10 @@ export function DailyForm({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (imagesUploadingRef.current) {
+      setError("이미지 업로드가 끝난 후 저장해주세요.")
+      return
+    }
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
     const date = String(formData.get("posted_at") ?? "")
@@ -71,8 +77,8 @@ export function DailyForm({
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
 
@@ -123,6 +129,7 @@ export function DailyForm({
           defaultValue={post?.content ?? ""}
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."
           folder="daily"
+          onUploadingChange={(value) => { imagesUploadingRef.current = value; setImagesUploading(value) }}
           onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
@@ -143,8 +150,8 @@ export function DailyForm({
         >
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
     </form>

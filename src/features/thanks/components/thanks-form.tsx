@@ -22,12 +22,18 @@ interface Props {
 
 export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9B%84%EC%9B%90" }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(post?.id)
   const contentRef = useRef<string>(post?.content ?? "")
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (imagesUploadingRef.current) {
+      setError("이미지 업로드가 끝난 후 저장해주세요.")
+      return
+    }
     const formData = new FormData(event.currentTarget)
     formData.set("content", contentRef.current)
     await save(() => isEdit && post?.id
@@ -96,6 +102,7 @@ export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9
           defaultValue={post?.content ?? ""}
           placeholder="후원자께 전하는 감사 메시지와 받은 물품 사진을 자유롭게 적어주세요."
           folder="thanks"
+          onUploadingChange={(value) => { imagesUploadingRef.current = value; setImagesUploading(value) }}
           onChange={(html) => {
             contentRef.current = html
           }}
@@ -131,8 +138,8 @@ export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9
         >
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
     </form>

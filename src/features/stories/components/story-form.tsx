@@ -27,12 +27,18 @@ interface Props {
 
 export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(story)
   const contentRef = useRef<string>(story?.content ?? "")
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (imagesUploadingRef.current) {
+      setError("이미지 업로드가 끝난 후 저장해주세요.")
+      return
+    }
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
     await save(() => isEdit && story
@@ -51,8 +57,8 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
 
@@ -98,6 +104,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
           defaultValue={story?.content ?? ""}
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."
           folder="stories"
+          onUploadingChange={(value) => { imagesUploadingRef.current = value; setImagesUploading(value) }}
           onChange={(html) => { contentRef.current = html }}
         />
         <p className="text-xs text-muted-foreground">
@@ -134,8 +141,8 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
         >
           취소
         </Link>
-        <Button type="submit" disabled={pending}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
     </form>

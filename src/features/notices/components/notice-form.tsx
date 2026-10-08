@@ -45,6 +45,9 @@ function editorContent(content: string, isExpense: boolean) {
 
 export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/notices" }: Props) {
   const [attachmentsUploading, setAttachmentsUploading] = useState(false)
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const imagesUploadingRef = useRef(false)
+  const attachmentsUploadingRef = useRef(false)
   const [homeVisible, setHomeVisible] = useState(notice?.home_visible ?? false)
   const [error, setError] = useState<string | null>(null)
   const { save, pending, completed } = useSaveFeedback(setError)
@@ -70,6 +73,10 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (imagesUploadingRef.current || attachmentsUploadingRef.current) {
+      setError("이미지와 첨부파일 업로드가 끝난 후 저장해주세요.")
+      return
+    }
     const formData = new FormData(e.currentTarget)
     formData.set("content", contentRef.current)
     await save(() => isEdit && notice
@@ -107,8 +114,8 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           취소
         </Link>
-        <Button type="submit" disabled={pending || attachmentsUploading}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || attachmentsUploading || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : attachmentsUploading ? "첨부파일 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
 
@@ -178,6 +185,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
               placeholder={isExpense ? "지출 내역 본문을 입력하세요." : "공지 본문을 입력하세요."}
               folder={isExpense ? "expense-reports" : "notices"}
               privateUpload={isExpense}
+              onUploadingChange={(value) => { imagesUploadingRef.current = value; setImagesUploading(value) }}
               onChange={(html) => { contentRef.current = html }}
             />
             {!isExpense && (
@@ -187,7 +195,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
             )}
       </div>
 
-      {isExpense && <ExpenseAttachmentUploader defaultValue={notice?.attachments ?? []} onUploadingChange={setAttachmentsUploading} />}
+      {isExpense && <ExpenseAttachmentUploader defaultValue={notice?.attachments ?? []} onUploadingChange={(value) => { attachmentsUploadingRef.current = value; setAttachmentsUploading(value) }} />}
 
       {/* 옵션 */}
       {!isExpense && <div className="flex flex-col gap-3 rounded-lg border border-border bg-secondary/30 p-4 sm:flex-row sm:items-center sm:gap-6">
@@ -221,8 +229,8 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
         <Link href={cancelHref} className="text-sm text-muted-foreground hover:text-foreground">
           취소
         </Link>
-        <Button type="submit" disabled={pending || attachmentsUploading}>
-          {pending ? "저장 중..." : isEdit ? "수정" : "등록"}
+        <Button type="submit" disabled={pending || attachmentsUploading || imagesUploading}>
+          {imagesUploading ? "이미지 업로드 중…" : attachmentsUploading ? "첨부파일 업로드 중…" : pending ? "저장 중..." : isEdit ? "수정" : "등록"}
         </Button>
       </div>
     </form>
