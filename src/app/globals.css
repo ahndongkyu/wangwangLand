@@ -10,6 +10,9 @@
   min-inline-size: 0;
   inline-size: 100%;
   max-inline-size: 100%;
+  block-size: 2.75rem;
+  min-block-size: 2.75rem;
+  box-sizing: border-box;
 }
 .application-date-input::-webkit-date-and-time-value {
   min-inline-size: 0;

@@ -28,8 +28,22 @@ test("mobile applications keep one submitted status value and bounded date input
   assert.equal((html.match(/name="status"/g) || []).length, 1)
   assert.equal((html.match(/application-date-input/g) || []).length, 2)
   assert.match(html, /<option[^>]*selected[^>]*>승인/)
-  assert.match(html, /max-\[380px\]:col-span-2/)
+  assert.match(html, /grid-cols-1 items-end/)
+  assert.equal((html.match(/h-11 min-h-11/g) || []).length, 5)
   assert.match(html, /aria-label="처리 상태"/)
+})
+test("application schedule labels split date and time and keep timestamps in Korea time", async () => {
+  for (const options of [{}, { status: "승인", registered: true }, { status: "일정변경요청", registered: true }]) {
+    const html = await renderVolunteer(options)
+    assert.match(html, />날짜:<\/dt>/)
+    assert.match(html, />시간:<\/dt>/)
+    assert.match(html, />26\.10\.24<\/dd>/)
+    assert.match(html, />15:00<\/dd>/)
+  }
+  const html = renderApplicationList({}, [{ id: "sample", applicant_name: "예시", phone: "010-0000-0000", status: "접수", submitted_at: "2026-10-08T07:00:00Z", party_size: 2, available_dates: ["2026-10-17", "2026-10-18"], available_time: "14:00", linkedCount: 0 }])
+  assert.equal((html.match(/>날짜:<\/dt>/g) || []).length, 2)
+  assert.equal((html.match(/>시간:<\/dt>/g) || []).length, 2)
+  assert.match(html, />26\.10\.17<\/dd>/)
 })
 
 test("mobile status selector submits the containing search form without dropping its fields", () => {

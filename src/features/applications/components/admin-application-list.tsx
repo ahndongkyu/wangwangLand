@@ -4,9 +4,10 @@ import { formatKoreanPhone } from "@/shared/lib/validation"
 import type { AdminApplicationRow } from "../api/admin-queries"
 import { applicationDate, applicationHref, applicationParams, type ApplicationFilters } from "../lib/admin-list"
 import { ApplicationBadge } from "./application-detail-layout"
+import { ApplicationScheduleTime } from "./application-schedule-time"
 import { ApplicationStatusFilter } from "./application-status-filter"
 
-const control = "min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 text-base text-foreground focus-visible:outline-2 focus-visible:outline-ring md:text-sm"
+const control = "h-11 min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 text-base text-foreground focus-visible:outline-2 focus-visible:outline-ring md:text-sm"
 const listColumns = "xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)_112px_110px_64px]"
 export function AdminApplicationList({ filters, rows, counts, total, error, eventsError }: {
   filters: ApplicationFilters; rows: AdminApplicationRow[]; counts: Record<string, number>; total: number; error: string; eventsError: boolean
@@ -24,12 +25,12 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
     </div>
     <form action="/admin/applications" method="get" className="mb-4">
       <input type="hidden" name="type" value={filters.type} />
-      <div className="grid min-w-0 grid-cols-[96px_minmax(0,1fr)] items-end gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_130px_145px_145px_auto]">
-        <div className="col-span-2 flex min-w-0 items-end gap-2 xl:col-span-1"><label className="min-w-0 flex-1 text-xs text-muted-foreground"><span className="sr-only xl:not-sr-only xl:mb-2 xl:block">{volunteer ? "이름·단체명·전화번호" : "이름·전화번호"}</span><input key={filters.q} name="q" defaultValue={filters.q} placeholder={volunteer ? "이름·단체명·전화번호 검색" : "이름·전화번호 검색"} className={`${control} w-full`} /></label><button type="submit" className="min-h-11 shrink-0 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-brand-action-hover xl:hidden">검색</button></div>
+      <div className="grid min-w-0 grid-cols-1 items-end gap-2 xl:grid-cols-[minmax(0,1fr)_130px_145px_145px_auto]">
+        <div className="col-span-1 flex min-w-0 items-end gap-2 xl:col-span-1"><label className="min-w-0 flex-1 text-xs text-muted-foreground"><span className="sr-only xl:not-sr-only xl:mb-2 xl:block">{volunteer ? "이름·단체명·전화번호" : "이름·전화번호"}</span><input key={filters.q} name="q" defaultValue={filters.q} placeholder={volunteer ? "이름·단체명·전화번호 검색" : "이름·전화번호 검색"} className={`${control} w-full`} /></label><button type="submit" className="min-h-11 shrink-0 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-brand-action-hover xl:hidden">검색</button></div>
         <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">날짜 기준</span><select key={filters.dateBy} name="dateBy" defaultValue={filters.dateBy} className={`${control} w-full`}><option value="submitted">신청일</option><option value="activity">{volunteer ? "봉사 희망일" : "방문 희망일"}</option></select></label>
-        <div className="grid min-w-0 grid-cols-2 gap-2 max-[380px]:col-span-2 xl:col-span-2">
-          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">시작일</span><input key={filters.from} type="date" name="from" defaultValue={filters.from} className={`${control} application-date-input w-full max-w-full !px-1.5`} /></label>
-          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">종료일</span><input key={filters.to} type="date" name="to" defaultValue={filters.to} className={`${control} application-date-input w-full max-w-full !px-1.5`} /></label>
+        <div className="grid min-w-0 grid-cols-2 gap-2 xl:col-span-2">
+          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">시작일</span><input key={filters.from} type="date" name="from" defaultValue={filters.from} className={`${control} application-date-input w-full max-w-full`} /></label>
+          <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">종료일</span><input key={filters.to} type="date" name="to" defaultValue={filters.to} className={`${control} application-date-input w-full max-w-full`} /></label>
         </div>
         <div className="hidden gap-2 xl:flex"><button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand-action-hover">검색</button><Link href={href({ from: "", to: "", dateBy: "submitted", q: "" })} className="inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground">초기화</Link></div>
       </div>
@@ -71,8 +72,8 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
           <div className="col-span-2 col-start-1 row-start-2 min-w-0 xl:col-span-1 xl:col-auto xl:row-auto">
             <p className="sr-only">{volunteer ? "희망 일정" : "희망하는 아이 · 방문 일정"}</p>
             {a && <p title={animalName} className="mb-1 truncate text-sm font-medium">{animalName}</p>}
-            <p className={`${a ? "text-xs text-muted-foreground" : "text-sm font-medium"} tabular-nums`}>{dates[0] ? applicationDate(dates[0]) : v?.available_days?.length ? `${v.available_days.join(", ")}요일` : "날짜 미입력"} {time || ""}</p>
-            {dates.length > 1 && <details className="relative z-10 mt-1 text-xs text-muted-foreground"><summary className="cursor-pointer py-1">외 {dates.length - 1}일 · 전체 날짜</summary><ul className="space-y-1 pt-1">{dates.slice(1).map(date => <li key={date}>{applicationDate(date)} {time}</li>)}</ul></details>}
+            <ApplicationScheduleTime date={dates[0]} time={time} fallbackDate={v?.available_days?.length ? `${v.available_days.join(", ")}요일` : undefined} />
+            {dates.length > 1 && <details className="relative z-10 mt-1 text-xs text-muted-foreground"><summary className="cursor-pointer py-1">외 {dates.length - 1}일 · 전체 날짜</summary><ul className="space-y-1 pt-1">{dates.slice(1).map(date => <li key={date}><ApplicationScheduleTime date={date} time={time} /></li>)}</ul></details>}
             {v?.message && <p className="mt-1 text-xs text-muted-foreground">신청 메모 있음</p>}
           </div>
           <div className="col-span-2 col-start-1 row-start-3 flex min-w-0 justify-between gap-2 xl:col-span-1 xl:block text-xs text-muted-foreground xl:col-auto xl:row-auto xl:text-center">

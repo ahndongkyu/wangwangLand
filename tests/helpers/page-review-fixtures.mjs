@@ -123,6 +123,7 @@ export async function renderDonate() {
 }
 export function renderContact() { return renderToStaticMarkup(React.createElement(load("src/app/(public)/contact/page.tsx", base).default)) }
 const filters = load("src/features/applications/lib/admin-list.ts")
+const scheduleTime = load("src/features/applications/components/application-schedule-time.tsx", { "../lib/admin-list": filters })
 export function renderCalendar({ wholeRow = true, linked = true, readOnly = true } = {}) {
   const date = load("src/features/events/lib/date.ts")
   const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
@@ -138,7 +139,7 @@ export function renderCalendar({ wholeRow = true, linked = true, readOnly = true
 }
 export function renderApplicationList(params = {}, rows = []) {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge
-  const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge }, "./application-status-filter": load("src/features/applications/components/application-status-filter.tsx", base) }).AdminApplicationList
+  const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge }, "./application-schedule-time": scheduleTime, "./application-status-filter": load("src/features/applications/components/application-status-filter.tsx", base) }).AdminApplicationList
   return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows, counts: {}, total: rows.length, error: "", eventsError: false }))
 }
 export async function renderHome() {
@@ -171,7 +172,7 @@ export async function renderVolunteer({ status = "접수", registered = false, e
   }).ApplicationStatusForm
   const query = { select() { return this }, eq() { return this }, order: async () => ({ error: eventError ? { message: "offline" } : null, data: registered ? [{ id: "event", starts_at: "2026-10-24T06:00:00Z", ends_at: null, location: null }] : [] }) }
   const Page = load("src/app/(admin)/admin/(protected)/applications/volunteer/[id]/page.tsx", {
-    ...base, "@/features/applications/lib/admin-list": filters, "@/features/applications/lib/detail-navigation": navigation,
+    ...base, "@/features/applications/components/application-schedule-time": scheduleTime, "@/features/applications/lib/admin-list": filters, "@/features/applications/lib/detail-navigation": navigation,
     "@/features/applications": { ApplicationStatusForm: Status, formatVolunteerApplicantName: name => name, getVolunteerApplication: async () => ({ id: "volunteer", applicant_name: "김소연", group_name: null, party_size: 2, phone: "010-0000-1201", status, available_dates: ["2026-10-24"], available_time: "15:00", available_days: [], reschedule_dates: ["2026-10-25"], reschedule_time: "15:00", message: "봉사는 처음입니다. 친구와 함께 방문할 예정입니다.", submitted_at: "2026-10-07T00:42:00Z", created_by: "member", signup_provider: "kakao", admin_note: status === "승인" ? "준비물 안내" : null, approved_at: status === "승인" || status === "일정변경요청" ? "2026-10-07T01:05:00Z" : null, approved_by_profile: { nickname: "왕왕관리자", role: "admin" } }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) },
     "@/features/staff-schedule": { listStaffOnDates: async () => ({}), StaffAvailabilityDisplay: element("p", "출근 예정 확인 중") },
