@@ -29,12 +29,13 @@ interface Props {
   currentCancelReason?: string | null
   partySize?: number
   compactVolunteer?: boolean
+  detailHref?: string
 }
 
 export function ApplicationStatusForm({
   id, kind, currentStatus, currentNote, applicantName, hint, linkedEventCount = 0,
   linkedEvents = [], rescheduleInfo, approvalInfo, returnHref = "/admin/applications",
-  currentCancelReason, partySize, compactVolunteer = false,
+  currentCancelReason, partySize, compactVolunteer = false, detailHref,
 }: Props) {
   const reschedule = kind === "volunteer" && currentStatus === "일정변경요청"
   const [editing, setEditing] = useState(reschedule || !["승인", "반려", "취소"].includes(currentStatus))
@@ -51,14 +52,13 @@ export function ApplicationStatusForm({
   const { save, pending, completed } = useSaveFeedback(setError)
   const [deleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [continueAfterApproval, setContinueAfterApproval] = useState(false)
   const busy = pending || completed || deleting
   const dates = [...new Set(reschedule ? rescheduleInfo?.dates ?? [] : hint?.availableDates ?? [])].sort()
   const time = reschedule ? rescheduleInfo?.time : hint?.availableTime
   const addsSchedule = kind === "volunteer" && status === "승인" && (reschedule ? decision === "accept" : approvalMode === "with_schedule")
   const removesSchedule = kind === "volunteer" && status !== "승인" && linkedEventCount > 0
   const quickApproval = freshVolunteer && !reschedule && status === "승인" && approvalMode === "with_schedule" && !linkedEventCount && !advanced
-  const needsConfirmation = (addsSchedule && !quickApproval) || removesSchedule
+  const needsConfirmation = (addsSchedule && !quickApproval && !reschedule) || removesSchedule
   const validSchedule = dates.length > 0 && dates.every(validDate) && !!time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time)
   const newDates = dates.filter(date => !linkedEvents.some(event => Date.parse(event.starts_at) === Date.parse(date + "T" + time + ":00+09:00")))
   function changeStatus(next: ApplicationStatus) {
@@ -80,31 +80,31 @@ export function ApplicationStatusForm({
     formData.set("schedule_mode", reschedule ? "with_schedule" : approvalMode)
     if (reschedule && decision === "reject") formData.set("reject_reschedule", "true")
     await save(() => continueNext && quickApproval ? approveVolunteerAndContinue(id, formData, returnHref) : kind === "volunteer" ? updateVolunteerApplication(id, formData) : updateAdoptionApplication(id, formData),
-      reschedule ? (decision === "accept" ? "변경 일정으로 승인했습니다." : "기존 일정을 유지했습니다.") : addsSchedule ? "승인 완료 · 캘린더에 일정이 등록되었습니다." : "신청 처리 내용이 저장되었습니다.", continueNext && quickApproval ? undefined : returnHref)
+      reschedule ? (decision === "accept" ? "변경 일정으로 승인했습니다." : "기존 일정을 유지했습니다.") : addsSchedule ? "승인 완료 · 캘린더에 일정이 등록되었습니다." : "신청 처리 내용이 저장되었습니다.", continueNext && quickApproval ? undefined : compactVolunteer ? detailHref : returnHref)
   }
   const actionLabel = reschedule ? (decision === "accept" ? "승인 및 일정 교체" : "변경 거절 · 기존 일정 유지") : addsSchedule ? "승인 및 일정 등록" : "저장"
   return <section className="w-full min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
-    <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 className="text-lg font-semibold">신청 처리</h2>
+    <div className={`${compactVolunteer ? "mb-2" : "mb-4"} flex items-center justify-between gap-3`}>
+      <h2 className="text-base font-semibold">{compactVolunteer && !editing ? "처리 내역" : "신청 처리"}</h2>
       {!editing && <Button type="button" variant="outline" onClick={() => setEditing(true)}>처리 수정</Button>}
     </div>
     {!compactVolunteer && approvalInfo && <p className="mb-4 text-xs leading-6 text-muted-foreground break-all">승인 담당: {approvalInfo.nickname} · {applicationDate(approvalInfo.approvedAt, true)}</p>}
-    {completed ? <p role="status" className="py-6 text-sm">저장되었습니다. 화면을 이동합니다.</p> : !editing ? <div className="space-y-4">
-      <p className="font-semibold">{currentStatus} 처리 완료</p>
+    {completed ? <p role="status" className="py-6 text-sm">저장되었습니다. 화면을 이동합니다.</p> : !editing ? <div className="space-y-2">
+      {!compactVolunteer && <p className="font-semibold">{currentStatus} 처리 완료</p>}
       {currentStatus === "취소" && currentCancelReason && <p className="whitespace-pre-wrap text-sm leading-6">취소 사유 · {currentCancelReason}</p>}
-      {kind === "volunteer" && <p className="text-sm text-muted-foreground">캘린더에 등록된 일정 {linkedEventCount}건</p>}
+      {kind === "volunteer" && !compactVolunteer && <p className="text-sm text-muted-foreground">캘린더에 등록된 일정 {linkedEventCount}건</p>}
       {currentNote && <details><summary className="min-h-11 cursor-pointer py-3 text-sm">신청자에게 전달한 안내</summary><p className="whitespace-pre-wrap text-sm leading-6 [overflow-wrap:anywhere]">{currentNote}</p></details>}
-      <Link href={returnHref} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{applicationBackLabel(returnHref)}</Link>
-    </div> : <form onSubmit={event => { event.preventDefault(); void handleSave(compactVolunteer && continueAfterApproval && quickApproval) }} className="flex flex-col gap-4">
-      <fieldset disabled={busy} className={`min-w-0 space-y-5 disabled:opacity-60 ${compactVolunteer && quickApproval ? "order-2" : ""}`}>
-        {reschedule ? <fieldset className="space-y-2">
+      {!compactVolunteer && <Link href={returnHref} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{applicationBackLabel(returnHref)}</Link>}
+    </div> : <form onSubmit={event => { event.preventDefault(); void handleSave() }} className="flex flex-col gap-4">
+      <fieldset disabled={busy} className={`min-w-0 space-y-5 disabled:opacity-60 ${compactVolunteer && (quickApproval || reschedule) ? "order-2" : ""}`}>
+        {reschedule ? <details><summary className="min-h-11 cursor-pointer py-3 text-sm">변경 거절 등 다른 처리</summary><fieldset className="space-y-2">
           <legend className="mb-2 text-sm font-semibold">일정변경 요청 처리</legend>
           <p className="mb-3 text-xs leading-5 text-muted-foreground">검토 중에는 저장하지 않고 나가면 요청이 유지됩니다.</p>
           {(["accept", "reject"] as const).map(value => <label key={value} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border p-3 text-sm has-checked:border-primary has-checked:bg-primary/5">
             <input type="radio" name="decision" checked={decision === value} onChange={() => { setDecision(value); setConfirmed(false); setError(null) }} className="mt-1 accent-primary" />
             {value === "accept" ? "변경 승인 · 요청한 일정으로 교체" : "변경 거절 · 기존 일정 유지"}
           </label>)}
-        </fieldset> : <div hidden={freshVolunteer && !advanced}>
+        </fieldset></details> : <div hidden={freshVolunteer && !advanced}>
           <label htmlFor="application-status" className="mb-2 block text-sm font-semibold">처리 상태</label>
           <select id="application-status" value={status} onChange={event => changeStatus(event.target.value as ApplicationStatus)} className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm">
             {STATUS_OPTIONS.map(value => <option key={value}>{value}</option>)}
@@ -117,7 +117,7 @@ export function ApplicationStatusForm({
             {value === "with_schedule" ? "승인 및 일정 등록" : "승인만 · 일정은 등록하지 않음"}
           </label>)}
         </fieldset>}
-        {kind === "volunteer" && !(compactVolunteer && quickApproval) && <div className="rounded-xl bg-muted/50 p-4 text-sm leading-6">
+        {kind === "volunteer" && !(compactVolunteer && (quickApproval || reschedule)) && <div className="rounded-xl bg-muted/50 p-4 text-sm leading-6">
           <p className="font-semibold">{quickApproval ? "승인할 일정" : addsSchedule ? (reschedule ? `기존 ${linkedEventCount}건 → 요청 일정 ${dates.length}건으로 교체` : `기존 ${linkedEventCount}건 유지 · ${newDates.length}건 추가`) : removesSchedule ? `등록된 일정 ${linkedEventCount}건 삭제` : `기존 일정 ${linkedEventCount}건 유지`}</p>
           {addsSchedule && <><ul className="mt-2 space-y-1">{dates.map(date => <li key={date}>{applicationDate(date)} · {time || "시간 미입력"}</li>)}</ul>
             {!validSchedule && <p className="mt-2 text-destructive">등록할 날짜와 시간을 확인해 주세요.</p>}
@@ -129,7 +129,7 @@ export function ApplicationStatusForm({
         </div>}
         {kind === "adoption" && <p className="rounded-lg bg-muted/50 p-3 text-xs leading-5 text-muted-foreground">입양 신청의 상태만 변경합니다. 방문 일정은 자동으로 캘린더에 등록되지 않습니다.</p>}
         {status === "취소" && <div><label htmlFor="cancel-reason" className="mb-2 block text-sm font-semibold">취소 사유 (필수)</label><Textarea id="cancel-reason" required value={cancelReason} onChange={e => setCancelReason(e.target.value)} /></div>}
-        <details open={!quickApproval} key={quickApproval ? "quick" : "advanced"}>
+        <details open={status === "반려" || (!compactVolunteer && !quickApproval)} key={quickApproval ? "quick" : "advanced"}>
           <summary className="min-h-11 cursor-pointer py-3 text-sm">{quickApproval ? "기본 안내 확인·수정" : "신청자 안내"}</summary>
         <div><label htmlFor="application-note" className="mb-2 block text-sm font-semibold">{status === "반려" ? "반려 사유 (필수)" : "신청자 안내"}</label>
           <Textarea id="application-note" value={adminNote} onChange={e => setAdminNote(e.target.value)} rows={6} required={status === "반려"} className="min-h-36" />
@@ -142,17 +142,16 @@ export function ApplicationStatusForm({
         </label>}
       </fieldset>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className={`space-y-2 ${compactVolunteer && quickApproval ? "order-1" : "border-t border-border pt-4"}`}>
-        {compactVolunteer && quickApproval && <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-muted-foreground"><input type="checkbox" checked={continueAfterApproval} onChange={event => setContinueAfterApproval(event.target.checked)} disabled={busy} className="size-4 shrink-0 accent-primary" />승인 후 다음 접수로 이동</label>}
+      <div className={`space-y-2 ${compactVolunteer && (quickApproval || reschedule) ? "order-1" : "border-t border-border pt-4"}`}>
         {compactVolunteer && quickApproval && !validSchedule && <p role="alert" className="text-sm text-destructive">등록할 날짜와 시간을 확인해 주세요.</p>}
         <Button type="submit" disabled={busy || (compactVolunteer && quickApproval && !validSchedule)} className="min-h-12 w-full whitespace-normal">{pending ? "저장 중…" : actionLabel}</Button>
         {compactVolunteer && quickApproval && <p className="text-xs leading-5 text-muted-foreground">확인한 일정 {dates.length}건을 캘린더에 등록하고 기본 안내를 함께 저장합니다.</p>}
         {!compactVolunteer && quickApproval && <Button type="button" variant="outline" disabled={busy || !validSchedule} className="min-h-11 w-full whitespace-normal" onClick={() => void handleSave(true)}>승인 후 다음 접수 보기</Button>}
         {freshVolunteer && <Button type="button" variant="ghost" disabled={busy} className="min-h-11 w-full whitespace-normal" onClick={() => { setAdvanced(!advanced); setConfirmed(false); setError(null); if (advanced) { changeStatus("승인"); setApprovalMode(linkedEventCount ? "approval_only" : "with_schedule") } }}> {advanced ? "빠른 승인으로 돌아가기" : "다른 처리 · 검토중·반려·취소"}</Button>}
-        <Link href={returnHref} className="flex min-h-11 items-center justify-center rounded-lg text-sm text-muted-foreground hover:bg-muted">저장하지 않고 돌아가기</Link>
+        <Link href={returnHref} className={`${compactVolunteer ? "hidden md:flex" : "flex"} min-h-11 items-center justify-center rounded-lg text-sm text-muted-foreground hover:bg-muted`}>저장하지 않고 돌아가기</Link>
       </div>
     </form>}
-    {!completed && <details className="mt-5 border-t border-border pt-3">
+    {!completed && <details className="mt-2 border-t border-border pt-1">
       <summary className="min-h-11 cursor-pointer py-3 text-xs text-muted-foreground">신청 삭제</summary>
       {!confirmDelete ? <Button type="button" variant="outline" disabled={busy} onClick={() => setConfirmDelete(true)}>삭제 확인</Button> : <div className="space-y-3">
         <p className="text-sm leading-6 [overflow-wrap:anywhere]">{applicantName}님의 신청과 연결된 일정을 삭제합니다. 되돌릴 수 없습니다.</p>

@@ -140,14 +140,16 @@ test("approve and continue dispatches only one save and uses server-selected des
   assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
   assert.equal(form.errors[0].href, undefined)
 })
-test("compact volunteer approval uses one submit button and optional continue checkbox", async () => {
-  const form = formHarness({ compactVolunteer: true })
+test("compact volunteer approval needs no checkbox and stays on the saved detail", async () => {
+  const detailHref = "/admin/applications/volunteer/test?returnTo=%2Fadmin%2Fapplications"
+  const form = formHarness({ compactVolunteer: true, detailHref })
   assert.equal(nodes(form.render()).filter(n => n.type === "button" && n.props.type === "submit").length, 1)
   assert.equal(nodes(form.render()).some(n => n.props?.children === "승인 후 다음 접수 보기"), false)
-  form.confirm()
+  assert.equal(nodes(form.render()).some(n => n.props?.type === "checkbox"), false)
   await form.submit()
   assert.equal(form.writes.length, 1)
-  assert.equal(form.writes[0].next, true)
+  assert.equal(form.writes[0].next, undefined)
+  assert.equal(form.errors[0].href, detailHref)
   assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")
 })
 test("compact completed applications have no submit until processing is explicitly edited", () => {
@@ -161,13 +163,22 @@ test("reschedule approval replaces schedules; rejection keeps them and does not 
   const props = { currentStatus: "일정변경요청", linkedEventCount: 1, rescheduleInfo: { dates: ["2026-10-20"], time: "11:00" } }
   const accepted = formHarness(props)
   assert.equal(nodes(accepted.render()).some(n => n.type === "select"), false)
-  accepted.confirm(); await accepted.submit()
+  assert.equal(nodes(accepted.render()).some(n => n.props?.type === "checkbox"), false)
+  await accepted.submit()
   assert.equal(accepted.writes[0].data.get("status"), "승인")
   assert.equal(accepted.writes[0].data.get("schedule_mode"), "with_schedule")
   const rejected = formHarness(props)
   rejected.choose("decision", 1); await rejected.submit()
   assert.equal(rejected.writes[0].data.get("reject_reschedule"), "true")
   assert.equal(rejected.writes[0].data.get("status"), "승인")
+})
+test("one-click reschedule still rejects missing or invalid schedule information", async () => {
+  for (const rescheduleInfo of [{ dates: [], time: "11:00" }, { dates: ["2026-02-30"], time: "11:00" }, { dates: ["2026-10-20"], time: null }]) {
+    const form = formHarness({ compactVolunteer: true, currentStatus: "일정변경요청", linkedEventCount: 1, rescheduleInfo })
+    await form.submit()
+    assert.equal(form.writes.length, 0)
+    assert.ok(nodes(form.render()).some(n => n.props?.role === "alert"))
+  }
 })
 test("missing schedule blocks automatic approval; explicit approval-only remains available", async () => {
   const form = formHarness({ hint: { availableDates: [], availableTime: null } })

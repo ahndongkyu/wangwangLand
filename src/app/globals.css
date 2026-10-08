@@ -3,6 +3,23 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Native date fields must not impose their intrinsic width on narrow grid tracks. */
+.application-date-input {
+  appearance: none;
+  display: block;
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+.application-date-input::-webkit-date-and-time-value {
+  min-inline-size: 0;
+  text-align: left;
+}
+.application-date-input::-webkit-datetime-edit {
+  min-inline-size: 0;
+  padding: 0;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

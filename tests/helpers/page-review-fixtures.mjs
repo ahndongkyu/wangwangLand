@@ -138,7 +138,7 @@ export function renderCalendar({ wholeRow = true, linked = true, readOnly = true
 }
 export function renderApplicationList(params = {}, rows = []) {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge
-  const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge } }).AdminApplicationList
+  const List = load("src/features/applications/components/admin-application-list.tsx", { ...base, "../lib/admin-list": filters, "./application-detail-layout": { ApplicationBadge: Badge }, "./application-status-filter": load("src/features/applications/components/application-status-filter.tsx", base) }).AdminApplicationList
   return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows, counts: {}, total: rows.length, error: "", eventsError: false }))
 }
 export async function renderHome() {
@@ -162,9 +162,10 @@ export async function renderHome() {
 }
 export async function renderVolunteer({ status = "접수", registered = false, eventError = false } = {}) {
   const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
+  const buttons = load("src/shared/components/ui/button.tsx", { ...base, "class-variance-authority": { cva }, "@base-ui/react/button": { Button: ({ children, ...props }) => React.createElement("button", props, children) } })
   const Status = load("src/features/applications/components/status-form.tsx", {
     ...base, "../api/mutations": {}, "../api/processing": {}, "../lib/detail-navigation": navigation, "../lib/admin-list": filters,
-    "@/shared/components/ui/button": { Button: ({ children, ...props }) => React.createElement("button", Object.fromEntries(Object.entries(props).filter(([key]) => !["variant", "size"].includes(key))), children) },
+    "@/shared/components/ui/button": buttons,
     "@/shared/components/ui/textarea": { Textarea: props => React.createElement("textarea", props) },
     "@/shared/lib/use-save-feedback": { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => {} }) },
   }).ApplicationStatusForm

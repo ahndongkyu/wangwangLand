@@ -23,6 +23,23 @@ test("application filter toolbar is always visible, latest-first and keeps date 
     assert.match(html, /name="dateBy"/)
   }
 })
+test("mobile applications keep one submitted status value and bounded date inputs", () => {
+  const html = renderApplicationList({ status: "승인", q: "김" })
+  assert.equal((html.match(/name="status"/g) || []).length, 1)
+  assert.equal((html.match(/application-date-input/g) || []).length, 2)
+  assert.match(html, /<option[^>]*selected[^>]*>승인/)
+  assert.match(html, /max-\[380px\]:col-span-2/)
+  assert.match(html, /aria-label="처리 상태"/)
+})
+
+test("mobile status selector submits the containing search form without dropping its fields", () => {
+  const { ApplicationStatusFilter } = load("src/features/applications/components/application-status-filter.tsx")
+  let submits = 0
+  const element = ApplicationStatusFilter({ value: "접수", statuses: ["접수", "검토중"], className: "" })
+  element.props.onChange({ currentTarget: { form: { requestSubmit: () => submits++ } } })
+  assert.equal(submits, 1)
+  assert.equal(element.props.name, "status")
+})
 test("home volunteer actions use matching buttons without arrow and retain first-visit guidance", async () => {
   const html = await renderHome()
   const banner = html.slice(html.indexOf("함께하는 방법"), html.indexOf('aria-label="후원 계좌 안내"'))
