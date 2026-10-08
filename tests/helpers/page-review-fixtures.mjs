@@ -11,6 +11,7 @@ export function load(path, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   vm.runInNewContext(code, { exports, Date, URL, URLSearchParams, FormData, process: { env: {} }, require: name => {
+    if (name === "@/features/operation-logs/server" && !(name in imports)) return { recordOperationError: async () => {} }
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     if (name === "react") return React
     if (name === "react/jsx-runtime") return jsx

@@ -1,4 +1,5 @@
 "use server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
 
@@ -102,7 +103,8 @@ export async function createAdoptionStory(
     .single()
 
   if (error) {
-    console.error("[createAdoptionStory]", error)
+console.error("[createAdoptionStory]", error)
+await recordOperationError("post", "createAdoptionStory", error, "post")
     return { error: error.message }
   }
 
@@ -123,6 +125,7 @@ export async function createAdoptionStory(
       )
     } catch (e) {
       console.error("[push story]", e)
+      await recordOperationError("push", "push story", e, "post")
     }
   }
 
@@ -179,6 +182,7 @@ export async function updateAdoptionStory(
 
   if (error) {
     console.error("[updateAdoptionStory]", error)
+    await recordOperationError("post", "updateAdoptionStory", error, "post")
     return { error: error.message }
   }
 
@@ -192,6 +196,7 @@ export async function bulkDeleteAdoptionStories(ids: string[]): Promise<{ error?
   const { error } = await admin.from("adoption_stories").delete().in("id", ids)
   if (error) {
     console.error("[bulkDeleteAdoptionStories]", error)
+    await recordOperationError("post", "bulkDeleteAdoptionStories", error, "post")
     return { error: error.message }
   }
   revalidatePath("/admin/stories")
@@ -228,6 +233,7 @@ export async function deleteAdoptionStory(
 
   if (error) {
     console.error("[deleteAdoptionStory]", error)
+    await recordOperationError("post", "deleteAdoptionStory", error, "post")
     return { error: error.message }
   }
 

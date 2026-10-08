@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/shared/lib/auth"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { createClient } from "@/shared/lib/supabase/server"
 import type { VolunteerApplication } from "@/shared/types/database"
 import type { AdoptionRow } from "./queries"
@@ -18,7 +19,10 @@ export async function getAdminApplicationList(filters: ApplicationFilters) {
     return { status, count: result.count ?? 0, error: result.error }
   }))
   const counts = Object.fromEntries(totals.map(row => [row.status, row.count]))
-  if (totals.some(row => row.error)) return { ...empty, error: "신청 집계를 불러오지 못했습니다. 새로고침해 주세요." }
+  if (totals.some(row => row.error)) {
+    await recordOperationError("query", "applicationCounts", totals.find(row => row.error)?.error, "application")
+    return { ...empty, error: "신청 집계를 불러오지 못했습니다. 새로고침해 주세요." }
+  }
   function query() {
     let q = filters.type === "volunteer"
       ? client.from("volunteer_applications").select("*", { count: "exact" })
@@ -44,7 +48,10 @@ export async function getAdminApplicationList(filters: ApplicationFilters) {
   }
   const offset = (filters.page - 1) * 20
   const result = await query().range(offset, offset + 19)
-  if (result.error) return { ...empty, counts, error: "신청 목록을 불러오지 못했습니다. 새로고침해 주세요." }
+  if (result.error) {
+    await recordOperationError("query", "applicationList", result.error, "application")
+    return { ...empty, counts, error: "신청 목록을 불러오지 못했습니다. 새로고침해 주세요." }
+  }
   let rows = (result.data ?? []) as AdminApplicationRow[]
   const total = result.count ?? 0
   let eventsError = false
@@ -54,6 +61,7 @@ export async function getAdminApplicationList(filters: ApplicationFilters) {
       return { id: row.id, count: result.count ?? 0, error: result.error }
     }))
     eventsError = linked.some(result => !!result.error)
+    if (eventsError) await recordOperationError("query", "applicationLinkedEvents", linked.find(row => row.error)?.error, "application")
     if (!eventsError) rows = rows.map(row => ({ ...row, linkedCount: linked.find(result => result.id === row.id)?.count ?? 0 }))
   }
   return { rows, total, counts, error: "", eventsError }

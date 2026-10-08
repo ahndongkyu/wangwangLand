@@ -2,6 +2,7 @@ import { put } from "@vercel/blob"
 import { NextResponse } from "next/server"
 
 import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -26,10 +27,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "파일이 없습니다." }, { status: 400 })
   }
 
-  const blob = await put(filename, request.body, {
-    access: "public",
-    addRandomSuffix: false,
-  })
-
-  return NextResponse.json({ url: blob.url })
+  try {
+    const blob = await put(filename, request.body, {
+      access: "public",
+      addRandomSuffix: false,
+    })
+    return NextResponse.json({ url: blob.url })
+  } catch (error) {
+    await recordOperationError("upload", "publicUpload", error, "upload")
+    return NextResponse.json({ error: "파일 업로드에 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 500 })
+  }
 }

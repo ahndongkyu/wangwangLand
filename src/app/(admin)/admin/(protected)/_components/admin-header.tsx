@@ -74,6 +74,7 @@ function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
     { label: "시스템 관리", items: [
       { label: "홈페이지 관리", href: "/admin/settings" },
       { label: "SMS 발송 내역", href: "/admin/sms" },
+      ...(isTopAdmin ? [{ label: "오류 로그", href: "/admin/logs" }] : []),
     ] },
   ]
 }

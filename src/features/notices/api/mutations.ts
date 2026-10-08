@@ -1,4 +1,5 @@
 "use server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
 
@@ -136,7 +137,8 @@ export async function createNotice(
     .single()
 
   if (error) {
-    console.error("[createNotice]", error)
+console.error("[createNotice]", error)
+await recordOperationError("post", "createNotice", error, "post")
     return { error: error.message }
   }
 
@@ -155,6 +157,7 @@ export async function createNotice(
       )
     } catch (e) {
       console.error("[push notice]", e)
+      await recordOperationError("push", "push notice", e, "post")
     }
   }
 
@@ -218,6 +221,7 @@ export async function updateNotice(
 
   if (error) {
     console.error("[updateNotice]", error)
+    await recordOperationError("post", "updateNotice", error, "post")
     return { error: error.message }
   }
 
@@ -236,6 +240,7 @@ export async function bulkDeleteNotices(
   const { error } = await admin.from("notices").delete().in("id", ids).eq("board_type", boardType)
   if (error) {
     console.error("[bulkDeleteNotices]", error)
+    await recordOperationError("post", "bulkDeleteNotices", error, "post")
     return { error: error.message }
   }
   revalidateAll(undefined, boardType)
@@ -254,6 +259,7 @@ export async function deleteNotice(
 
   if (error) {
     console.error("[deleteNotice]", error)
+    await recordOperationError("post", "deleteNotice", error, "post")
     return { error: error.message }
   }
 

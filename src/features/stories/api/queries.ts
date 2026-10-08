@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { AdoptionStory } from "@/shared/types/database"
 
@@ -76,7 +77,8 @@ export async function listAdoptionStories({
     ])
 
     if (mainResult.error) {
-      console.error("[listAdoptionStories] error:", mainResult.error)
+await recordOperationError("query", "listAdoptionStories", mainResult.error, "post")
+console.error("[listAdoptionStories] error:", mainResult.error)
       return { stories: [], total: 0, publishedCount: 0, draftCount: 0 }
     }
 
@@ -97,6 +99,7 @@ export async function listAdoptionStories({
   const { data, count, error } = await query
 
   if (error) {
+    await recordOperationError("query", "listAdoptionStories", error, "post")
     console.error("[listAdoptionStories] error:", error)
     return { stories: [], total: 0, publishedCount: 0, draftCount: 0 }
   }
@@ -124,6 +127,7 @@ export async function listAdoptionStoriesByUser(
     .order("created_at", { ascending: false })
     .limit(limit)
   if (error) {
+    await recordOperationError("query", "listAdoptionStoriesByUser", error, "post")
     console.error("[listAdoptionStoriesByUser]", error)
     return []
   }
@@ -194,6 +198,7 @@ export async function getAdoptionStory(
   const { data, error } = await query.maybeSingle()
 
   if (error) {
+    await recordOperationError("query", "getAdoptionStory", error, "post")
     console.error("[getAdoptionStory] error:", error)
     return null
   }

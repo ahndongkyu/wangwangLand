@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
 import type {
   CalendarEvent,
   EventCategory,
@@ -111,7 +112,10 @@ export async function getEventWithMySignup(
     .eq("id", id)
     .maybeSingle()
   if (error || !event) {
-    if (error) console.error("[getEventWithMySignup]", error)
+if (error) {
+  await recordOperationError("query", "getEventWithMySignup", error, "calendar")
+  console.error("[getEventWithMySignup]", error)
+}
     return null
   }
 
@@ -239,7 +243,10 @@ export async function listRecurrenceGroupDates(
     .eq("recurrence_group_id", groupId)
     .order("starts_at", { ascending: true })
   if (error || !data) {
-    if (error) console.error("[listRecurrenceGroupDates]", error)
+    if (error) {
+      await recordOperationError("query", "listRecurrenceGroupDates", error, "calendar")
+      console.error("[listRecurrenceGroupDates]", error)
+    }
     return []
   }
   return data as { id: string; starts_at: string }[]

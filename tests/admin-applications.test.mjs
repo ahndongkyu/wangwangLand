@@ -9,6 +9,7 @@ function load(path, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   vm.runInNewContext(code, { exports, URLSearchParams, FormData, console, require: name => {
+    if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     if (name === "react/jsx-runtime") return jsx
     assert.ok(name in imports, `Missing import: ${name}`)
     return imports[name]

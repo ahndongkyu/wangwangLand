@@ -1,4 +1,5 @@
 "use server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 import { randomUUID } from "crypto"
 
@@ -222,7 +223,8 @@ async function createRecurringEvents(
 
   const { error } = await supabase.from("events").insert(rows)
   if (error) {
-    console.error("[createRecurringEvents]", error)
+console.error("[createRecurringEvents]", error)
+await recordOperationError("calendar", "createRecurringEvents", error, "calendar")
     return { error: error.message }
   }
 
@@ -307,6 +309,7 @@ async function createMultiDateEvents(opts: {
       return { error: "이미 등록된 일정이 포함되어 있습니다. 새로고침 후 다시 선택해주세요." }
     }
     console.error("[createMultiDateEvents]", error)
+    await recordOperationError("calendar", "createMultiDateEvents", error, "calendar")
     return { error: error.message }
   }
 
@@ -378,6 +381,7 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
       }
     }
     console.error("[createEvent]", error)
+    await recordOperationError("calendar", "createEvent", error, "calendar")
     return { error: error.message }
   }
 
@@ -438,6 +442,7 @@ export async function updateEvent(
     const { data: updated, error } = await supabase.from("events").update(parsed).eq("id", id).select("id").maybeSingle()
     if (error) {
       console.error("[updateEvent]", error)
+      await recordOperationError("calendar", "updateEvent", error, "calendar")
       return { error: error.message }
     }
     if (!updated) return { error: "수정할 일정이 없습니다. 새로고침 후 확인해주세요." }
@@ -457,6 +462,7 @@ export async function updateEvent(
   })
   if (error) {
     console.error("[updateEvent recurring]", error)
+    await recordOperationError("calendar", "updateEvent recurring", error, "calendar")
     return { error: "반복 일정을 저장하지 못했습니다. 변경사항은 적용되지 않았습니다. 다시 시도해주세요." }
   }
   const changedIds = (data ?? []) as string[]
@@ -492,6 +498,7 @@ export async function deleteEvent(
     .in("id", snapshots.map((snapshot) => snapshot.eventId)).select("id")
   if (error) {
     console.error("[deleteEvent]", error)
+    await recordOperationError("calendar", "deleteEvent", error, "calendar")
     return { error: error.message }
   }
   const deletedIds = new Set((deleted ?? []).map((event) => event.id))
@@ -547,6 +554,7 @@ export async function createSignup(
       .eq("id", existing.id)
     if (updateErr) {
       console.error("[createSignup re-activate]", updateErr)
+      await recordOperationError("calendar", "createSignup re-activate", updateErr, "calendar")
       return { error: updateErr.message }
     }
   } else {
@@ -560,6 +568,7 @@ export async function createSignup(
       })
     if (insertErr) {
       console.error("[createSignup]", insertErr)
+      await recordOperationError("calendar", "createSignup", insertErr, "calendar")
       return { error: `신청 실패: ${insertErr.message}` }
     }
   }
@@ -593,6 +602,7 @@ export async function cancelSignup(
 
   if (error) {
     console.error("[cancelSignup]", error)
+    await recordOperationError("calendar", "cancelSignup", error, "calendar")
     return { error: error.message }
   }
 

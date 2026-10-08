@@ -12,6 +12,7 @@ function fixture({ authorized = true, configured = true, logFails = false, respo
   const calls = []
   const exports = {}
   const imports = {
+    "@/features/operation-logs/server": { recordOperationError: async () => {} },
     "server-only": {}, crypto: { default: crypto },
     "@/shared/lib/auth": { requireAdmin: async () => ({ ok: authorized, userId: "staff", error: "권한 없음" }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from(table) {
@@ -160,7 +161,7 @@ test("SMS navigation belongs to system management for both member roles", () => 
   for (const top of [true, false]) {
     const groups = exports.groups(top)
     assert.ok(!groups.find(g => g.label === "회원").items.some(i => i.href === "/admin/sms"))
-    assert.deepEqual(Array.from(groups.find(g => g.label === "시스템 관리").items, i => i.label), ["홈페이지 관리", "SMS 발송 내역"])
+    assert.deepEqual(Array.from(groups.find(g => g.label === "시스템 관리").items, i => i.label), ["홈페이지 관리", "SMS 발송 내역", ...(top ? ["오류 로그"] : [])])
   }
   assert.equal(fs.existsSync("src/features/sms/diagnose.ts"), false)
   assert.equal(fs.existsSync("src/features/sms/diagnostic-panel.tsx"), false)

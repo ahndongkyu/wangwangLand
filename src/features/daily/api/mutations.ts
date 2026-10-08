@@ -1,4 +1,5 @@
 "use server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
 
@@ -102,7 +103,8 @@ export async function createDailyPost(
     .single()
 
   if (error) {
-    console.error("[createDailyPost]", error)
+console.error("[createDailyPost]", error)
+await recordOperationError("post", "createDailyPost", error, "post")
     return { error: error.message }
   }
 
@@ -123,6 +125,7 @@ export async function createDailyPost(
       )
     } catch (e) {
       console.error("[push daily]", e)
+      await recordOperationError("push", "push daily", e, "post")
     }
   }
 
@@ -172,6 +175,7 @@ export async function updateDailyPost(
 
   if (error) {
     console.error("[updateDailyPost]", error)
+    await recordOperationError("post", "updateDailyPost", error, "post")
     return { error: error.message }
   }
 
@@ -187,6 +191,7 @@ export async function bulkDeleteDailyPosts(ids: string[]): Promise<{ error?: str
   const { error } = await admin.from("daily_posts").delete().in("id", ids)
   if (error) {
     console.error("[bulkDeleteDailyPosts]", error)
+    await recordOperationError("post", "bulkDeleteDailyPosts", error, "post")
     return { error: error.message }
   }
   revalidateAll()
@@ -221,6 +226,7 @@ export async function deleteDailyPost(
 
   if (error) {
     console.error("[deleteDailyPost]", error)
+    await recordOperationError("post", "deleteDailyPost", error, "post")
     return { error: error.message }
   }
 

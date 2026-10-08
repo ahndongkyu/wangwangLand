@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { useEffect } from "react"
+import { reportBrowserError } from "@/features/operation-logs/browser"
 
 import { Button, buttonVariants } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
@@ -18,6 +19,8 @@ interface Props {
 export function ErrorShell({ error, reset, homeHref, homeLabel }: Props) {
   useEffect(() => {
     console.error("[ErrorShell]", error)
+    // 서버 오류는 instrumentation에서 별도로 기록된다.
+    if (!error.digest) reportBrowserError("boundary")
   }, [error])
 
   return (

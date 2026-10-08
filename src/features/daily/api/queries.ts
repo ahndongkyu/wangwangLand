@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { DailyPost } from "@/shared/types/database"
 import type { CommunityType } from "../lib/community-category"
@@ -63,7 +64,8 @@ export async function listDailyPosts({
   const { data, count, error } = await query
 
   if (error) {
-    console.error("[listDailyPosts] error:", error)
+await recordOperationError("query", "listDailyPosts", error, "post")
+console.error("[listDailyPosts] error:", error)
     return { posts: [], total: 0, publishedCount: 0 }
   }
 
@@ -90,6 +92,7 @@ export async function listDailyPostsByUser(
     .order("posted_at", { ascending: false })
     .limit(limit)
   if (error) {
+    await recordOperationError("query", "listDailyPostsByUser", error, "post")
     console.error("[listDailyPostsByUser]", error)
     return []
   }
@@ -150,6 +153,7 @@ export async function getDailyPost(id: string): Promise<DailyPostWithAuthor | nu
     .maybeSingle()
 
   if (error) {
+    await recordOperationError("query", "getDailyPost", error, "post")
     console.error("[getDailyPost] error:", error)
     return null
   }

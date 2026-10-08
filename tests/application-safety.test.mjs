@@ -9,6 +9,7 @@ function load(file, imports = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   vm.runInNewContext(code, { exports, Date, FormData, console: { error() {} }, require(name) {
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
+    if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     assert.ok(name in imports, `Unexpected dependency: ${name}`)
     return imports[name]
   } })

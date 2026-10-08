@@ -1,4 +1,5 @@
 "use server"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -49,7 +50,8 @@ async function notifyStaffCancellation(id: string, type: "volunteer" | "adoption
       tag: `application-cancelled-${id}`,
     }, userId)
   } catch (error) {
-    console.error("[notifyStaffCancellation]", error)
+console.error("[notifyStaffCancellation]", error)
+await recordOperationError("push", "notifyStaffCancellation", error, "application")
   }
 }
 
@@ -75,7 +77,10 @@ async function checkVolunteerGroupDates(
       .in("category", GROUP_BLOCKING_CATEGORIES)
       .gte("starts_at", new Date(`${date}T00:00:00+09:00`).toISOString())
       .lt("starts_at", new Date(new Date(`${date}T00:00:00+09:00`).getTime() + 86400000).toISOString())
-    if (error || typeof count !== "number") return { error: "정기봉사 일정을 확인하지 못했습니다. 잠시 후 다시 시도해주세요.", field: "available_dates" }
+    if (error || typeof count !== "number") {
+      await recordOperationError("query", "volunteerGroupDates", error, "application")
+      return { error: "정기봉사 일정을 확인하지 못했습니다. 잠시 후 다시 시도해주세요.", field: "available_dates" }
+    }
     if (count > 0) return {
       error: `정기봉사가 있는 날(${date})은 ${GROUP_BLOCK_THRESHOLD}명 이상 단체 신청이 어려워요. 날짜를 변경하거나 인원을 조정해주세요.`,
       field: "available_dates",
@@ -201,6 +206,7 @@ export async function submitAdoptionApplication(
 
   if (error) {
     console.error("[submitAdoptionApplication]", error)
+    await recordOperationError("application", "submitAdoptionApplication", error, "application")
     return { error: `신청 실패: ${error.message}` }
   }
 
@@ -215,6 +221,7 @@ export async function submitAdoptionApplication(
     })
   } catch (e) {
     console.error("[push adoption-app]", e)
+    await recordOperationError("push", "push adoption-app", e, "application")
   }
 
   return { id: data.id }
@@ -324,6 +331,7 @@ export async function submitVolunteerApplication(
 
   if (error) {
     console.error("[submitVolunteerApplication]", error)
+    await recordOperationError("application", "submitVolunteerApplication", error, "application")
     return { error: `신청 실패: ${error.message}` }
   }
 
@@ -342,6 +350,7 @@ export async function submitVolunteerApplication(
     })
   } catch (e) {
     console.error("[push volunteer-app]", e)
+    await recordOperationError("push", "push volunteer-app", e, "application")
   }
 
   return { id: data.id }
@@ -434,6 +443,7 @@ export async function updateMyVolunteerApplication(
 
   if (error) {
     console.error("[updateMyVolunteerApplication]", error)
+    await recordOperationError("application", "updateMyVolunteerApplication", error, "application")
     return { error: error.message }
   }
   if (!updated) return { error: "저장 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
@@ -488,19 +498,25 @@ export async function updateAdoptionApplication(
 
   if (error) {
     console.error("[updateAdoptionApplication]", error)
+    await recordOperationError("application", "updateAdoptionApplication", error, "application")
     return { error: error.message }
   }
 
   // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
   if (prev?.created_by && prev.status !== status) {
     const admin = createAdminClient()
-    await admin.from("notifications").insert({
-      user_id: prev.created_by,
-      type: notificationTypeForStatus(status),
-      post_type: "adoption",
-      post_id: id,
-      actor_id: null,
-    })
+    try {
+      const { error: notificationError } = await admin.from("notifications").insert({
+        user_id: prev.created_by,
+        type: notificationTypeForStatus(status),
+        post_type: "adoption",
+        post_id: id,
+        actor_id: null,
+      })
+      if (notificationError) await recordOperationError("push", "adoptionInAppNotification", notificationError, "notification")
+    } catch (notificationError) {
+      await recordOperationError("push", "adoptionInAppNotification", notificationError, "notification")
+    }
 
     // 푸시 알림
     try {
@@ -518,6 +534,7 @@ export async function updateAdoptionApplication(
       )
     } catch (e) {
       console.error("[push adoption-status]", e)
+      await recordOperationError("push", "push adoption-status", e, "application")
     }
   }
 
@@ -664,7 +681,10 @@ export async function updateVolunteerApplication(
     const { count, error: scheduleError } = await admin.from("events")
       .select("id", { count: "exact", head: true })
       .eq("source_application_type", "volunteer").eq("source_application_id", id)
-    if (scheduleError) return { error: "확정 일정 조회에 실패했습니다. 취소 처리하지 않았습니다. 다시 시도해주세요." }
+    if (scheduleError) {
+      await recordOperationError("query", "confirmedSchedule", scheduleError, "application")
+      return { error: "확정 일정 조회에 실패했습니다. 취소 처리하지 않았습니다. 다시 시도해주세요." }
+    }
     hadConfirmedSchedule = (count ?? 0) > 0
   }
 
@@ -683,6 +703,7 @@ export async function updateVolunteerApplication(
 
   if (error) {
     console.error("[updateVolunteerApplication]", error)
+    await recordOperationError("application", "updateVolunteerApplication", error, "application")
     return { error: "처리 중 오류가 발생했습니다. 상태와 일정은 변경되지 않았습니다." }
   }
 
@@ -693,13 +714,18 @@ export async function updateVolunteerApplication(
         ? "volunteer_reschedule_rejected"
         : "volunteer_reschedule_approved"
       : notificationTypeForStatus(status)
-    await admin.from("notifications").insert({
-      user_id: prev.created_by,
-      type: notificationType,
-      post_type: "volunteer",
-      post_id: id,
-      actor_id: null,
-    })
+    try {
+      const { error: notificationError } = await admin.from("notifications").insert({
+        user_id: prev.created_by,
+        type: notificationType,
+        post_type: "volunteer",
+        post_id: id,
+        actor_id: null,
+      })
+      if (notificationError) await recordOperationError("push", "volunteerInAppNotification", notificationError, "notification")
+    } catch (notificationError) {
+      await recordOperationError("push", "volunteerInAppNotification", notificationError, "notification")
+    }
 
     try {
       const { sendPushToUser } = await import("@/features/push")
@@ -724,6 +750,7 @@ export async function updateVolunteerApplication(
       )
     } catch (e) {
       console.error("[push volunteer-status]", e)
+      await recordOperationError("push", "push volunteer-status", e, "application")
     }
 
   }
@@ -739,6 +766,7 @@ export async function updateVolunteerApplication(
     } catch (e) {
       warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
       console.error("[sms volunteer-status]", e)
+      await recordOperationError("sms", "sms volunteer-status", e, "application")
     }
   }
 
@@ -761,6 +789,7 @@ export async function deleteAdoptionApplication(
 
   if (error) {
     console.error("[deleteAdoptionApplication]", error)
+    await recordOperationError("application", "deleteAdoptionApplication", error, "application")
     return { error: error.message }
   }
 
@@ -782,6 +811,7 @@ export async function deleteVolunteerApplication(
 
   if (error) {
     console.error("[deleteVolunteerApplication]", error)
+    await recordOperationError("application", "deleteVolunteerApplication", error, "application")
     return { error: error.message }
   }
 
@@ -826,6 +856,7 @@ export async function cancelOwnVolunteerApplication(
 
   if (error) {
     console.error("[cancelOwnVolunteerApplication]", error)
+    await recordOperationError("application", "cancelOwnVolunteerApplication", error, "application")
     return { error: error.message }
   }
 
@@ -905,6 +936,7 @@ export async function requestReschedule(
 
   if (error) {
     console.error("[requestReschedule]", error)
+    await recordOperationError("application", "requestReschedule", error, "application")
     return { error: error.message }
   }
   if (!updated) return { error: "요청 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
@@ -927,6 +959,7 @@ export async function requestReschedule(
     )
   } catch (e) {
     console.error("[push reschedule]", e)
+    await recordOperationError("push", "push reschedule", e, "application")
   }
 
   revalidatePath("/my/applications")
@@ -967,6 +1000,7 @@ export async function cancelOwnAdoptionApplication(
 
   if (error) {
     console.error("[cancelOwnAdoptionApplication]", error)
+    await recordOperationError("application", "cancelOwnAdoptionApplication", error, "application")
     return { error: error.message }
   }
 

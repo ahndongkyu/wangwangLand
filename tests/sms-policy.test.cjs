@@ -12,6 +12,7 @@ function load(file, mocks = {}, globals = {}) {
   const exports = {}
   vm.runInNewContext(code, { exports, require: name => {
     if (name in mocks) return mocks[name]
+    if (name === '@/features/operation-logs/server') return { recordOperationError: async () => {} }
     throw new Error(`Unexpected dependency: ${name}`)
   }, ...globals })
   return exports

@@ -2,6 +2,7 @@ import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client"
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/shared/lib/auth"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 export async function POST(request: Request) {
   try {
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
     }
     const storeToken = process.env.BLOB_PRIVATE_READ_WRITE_TOKEN
     if (!storeToken) {
+      await recordOperationError("upload", "privateStorageConfiguration", undefined, "upload")
       return NextResponse.json({ error: "비공개 첨부파일 저장소가 설정되지 않았습니다. 운영진에게 문의해 주세요." }, { status: 503 })
     }
     const token = await generateClientTokenFromReadWriteToken({
@@ -27,6 +29,7 @@ export async function POST(request: Request) {
     })
     return NextResponse.json({ token }, { headers: { "Cache-Control": "no-store" } })
   } catch (error) {
+    await recordOperationError("upload", "privateUploadToken", error, "upload")
     console.error("[expense upload]", error)
     return NextResponse.json({ error: "첨부파일 업로드 준비에 실패했습니다. 잠시 후 다시 시도해 주세요." }, { status: 500 })
   }

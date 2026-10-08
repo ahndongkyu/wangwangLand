@@ -1,4 +1,5 @@
 "use client"
+import { reportBrowserError } from "@/features/operation-logs/browser"
 
 import { FileText, Trash2, Upload } from "lucide-react"
 import { useRef, useState } from "react"
@@ -66,6 +67,7 @@ export function ExpenseAttachmentUploader({
         setAttachments((current) => [...current, attachment])
       }
     } catch (cause) {
+      reportBrowserError("upload")
       setError(cause instanceof Error ? cause.message : "첨부파일 업로드에 실패했습니다.")
     } finally {
       setUploading(false)

@@ -14,6 +14,7 @@ function load(file, imports = {}) {
   } }).outputText
   vm.runInNewContext(code, { exports, FormData, Date, console: { error() {} }, require(name) {
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
+    if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     assert.ok(name in imports, name)
     return imports[name]
   } })

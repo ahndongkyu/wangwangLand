@@ -1,6 +1,7 @@
 "use server"
 
 import webpush from "web-push"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { SITE } from "@/shared/constants/site"
@@ -119,6 +120,7 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
   )
 
   // 만료된 구독 정리
+  if (failed > expiredIds.length) await recordOperationError("push", "broadcastDelivery", undefined, "notification")
   if (expiredIds.length > 0) {
     await admin.from("push_subscriptions").delete().in("id", expiredIds)
   }
@@ -140,7 +142,10 @@ async function sendPushInternal(
   payload: PushPayload,
   options: SendOptions = {}
 ): Promise<void> {
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+    await recordOperationError("push", "configuration", undefined, "notification")
+    return
+  }
 
   const admin = createAdminClient()
 
@@ -151,10 +156,11 @@ async function sendPushInternal(
     targetUserIds = options.onlyUserIds
   } else if (!options.ignoreMarketingConsent) {
     // 마케팅 동의자만
-    const { data: optedIn } = await admin
+    const { data: optedIn, error } = await admin
       .from("profiles")
       .select("id")
       .not("marketing_agreed_at", "is", null)
+    if (error) { await recordOperationError("push", "recipients", error, "notification"); return }
     targetUserIds = (optedIn ?? []).map((r) => r.id)
   }
 
@@ -173,10 +179,12 @@ async function sendPushInternal(
   if (targetUserIds) {
     query = query.in("user_id", targetUserIds)
   }
-  const { data: subs } = await query
+  const { data: subs, error } = await query
+  if (error) { await recordOperationError("push", "subscriptions", error, "notification"); return }
   if (!subs || subs.length === 0) return
 
   const expiredIds: string[] = []
+  let deliveryFailed = false
 
   await Promise.all(
     subs.map(async (sub) => {
@@ -192,11 +200,14 @@ async function sendPushInternal(
         const statusCode = (e as { statusCode?: number }).statusCode
         if (statusCode === 410 || statusCode === 404) {
           expiredIds.push(sub.id)
+        } else {
+          deliveryFailed = true
         }
       }
     })
   )
 
+  if (deliveryFailed) await recordOperationError("push", "automaticDelivery", undefined, "notification")
   if (expiredIds.length > 0) {
     await admin.from("push_subscriptions").delete().in("id", expiredIds)
   }
@@ -217,13 +228,17 @@ export async function sendPushToStaff(
   payload: PushPayload,
   excludeUserId?: string | null
 ): Promise<void> {
-  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+    await recordOperationError("push", "configuration", undefined, "notification")
+    return
+  }
 
   const admin = createAdminClient()
-  const { data: staff } = await admin
+  const { data: staff, error } = await admin
     .from("profiles")
     .select("id")
     .in("role", ["admin", "staff"])
+  if (error) { await recordOperationError("push", "staffRecipients", error, "notification"); return }
 
   const ids = (staff ?? [])
     .map((r) => r.id)

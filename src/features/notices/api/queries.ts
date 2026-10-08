@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { fetchAuthorMap, type AuthorInfo } from "@/shared/lib/fetch-authors"
 import type { Notice, NoticeBoardType } from "@/shared/types/database"
 
@@ -126,7 +127,8 @@ export async function listRecentPublishedNotices(
     .limit(limit)
 
   if (error) {
-    console.error("[listRecentPublishedNotices] error:", error)
+await recordOperationError("query", "listRecentPublishedNotices", error, "post")
+console.error("[listRecentPublishedNotices] error:", error)
     return []
   }
 
@@ -180,6 +182,7 @@ export async function getNotice(
   const { data, error } = await query.maybeSingle()
 
   if (error) {
+    await recordOperationError("query", "getNotice", error, "post")
     console.error("[getNotice] error:", error)
     return null
   }

@@ -3,6 +3,7 @@ import "server-only"
 import crypto from "crypto"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { requireAdmin } from "@/shared/lib/auth"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 function makeAuthHeader(apiKey: string, apiSecret: string): string {
   const date = new Date().toISOString()
@@ -41,15 +42,22 @@ export async function sendSms(to: string, text: string, context?: {
     state: configured ? "pending" : "failed",
     error_message: configured ? null : "문자 발송 환경변수가 설정되지 않았습니다.",
   }).select("id").single()
-  if (logError || !log) return { ok: false, error: "문자 발송 기록을 저장하지 못해 발송하지 않았습니다." }
+  if (logError || !log) {
+    await recordOperationError("sms", "requestLog", logError, "notification")
+    return { ok: false, error: "문자 발송 기록을 저장하지 못해 발송하지 않았습니다." }
+  }
   const logId = log.id
-  if (!apiKey || !apiSecret || !from) return { ok: false, error: "문자 발송 설정이 필요합니다." }
+  if (!apiKey || !apiSecret || !from) {
+    await recordOperationError("sms", "configuration", undefined, "notification")
+    return { ok: false, error: "문자 발송 설정이 필요합니다." }
+  }
 
   async function finish(state: string, errorMessage: string | null, messageId?: string) {
     const { error } = await admin.from("sms_delivery_logs").update({
       state, error_message: errorMessage, provider_message_id: messageId ?? null,
     }).eq("id", logId)
-    if (error) console.error("[sendSms] result log update failed", logId)
+    if (error) await recordOperationError("sms", "resultLog", error, "notification")
+    if (state === "failed" || state === "unknown") await recordOperationError("sms", state, undefined, "notification")
   }
 
   try {
@@ -150,7 +158,8 @@ export async function getSmsDeliveryReports(messageIds: string[]) {
     }
     const missing = requestedIds.some(id => !reports[id]?.statusCode)
     return { reports, ...(missing ? { error: "일부 문자의 전달 결과가 조회되지 않았습니다. 접수 기록만으로 전달 완료 여부를 판단하거나 재발송하지 마세요." } : {}) }
-  } catch {
+  } catch (error) {
+    await recordOperationError("sms", "deliveryLookup", error, "notification")
     return { error: "최신 전달 결과를 조회하지 못했습니다. 저장된 요청 기록을 표시합니다.", reports: {} }
   }
 }

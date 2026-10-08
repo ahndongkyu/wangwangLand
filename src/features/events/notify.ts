@@ -1,6 +1,7 @@
 import "server-only"
 
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { recordOperationError } from "@/features/operation-logs/server"
 
 export type EventNotificationType =
   | "event_signup_confirmed"   // 본인이 신청 완료
@@ -64,6 +65,7 @@ export async function dispatchEventNotification(opts: DispatchOpts) {
   } catch (error) {
     // 일정 저장 성공을 알림 실패로 뒤집어 재처리를 유도하지 않는다.
     console.error("[dispatchEventNotification]", error)
+    await recordOperationError("push", "eventNotification", error, "notification")
   }
 }
 
@@ -85,7 +87,10 @@ async function sendEventNotification(opts: DispatchOpts) {
     actor_id: null,
   }))
   const { error } = await admin.from("notifications").insert(rows)
-  if (error) console.error("[dispatchEventNotification] in-app:", error)
+  if (error) {
+    console.error("[dispatchEventNotification] in-app:", error)
+    await recordOperationError("push", "eventInAppNotification", error, "notification")
+  }
 
   // 이벤트 제목 조회 (Push 메시지용)
   const evTitle = snapshot.title
@@ -125,6 +130,7 @@ async function sendEventNotification(opts: DispatchOpts) {
     )
   } catch (e) {
     console.error("[dispatchEventNotification push]", e)
+    await recordOperationError("push", "eventPushNotification", e, "notification")
   }
 
   // 카카오 알림톡 — 미래 통합 지점.

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/shared/components/theme-provider"
 import { ToastProvider } from "@/shared/components/toast"
 import { SITE } from "@/shared/constants/site"
 import { ServiceWorkerRegister } from "@/features/push"
+import { BrowserErrorListener } from "@/features/operation-logs/browser-listener"
 import "./globals.css"
 
 // 페이지 로드 시 깜빡임 없이 올바른 테마 적용 (hydration 전에 실행)
@@ -123,6 +124,7 @@ export default function RootLayout({
           </ToastProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
+        <BrowserErrorListener />
       </body>
     </html>
   )
