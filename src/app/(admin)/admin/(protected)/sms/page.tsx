@@ -3,6 +3,7 @@ import Link from "next/link"
 import { requireAdmin } from "@/shared/lib/auth"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { getSmsDeliveryReports } from "@/features/sms"
+import { SmsAutoRefresh } from "@/features/sms/auto-refresh"
 import { formatPostDateTime } from "@/shared/lib/utils"
 
 export const metadata: Metadata = { title: "SMS 발송 내역" }
@@ -21,14 +22,14 @@ export default async function SmsHistoryPage({ searchParams }: { searchParams: P
   const result = error ? { reports: {}, error: "발송 기록을 불러오지 못했습니다. DB 설정을 확인한 뒤 다시 시도해주세요." }
     : await getSmsDeliveryReports(logs.flatMap(row => row.provider_message_id ? [row.provider_message_id] : []))
   const reports = result.reports as Record<string, { statusCode?: string; reason?: string }>
-  const labels: Record<string, string> = { pending: "요청 처리 중 · 결과 미확인", accepted: "발송 요청 접수", failed: "발송 실패", unknown: "결과 확인 필요" }
+  const labels: Record<string, string> = { pending: "요청 처리 중 · 결과 미확인", accepted: "접수 완료 · 전달 결과 미확인", failed: "발송 실패", unknown: "결과 확인 필요" }
   return <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
     <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div><h1 className="text-2xl font-bold md:text-3xl">SMS 발송 내역</h1>
         <p className="mt-2 text-sm text-muted-foreground">홈페이지에서 보낸 문자와 전달 결과를 확인하세요. 이 기능 적용 이후 요청부터 기록됩니다.</p>
         <p className="mt-1 text-sm text-muted-foreground">접수와 전달 완료는 다릅니다. 결과 미확인 상태에서는 중복 발송에 주의하세요.</p>
       </div>
-      <a href={`/admin/sms?page=${page}`} className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-4 text-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">결과 새로고침</a>
+      <SmsAutoRefresh />
     </header>
     {result.error && <p role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-card p-4 text-sm text-destructive">{result.error}</p>}
     {!error && logs.length === 0 && <p className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">기록된 문자 발송 내역이 없습니다.</p>}

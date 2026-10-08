@@ -23,6 +23,7 @@ export async function sendSms(to: string, text: string, context?: {
   applicationId: string
   applicationType: "volunteer" | "adoption"
   recipientName: string
+  messageType?: "SMS" | "LMS"
 }): Promise<{ ok: boolean; error?: string }> {
   const auth = await requireAdmin()
   if (!auth.ok) return { ok: false, error: auth.error }
@@ -60,7 +61,7 @@ export async function sendSms(to: string, text: string, context?: {
         Authorization: makeAuthHeader(apiKey, apiSecret),
       },
       body: JSON.stringify({
-        messages: [{ to: toClean, from, text }],
+        messages: [{ to: toClean, from, text, ...(context?.messageType ? { type: context.messageType, autoTypeDetect: false } : {}) }],
         showMessageList: true,
       }),
     })
@@ -104,7 +105,20 @@ export async function getSmsDeliveryReports(messageIds: string[]) {
     if (!response.ok) throw new Error("Provider unavailable")
     const body = await response.json()
     if (!body.messageList || typeof body.messageList !== "object" || Array.isArray(body.messageList)) throw new Error("Invalid response")
-    return { reports: body.messageList as Record<string, { statusCode?: string; reason?: string; dateReported?: string }> }
+    const reports: Record<string, { statusCode?: string; reason?: string; dateReported?: string }> = {}
+    const requestedIds = [...new Set(messageIds.slice(0, 20))]
+    for (const id of requestedIds) {
+      const report = body.messageList[id]
+      if (!report || typeof report !== "object" || Array.isArray(report)) continue
+      const code = report.statusCode
+      reports[id] = {
+        statusCode: typeof code === "string" || typeof code === "number" ? String(code) : undefined,
+        reason: typeof report.reason === "string" ? report.reason : undefined,
+        dateReported: typeof report.dateReported === "string" ? report.dateReported : undefined,
+      }
+    }
+    const missing = requestedIds.some(id => !reports[id]?.statusCode)
+    return { reports, ...(missing ? { error: "일부 문자의 전달 결과가 조회되지 않았습니다. 접수 기록만으로 전달 완료 여부를 판단하거나 재발송하지 마세요." } : {}) }
   } catch {
     return { error: "최신 전달 결과를 조회하지 못했습니다. 저장된 요청 기록을 표시합니다.", reports: {} }
   }

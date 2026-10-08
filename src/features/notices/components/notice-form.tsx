@@ -25,13 +25,14 @@ const PRESET_TYPES = ["공지", "이벤트", "모집"] as const
 type PresetType = (typeof PRESET_TYPES)[number]
 
 /** 기존 제목에서 prefix 감지 후 분리 */
-function splitPrefix(title: string): { type: string; body: string } {
+function splitPrefix(title: string): { type: string; body: string; customPrefix: string } {
   const match = title.match(/^\[(.+?)\]\s*/)
-  if (!match) return { type: "", body: title }
+  if (!match) return { type: "", body: title, customPrefix: "" }
   const tag = match[1]
   const isPreset = PRESET_TYPES.includes(tag as PresetType)
   return {
     type: isPreset ? tag : "직접입력",
+    customPrefix: isPreset ? "" : tag,
     body: title.slice(match[0].length),
   }
 }
@@ -58,10 +59,10 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
   const isExpense = boardType === "expense"
 
   // 공지 유형 초기값 (수정 모드: 기존 제목에서 파싱)
-  const initial = notice && !isExpense ? splitPrefix(notice.title) : { type: "", body: notice?.title ?? "" }
+  const initial = notice && !isExpense ? splitPrefix(notice.title) : { type: "", body: notice?.title ?? "", customPrefix: "" }
   const [noticeType, setNoticeType] = useState(initial.type)   // "", "공지", "이벤트", "직접입력"
   const [customPrefix, setCustomPrefix] = useState(
-    initial.type === "직접입력" ? splitPrefix(notice?.title ?? "").type : ""
+    initial.customPrefix
   )
 
   // 실제 prefix 문자열

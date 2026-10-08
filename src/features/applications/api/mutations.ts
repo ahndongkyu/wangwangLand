@@ -16,6 +16,7 @@ import {
   normalizeVolunteerGroupName,
 } from "../lib/volunteer-applicant"
 import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
+import { buildVolunteerSms, volunteerSmsKind } from "../lib/volunteer-sms"
 import {
   formatKoreanPhone,
   validateGroupPartySize,
@@ -440,7 +441,6 @@ export async function updateAdoptionApplication(
   id: string,
   formData: FormData
 ): Promise<SubmitResult> {
-  let warning: string | undefined
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
   const status = String(formData.get("status") ?? "") as ApplicationStatus
@@ -505,33 +505,11 @@ export async function updateAdoptionApplication(
     } catch (e) {
       console.error("[push adoption-status]", e)
     }
-
-    // SMS 발송
-    if (prev.phone) {
-      let smsText: string | null = null
-      if (status === "승인") {
-        smsText = buildAdoptionSmsText(prev.applicant_name ?? "")
-      } else if (status === "검토중" && prev.status !== "검토중") {
-        smsText = buildReviewSmsText(prev.applicant_name ?? "", "입양")
-      } else if (status === "취소" && prev.status !== "취소") {
-        smsText = buildCancelSmsText(prev.applicant_name ?? "", "입양")
-      }
-      if (smsText) {
-        try {
-          const { sendSms } = await import("@/features/sms")
-          const delivery = await sendSms(prev.phone, smsText, { applicationId: id, applicationType: "adoption", recipientName: prev.applicant_name ?? "" })
-          if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
-        } catch (e) {
-          warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
-          console.error("[sms adoption-status]", e)
-        }
-      }
-    }
   }
 
   revalidateAdminApplications()
   revalidatePath(`/admin/applications/adoption/${id}`)
-  return { id, ...(warning ? { warning } : {}) }
+  return { id }
 }
 
 function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"): string {
@@ -563,35 +541,6 @@ function pushBodyForStatus(status: ApplicationStatus): string {
     default:
       return "신청 상태가 변경됐어요."
   }
-}
-
-function buildVolunteerSmsText(applicantName: string, starts: string[], partySize: number): string {
-  const weekdays = ["일", "월", "화", "수", "목", "금", "토"]
-  const visits = [...new Set(starts)].sort().map(start => {
-    const local = new Date(new Date(start).getTime() + 9 * 60 * 60 * 1000)
-    return `${local.toISOString().slice(0, 10).replaceAll("-", ".")}(${weekdays[local.getUTCDay()]}) ${local.toISOString().slice(11, 16)}`
-  })
-  return `[왕왕랜드 봉사 안내]\n${applicantName}님, 봉사 신청이 승인되었습니다.\n\n방문 일정: ${visits.length ? visits.join("\n") : "별도 안내 예정"}\n참여 인원: ${partySize}명\n\n준비물과 신청 내역은 마이페이지에서 확인해 주세요.\n일정 변경이나 취소가 필요한 경우 미리 알려주세요.`
-}
-
-function buildAdoptionSmsText(applicantName: string): string {
-  return `왕왕랜드\n${applicantName}님, 입양 신청이 승인됐어요.\n신청내역에서 안내사항 확인해주세요.`
-}
-
-function buildReviewSmsText(applicantName: string, kind: "입양" | "봉사"): string {
-  return `왕왕랜드\n${applicantName}님, ${kind} 신청이 검토중이에요.\n운영진 상의 후 연락드릴게요.`
-}
-
-function buildCancelSmsText(applicantName: string, kind: "입양" | "봉사"): string {
-  return `왕왕랜드\n${applicantName}님, ${kind} 신청이 취소되었어요.\n사유는 홈페이지에서 확인해주세요.`
-}
-
-function buildRescheduleSmsText(applicantName: string): string {
-  return `왕왕랜드\n${applicantName}님, 봉사 일정이 변경됐어요.\n신청내역에서 안내사항 확인해주세요.`
-}
-
-function buildRescheduleRejectedSmsText(applicantName: string): string {
-  return `왕왕랜드\n${applicantName}님, 봉사 일정변경 요청이 거절됐어요.\n신청내역에서 확인해주세요.`
 }
 
 function notificationTypeForStatus(status: ApplicationStatus): string {
@@ -696,7 +645,16 @@ export async function updateVolunteerApplication(
       ? "append"
       : "keep"
 
-  const { error } = await admin.rpc("process_volunteer_application_checked", {
+  let hadConfirmedSchedule = false
+  if (status === "취소" && prev.status !== "취소") {
+    const { count, error: scheduleError } = await admin.from("events")
+      .select("id", { count: "exact", head: true })
+      .eq("source_application_type", "volunteer").eq("source_application_id", id)
+    if (scheduleError) return { error: "확정 일정 조회에 실패했습니다. 취소 처리하지 않았습니다. 다시 시도해주세요." }
+    hadConfirmedSchedule = (count ?? 0) > 0
+  }
+
+  const { data: createdSchedules, error } = await admin.rpc("process_volunteer_application_checked", {
     p_application_id: id,
     p_status: status,
     p_admin_note: adminNote || null,
@@ -715,8 +673,8 @@ export async function updateVolunteerApplication(
   }
 
   // DB 처리가 모두 끝난 뒤 신청자 알림을 한 번만 발송한다.
-  if (prev.created_by && prev.status !== status) {
-    const notificationType = isRescheduleRequest
+  if (prev.created_by && (prev.status !== status || (createdSchedules ?? 0) > 0)) {
+    const notificationType = isRescheduleRequest && status === "승인"
       ? rescheduleRejected
         ? "volunteer_reschedule_rejected"
         : "volunteer_reschedule_approved"
@@ -733,12 +691,12 @@ export async function updateVolunteerApplication(
       const { sendPushToUser } = await import("@/features/push")
       await sendPushToUser(
         {
-          title: isRescheduleRequest
+          title: isRescheduleRequest && status === "승인"
             ? rescheduleRejected
               ? "🐾 봉사 일정변경 거절"
               : "🐾 봉사 일정변경 승인"
             : pushTitleForStatus(status, "봉사"),
-          body: isRescheduleRequest
+          body: isRescheduleRequest && status === "승인"
             ? rescheduleRejected
               ? "기존 일정이 유지됩니다. 신청 내역에서 확인해주세요."
               : "변경된 일정을 신청 내역에서 확인해주세요."
@@ -754,42 +712,19 @@ export async function updateVolunteerApplication(
       console.error("[push volunteer-status]", e)
     }
 
-    // SMS 발송
-    if (prev.phone) {
-      const volunteerApplicantName = formatVolunteerApplicantName(
-        prev.applicant_name ?? "",
-        prev.group_name
-      )
-      let smsText: string | null = null
-      if (status === "승인" && prev.status === "일정변경요청" && rejectReschedule) {
-        smsText = buildRescheduleRejectedSmsText(volunteerApplicantName)
-      } else if (status === "승인" && prev.status === "일정변경요청") {
-        smsText = buildRescheduleSmsText(volunteerApplicantName)
-      } else if (status === "승인" && prev.status !== "일정변경요청") {
-        let confirmedStarts = scheduleStarts
-        if (!shouldCreateSchedule) {
-          const { data: events, error: scheduleError } = await admin.from("events")
-            .select("starts_at").eq("source_application_type", "volunteer").eq("source_application_id", id)
-          if (!scheduleError) confirmedStarts = (events ?? []).map(event => event.starts_at)
-        }
-        smsText = buildVolunteerSmsText(volunteerApplicantName, confirmedStarts, prev.party_size ?? 1)
-      } else if (prev.status === "일정변경요청" && status !== "승인") {
-        smsText = buildRescheduleRejectedSmsText(volunteerApplicantName)
-      } else if (status === "검토중" && prev.status !== "검토중") {
-        smsText = buildReviewSmsText(volunteerApplicantName, "봉사")
-      } else if (status === "취소" && prev.status !== "취소") {
-        smsText = buildCancelSmsText(volunteerApplicantName, "봉사")
-      }
-      if (smsText) {
-        try {
-          const { sendSms } = await import("@/features/sms")
-          const delivery = await sendSms(prev.phone, smsText, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName })
-          if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
-        } catch (e) {
-          warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
-          console.error("[sms volunteer-status]", e)
-        }
-      }
+  }
+
+  const smsKind = volunteerSmsKind(prev.status, status, createdSchedules ?? 0, hadConfirmedSchedule, rejectReschedule)
+  if (prev.phone && smsKind) {
+    const volunteerApplicantName = formatVolunteerApplicantName(prev.applicant_name ?? "", prev.group_name)
+    try {
+      const message = buildVolunteerSms(smsKind, volunteerApplicantName, scheduleStarts, prev.party_size ?? 1)
+      const { sendSms } = await import("@/features/sms")
+      const delivery = await sendSms(prev.phone, message.text, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName, messageType: message.type })
+      if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
+    } catch (e) {
+      warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
+      console.error("[sms volunteer-status]", e)
     }
   }
 
