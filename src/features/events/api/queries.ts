@@ -40,10 +40,8 @@ export async function listEventsInRange({
   if (!includeInternal) q = q.eq("visibility", "public")
 
   const { data, error } = await q
-  if (error || !data) {
-    if (error) console.error("[listEventsInRange]", error)
-    return []
-  }
+  if (error) throw new Error("일정을 불러오지 못했습니다.", { cause: error })
+  if (!data) return []
 
   // 신청 수 집계 (한 번에)
   const ids = (data as CalendarEvent[]).map((e) => e.id)
@@ -73,10 +71,8 @@ export async function listUpcomingEvents(
   }
 
   const { data, error } = await q
-  if (error || !data) {
-    if (error) console.error("[listUpcomingEvents]", error)
-    return []
-  }
+  if (error) throw new Error("다가오는 일정을 불러오지 못했습니다.", { cause: error })
+  if (!data) return []
   const ids = (data as CalendarEvent[]).map((e) => e.id)
   const counts = await fetchSignupCounts(ids)
   return (data as CalendarEvent[]).map((e) => ({
@@ -95,7 +91,8 @@ async function fetchSignupCounts(
     .select("event_id")
     .in("event_id", eventIds)
     .eq("status", "접수")
-  if (error || !data) return {}
+  if (error) throw new Error("일정 신청 인원을 불러오지 못했습니다.", { cause: error })
+  if (!data) return {}
   const counts: Record<string, number> = {}
   for (const row of data as { event_id: string }[]) {
     counts[row.event_id] = (counts[row.event_id] ?? 0) + 1
@@ -154,7 +151,8 @@ export async function listMyUpcomingSignups(): Promise<
     .gte("event.ends_at", new Date().toISOString())
     .order("created_at", { ascending: false })
 
-  if (error || !data) return []
+  if (error) throw new Error("신청 일정을 불러오지 못했습니다.", { cause: error })
+  if (!data) return []
   return (data as Array<EventSignup & { event: CalendarEvent }>).filter(
     (r) => r.event !== null
   )
@@ -180,31 +178,34 @@ export async function listMyUpcomingEvents(): Promise<CalendarEvent[]> {
   // 본인 봉사 신청 id 들 (RLS 가 막으므로 admin client 사용)
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
-  const { data: myApps } = await admin
+  const { data: myApps, error: appsError } = await admin
     .from("volunteer_applications")
     .select("id")
     .eq("created_by", userId)
   const appIds = ((myApps ?? []) as Array<{ id: string }>).map((a) => a.id)
+  if (appsError) throw new Error("신청 내역을 불러오지 못했습니다.", { cause: appsError })
 
   // 1. 봉사 신청 → 자동 등록된 이벤트
   let appLinkedEvents: CalendarEvent[] = []
   if (appIds.length > 0) {
-    const { data } = await admin
+    const { data, error } = await admin
       .from("events")
       .select("*")
       .eq("source_application_type", "volunteer")
       .in("source_application_id", appIds)
       .gte("ends_at", nowIso)
       .order("starts_at", { ascending: true })
+    if (error) throw new Error("확정 일정을 불러오지 못했습니다.", { cause: error })
     appLinkedEvents = (data ?? []) as CalendarEvent[]
   }
 
   // 2. 직접 신청한 이벤트
-  const { data: signupRows } = await supabase
+  const { data: signupRows, error: signupError } = await supabase
     .from("event_signups")
     .select("event:events(*)")
     .eq("user_id", userId)
     .eq("status", "접수")
+  if (signupError) throw new Error("신청 일정을 불러오지 못했습니다.", { cause: signupError })
   // supabase 가 단일 join 결과도 배열로 반환하는 경우가 있어 평탄화.
   const directEvents: CalendarEvent[] = []
   for (const row of (signupRows ?? []) as Array<{

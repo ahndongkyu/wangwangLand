@@ -125,6 +125,8 @@ async function MyActivity(userId: string) {
     admin.from("donation_thanks").select("id, title, published_at").eq("created_by", userId).not("published_at", "is", null).order("published_at", { ascending: false }).limit(20),
   ])
 
+  const queryError = [adoptionRes, volunteerRes, dogLikesRes, catLikesRes, dailyPostsRes, storyPostsRes, thanksPostsRes].find((result) => result.error)?.error
+  if (queryError) throw new Error("내 활동을 불러오지 못했습니다.", { cause: queryError })
   const { total: volunteerCount, yearly: volunteerYearly, monthly: volunteerMonthly } = volunteerBreakdown
 
   const adoptions = (adoptionRes.data ?? []) as Array<{

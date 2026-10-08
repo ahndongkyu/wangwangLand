@@ -82,6 +82,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
       .order("submitted_at", { ascending: false }),
   ])
 
+  if (adoptionRes.error || volunteerRes.error) throw new Error("신청 내역을 불러오지 못했습니다.", { cause: adoptionRes.error ?? volunteerRes.error })
   const adoptions = (adoptionRes.data ?? []) as Array<{
     id: string
     status: ApplicationStatus

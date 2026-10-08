@@ -76,9 +76,8 @@ export async function listNotices({
       supabase.from("notices").select("*", { count: "exact", head: true }).eq("board_type", boardType).is("published_at", null),
     ])
 
-    if (mainResult.error) {
-      console.error("[listNotices] error:", mainResult.error)
-      return { notices: [], total: 0, publishedCount: 0, draftCount: 0 }
+    if (mainResult.error || publishedCountRes.error || draftCountRes.error) {
+      throw new Error("게시글 목록을 불러오지 못했습니다.", { cause: mainResult.error ?? publishedCountRes.error ?? draftCountRes.error })
     }
 
     const authorMap = await fetchAuthorMap((mainResult.data ?? []).map((n) => n.created_by))
@@ -98,8 +97,7 @@ export async function listNotices({
   const { data, count, error } = await query
 
   if (error) {
-    console.error("[listNotices] error:", error)
-    return { notices: [], total: 0, publishedCount: 0, draftCount: 0 }
+    throw new Error("게시글 목록을 불러오지 못했습니다.", { cause: error })
   }
 
   const authorMap = await fetchAuthorMap((data ?? []).map((n) => n.created_by))
