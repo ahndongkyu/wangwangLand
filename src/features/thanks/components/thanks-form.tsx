@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePostDraftKey, clearPostDraft } from "@/shared/hooks/use-post-draft-key"
 import { useRef, useState } from "react"
 import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 
@@ -22,6 +23,7 @@ interface Props {
 
 export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9B%84%EC%9B%90" }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const draftKey = usePostDraftKey("thanks", post?.id)
   const [imagesUploading, setImagesUploading] = useState(false)
   const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
@@ -38,7 +40,7 @@ export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9
     formData.set("content", contentRef.current)
     await save(() => isEdit && post?.id
       ? updateDonationThanks(post.id, formData)
-      : createDonationThanks(formData), "게시글이 저장되었습니다.", cancelHref)
+      : createDonationThanks(formData), "게시글이 저장되었습니다.", cancelHref, () => clearPostDraft(draftKey))
   }
 
   if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
@@ -98,6 +100,7 @@ export function ThanksForm({ post, cancelHref = "/admin/community?category=%ED%9
       <div className="space-y-1.5">
         <Label>본문</Label>
         <RichTextEditor
+          draftKey={draftKey}
           name="content"
           defaultValue={post?.content ?? ""}
           placeholder="후원자께 전하는 감사 메시지와 받은 물품 사진을 자유롭게 적어주세요."

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePostDraftKey, clearPostDraft } from "@/shared/hooks/use-post-draft-key"
 import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
@@ -50,6 +51,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
   const attachmentsUploadingRef = useRef(false)
   const [homeVisible, setHomeVisible] = useState(notice?.home_visible ?? false)
   const [error, setError] = useState<string | null>(null)
+  const draftKey = usePostDraftKey(boardType, notice?.id)
   const { save, pending, completed } = useSaveFeedback(setError)
   const isEdit = Boolean(notice)
   const isPublished = Boolean(notice?.published_at)
@@ -81,7 +83,7 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
     formData.set("content", contentRef.current)
     await save(() => isEdit && notice
       ? updateNotice(notice.id, formData, boardType)
-      : createNotice(formData, boardType), "게시글이 저장되었습니다.", cancelHref)
+      : createNotice(formData, boardType), "게시글이 저장되었습니다.", cancelHref, () => clearPostDraft(draftKey))
   }
 
   if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
@@ -179,7 +181,8 @@ export function NoticeForm({ notice, boardType = "notice", cancelHref = "/admin/
       {/* 내용 */}
       <div className="space-y-1.5">
         <Label>{isExpense ? "내용" : "내용 *"}</Label>
-            <RichTextEditor
+        <RichTextEditor
+          draftKey={draftKey}
               name="content"
               defaultValue={initialContent}
               placeholder={isExpense ? "지출 내역 본문을 입력하세요." : "공지 본문을 입력하세요."}

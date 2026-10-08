@@ -21,6 +21,7 @@ function formFixture(path, name, props = {}) {
     if (name === "react/jsx-runtime") return { jsx: element, jsxs: element }
     if (name === "next/link") return { default: "a" }
     if (name.includes("use-save-feedback")) return { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => { writes++ } }) }
+    if (name.includes("use-post-draft-key")) return { usePostDraftKey: () => "draft:test", clearPostDraft() {} }
     if (name.includes("community-category")) return { communityType: value => value ?? "일상", COMMUNITY_TYPES: ["일상"] }
     if (name.includes("rich-text-editor")) return { RichTextEditor: marker("editor") }
     if (name.includes("expense-attachment-uploader")) return { ExpenseAttachmentUploader: marker("attachments") }

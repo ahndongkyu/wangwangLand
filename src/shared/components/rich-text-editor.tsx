@@ -89,7 +89,7 @@ export function RichTextEditor({
   const savedSelectionRef = useRef<{ from: number; to: number } | null>(null)
   // 에디터 현재 HTML (draft 저장용)
   const [editorHtml, setEditorHtml] = useState(defaultValue)
-  const { hasDraft, savedAt, getDraftValue, clearDraft } = useDraftSave(
+  const { hasDraft, savedAt, getDraftValue, clearDraft, acceptDraft } = useDraftSave(
     draftKey ?? "",
     editorHtml,
     !!draftKey
@@ -381,7 +381,7 @@ export function RichTextEditor({
                   setEditorHtml(draft)
                   onChange?.(draft)
                 }
-                clearDraft()
+                acceptDraft()
                 setDraftDismissed(true)
               }}
               className="font-semibold text-amber-700 hover:underline dark:text-amber-400"

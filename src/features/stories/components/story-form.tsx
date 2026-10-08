@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePostDraftKey, clearPostDraft } from "@/shared/hooks/use-post-draft-key"
 import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
@@ -27,6 +28,7 @@ interface Props {
 
 export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const draftKey = usePostDraftKey("stories", story?.id)
   const [imagesUploading, setImagesUploading] = useState(false)
   const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
@@ -43,7 +45,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
     formData.set("content", contentRef.current)
     await save(() => isEdit && story
       ? updateAdoptionStory(story.id, formData)
-      : createAdoptionStory(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref)
+      : createAdoptionStory(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref, () => clearPostDraft(draftKey))
   }
 
   if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
@@ -100,6 +102,7 @@ export function StoryForm({ story, dogs, cancelHref = "/admin/stories", returnTo
       <div className="space-y-1.5">
         <Label>본문 *</Label>
         <RichTextEditor
+          draftKey={draftKey}
           name="content"
           defaultValue={story?.content ?? ""}
           placeholder="입양 후 근황, 새 가족 메시지 등을 자유롭게 적어주세요."

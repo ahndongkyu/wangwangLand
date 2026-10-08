@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { usePostDraftKey, clearPostDraft } from "@/shared/hooks/use-post-draft-key"
 import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { useRef, useState } from "react"
 
@@ -39,6 +40,7 @@ export function DailyForm({
   defaultCategory,
 }: Props) {
   const [error, setError] = useState<string | null>(null)
+  const draftKey = usePostDraftKey("daily", post?.id)
   const [imagesUploading, setImagesUploading] = useState(false)
   const imagesUploadingRef = useRef(false)
   const { save, pending, completed } = useSaveFeedback(setError)
@@ -63,7 +65,7 @@ export function DailyForm({
     }
     await save(() => isEdit && post
       ? updateDailyPost(post.id, formData)
-      : createDailyPost(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref)
+      : createDailyPost(formData), "게시글이 저장되었습니다.", returnTo ?? cancelHref, () => clearPostDraft(draftKey))
   }
 
   if (completed) return <p role="status">저장되었습니다. 목록으로 이동합니다.</p>
@@ -125,6 +127,7 @@ export function DailyForm({
       <div className="space-y-1.5">
         <Label>본문</Label>
         <RichTextEditor
+          draftKey={draftKey}
           name="content"
           defaultValue={post?.content ?? ""}
           placeholder="오늘 봉사 활동, 아이들 근황 등을 자유롭게 적어주세요."

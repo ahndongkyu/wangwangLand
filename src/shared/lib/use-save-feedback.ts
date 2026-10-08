@@ -14,7 +14,7 @@ export function useSaveFeedback(onError: (message: string | null) => void) {
   const [pending, setPending] = useState(false)
   const [completed, setCompleted] = useState(false)
 
-  async function save(action: () => Promise<SaveResult>, message: string, href?: string) {
+  async function save(action: () => Promise<SaveResult>, message: string, href?: string, onSuccess?: () => void) {
     if (running.current) return
     running.current = true
     setPending(true)
@@ -33,6 +33,7 @@ export function useSaveFeedback(onError: (message: string | null) => void) {
       running.current = false; setPending(false)
       return
     }
+    onSuccess?.()
     setCompleted(true)
     if (result.warning) toast.warning(`${message} ${result.warning}`, { duration: 10000 })
     else toast.success(message)
