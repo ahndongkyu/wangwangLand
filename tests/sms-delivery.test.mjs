@@ -33,7 +33,7 @@ function fixture({ authorized = true, configured = true, logFails = false, respo
     fetch: async (url, options) => {
       calls.push(["fetch", url, options])
       if (networkError) throw Error("Network interrupted")
-      return response ?? { ok: true, json: async () => ({ messageList: [{ messageId: "provider-id", statusCode: "2000" }] }) }
+      return typeof response === "function" ? response(url, options) : response ?? { ok: true, json: async () => ({ messageList: [{ messageId: "provider-id", statusCode: "2000" }] }) }
     },
   })
   return { api: exports, calls }
@@ -83,6 +83,89 @@ test("provider result lookup requires staff and does not write or send", async (
   assert.match(allowed.calls[0][1], /messages\/v4\/list/)
 })
 
+test("empty batch falls back to exact-ID reads and resolves delivery without writes", async () => {
+  const { api, calls } = fixture({ response: async (url, options) => {
+    const params = new URL(url).searchParams
+    assert.equal(options.cache, "no-store")
+    if (params.has("messageIds")) return { ok: true, json: async () => ({ messageList: {} }) }
+    assert.equal(options.method, "GET")
+    assert.equal(params.get("criteria"), "messageId")
+    assert.equal(params.get("cond"), "eq")
+    assert.equal(params.get("limit"), "1")
+    const id = params.get("value")
+    return { ok: true, json: async () => ({ messageList: { [id]: { messageId: id, statusCode: 4000 } } }) }
+  } })
+  const result = await api.getSmsDeliveryReports(["one", "two", "one"])
+  assert.equal(result.error, undefined)
+  assert.equal(result.reports.one.statusCode, "4000")
+  assert.equal(result.reports.two.statusCode, "4000")
+  assert.equal(calls.length, 3)
+  assert.ok(calls.every(([kind]) => kind === "fetch"))
+})
+
+test("only missing results are queried and partial failures preserve known delivery", async () => {
+  const { api, calls } = fixture({ response: async url => {
+    const params = new URL(url).searchParams
+    if (params.has("messageIds")) return { ok: true, json: async () => ({ messageList: { one: { statusCode: "4000" } } }) }
+    assert.equal(params.get("value"), "two")
+    throw Error("Timeout")
+  } })
+  const result = await api.getSmsDeliveryReports(["one", "two"])
+  assert.equal(result.reports.one.statusCode, "4000")
+  assert.equal(result.reports.two, undefined)
+  assert.ok(result.error)
+  assert.equal(calls.length, 2)
+})
+
+test("empty, unrelated, malformed or rejected single results stay unconfirmed", async () => {
+  for (const single of [
+    { ok: false }, { ok: true, json: async () => ({ messageList: {} }) },
+    { ok: true, json: async () => ({ messageList: { other: { statusCode: "4000" } } }) },
+    { ok: true, json: async () => ({ messageList: { one: { messageId: "other", statusCode: "4000" } } }) },
+    { ok: true, json: async () => { throw Error("invalid json") } },
+  ]) {
+    const { api } = fixture({ response: url => new URL(url).searchParams.has("messageIds") ? { ok: true, json: async () => ({ messageList: {} }) } : single })
+    const result = await api.getSmsDeliveryReports(["one"])
+    assert.ok(result.error)
+    assert.equal(result.reports.one, undefined)
+  }
+})
+
+test("batch HTTP failure does not multiply authentication or provider errors into retries", async () => {
+  const { api, calls } = fixture({ response: { ok: false, status: 401 } })
+  assert.ok((await api.getSmsDeliveryReports(["one", "two"])).error)
+  assert.equal(calls.length, 1)
+})
+
+test("fallback limits concurrent reads to four and caps a page at twenty unique IDs", async () => {
+  let active = 0, peak = 0
+  const { api, calls } = fixture({ response: async url => {
+    const params = new URL(url).searchParams
+    if (params.has("messageIds")) return { ok: true, json: async () => ({ messageList: {} }) }
+    active++; peak = Math.max(peak, active)
+    await new Promise(resolve => setImmediate(resolve))
+    active--
+    return { ok: true, json: async () => ({ messageList: { [params.get("value")]: { statusCode: "4000" } } }) }
+  } })
+  const result = await api.getSmsDeliveryReports(Array.from({ length: 25 }, (_, i) => `id${i}`))
+  assert.equal(peak, 4)
+  assert.equal(calls.length, 21)
+  assert.equal(Object.keys(result.reports).length, 20)
+})
+
+test("SMS navigation belongs to system management for both member roles", () => {
+  const source = fs.readFileSync("src/app/(admin)/admin/(protected)/_components/admin-header.tsx", "utf8") + "\nexports.groups = buildNavGroups;"
+  const exports = {}
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, { exports, require: () => ({}) })
+  for (const top of [true, false]) {
+    const groups = exports.groups(top)
+    assert.ok(!groups.find(g => g.label === "회원").items.some(i => i.href === "/admin/sms"))
+    assert.deepEqual(Array.from(groups.find(g => g.label === "시스템 관리").items, i => i.label), ["홈페이지 관리", "SMS 발송 내역"])
+  }
+  assert.equal(fs.existsSync("src/features/sms/diagnose.ts"), false)
+  assert.equal(fs.existsSync("src/features/sms/diagnostic-panel.tsx"), false)
+})
+
 test("approval template uses confirmed KST visits and the approved copy", () => {
   const { buildVolunteerSms } = load("src/features/applications/lib/volunteer-sms.ts")
   const message = buildVolunteerSms("confirmed", "홍길동", ["2026-10-18T04:00:00Z"], 3)
@@ -98,7 +181,6 @@ test("SMS history renders delivery status, content, application link and distinc
   for (const failed of [false, true]) {
     const page = load("src/app/(admin)/admin/(protected)/sms/page.tsx", {
       "@/features/sms/auto-refresh": { SmsAutoRefresh: () => null },
-      "@/features/sms/diagnostic-panel": { SmsDiagnosticPanel: () => null },
       "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
       "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true }) },
       "@/shared/lib/utils": { formatPostDateTime: value => value },

@@ -4,7 +4,6 @@ import { requireAdmin } from "@/shared/lib/auth"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { getSmsDeliveryReports } from "@/features/sms"
 import { SmsAutoRefresh } from "@/features/sms/auto-refresh"
-import { SmsDiagnosticPanel } from "@/features/sms/diagnostic-panel"
 import { formatPostDateTime } from "@/shared/lib/utils"
 
 export const metadata: Metadata = { title: "SMS 발송 내역" }
@@ -64,6 +63,5 @@ export default async function SmsHistoryPage({ searchParams }: { searchParams: P
       <span>{page} / {Math.max(1, Math.ceil((count ?? 0) / 20))}</span>
       {page * 20 < (count ?? 0) && <Link className="inline-flex min-h-11 items-center hover:underline" href={`/admin/sms?page=${page + 1}`}>다음</Link>}
     </nav>
-    {auth.role === "admin" && <SmsDiagnosticPanel />}
   </div>
 }

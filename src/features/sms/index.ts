@@ -97,7 +97,9 @@ export async function getSmsDeliveryReports(messageIds: string[]) {
   if (!apiKey || !apiSecret) return { error: "문자 제공업체 연결 설정이 필요합니다.", reports: {} }
   if (!messageIds.length) return { reports: {} }
   try {
-    const query = new URLSearchParams({ messageIds: JSON.stringify(messageIds.slice(0, 20)), limit: "20" })
+    const requestedIds = [...new Set(messageIds.filter(id => typeof id === "string" && id.length > 0))].slice(0, 20)
+    if (!requestedIds.length) return { reports: {} }
+    const query = new URLSearchParams({ messageIds: JSON.stringify(requestedIds), limit: "20" })
     const response = await fetch(`https://api.solapi.com/messages/v4/list?${query}`, {
       headers: { Authorization: makeAuthHeader(apiKey, apiSecret) },
       cache: "no-store", signal: AbortSignal.timeout(10000),
@@ -106,16 +108,45 @@ export async function getSmsDeliveryReports(messageIds: string[]) {
     const body = await response.json()
     if (!body.messageList || typeof body.messageList !== "object" || Array.isArray(body.messageList)) throw new Error("Invalid response")
     const reports: Record<string, { statusCode?: string; reason?: string; dateReported?: string }> = {}
-    const requestedIds = [...new Set(messageIds.slice(0, 20))]
-    for (const id of requestedIds) {
-      const report = body.messageList[id]
-      if (!report || typeof report !== "object" || Array.isArray(report)) continue
-      const code = report.statusCode
+    function collect(id: string, report: unknown) {
+      if (!report || typeof report !== "object" || Array.isArray(report)) return
+      const item = report as Record<string, unknown>
+      if (typeof item.messageId === "string" && item.messageId !== id) return
+      const code = item.statusCode
       reports[id] = {
         statusCode: typeof code === "string" || typeof code === "number" ? String(code) : undefined,
-        reason: typeof report.reason === "string" ? report.reason : undefined,
-        dateReported: typeof report.dateReported === "string" ? report.dateReported : undefined,
+        reason: typeof item.reason === "string" ? item.reason : undefined,
+        dateReported: typeof item.dateReported === "string" ? item.dateReported : undefined,
       }
+    }
+    for (const id of requestedIds) collect(id, body.messageList[id])
+
+    // 운영 응답에서 일괄 검색은 빈 목록, 동일 ID의 eq 검색은 4000을 반환한 사례 보완.
+    // 조회된 결과는 유지하고 누락된 ID만 조회한다. 발송 API나 DB 쓰기는 호출하지 않는다.
+    const missingIds = requestedIds.filter(id => !reports[id]?.statusCode)
+    if (missingIds.length) {
+      const signal = AbortSignal.timeout(10000)
+      let next = 0
+      async function lookupMissing() {
+        while (next < missingIds.length && !signal.aborted) {
+          const id = missingIds[next++]
+          try {
+            const params = new URLSearchParams({ criteria: "messageId", cond: "eq", value: id, limit: "1" })
+            const single = await fetch(`https://api.solapi.com/messages/v4/list?${params}`, {
+              method: "GET", cache: "no-store", signal,
+              headers: { Authorization: makeAuthHeader(apiKey!, apiSecret!) },
+            })
+            if (!single.ok) continue
+            const result = await single.json()
+            if (result?.messageList && typeof result.messageList === "object" && !Array.isArray(result.messageList)) {
+              collect(id, result.messageList[id])
+            }
+          } catch {
+            // 일부 단건 조회가 실패해도 다른 문자의 확인된 전달 결과를 지우지 않는다.
+          }
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(4, missingIds.length) }, () => lookupMissing()))
     }
     const missing = requestedIds.some(id => !reports[id]?.statusCode)
     return { reports, ...(missing ? { error: "일부 문자의 전달 결과가 조회되지 않았습니다. 접수 기록만으로 전달 완료 여부를 판단하거나 재발송하지 마세요." } : {}) }
