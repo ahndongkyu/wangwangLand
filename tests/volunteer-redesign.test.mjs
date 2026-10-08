@@ -24,8 +24,8 @@ const validation = load("src/shared/lib/validation.ts")
 const events = load("src/features/events/types.ts")
 const date = load("src/features/events/lib/date.ts")
 
-function harness({ user = true, approved = true, blocked = false, failure = false, status = "접수", changedDuringSave = false, owner = "member" } = {}) {
-  const inserts = [], pushes = [], updates = []
+function harness({ user = true, approved = true, blocked = false, failure = false, status = "접수", changedDuringSave = false, owner = "member", partySize = 1, eventFailure = false } = {}) {
+  const inserts = [], pushes = [], updates = [], dateChecks = []
   const historical = { activities: ["산책", "청소·정리"] }
   const api = load("src/features/applications/api/mutations.ts", {
     "next/cache": { revalidatePath() {} }, "next/navigation": {},
@@ -36,7 +36,7 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
     }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({
       from(table) {
-        if (table === "events") return { select() { return this }, in() { return this }, gte() { return this }, lte: async () => ({ data: blocked ? [{ starts_at: "2099-10-10T01:00:00Z" }] : [] }) }
+        if (table === "events") return { select() { return this }, in() { return this }, gte(key, value) { dateChecks.push(value); return this }, lt: async () => ({ count: eventFailure ? null : blocked ? 1 : 0, error: eventFailure ? { message: "query failed" } : null }) }
         assert.equal(table, "volunteer_applications")
         let patch = null
         const filters = {}
@@ -45,7 +45,7 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
           update(value) { patch = value; return this },
           eq(key, value) { filters[key] = value; return this }, select() { return this },
           maybeSingle: async () => {
-            if (!patch) return { data: { id: "application", created_by: owner, status, updated_at: "2026-10-08T00:00:00+00:00" } }
+            if (!patch) return { data: { id: "application", created_by: owner, status, party_size: partySize, applicant_name: "테스트", group_name: null, updated_at: "2026-10-08T00:00:00+00:00" } }
             assert.equal(filters.created_by, "member")
             assert.equal(filters.status, status)
             assert.equal(filters.updated_at, "2026-10-08T00:00:00+00:00")
@@ -64,7 +64,7 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
     "../lib/volunteer-applicant": applicant, "../lib/volunteer-operating-hours": hours,
     "@/shared/lib/validation": validation,
   })
-  return { submit: api.submitVolunteerApplication, update: api.updateMyVolunteerApplication, inserts, pushes, updates, historical }
+  return { submit: api.submitVolunteerApplication, update: api.updateMyVolunteerApplication, reschedule: api.requestReschedule, inserts, pushes, updates, historical, dateChecks }
 }
 function form(overrides = {}) {
   const data = new FormData()
@@ -131,6 +131,71 @@ test("ordinary editing permits only pending/review and rejects other owners", as
   const other = harness({ owner: "someone-else" })
   assert.match((await other.update("application", form())).error, /본인/)
   assert.equal(other.updates.length, 0)
+})
+
+test("new and edited applications enforce the same personal/group size rules", async () => {
+  for (const method of ["submit", "update"]) {
+    for (const [party_type, party_size] of [["individual", "2"], ["group", "1"], ["group", "31"], ["group", "2.5"], ["group", "NaN"]]) {
+      const h = harness(), data = form({ party_type, party_size })
+      const result = method === "submit" ? await h.submit(data) : await h.update("application", data)
+      assert.equal(result.field, "party_size")
+      assert.equal(h.inserts.length + h.updates.length, 0)
+    }
+  }
+})
+
+test("regular volunteer date limit and lookup failures apply to all three paths", async () => {
+  for (const method of ["submit", "update", "reschedule"]) {
+    for (const partySize of [4, 5, 30]) {
+      for (const options of [{ blocked: true }, { eventFailure: true }]) {
+        const h = harness({ ...options, partySize, status: method === "reschedule" ? "승인" : "접수" })
+        const data = form({ party_type: "group", party_size: String(partySize), available_dates: method === "reschedule" ? JSON.stringify(["2099-10-10"]) : "2099-10-10" })
+        const result = method === "submit" ? await h.submit(data) : await h[method]("application", data)
+        if (partySize < 5) {
+          assert.equal(result.id, "application")
+          assert.equal(h.dateChecks.length, 0)
+        } else {
+          assert.match(result.error, options.blocked ? /정기봉사가 있는 날/ : /확인하지 못했습니다/)
+          assert.equal(h.inserts.length + h.updates.length, 0)
+          assert.equal(h.pushes.length, 0)
+        }
+      }
+    }
+  }
+})
+
+test("reschedule uses saved party size and rejects malformed dates or concurrent changes", async () => {
+  const data = form({ party_size: "1", available_dates: JSON.stringify(["2099-10-10"]) })
+  const group = harness({ status: "승인", partySize: 5, blocked: true })
+  assert.match((await group.reschedule("application", data)).error, /5명 이상/)
+  for (const dates of ['[null]', '[123]', '[{}]', '{}', 'invalid', '["2099-02-30"]']) {
+    const h = harness({ status: "승인" })
+    assert.ok((await h.reschedule("application", form({ available_dates: dates }))).error)
+    assert.equal(h.updates.length, 0)
+  }
+  const changed = harness({ status: "승인", changedDuringSave: true })
+  assert.match((await changed.reschedule("application", data)).error, /요청 중/)
+  assert.equal(changed.pushes.length, 0)
+})
+
+test("valid multi-date group requests check each KST date once", async () => {
+  const h = harness({ status: "승인", partySize: 30 })
+  const data = form({ available_dates: JSON.stringify(["2099-10-10", "2099-10-11", "2099-10-10"]) })
+  assert.equal((await h.reschedule("application", data)).id, "application")
+  assert.deepEqual(h.dateChecks, ["2099-10-09T15:00:00.000Z", "2099-10-10T15:00:00.000Z"])
+  assert.equal(h.updates[0].status, "일정변경요청")
+})
+
+test("all application paths reject invalid dates and out-of-window times", async () => {
+  for (const method of ["submit", "update", "reschedule"]) {
+    for (const [date, time] of [["2099-02-30", "10:00"], ["2020-01-01", "10:00"], ["2099-10-10", "11:10"], ["2099-10-10", "12:00"], ["2099-10-10", "17:10"], ["2099-10-10", "17:50"]]) {
+      const h = harness({ status: method === "reschedule" ? "승인" : "접수" })
+      const data = form({ available_dates: method === "reschedule" ? JSON.stringify([date]) : date, available_time: time })
+      const result = method === "submit" ? await h.submit(data) : await h[method]("application", data)
+      assert.ok(result.error, `${method}: ${date} ${time}`)
+      assert.equal(h.inserts.length + h.updates.length, 0)
+    }
+  }
 })
 
 test("stale forms and concurrent processing never report a successful ordinary edit", async () => {

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { requireAdmin } from "@/shared/lib/auth"
-import { localKstToIso, dateKey } from "@/features/events/lib/date"
+import { localKstToIso } from "@/features/events/lib/date"
 import {
   GROUP_BLOCK_THRESHOLD,
   GROUP_BLOCKING_CATEGORIES,
@@ -36,6 +36,37 @@ export interface SubmitResult {
   warning?: string
   field?: string
   id?: string
+}
+
+function validateVolunteerParty(partyType: string, value: string) {
+  const result = partyType === "group" ? validateGroupPartySize(value) : validatePartySize(value)
+  if (result.valid && partyType === "individual" && result.partySize !== 1) {
+    return { valid: false, error: "개인 신청 인원수는 1명이어야 합니다.", partySize: undefined }
+  }
+  return result
+}
+
+/** 날짜·시간 검증을 통과한 신청에 동일한 정기봉사 제한을 적용한다. */
+async function checkVolunteerGroupDates(
+  admin: ReturnType<typeof createAdminClient>,
+  dates: string[],
+  partySize: number
+): Promise<SubmitResult | null> {
+  if (partySize < GROUP_BLOCK_THRESHOLD) return null
+  // 선택한 날짜별로 존재 여부만 조회해, 넓은 기간 조회의 행 수 제한을 피한다.
+  for (const date of new Set(dates)) {
+    const { count, error } = await admin.from("events")
+      .select("id", { count: "exact", head: true })
+      .in("category", GROUP_BLOCKING_CATEGORIES)
+      .gte("starts_at", new Date(`${date}T00:00:00+09:00`).toISOString())
+      .lt("starts_at", new Date(new Date(`${date}T00:00:00+09:00`).getTime() + 86400000).toISOString())
+    if (error || typeof count !== "number") return { error: "정기봉사 일정을 확인하지 못했습니다. 잠시 후 다시 시도해주세요.", field: "available_dates" }
+    if (count > 0) return {
+      error: `정기봉사가 있는 날(${date})은 ${GROUP_BLOCK_THRESHOLD}명 이상 단체 신청이 어려워요. 날짜를 변경하거나 인원을 조정해주세요.`,
+      field: "available_dates",
+    }
+  }
+  return null
 }
 
 export async function submitAdoptionApplication(
@@ -200,13 +231,8 @@ export async function submitVolunteerApplication(
   const phoneCheck = validateKoreanPhone(phone)
   if (!phoneCheck.valid) return { error: phoneCheck.error, field: "phone" }
 
-  const partyCheck = partyType === "group"
-    ? validateGroupPartySize(String(formData.get("party_size") ?? "1"))
-    : validatePartySize(String(formData.get("party_size") ?? "1"))
+  const partyCheck = validateVolunteerParty(partyType, String(formData.get("party_size") ?? "1"))
   if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
-  if (partyType === "individual" && partyCheck.partySize !== 1) {
-    return { error: "개인 신청 인원수는 1명이어야 합니다.", field: "party_size" }
-  }
 
   if (!privacy_agreed) {
     return { error: "개인정보 수집·이용 동의가 필요합니다.", field: "privacy_agreed" }
@@ -259,26 +285,8 @@ export async function submitVolunteerApplication(
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
 
-  // 정기봉사가 있는 날엔 단체(5명 이상) 봉사 신청 불가
-  if ((partyCheck.partySize ?? 1) >= GROUP_BLOCK_THRESHOLD && availableDates.length > 0) {
-    const sorted = [...availableDates].sort()
-    const fromIso = new Date(`${sorted[0]}T00:00:00+09:00`).toISOString()
-    const toIso = new Date(`${sorted[sorted.length - 1]}T23:59:59+09:00`).toISOString()
-    const { data: regEvents } = await admin
-      .from("events")
-      .select("starts_at")
-      .in("category", GROUP_BLOCKING_CATEGORIES)
-      .gte("starts_at", fromIso)
-      .lte("starts_at", toIso)
-    const blocked = new Set((regEvents ?? []).map((e) => dateKey(new Date(e.starts_at))))
-    const conflicts = availableDates.filter((d) => blocked.has(d))
-    if (conflicts.length > 0) {
-      return {
-        error: `정기봉사가 있는 날(${conflicts.join(", ")})은 ${GROUP_BLOCK_THRESHOLD}명 이상 단체 신청이 어려워요. 날짜를 변경하거나 인원을 조정해주세요.`,
-        field: "available_dates",
-      }
-    }
-  }
+  const groupDateError = await checkVolunteerGroupDates(admin, availableDates, partyCheck.partySize!)
+  if (groupDateError) return groupDateError
 
   const { data, error } = await admin
     .from("volunteer_applications")
@@ -352,9 +360,7 @@ export async function updateMyVolunteerApplication(
   }
   const phoneCheck = validateKoreanPhone(phone)
   if (!phoneCheck.valid) return { error: phoneCheck.error, field: "phone" }
-  const partyCheck = partyType === "group"
-    ? validateGroupPartySize(String(formData.get("party_size") ?? "1"))
-    : validatePartySize(String(formData.get("party_size") ?? "1"))
+  const partyCheck = validateVolunteerParty(partyType, String(formData.get("party_size") ?? "1"))
   if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -388,6 +394,9 @@ export async function updateMyVolunteerApplication(
       field: availableDates.length === 0 ? "available_dates" : "available_time",
     }
   }
+
+  const groupDateError = await checkVolunteerGroupDates(admin, availableDates, partyCheck.partySize!)
+  if (groupDateError) return groupDateError
 
   const { data: updated, error } = await admin
     .from("volunteer_applications")
@@ -896,7 +905,7 @@ export async function requestReschedule(
 
   const { data: prev } = await admin
     .from("volunteer_applications")
-    .select("id, created_by, status, applicant_name, group_name")
+    .select("id, created_by, status, applicant_name, group_name, party_size, updated_at")
     .eq("id", id)
     .maybeSingle()
 
@@ -905,6 +914,12 @@ export async function requestReschedule(
   if (prev.status !== "승인" && prev.status !== "일정변경요청") {
     return { error: "승인된 신청만 일정변경 요청할 수 있습니다." }
   }
+  const expectedUpdatedAt = String(formData.get("expected_updated_at") ?? "")
+  if (!expectedUpdatedAt || expectedUpdatedAt !== prev.updated_at) {
+    return { error: "신청 내용이 변경되었습니다. 신청 내역을 새로 확인한 뒤 요청해주세요." }
+  }
+  const partyCheck = validatePartySize(prev.party_size)
+  if (!partyCheck.valid) return { error: "기존 신청 인원을 확인할 수 없습니다. 운영진에게 문의해주세요." }
 
   const datesRaw = String(formData.get("available_dates") ?? "").trim()
   const time = String(formData.get("available_time") ?? "").trim()
@@ -912,15 +927,17 @@ export async function requestReschedule(
   let dates: string[]
   try {
     dates = JSON.parse(datesRaw)
-    if (!Array.isArray(dates)) throw new Error()
+    if (!Array.isArray(dates) || dates.some(date => typeof date !== "string")) throw new Error()
   } catch {
     return { error: "날짜 형식이 올바르지 않습니다." }
   }
 
   const scheduleError = validateVolunteerSchedule(dates, time)
   if (scheduleError) return { error: scheduleError }
+  const groupDateError = await checkVolunteerGroupDates(admin, dates, partyCheck.partySize!)
+  if (groupDateError) return groupDateError
 
-  const { error } = await admin
+  const { data: updated, error } = await admin
     .from("volunteer_applications")
     .update({
       status: "일정변경요청",
@@ -929,11 +946,17 @@ export async function requestReschedule(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("created_by", user.id)
+    .eq("status", prev.status)
+    .eq("updated_at", expectedUpdatedAt)
+    .select("id")
+    .maybeSingle()
 
   if (error) {
     console.error("[requestReschedule]", error)
     return { error: error.message }
   }
+  if (!updated) return { error: "요청 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
 
   // 운영진에게 푸시 알림
   try {
