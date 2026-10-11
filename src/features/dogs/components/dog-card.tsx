@@ -11,10 +11,13 @@ export function DogCard({ dog, variant = "list" }: { dog: Dog; variant?: "list" 
     <Link href={`/dogs/${dog.id}`} className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {thumbnail ? <Image src={thumbnail} alt={dog.name} fill sizes="(max-width: 767px) 50vw, 360px" className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transform-none" /> : <span className="absolute inset-0 flex items-center justify-center" aria-hidden><span className="aspect-[1.53/1] w-[42%] bg-left bg-no-repeat opacity-30 grayscale dark:invert" style={{ backgroundImage: `url(${SITE.headerLogo})`, backgroundSize: "196.08% 100%" }} /></span>}
-        <span className="absolute left-3 top-3 rounded-full border border-border/50 bg-card/95 px-2.5 py-1 text-xs font-medium text-foreground">{dog.status}</span>
+        {variant === "list" && <span className="absolute left-3 top-3 rounded-full border border-border/50 bg-card/95 px-2.5 py-1 text-xs font-medium text-foreground">{dog.status}</span>}
       </div>
       <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <h3 className="break-words text-base font-bold tracking-tight text-foreground group-hover:text-primary sm:text-xl">{dog.name}</h3>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
+          <h3 className="min-w-0 max-w-full break-words text-base font-bold tracking-tight text-foreground group-hover:text-primary sm:text-xl">{dog.name}</h3>
+          {variant === "home" && <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{dog.status}</span>}
+        </div>
         {variant === "list" && dog.breed && <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground sm:text-sm">{dog.breed}</p>}
         {variant === "home" ? (
           <p className="mt-2 truncate text-xs text-muted-foreground" title={facts.join(" · ")}>{facts.join(" · ")}</p>

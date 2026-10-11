@@ -33,6 +33,7 @@ test("all writes reject non-staff before accessing database",async()=>{
   assert.equal((await api.saveSitePhotos(model.DEFAULT_PHOTOS)).error,"denied")
   assert.equal((await api.changeAnimalPhoto("dogs","id","url")).error,"denied")
   assert.equal((await api.saveHomeAnimals([],true,{})).error,"denied")
+  assert.equal((await api.clearUnavailableHomeAnimals()).error,"denied")
 })
 test("home selection rejects duplicates and more than four",async()=>{
   const api=actions({ok:true,role:"staff"},null)
@@ -67,7 +68,7 @@ test("representative photo compares the image array and rejects concurrent edits
   }
 })
 
-function managerHarness(pinnedCount, save = async()=>({ok:true})) {
+function managerHarness(pinnedCount, save = async()=>({ok:true}), cleanup = async()=>({removed:[]})) {
   const state=[];let cursor=0;let writes=0
   const {HomepageManager}=load("src/features/settings/components/homepage-manager.tsx",{
     "react/jsx-runtime":jsxRuntime,
@@ -75,7 +76,7 @@ function managerHarness(pinnedCount, save = async()=>({ok:true})) {
     react:{useEffect(){},useState(initial){const slot=cursor++;if(!(slot in state))state[slot]=initial;return [state[slot],value=>{state[slot]=typeof value==="function"?value(state[slot]):value}]}},
     "next/image":{default:"img"},"next/navigation":{useRouter:()=>({refresh(){}})},
     "@/shared/components/ui/button":{Button:"button"},"./animal-photo-picker":{AnimalPhotoPicker:"picker"},
-    "../lib/homepage":model,"../api/homepage-actions":{saveSitePhotos:async()=>{writes++;return save()},saveHomeAnimals:async()=>{writes++;return {ok:true}}},
+    "../lib/homepage":model,"../api/homepage-actions":{clearUnavailableHomeAnimals:cleanup,saveSitePhotos:async()=>{writes++;return save()},saveHomeAnimals:async()=>{writes++;return {ok:true}}},
   })
   const animals=Array.from({length:pinnedCount+1},(_,i)=>({id:String(i),name:`아이${i}`,status:"보호중",images:["a"],thumbnail_index:0,is_pinned:i<pinnedCount,pin_order:i,rescue_date:null,created_at:"2026-01-01"}))
   const render=()=>{cursor=0;return HomepageManager({initialPhotos:model.DEFAULT_PHOTOS,initialAutoFill:true,animals,maintenance:null,loadError:null})}
@@ -90,6 +91,54 @@ test("legacy seven pins can be explicitly reduced and then replaced without imme
   h.button(tree,"1. 아이0 교체").props.onClick();tree=h.render()
   assert.match(h.text(tree),/1\. 아이4/)
   assert.equal(h.writes(),0)
+})
+
+test("automatic cleanup only updates invalid pinned dogs and reports committed rows",async()=>{
+  for(const failed of [false,true]) {
+    const calls=[]
+    const chain={update(value){calls.push(value);return this},eq(key,value){assert.equal(key,"is_pinned");assert.equal(value,true);return this},or(filter){assert.equal(filter,'status.not.in.(보호중,임시보호중),status.is.null,images.eq.{},images.is.null');return this},select:async()=>failed?{error:{message:"failure"}}:{data:[{id:"a",name:"사랑",status:"입양완료",images:["photo"]},{id:"b",name:"희망",status:"보호중",images:[]},{id:"c",name:"행복",status:"입양완료",images:null}]}}
+    const api=actions({ok:true},{from(table){assert.equal(table,"dogs");return chain}})
+    const result=await api.clearUnavailableHomeAnimals()
+    assert.equal(JSON.stringify(calls),JSON.stringify([{is_pinned:false,pin_order:null}]))
+    if(failed){assert.ok(result.error);assert.equal(result.removed,undefined)}
+    else {assert.equal(result.removed[0].reason,"현재 상태: 입양완료");assert.equal(result.removed[1].reason,"등록된 사진 없음");assert.equal(result.removed[2].reason,"현재 상태: 입양완료 · 등록된 사진 없음")}
+  }
+})
+test("cleanup updates saved baseline, preserves unrelated drafts, and supports retry",async()=>{
+  let attempts=0
+  const h=managerHarness(2,undefined,async()=>++attempts===1?{error:"다시 시도해 주세요"}:{removed:[{id:"0",name:"아이0",reason:"등록된 사진 없음"}]})
+  let tree=h.render()
+  await h.button(tree,"홈 노출 아이들").props.onClick();tree=h.render()
+  assert.match(h.text(tree),/다시 시도해 주세요/)
+  assert.doesNotMatch(h.text(tree),/고정을 자동 해제했습니다/)
+  await h.button(tree,"자동 해제 다시 시도").props.onClick();tree=h.render()
+  assert.match(h.text(tree),/아이0 · 등록된 사진 없음/)
+  assert.ok(h.button(tree,"홈 노출 아이들"))
+  assert.equal(h.button(tree,"노출·대표사진 저장").props.disabled,true)
+  h.nodes(tree).find(n=>n.type==="input"&&n.props.type==="checkbox").props.onChange({target:{checked:false}})
+  tree=h.render()
+  await h.button(tree,"홈 노출 아이들 · 변경됨").props.onClick();tree=h.render()
+  assert.equal(h.nodes(tree).find(n=>n.type==="input"&&n.props.type==="checkbox").props.checked,false)
+  h.button(tree,"변경 취소").props.onClick();tree=h.render()
+  assert.match(h.text(tree),/고정 순서 · 1\/4/)
+})
+test("repeated cleanup with no invalid pins does not announce removals",async()=>{
+  const h=managerHarness(2)
+  for(let i=0;i<2;i++) {
+    await h.button(h.render(),"홈 노출 아이들").props.onClick()
+    const tree=h.render()
+    assert.match(h.text(tree),/고정 순서 · 2\/4/)
+    assert.doesNotMatch(h.text(tree),/고정을 자동 해제했습니다/)
+    assert.equal(h.button(tree,"노출·대표사진 저장").props.disabled,true)
+  }
+})
+test("network failure preserves pins and provides retry without false success",async()=>{
+  const h=managerHarness(2,undefined,async()=>{throw new Error("network")})
+  await h.button(h.render(),"홈 노출 아이들").props.onClick()
+  const tree=h.render()
+  assert.match(h.text(tree),/고정 순서 · 2\/4/)
+  assert.ok(h.button(tree,"자동 해제 다시 시도"))
+  assert.doesNotMatch(h.text(tree),/고정을 자동 해제했습니다/)
 })
 test("photo save feedback stays beside the button and never reports success on failure",async()=>{
   for(const error of [undefined,"저장 실패"]){

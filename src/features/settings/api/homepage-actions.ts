@@ -9,6 +9,22 @@ function refreshAnimals(kind: "dogs" | "cats") {
   for (const path of ["/", `/${kind}`, `/admin/${kind}`, "/admin/settings", "/my", "/my/likes"]) revalidatePath(path)
   revalidatePath(`/${kind}/[id]`, "page")
 }
+export async function clearUnavailableHomeAnimals() {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { error: auth.error }
+  // 조건 확인과 해제를 한 쿼리에서 처리하여 최신 상태가 유효한 아이는 유지합니다.
+  const { data, error } = await createAdminClient().from("dogs")
+    .update({ is_pinned: false, pin_order: null }).eq("is_pinned", true)
+    .or('status.not.in.(보호중,임시보호중),status.is.null,images.eq.{},images.is.null')
+    .select("id,name,status,images")
+  if (error || !data) return { error: "자동 고정 해제 결과를 확인하지 못했습니다. 다시 시도해 주세요." }
+  const removed = data.map(animal => ({
+    id: animal.id, name: animal.name,
+    reason: [!["보호중", "임시보호중"].includes(animal.status) ? `현재 상태: ${animal.status || "미지정"}` : "", !animal.images?.length ? "등록된 사진 없음" : ""].filter(Boolean).join(" · "),
+  }))
+  if (removed.length) refreshAnimals("dogs")
+  return { removed }
+}
 export async function saveSitePhotos(photos: SitePhotos) {
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
