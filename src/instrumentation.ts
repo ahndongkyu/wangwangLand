@@ -5,5 +5,5 @@ export const onRequestError: Instrumentation.onRequestError = async (error, _req
   if (process.env.NEXT_RUNTIME !== "nodejs") return
   const { recordOperationError } = await import("@/features/operation-logs/server")
   const { logArea, serverErrorStep } = await import("@/features/operation-logs/catalog")
-  await recordOperationError("server", serverErrorStep(context.routeType, context.routePath), error, logArea(context.routePath))
+  await recordOperationError("server", serverErrorStep(context.routeType, context.routePath), error, logArea(context.routePath), { page: context.routePath })
 }

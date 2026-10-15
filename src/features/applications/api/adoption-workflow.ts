@@ -31,7 +31,7 @@ export async function processAdoption(id: string, form: FormData) {
     p_adopter_phone: String(form.get("adopter_phone") ?? "").replace(/\D/g, "") || null,
   })
   if (error) {
-    await recordOperationError("application", "processAdoption", error, "application")
+    await recordOperationError("application", "processAdoption", error, "application", { page: "/admin/applications/adoption/[id]", targetType: "adoption", targetId: id, action })
     return { error: error.message }
   }
   const warning = await dispatchAdoptionSms(id)
@@ -45,7 +45,7 @@ export async function processAdoption(id: string, form: FormData) {
         const { sendPushToUser } = await import("@/features/push")
         await sendPushToUser({ title: "입양상담 신청 거절", body: "신청 내역에서 사유를 확인해주세요.", url: `/my/applications/adoption/${id}`, tag: `adoption-rejected-${id}` }, app.created_by)
       }
-    } catch (error) { await recordOperationError("push", "adoptionRejectionNotice", error, "notification") }
+    } catch (error) { await recordOperationError("push", "adoptionRejectionNotice", error, "notification", { targetType: "adoption", targetId: id, action: "reject" }) }
   }
   for (const path of ["/admin/applications", `/admin/applications/adoption/${id}`, "/my/applications", `/my/applications/adoption/${id}`, "/", "/dogs", "/cats", "/about"]) revalidatePath(path)
   return { id, warning }

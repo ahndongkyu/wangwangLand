@@ -8,8 +8,10 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" }
+  let applicationId: string | undefined
   try {
     const { id } = await context.params
+    applicationId = id
     const result = await getAccessibleAdoption(id)
     if (!result) return Response.json({ error: "열람 권한이 없습니다." }, { status: 403, headers })
     const app = result.application
@@ -19,7 +21,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const bytes = await generateAdoptionPdf(app, font, bold)
     return new Response(new Uint8Array(bytes), { headers: { ...headers, "Content-Type": "application/pdf", "Content-Disposition": "attachment; filename=adoption-visit-documents.pdf" } })
   } catch (error) {
-    await recordOperationError("query", "adoptionPdf", error, "application")
+    await recordOperationError("query", "adoptionPdf", error, "application", { targetType: "adoption", targetId: applicationId, action: "download" })
     return Response.json({ error: "서류를 만들지 못했습니다. 잠시 후 다시 시도해주세요." }, { status: 500, headers })
   }
 }

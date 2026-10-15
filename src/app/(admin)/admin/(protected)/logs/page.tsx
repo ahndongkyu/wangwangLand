@@ -5,6 +5,7 @@ import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { formatShortDateTime } from "@/shared/lib/utils"
 import { operations, logStatuses, errorSummary, type OperationLog } from "@/features/operation-logs/catalog"
 import { LogStatusForm } from "@/features/operation-logs/status-form"
+import { EventHistory } from "@/features/operation-logs/event-history"
 
 export const metadata: Metadata = { title: "오류 로그" }
 export const dynamic = "force-dynamic"
@@ -80,9 +81,10 @@ export default async function OperationLogsPage({ searchParams }: { searchParams
               <dt className="text-muted-foreground">최근 발생</dt><dd>{formatShortDateTime(log.last_seen_at)}</dd>
               <dt className="text-muted-foreground">재발 횟수</dt><dd>{log.recurrences}회</dd>
             </dl>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{log.operation === "browser" ? "브라우저에서 보낸 확인 전 신고입니다. 같은 종류·영역은 1분에 한 번 집계하므로 실제 발생 횟수와 다를 수 있습니다." : "같은 기능·처리 지점·오류 코드를 묶습니다. 입력 내용과 개인정보는 수집하지 않습니다."}</p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{log.operation === "browser" ? "브라우저에서 보낸 확인 전 신고입니다. 새 개별 기록은 같은 회원·화면·오류당 1분에 한 번 집계하며, 이전 기록은 영역별로 제한되었습니다." : "같은 기능·처리 지점·오류 코드를 묶습니다. 사용자 내부 ID와 작업 대상을 기록하되 입력 내용·연락처·인증정보는 저장하지 않습니다."}</p>
             {(log.operation === "sms" || log.step.startsWith("sms")) && <Link href="/admin/sms" className="mt-2 inline-flex min-h-11 items-center text-primary hover:underline">SMS 발송 내역 확인</Link>}
             <LogStatusForm key={`${log.id}-${log.last_seen_at}-${log.status}`} log={log} />
+            <EventHistory logId={log.id} />
           </div>
         </details>)}
       </div>}

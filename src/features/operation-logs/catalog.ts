@@ -44,6 +44,7 @@ export const logPages = ["home", "admin", "volunteer", "adoption", "calendar", "
 export function browserPage(pathname: string): string {
   const parts = pathname.split(/[?#]/, 1)[0].split('/').filter(Boolean)
   if (!parts.length) return "home"
+  if (parts.includes("adopt")) return "adoption"
   for (const page of logPages) if (page !== "admin" && page !== "other" && parts.includes(page)) return page
   return parts[0] === "admin" ? "admin" : "other"
 }
@@ -52,7 +53,7 @@ export type LogArea = typeof areas[number]
 
 export function logArea(pathname: string): LogArea {
   const path = pathname.split(/[?#]/, 1)[0]
-  if (/\/applications?(\/|$)|\/volunteer(\/|$)|\/adoption(\/|$)/.test(path)) return "application"
+  if (/\/applications?(\/|$)|\/volunteer(\/|$)|\/adopt(?:ion)?(\/|$)/.test(path)) return "application"
   if (/\/calendar(\/|$)|\/events(\/|$)/.test(path)) return "calendar"
   if (/\/(notice|notices|daily|stories|community|expenses)(\/|$)/.test(path)) return "post"
   return path.startsWith("/admin") ? "admin" : "public"

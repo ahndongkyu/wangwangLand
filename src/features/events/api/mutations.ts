@@ -442,7 +442,7 @@ export async function updateEvent(
     const { data: updated, error } = await supabase.from("events").update(parsed).eq("id", id).select("id").maybeSingle()
     if (error) {
       console.error("[updateEvent]", error)
-      await recordOperationError("calendar", "updateEvent", error, "calendar")
+      await recordOperationError("calendar", "updateEvent", error, "calendar", { targetType: "event", targetId: id, action: "update" })
       return { error: error.message }
     }
     if (!updated) return { error: "수정할 일정이 없습니다. 새로고침 후 확인해주세요." }
@@ -462,7 +462,7 @@ export async function updateEvent(
   })
   if (error) {
     console.error("[updateEvent recurring]", error)
-    await recordOperationError("calendar", "updateEvent recurring", error, "calendar")
+    await recordOperationError("calendar", "updateEvent recurring", error, "calendar", { targetType: "event", targetId: id, action: "update" })
     return { error: "반복 일정을 저장하지 못했습니다. 변경사항은 적용되지 않았습니다. 다시 시도해주세요." }
   }
   const changedIds = (data ?? []) as string[]
@@ -498,7 +498,7 @@ export async function deleteEvent(
     .in("id", snapshots.map((snapshot) => snapshot.eventId)).select("id")
   if (error) {
     console.error("[deleteEvent]", error)
-    await recordOperationError("calendar", "deleteEvent", error, "calendar")
+    await recordOperationError("calendar", "deleteEvent", error, "calendar", { targetType: "event", targetId: id, action: "delete" })
     return { error: error.message }
   }
   const deletedIds = new Set((deleted ?? []).map((event) => event.id))

@@ -175,7 +175,7 @@ export async function updateDailyPost(
 
   if (error) {
     console.error("[updateDailyPost]", error)
-    await recordOperationError("post", "updateDailyPost", error, "post")
+    await recordOperationError("post", "updateDailyPost", error, "post", { targetType: "daily", targetId: id, action: "update" })
     return { error: error.message }
   }
 
@@ -226,7 +226,7 @@ export async function deleteDailyPost(
 
   if (error) {
     console.error("[deleteDailyPost]", error)
-    await recordOperationError("post", "deleteDailyPost", error, "post")
+    await recordOperationError("post", "deleteDailyPost", error, "post", { targetType: "daily", targetId: id, action: "delete" })
     return { error: error.message }
   }
 

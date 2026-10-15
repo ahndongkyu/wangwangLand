@@ -221,7 +221,7 @@ export async function updateNotice(
 
   if (error) {
     console.error("[updateNotice]", error)
-    await recordOperationError("post", "updateNotice", error, "post")
+    await recordOperationError("post", "updateNotice", error, "post", { targetType: boardType, targetId: id, action: "update" })
     return { error: error.message }
   }
 
@@ -259,7 +259,7 @@ export async function deleteNotice(
 
   if (error) {
     console.error("[deleteNotice]", error)
-    await recordOperationError("post", "deleteNotice", error, "post")
+    await recordOperationError("post", "deleteNotice", error, "post", { targetType: boardType, targetId: id, action: "delete" })
     return { error: error.message }
   }
 

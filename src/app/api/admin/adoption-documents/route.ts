@@ -15,9 +15,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "비공개 첨부파일 저장소 설정이 필요합니다." }, { status: 503, headers })
   }
   let uploaded: string | undefined
+  let applicationId: string | undefined
   try {
     const data = await request.formData()
     const id = String(data.get("application_id") ?? "")
+    applicationId = id
     const kind = String(data.get("kind") ?? "")
     const file = data.get("file")
     if (!["survey", "application"].includes(kind) || !(file instanceof File) || !file.size || file.size > 3*1024*1024) return Response.json({ error: "설문지 또는 신청서 파일을 3MB 이하로 첨부해주세요." }, { status: 400, headers })
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: true }, { headers })
   } catch(error) {
     if (uploaded) await del(uploaded,{token}).catch(()=>{})
-    await recordOperationError("upload","adoptionDocumentUpload",error,"application")
+    await recordOperationError("upload","adoptionDocumentUpload",error,"application", { page: "/admin/applications/adoption/[id]", targetType: "adoption", targetId: applicationId, action: "upload" })
     return Response.json({ error: "서류를 저장하지 못했습니다. 다시 시도해주세요." }, { status:500, headers })
   }
 }

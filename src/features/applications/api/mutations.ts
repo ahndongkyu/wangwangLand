@@ -214,7 +214,7 @@ export async function submitAdoptionApplication(
 
   if (error) {
     console.error("[submitAdoptionApplication]", error)
-    await recordOperationError("application", "submitAdoptionApplication", error, "application")
+    await recordOperationError("application", "submitAdoptionApplication", error, "application", { page: "/adopt", action: "create" })
     return { error: `신청 실패: ${error.message}` }
   }
 
@@ -343,7 +343,7 @@ export async function submitVolunteerApplication(
 
   if (error) {
     console.error("[submitVolunteerApplication]", error)
-    await recordOperationError("application", "submitVolunteerApplication", error, "application")
+    await recordOperationError("application", "submitVolunteerApplication", error, "application", { page: "/volunteer", action: "create" })
     return { error: `신청 실패: ${error.message}` }
   }
 
@@ -455,7 +455,7 @@ export async function updateMyVolunteerApplication(
 
   if (error) {
     console.error("[updateMyVolunteerApplication]", error)
-    await recordOperationError("application", "updateMyVolunteerApplication", error, "application")
+    await recordOperationError("application", "updateMyVolunteerApplication", error, "application", { targetType: "volunteer", targetId: id, action: "update" })
     return { error: error.message }
   }
   if (!updated) return { error: "저장 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
@@ -641,7 +641,7 @@ export async function updateVolunteerApplication(
 
   if (error) {
     console.error("[updateVolunteerApplication]", error)
-    await recordOperationError("application", "updateVolunteerApplication", error, "application")
+    await recordOperationError("application", "updateVolunteerApplication", error, "application", { page: "/admin/applications/volunteer/[id]", targetType: "volunteer", targetId: id, action: status === "승인" ? "approve" : status === "취소" ? "cancel" : status === "반려" ? "reject" : "update" })
     return { error: "처리 중 오류가 발생했습니다. 상태와 일정은 변경되지 않았습니다." }
   }
 
@@ -727,7 +727,7 @@ export async function deleteAdoptionApplication(
 
   if (error) {
     console.error("[deleteAdoptionApplication]", error)
-    await recordOperationError("application", "deleteAdoptionApplication", error, "application")
+    await recordOperationError("application", "deleteAdoptionApplication", error, "application", { targetType: "adoption", targetId: id, action: "delete" })
     return { error: error.message }
   }
 
@@ -749,7 +749,7 @@ export async function deleteVolunteerApplication(
 
   if (error) {
     console.error("[deleteVolunteerApplication]", error)
-    await recordOperationError("application", "deleteVolunteerApplication", error, "application")
+    await recordOperationError("application", "deleteVolunteerApplication", error, "application", { targetType: "volunteer", targetId: id, action: "delete" })
     return { error: error.message }
   }
 
@@ -794,7 +794,7 @@ export async function cancelOwnVolunteerApplication(
 
   if (error) {
     console.error("[cancelOwnVolunteerApplication]", error)
-    await recordOperationError("application", "cancelOwnVolunteerApplication", error, "application")
+    await recordOperationError("application", "cancelOwnVolunteerApplication", error, "application", { targetType: "volunteer", targetId: id, action: "cancel" })
     return { error: error.message }
   }
 
@@ -874,7 +874,7 @@ export async function requestReschedule(
 
   if (error) {
     console.error("[requestReschedule]", error)
-    await recordOperationError("application", "requestReschedule", error, "application")
+    await recordOperationError("application", "requestReschedule", error, "application", { targetType: "volunteer", targetId: id, action: "update" })
     return { error: error.message }
   }
   if (!updated) return { error: "요청 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." }
@@ -940,7 +940,7 @@ export async function cancelOwnAdoptionApplication(
 
   if (error) {
     console.error("[cancelOwnAdoptionApplication]", error)
-    await recordOperationError("application", "cancelOwnAdoptionApplication", error, "application")
+    await recordOperationError("application", "cancelOwnAdoptionApplication", error, "application", { targetType: "adoption", targetId: id, action: "cancel" })
     return { error: error.message }
   }
 

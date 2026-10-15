@@ -182,7 +182,7 @@ export async function updateAdoptionStory(
 
   if (error) {
     console.error("[updateAdoptionStory]", error)
-    await recordOperationError("post", "updateAdoptionStory", error, "post")
+    await recordOperationError("post", "updateAdoptionStory", error, "post", { targetType: "story", targetId: id, action: "update" })
     return { error: error.message }
   }
 
@@ -233,7 +233,7 @@ export async function deleteAdoptionStory(
 
   if (error) {
     console.error("[deleteAdoptionStory]", error)
-    await recordOperationError("post", "deleteAdoptionStory", error, "post")
+    await recordOperationError("post", "deleteAdoptionStory", error, "post", { targetType: "story", targetId: id, action: "delete" })
     return { error: error.message }
   }
 

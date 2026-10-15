@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { load } from "./helpers/page-review-fixtures.mjs"
 
 const catalog = load("src/features/operation-logs/catalog.ts")
+const diagnostics = load("src/features/operation-logs/diagnostics.ts", { "./catalog": catalog })
 test("diagnostics classify pages and errors without retaining paths or sensitive strings", () => {
   assert.equal(catalog.browserPage("/admin/applications/adoption/private-id?phone=secret"), "adoption")
   assert.equal(catalog.browserPage("/unknown-person@example.test"), "other")
@@ -19,7 +20,7 @@ test("diagnostics classify pages and errors without retaining paths or sensitive
 function runtime(file, imports, extra = {}) {
   const exports = {}
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
-    exports, Date, AbortSignal, Response, Request, TextDecoder, URL, console: { warn() {} }, ...extra,
+    exports, Date, AbortSignal, Response, Request, TextDecoder, URL, crypto, setTimeout, clearTimeout, process: { env: {} }, console: { warn() {} }, ...extra,
     require(name) { assert.ok(name in imports, name); return imports[name] },
   })
   return exports
@@ -59,7 +60,7 @@ test("logger writes a minimal payload and contains missing DB, thrown, and timeo
   for (const failure of [false, "result", "throw", "timeout"]) {
     const writes = []
     const api = runtime("src/features/operation-logs/server.ts", {
-      "server-only": {}, "./catalog": catalog,
+      "server-only": {}, "./catalog": catalog, "./diagnostics": diagnostics, "./request-context": { requestLogContext: async () => null },
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({ rpc(name, value) {
         writes.push({ name, value })
         if (failure === "throw") throw Error("private error")
@@ -67,7 +68,11 @@ test("logger writes a minimal payload and contains missing DB, thrown, and timeo
       } }) },
     })
     await assert.doesNotReject(api.recordOperationError("application", "submitVolunteerApplication", { code: "23505", message: "private", details: "private" }, "application"))
-    assert.deepEqual(JSON.parse(JSON.stringify(writes[0])), { name: "record_operation_error", value: { p_operation: "application", p_step: "submitVolunteerApplication", p_code: "23505", p_area: "application" } })
+    assert.equal(writes[0].name, "record_operation_error_event")
+    assert.equal(writes[0].value.p_code, "23505")
+    assert.equal(writes[0].value.p_context.actor_id, null)
+    assert.ok(diagnostics.validId(writes[0].value.p_context.trace_id))
+    assert.doesNotMatch(JSON.stringify(writes), /private|details/)
     await api.recordOperationError("application", "https://private.example/?token=secret")
     assert.equal(writes.length, 1)
   }
@@ -94,6 +99,7 @@ test("browser reports reject cross-origin, oversized and arbitrary types; payloa
   const records = []
   const api = runtime("src/app/api/operation-errors/route.ts", {
     "@/features/operation-logs/catalog": catalog,
+    "@/features/operation-logs/diagnostics": diagnostics,
     "@/features/operation-logs/server": { recordOperationError: async (...args) => records.push(args) },
   })
   const request = (body, origin = "https://example.test") => new Request("https://example.test/api/operation-errors", { method: "POST", headers: { origin, "content-type": "application/json" }, body: JSON.stringify(body) })
@@ -103,17 +109,17 @@ test("browser reports reject cross-origin, oversized and arbitrary types; payloa
   assert.equal((await api.POST(request({ text: "x".repeat(600) }))).status, 413)
   assert.equal((await api.POST(request({ kind: "boundary", area: "public", message: "private ignored" }))).status, 204)
   assert.equal((await api.POST(request({ kind: "boundary", area: "public" }))).status, 204)
-  assert.equal(records.length, 1)
-  assert.equal(JSON.stringify(records), '[["browser","boundary.other",{"name":"UNKNOWN"},"public"]]')
+  assert.equal(records.length, 2)
+  assert.equal(JSON.stringify(records[0]), '["browser","boundary.other",{"name":"UNKNOWN"},"public",{"page":"unknown"}]')
   await api.POST(request({kind:"unhandled",area:"application",page:"adoption",code:"TypeError",message:"secret"}))
-  assert.equal(JSON.stringify(records[1]), '["browser","unhandled.adoption",{"name":"TypeError"},"application"]')
+  assert.equal(JSON.stringify(records[2]), '["browser","unhandled.adoption",{"name":"TypeError"},"application",{"page":"unknown"}]')
   await api.POST(request({kind:"unhandled",area:"admin",page:"private-id",code:"private-token"}))
-  assert.equal(JSON.stringify(records[2]), '["browser","unhandled.other",{"name":"UNKNOWN"},"admin"]')
+  assert.equal(JSON.stringify(records[3]), '["browser","unhandled.other",{"name":"UNKNOWN"},"admin",{"page":"unknown"}]')
 })
 
 test("browser listener throttles locally and does not retry failed logging requests", async () => {
   const calls = []
-  const api = runtime("src/features/operation-logs/browser.ts", { "./catalog": catalog }, {
+  const api = runtime("src/features/operation-logs/browser.ts", { "./catalog": catalog, "./diagnostics": diagnostics }, {
     window: { location: { pathname: "/notice/private-id" } },
     fetch: async (...args) => { calls.push(args); throw Error("offline") },
   })
@@ -121,7 +127,7 @@ test("browser listener throttles locally and does not retry failed logging reque
   api.reportBrowserError("boundary")
   await new Promise(resolve => setTimeout(resolve, 0))
   assert.equal(calls.length, 1)
-  assert.equal(calls[0][1].body, '{"kind":"boundary","area":"post","page":"notice","code":"UNKNOWN"}')
+  assert.equal(calls[0][1].body, '{"kind":"boundary","area":"post","page":"notice","code":"UNKNOWN","route":"/notice/[detail]"}')
 })
 
 export async function renderLogs({ authorized = true, failure = false, rows = [], params = {} } = {}) {
@@ -134,6 +140,7 @@ export async function renderLogs({ authorized = true, failure = false, rows = []
     "@/shared/lib/supabase/admin": { createAdminClient: () => { reads++; return { from: () => q } } },
     "@/shared/lib/utils": { formatShortDateTime: value => value.slice(2, 16).replace("T", " ").replaceAll("-", ".") },
     "@/features/operation-logs/catalog": catalog,
+    "@/features/operation-logs/event-history": { EventHistory: () => React.createElement("section", null, "개별 발생 기록") },
     "@/features/operation-logs/status-form": load("src/features/operation-logs/status-form.tsx", {
       "next/navigation": { useRouter: () => ({ refresh() {} }) },
       "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
@@ -163,7 +170,7 @@ test("log rows disclose details, use aligned columns, and link SMS instead of co
 test("retention job requires cron secret and only deletes records last seen over 90 days ago", async () => {
   let deleted = false
   const api = runtime("src/app/api/cron/cleanup-operation-logs/route.ts", {
-    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => ({ delete: () => ({ lt: async (column, cutoff) => { assert.equal(column, "last_seen_at"); assert.ok(Date.now() - Date.parse(cutoff) >= 90 * 86400000); deleted = true; return { error: null } } }) }) }) },
+    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: table => ({ delete: () => ({ lt: async (column, cutoff) => { assert.equal(column, table === "operation_error_events" ? "occurred_at" : "last_seen_at"); assert.ok(Date.now() - Date.parse(cutoff) >= 90 * 86400000); deleted = true; return { error: null } } }) }) }) },
   }, { process: { env: { CRON_SECRET: "test-secret" } } })
   assert.equal((await api.GET(new Request("https://example.test"))).status, 401)
   assert.equal(deleted, false)

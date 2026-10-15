@@ -43,6 +43,7 @@ export async function sendRecordedApplicationSms(to: string, text: string, actor
   const from = process.env.SOLAPI_SENDER_NUMBER
 
   const toClean = to.replace(/\D/g, "")
+  const logContext = { targetType: context?.applicationType, targetId: context?.applicationId }
   const admin = createAdminClient()
   const configured = !!(apiKey && apiSecret && from)
   const { data: log, error: logError } = await admin.from("sms_delivery_logs").insert({
@@ -53,12 +54,12 @@ export async function sendRecordedApplicationSms(to: string, text: string, actor
     error_message: configured ? null : "문자 발송 환경변수가 설정되지 않았습니다.",
   }).select("id").single()
   if (logError || !log) {
-    await recordOperationError("sms", "requestLog", logError, "notification")
+    await recordOperationError("sms", "requestLog", logError, "notification", logContext)
     return { ok: false, error: "문자 발송 기록을 저장하지 못해 발송하지 않았습니다." }
   }
   const logId = log.id
   if (!apiKey || !apiSecret || !from) {
-    await recordOperationError("sms", "configuration", undefined, "notification")
+    await recordOperationError("sms", "configuration", undefined, "notification", logContext)
     return { ok: false, error: "문자 발송 설정이 필요합니다." }
   }
 
@@ -66,8 +67,8 @@ export async function sendRecordedApplicationSms(to: string, text: string, actor
     const { error } = await admin.from("sms_delivery_logs").update({
       state, error_message: errorMessage, provider_message_id: messageId ?? null,
     }).eq("id", logId)
-    if (error) await recordOperationError("sms", "resultLog", error, "notification")
-    if (state === "failed" || state === "unknown") await recordOperationError("sms", state, undefined, "notification")
+    if (error) await recordOperationError("sms", "resultLog", error, "notification", logContext)
+    if (state === "failed" || state === "unknown") await recordOperationError("sms", state, undefined, "notification", logContext)
   }
 
   try {

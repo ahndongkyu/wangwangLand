@@ -1,8 +1,6 @@
 import { recordOperationError } from "@/features/operation-logs/server"
 import { areas, logPages, type LogArea } from "@/features/operation-logs/catalog"
-
-// 종류·영역·페이지·코드 모두 허용 목록으로 제한한다.
-const recentReports = new Map<string, number>()
+import { safePage } from "@/features/operation-logs/diagnostics"
 
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) return new Response(null, { status: 403 })
@@ -26,10 +24,9 @@ export async function POST(request: Request) {
     if (!body || !["boundary", "unhandled", "upload"].includes(body.kind) || !areas.includes(body.area)) return new Response(null, { status: 400 })
     const page = logPages.includes(body.page) ? body.page : "other"
     const code = ["TypeError", "RangeError", "SyntaxError", "AbortError", "TimeoutError"].includes(body.code) ? body.code : "UNKNOWN"
-    const key = `${body.kind}:${body.area}:${page}:${code}`
-    if (Date.now() - (recentReports.get(key) ?? 0) < 60000) return new Response(null, { status: 204 })
-    recentReports.set(key, Date.now())
-    await recordOperationError("browser", `${body.kind}.${page}`, { name: code }, body.area as LogArea)
+    // 회원 신원·페이지는 서버 요청에서 확인한다. 회원별 중복 제한은 DB에서 처리한다.
+    const location = typeof body.location === "string" && body.location.length <= 160 && /^[a-zA-Z0-9_.-]+\.(?:js|mjs|cjs|ts|tsx):\d{1,8}:\d{1,8}$/.test(body.location) ? body.location : null
+    await recordOperationError("browser", `${body.kind}.${page}`, { name: code, ...(location ? { stack: `\n at /${location}` } : {}) }, body.area as LogArea, { page: safePage(body.route) })
     return new Response(null, { status: 204 })
   } catch { return new Response(null, { status: 400 }) }
 }
