@@ -88,7 +88,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
       try {
         const result = await submitAdoptionApplication(data)
         if (result.error) fail(result.error, result.field)
-        else { toast.success("입양 신청이 접수되었습니다."); setSuccess(true) }
+        else { toast.success("입양상담 신청이 접수되었습니다."); if(result.warning)toast.error(result.warning); setSuccess(true) }
       } catch {
         fail("접수 결과를 확인하지 못했습니다. 마이페이지의 신청 내역을 먼저 확인한 뒤 다시 시도해 주세요.")
       } finally { submitting.current = false }
@@ -96,8 +96,10 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
   }
 
   if (success) return <div ref={feedbackRef} tabIndex={-1} role="status" className="rounded-2xl border border-border bg-card p-8 text-center focus-visible:outline-ring">
-    <h2 className="text-xl font-semibold">입양 신청이 접수되었습니다</h2>
-    <p className="mt-3 text-sm leading-6 text-muted-foreground">운영진이 확인한 후 등록하신 연락처로 안내드립니다.<br />방문 일정은 상담 후 확정됩니다.</p>
+    <span className="text-sm font-semibold text-primary">승인대기</span>
+    <h2 className="mt-2 text-xl font-semibold">입양상담 신청이 접수되었습니다</h2>
+    <p className="mt-3 text-sm leading-6 text-muted-foreground">운영진이 방문 일정을 확인한 뒤 승인 문자를 보내드립니다.<br />승인 후 마이페이지에서 방문 서류를 내려받아 출력해 준비해주세요.<br />설문지와 신청서의 작성·서명은 현장 상담 후 진행합니다.</p>
+    <p className="mt-4 text-sm">입양담당팀장: <a href="tel:01054732827" className="underline">010-5473-2827</a></p>
     <Link href="/my/applications" className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">신청 내역 확인하기</Link>
   </div>
 

@@ -7,6 +7,7 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: { "/api/adoption/*/documents": ["./public/fonts/NanumGothic-*.ttf"] },
   async redirects() {
     return [
       {

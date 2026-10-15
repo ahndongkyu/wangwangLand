@@ -52,6 +52,7 @@ export function CancelMyApplicationButton({ id, kind, triggerClassName }: Props)
         toast.error(result.error)
       } else {
         toast.success("신청이 취소되었습니다")
+        if (result.warning) toast.error(result.warning)
         handleClose()
         router.refresh()
       }

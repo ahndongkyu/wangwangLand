@@ -12,7 +12,8 @@ test("notification labels and links distinguish application/event/comment types"
   vm.runInNewContext(code, { exports, require: () => ({}) })
   for (const [type, post_type, label, path] of [
     ["application_cancelled", "volunteer", "봉사 신청이 취소", "/my/applications"],
-    ["application_cancelled", "adoption", "입양 신청이 취소", "/my/applications"],
+    ["application_cancelled", "adoption", "입양 신청이 취소", "/my/applications/adoption/event-id"],
+    ["application_rejected", "adoption", "입양상담 신청이 거절", "/my/applications/adoption/event-id"],
     ["event_changed", "event", "일정이 변경", "/calendar/event-id"],
     ["event_canceled", "event", "일정이 취소", "/my/applications"],
     ["event_signup_confirmed", "event", "신청이 접수", "/calendar/event-id"],

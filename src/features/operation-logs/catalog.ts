@@ -31,6 +31,10 @@ const stepLabels: Record<string, string> = {
   boundary: "화면 표시 실패", unhandled: "브라우저 처리 오류", upload: "브라우저 파일 업로드 실패",
   applicationCounts: "신청 집계 조회 실패", applicationList: "신청 목록 조회 실패", applicationLinkedEvents: "연결 일정 조회 실패",
   volunteerGroupDates: "정기 봉사 제한 조회 실패", confirmedSchedule: "확정 일정 조회 실패",
+  processAdoption: "입양상담 승인·완료 처리 실패", adoptionPdf: "입양 방문 서류 생성 실패",
+  adoptionDocumentUpload: "입양 현장 서류 첨부 실패", adoptionDocumentRead: "입양 현장 서류 조회 실패",
+  adoptionSmsDispatch: "입양 문자 발송 확인 필요", adoptionSmsResult: "입양 문자 처리 결과 저장 실패",
+  adoptionRejectionNotice: "입양상담 거절 알림 저장 실패",
 }
 export function errorSummary(operation: Operation, step: string) {
   return stepLabels[step] ?? `${operations[operation]} 중 오류 발생`

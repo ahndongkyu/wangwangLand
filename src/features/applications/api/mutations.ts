@@ -164,6 +164,10 @@ export async function submitAdoptionApplication(
   if (!/^(10|11|13|14|15|16|17):(00|10|20|30|40|50)$/.test(visitAvailableTime)) {
     return { error: "방문 가능한 시간을 선택해 주세요." }
   }
+  if (visitAvailableDates.length > 30 || visitAvailableDates.some(date => {
+    const instant = new Date(`${date}T${visitAvailableTime}:00+09:00`)
+    return !Number.isFinite(instant.getTime()) || instant <= new Date() || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date
+  })) return { error: "방문 가능한 미래 날짜를 30개 이내로 선택해주세요." }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -199,6 +203,10 @@ export async function submitAdoptionApplication(
       visit_available_dates: visitAvailableDates,
       visit_available_time: visitAvailableTime,
       privacy_agreed: true,
+      qualification_answers: {
+        adult: true, family_consent: true, readiness: true, terms_agreed: true,
+        ...(["전세", "월세"].includes(ownershipType) ? { landlord_consent: true } : {}),
+      },
       created_by: user.id,
     })
     .select("id")
@@ -214,8 +222,8 @@ export async function submitAdoptionApplication(
   try {
     const { sendPushToStaff } = await import("@/features/push")
     await sendPushToStaff({
-      title: "💕 새 입양 신청",
-      body: `${applicant_name}님이 입양을 신청했어요`,
+      title: "새 입양상담 신청",
+      body: `${applicant_name}님이 입양상담을 신청했습니다. 일정을 확인해주세요.`,
       url: `/admin/applications/adoption/${data.id}`,
       tag: `adoption-app-${data.id}`,
     })
@@ -224,7 +232,11 @@ export async function submitAdoptionApplication(
     await recordOperationError("push", "push adoption-app", e, "application")
   }
 
-  return { id: data.id }
+  const { dispatchAdoptionSms } = await import("./adoption-notifications")
+  const warning = await dispatchAdoptionSms(data.id)
+  revalidatePath("/admin/applications")
+  revalidatePath("/my/applications")
+  return { id: data.id, warning }
 }
 
 export async function submitVolunteerApplication(
@@ -461,88 +473,14 @@ function revalidateAdminApplications() {
   revalidatePath("/admin/applications")
 }
 
-export async function updateAdoptionApplication(
-  id: string,
-  formData: FormData
-): Promise<SubmitResult> {
+export async function updateAdoptionApplication(id: string, formData: FormData): Promise<SubmitResult> {
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
-  const status = String(formData.get("status") ?? "") as ApplicationStatus
-  const adminNote = String(formData.get("admin_note") ?? "").trim()
-  const cancelReason = String(formData.get("cancel_reason") ?? "").trim()
-
-  if (status === "취소" && !cancelReason) {
-    return { error: "취소 사유를 입력해주세요." }
-  }
-
-  const supabase = await createClient()
-
-  // 상태 변경 전 created_by, phone, applicant_name 조회 (RLS 우회 위해 admin client 사용)
-  const admin = createAdminClient()
-  const { data: prev } = await admin
-    .from("adoption_applications")
-    .select("created_by, status, phone, applicant_name")
-    .eq("id", id)
-    .maybeSingle()
-
-  const updatePayload: Record<string, unknown> = {
-    status,
-    admin_note: adminNote || null,
-  }
-  if (status === "취소") updatePayload.cancel_reason = cancelReason
-
-  const { error } = await supabase
-    .from("adoption_applications")
-    .update(updatePayload)
-    .eq("id", id)
-
-  if (error) {
-    console.error("[updateAdoptionApplication]", error)
-    await recordOperationError("application", "updateAdoptionApplication", error, "application")
-    return { error: error.message }
-  }
-
-  // 상태가 실제로 바뀌었고, created_by가 있으면 유저에게 알림 발송
-  if (prev?.created_by && prev.status !== status) {
-    const admin = createAdminClient()
-    try {
-      const { error: notificationError } = await admin.from("notifications").insert({
-        user_id: prev.created_by,
-        type: notificationTypeForStatus(status),
-        post_type: "adoption",
-        post_id: id,
-        actor_id: null,
-      })
-      if (notificationError) await recordOperationError("push", "adoptionInAppNotification", notificationError, "notification")
-    } catch (notificationError) {
-      await recordOperationError("push", "adoptionInAppNotification", notificationError, "notification")
-    }
-
-    // 푸시 알림
-    try {
-      const { sendPushToUser } = await import("@/features/push")
-      await sendPushToUser(
-        {
-          title: pushTitleForStatus(status, "입양"),
-          body: status === "취소" && cancelReason
-            ? `취소 사유: ${cancelReason}`
-            : pushBodyForStatus(status),
-          url: "/my/applications",
-          tag: `adoption-status-${id}`,
-        },
-        prev.created_by
-      )
-    } catch (e) {
-      console.error("[push adoption-status]", e)
-      await recordOperationError("push", "push adoption-status", e, "application")
-    }
-  }
-
-  revalidateAdminApplications()
-  revalidatePath(`/admin/applications/adoption/${id}`)
-  return { id }
+  const { processAdoption } = await import("./adoption-workflow")
+  const status = String(formData.get("status") ?? "")
+  formData.set("action", status === "승인" ? "approve" : status === "반려" ? "reject" : "invalid")
+  return processAdoption(id, formData)
 }
-
 function pushTitleForStatus(status: ApplicationStatus, kind: "입양" | "봉사"): string {
   const icon = kind === "입양" ? "💕" : "🐾"
   switch (status) {
@@ -982,20 +920,22 @@ export async function cancelOwnAdoptionApplication(
 
   const { data: app } = await admin
     .from("adoption_applications")
-    .select("created_by, status")
+    .select("created_by, status, updated_at, completed_at")
     .eq("id", id)
     .maybeSingle()
   if (!app) return { error: "신청을 찾을 수 없습니다." }
   if (app.created_by !== session.user.id) return { error: "본인 신청만 취소할 수 있습니다." }
   if (app.status === "취소") return { error: "이미 취소된 신청입니다." }
+  if (app.completed_at) return { error: "입양 완료된 신청은 취소할 수 없습니다." }
 
   const reason = cancelReason.trim()
   if (!reason) return { error: "취소 사유를 입력해주세요." }
 
-  const { error } = await supabase.rpc("cancel_own_application_with_events", {
-    p_application_id: id,
-    p_application_type: "adoption",
-    p_cancel_reason: reason,
+  const { error } = await supabase.rpc("process_adoption_consultation", {
+    p_id: id,
+    p_expected_updated_at: app.updated_at,
+    p_action: "cancel",
+    p_reason: reason,
   })
 
   if (error) {
@@ -1005,10 +945,14 @@ export async function cancelOwnAdoptionApplication(
   }
 
   await notifyStaffCancellation(id, "adoption", session.user.id)
+  const { dispatchAdoptionSms } = await import("./adoption-notifications")
+  const warning = await dispatchAdoptionSms(id)
 
   revalidatePath("/my/applications")
   revalidatePath("/admin/applications")
   revalidatePath("/calendar")
   revalidatePath("/admin/calendar")
-  return { id }
+  revalidatePath(`/my/applications/adoption/${id}`)
+  revalidatePath(`/admin/applications/adoption/${id}`)
+  return { id, warning }
 }

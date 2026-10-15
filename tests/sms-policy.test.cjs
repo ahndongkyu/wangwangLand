@@ -96,10 +96,13 @@ test('polling refreshes visible tab, pauses hidden/pending, and cleans up listen
   }
 })
 
-test('only volunteer mutation retains a sendSms call; adoption retains push', () => {
+test('volunteer SMS policy is retained; adoption uses persisted workflow events', () => {
   const source = fs.readFileSync(path.join(__dirname, '../src/features/applications/api/mutations.ts'), 'utf8')
   assert.equal((source.match(/await sendSms\(/g) || []).length, 1)
   const adoption = source.slice(source.indexOf('export async function updateAdoptionApplication'), source.indexOf('function pushTitleForStatus'))
-  assert.ok(adoption.includes('sendPushToUser'))
+  assert.ok(adoption.includes('processAdoption'))
   assert.ok(!adoption.includes('sendSms'))
+  const workflow = fs.readFileSync(path.join(__dirname, '../src/features/applications/api/adoption-workflow.ts'), 'utf8')
+  assert.ok(workflow.includes('sendPushToUser'))
+  assert.ok(workflow.includes('dispatchAdoptionSms'))
 })

@@ -16,6 +16,7 @@ const POST_PATH: Record<string, string> = {
 }
 
 function notifLabel(n: UserNotification): string {
+  if (n.post_type === "adoption" && n.type === "application_rejected") return "입양상담 신청이 거절되었습니다. 신청 내역에서 사유를 확인해주세요."
   const t = n.post_type === "adoption" ? "입양" : "봉사"
   if (n.type === "application_approved") return `${t} 신청이 승인되었습니다 🎉`
   if (n.type === "application_rejected") return `${t} 신청이 반려되었습니다. 사유는 신청 내역에서 확인하세요.`
@@ -47,6 +48,7 @@ const APPLICATION_STATUS_TYPES = new Set([
 ])
 
 function notifPath(n: UserNotification): string {
+  if (n.post_type === "adoption" && APPLICATION_STATUS_TYPES.has(n.type)) return `/my/applications/adoption/${n.post_id}`
   if (APPLICATION_STATUS_TYPES.has(n.type)) return "/my/applications"
   if (n.type === "event_canceled") return "/my/applications"
   if (n.post_type === "event") return `/calendar/${n.post_id}`

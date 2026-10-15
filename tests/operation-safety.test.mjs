@@ -24,6 +24,7 @@ test("own cancellation uses authenticated atomic RPC, never separate writes", as
   for (const type of ["volunteer", "adoption"]) {
     const calls = []
     const api = load("src/features/applications/api/mutations.ts", {
+      "./adoption-notifications": { dispatchAdoptionSms: async () => undefined },
       "next/cache": { revalidatePath() {} }, "next/navigation": {}, "@/shared/lib/auth": {},
       "@/features/push": { sendPushToStaff: async (message, userId) => {
         assert.equal(calls.length, 1)
@@ -36,7 +37,7 @@ test("own cancellation uses authenticated atomic RPC, never separate writes", as
       }) },
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from(table) {
         assert.equal(table, `${type}_applications`)
-        return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { created_by: "owner", status: "승인" } }) }
+        return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { created_by: "owner", status: "승인",updated_at:"2026-10-15T00:00:00Z" } }) }
       } }) },
       "@/features/events/lib/date": {}, "@/features/events/types": {},
       "../lib/volunteer-applicant": {}, "../lib/volunteer-operating-hours": {}, "@/shared/lib/validation": {},
@@ -44,8 +45,14 @@ test("own cancellation uses authenticated atomic RPC, never separate writes", as
     const action = type === "volunteer" ? api.cancelOwnVolunteerApplication : api.cancelOwnAdoptionApplication
     assert.equal((await action("application", " 사정으로 취소 ")).id, "application")
     assert.equal(calls.length, 1)
-    assert.equal(calls[0].name, "cancel_own_application_with_events")
-    assert.equal(calls[0].args.p_application_type, type)
-    assert.equal(calls[0].args.p_cancel_reason, "사정으로 취소")
+    assert.equal(calls[0].name, type === "adoption" ? "process_adoption_consultation" : "cancel_own_application_with_events")
+    if(type === "adoption") {
+      assert.equal(calls[0].args.p_action,"cancel")
+      assert.equal(calls[0].args.p_expected_updated_at,"2026-10-15T00:00:00Z")
+      assert.equal(calls[0].args.p_reason,"사정으로 취소")
+    } else {
+      assert.equal(calls[0].args.p_application_type, type)
+      assert.equal(calls[0].args.p_cancel_reason, "사정으로 취소")
+    }
   }
 })

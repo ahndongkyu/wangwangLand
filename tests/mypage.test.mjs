@@ -21,6 +21,7 @@ function load(file, mocks = {}) {
   const exports = {}
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
   vm.runInNewContext(code, { exports, Date, require: name => {
+    if(name === "@/features/applications/lib/adoption-workflow") return load("src/features/applications/lib/adoption-workflow.ts")
     assert.ok(name in mocks || name in imports, `Unexpected dependency: ${name}`)
     return mocks[name] ?? imports[name]
   } })

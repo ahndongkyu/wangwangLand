@@ -1,11 +1,13 @@
 import Link from "next/link"
-import { ApplicationBadge } from "@/features/applications/components/application-detail-layout"
+import { AdoptionProcessing, type AdoptionDocument } from "@/features/applications/components/adoption-processing"
+import { adoptionStatusLabel } from "@/features/applications/lib/adoption-workflow"
+import { requireAdmin } from "@/shared/lib/auth"
+import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { applicationReturnHref } from "@/features/applications/lib/admin-list"
 import { notFound } from "next/navigation"
 import { KeyRound, MessageSquare, Phone, User } from "lucide-react"
 
 import {
-  ApplicationStatusForm,
   getAdoptionApplication,
 } from "@/features/applications"
 import { formatKoreanPhone } from "@/shared/lib/validation"
@@ -42,10 +44,15 @@ export default async function AdoptionApplicationDetailPage({
   searchParams: Promise<{ returnTo?: string | string[] }>
 }) {
   const { id } = await params
+  const auth = await requireAdmin()
+  if (!auth.ok) notFound()
   const returnHref = applicationReturnHref((await searchParams).returnTo, "adoption")
   const app = await getAdoptionApplication(id)
 
   if (!app) notFound()
+  const { data: documents, error: documentError } = await createAdminClient().from("adoption_documents")
+    .select("id,kind,filename,created_at").eq("application_id",id).order("created_at",{ascending:false})
+  if (documentError) throw new Error("서류 목록을 불러오지 못했습니다. 입양상담 SQL 적용 여부를 확인해주세요.", { cause: documentError })
 
   const targetAnimal = app.dog
     ? { kind: "강아지" as const, ...app.dog }
@@ -71,9 +78,9 @@ export default async function AdoptionApplicationDetailPage({
             <h1 className="text-2xl font-bold text-foreground md:text-3xl">
               {app.applicant_name}
             </h1>
-            <ApplicationBadge status={app.status} />
+            <span className="rounded-lg bg-primary/10 px-2 py-1 text-sm text-primary">{adoptionStatusLabel(app.status, app.completed_at)}</span>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">입양 신청 상세</p>
+          <p className="mt-2 text-sm text-muted-foreground">입양상담 신청 상세 · 상담 승인과 실제 입양 완료는 별도입니다.</p>
           <p className="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <span>
               {new Date(app.submitted_at).toLocaleString("ko-KR", {
@@ -94,10 +101,6 @@ export default async function AdoptionApplicationDetailPage({
                   {(app as typeof app & { cancel_reason?: string }).cancel_reason}
                 </p>
               )}
-            </div>
-          ) : app.status !== "접수" ? (
-            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/50 dark:bg-amber-950/30 dark:text-amber-300">
-              이 신청은 이미 <span className="font-semibold">{app.status}</span> 처리되었어요.
             </div>
           ) : null}
         </div>
@@ -121,7 +124,7 @@ export default async function AdoptionApplicationDetailPage({
       {targetAnimal && (
       <section className="order-1 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5">
           <div>
-            <p className="text-xs text-muted-foreground">대상 아이</p>
+            <p className="text-xs text-muted-foreground">처음 희망한 아이 (원래 신청 내용)</p>
             <p className="mt-1 text-lg font-bold text-foreground">
               {targetAnimal.name}{" "}
               <span className="text-sm font-normal text-muted-foreground">
@@ -168,6 +171,7 @@ export default async function AdoptionApplicationDetailPage({
             />
           )}
           <Row label="주소" value={app.address} />
+          <Row label="이메일" value={app.email ?? "—"} />
         </Card>
 
         <Card title="가족 · 주거">
@@ -214,33 +218,14 @@ export default async function AdoptionApplicationDetailPage({
         <summary className="min-h-11 cursor-pointer text-sm font-semibold text-foreground">
           신청 시 동의·확인 사항
         </summary>
-        <ul className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-          <li>• 만 19세 이상 성인</li>
-          <li>• 동거 가족 전원의 입양 동의</li>
-          <li>• 양육 가능한 경제·시간 여건</li>
-          {(app.ownership_type === "전세" || app.ownership_type === "월세") && (
-            <li>• 임대인의 반려동물 양육 동의</li>
-          )}
-          <li>• 개인정보 수집·이용 동의</li>
-          <li>• 이용약관 동의</li>
-        </ul>
-        <p className="mt-2 text-[11px] text-muted-foreground/80">
-          신청 폼에서 위 항목을 모두 체크해야 제출이 가능합니다.
-        </p>
+        <p className="text-xs text-muted-foreground">개인정보 수집·이용: {app.privacy_agreed ? "동의함" : "동의 기록 없음"}</p>
+        {app.qualification_answers ? <ul className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">{Object.entries(app.qualification_answers).map(([key,value]) => <li key={key}>{({ adult:"성인 확인", family_consent:"가족 전원 동의", readiness:"평생 양육 여건", terms_agreed:"이용약관 동의", landlord_consent:"임대인 동의" } as Record<string,string>)[key] ?? key}: {value ? "확인" : "미확인"}</li>)}</ul> : <p className="mt-2 text-xs text-muted-foreground">과거 신청으로 개별 확인 기록이 없습니다.</p>}
       </details>
 
       </div>
       <aside id="application-processing" className="order-2 min-w-0 scroll-mt-20 xl:min-w-[300px] xl:flex-[.85]">
       {/* 처리 */}
-      <ApplicationStatusForm
-        id={app.id}
-        returnHref={returnHref}
-        currentCancelReason={(app as typeof app & { cancel_reason?: string | null }).cancel_reason}
-        kind="adoption"
-        currentStatus={app.status}
-        currentNote={app.admin_note}
-        applicantName={app.applicant_name}
-      />
+      <AdoptionProcessing key={app.updated_at} app={app} documents={(documents ?? []) as AdoptionDocument[]} />
       </aside>
       </div>
     </div>

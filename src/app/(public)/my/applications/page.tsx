@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { applicationDate } from "@/features/applications/lib/admin-list"
+import { adoptionStatusLabel } from "@/features/applications/lib/adoption-workflow"
 import { volunteerToday } from "@/features/applications/lib/volunteer-operating-hours"
 import { ChevronDown } from "lucide-react"
 
@@ -72,7 +73,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
   const [adoptionRes, volunteerRes] = await Promise.all([
     admin
       .from("adoption_applications")
-      .select("id, status, submitted_at, admin_note, cancel_reason, preferred_animal, dog:dogs(name), cat:cats(name)")
+      .select("id, status, submitted_at, admin_note, cancel_reason, preferred_animal, completed_at, dog:dogs(name), cat:cats(name)")
       .eq("created_by", session.user.id)
       .order("submitted_at", { ascending: false }),
     admin
@@ -84,6 +85,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
 
   if (adoptionRes.error || volunteerRes.error) throw new Error("신청 내역을 불러오지 못했습니다.", { cause: adoptionRes.error ?? volunteerRes.error })
   const adoptions = (adoptionRes.data ?? []) as Array<{
+    completed_at: string | null
     id: string
     status: ApplicationStatus
     submitted_at: string
@@ -286,7 +288,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <Badge className={cn("border-0 font-semibold", statusBadgeClass(a.status))}>
-                            {a.status}
+                            {adoptionStatusLabel(a.status, a.completed_at)}
                           </Badge>
                           <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
                         </div>
@@ -302,12 +304,14 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                         )}
 
                         {/* ── 버튼 행 ── */}
-                        <div className="flex items-center justify-end border-t border-border/60 pt-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+                          <Link href={`/my/applications/adoption/${a.id}`} className="inline-flex min-h-11 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">신청 상세 · 방문 서류</Link>
+                          {!a.completed_at && ["접수", "검토중", "승인"].includes(a.status) &&
                           <CancelMyApplicationButton
                             id={a.id}
                             kind="adoption"
                             triggerClassName="inline-flex min-h-11 items-center rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold text-muted-foreground hover:border-destructive/40 hover:text-destructive"
-                          />
+                          />}
                         </div>
                       </div>
                     </details>

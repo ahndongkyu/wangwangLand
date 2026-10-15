@@ -26,6 +26,7 @@ const Link = ({ children, ...props }) => React.createElement("a", props, childre
 const Image = props => React.createElement("img", { ...Object.fromEntries(Object.entries(props).filter(([key]) => !["fill", "sizes", "priority"].includes(key))), width: 40, height: 40 })
 const site = load("src/shared/constants/site.ts").SITE
 const base = {
+  "@/features/applications/lib/adoption-workflow": load("src/features/applications/lib/adoption-workflow.ts"),
   "next/link": { default: Link }, "next/image": { default: Image },
   "next/navigation": { notFound: () => { throw Error("Not found") }, redirect: href => { throw Error(`Redirect ${href}`) } },
   "@/shared/lib/utils": { cn: (...args) => args.filter(Boolean).join(" "), formatShortDate: iso => iso.slice(2, 10).replaceAll("-", ".") },
@@ -189,6 +190,9 @@ export async function renderAdoption() {
     "@/shared/lib/use-save-feedback": { useSaveFeedback: () => ({ pending: false, completed: false, save: async () => {} }) },
   }).ApplicationStatusForm
   const Page = load("src/app/(admin)/admin/(protected)/applications/adoption/[id]/page.tsx", {
+    "@/shared/lib/auth": { requireAdmin: async () => ({ok:true,userId:"staff"}) },
+    "@/shared/lib/supabase/admin": { createAdminClient: () => ({from:()=>({select(){return this},eq(){return this},order:async()=>({data:[],error:null})})}) },
+    "@/features/applications/components/adoption-processing": { AdoptionProcessing: element("div","방문 일정 확정 · 실제 입양 완료 · 현장 서류") },
     ...base, "@/features/applications/components/application-detail-layout": { ApplicationBadge: Badge }, "@/features/applications/lib/admin-list": filters,
     "@/features/applications": { ApplicationStatusForm: Status, getAdoptionApplication: async () => ({ id: "adoption", applicant_name: "입양신청자", status: "접수", phone: "010-0000-0000", submitted_at: "2026-10-07T01:20:00Z", created_by: "member", dog: { id: "dog", name: "사랑" }, address: "인천시", family_size: 3, housing_type: "아파트", ownership_type: "자가", current_pets: "없음", past_pet_experience: "반려동물과 함께한 경험", visit_available_dates: ["2026-10-18"], visit_available_time: "13:00", reason: "오랫동안 함께할 가족을 찾고 있습니다. 충분히 고민하고 신청했습니다." }) },
   }).default

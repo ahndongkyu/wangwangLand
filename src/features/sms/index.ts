@@ -28,6 +28,16 @@ export async function sendSms(to: string, text: string, context?: {
 }): Promise<{ ok: boolean; error?: string }> {
   const auth = await requireAdmin()
   if (!auth.ok) return { ok: false, error: auth.error }
+  return sendRecordedApplicationSms(to, text, auth.userId, context)
+}
+
+/** 서버 내부 전용. 호출자는 저장된 업무 이벤트와 권한을 먼저 검증해야 한다. */
+export async function sendRecordedApplicationSms(to: string, text: string, actorId: string | null, context?: {
+  applicationId: string
+  applicationType: "volunteer" | "adoption"
+  recipientName: string
+  messageType?: "SMS" | "LMS"
+}): Promise<{ ok: boolean; error?: string }> {
   const apiKey = process.env.SOLAPI_API_KEY
   const apiSecret = process.env.SOLAPI_API_SECRET
   const from = process.env.SOLAPI_SENDER_NUMBER
@@ -38,7 +48,7 @@ export async function sendSms(to: string, text: string, context?: {
   const { data: log, error: logError } = await admin.from("sms_delivery_logs").insert({
     recipient_phone: toClean, recipient_name: context?.recipientName ?? null,
     message: text, application_id: context?.applicationId ?? null,
-    application_type: context?.applicationType ?? null, created_by: auth.userId,
+    application_type: context?.applicationType ?? null, created_by: actorId,
     state: configured ? "pending" : "failed",
     error_message: configured ? null : "문자 발송 환경변수가 설정되지 않았습니다.",
   }).select("id").single()

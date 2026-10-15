@@ -146,22 +146,23 @@ test("completed application update survives both returned and thrown notificatio
     const records = []
     const db = { from(table) {
       if (table === "notifications") return { insert: async () => { if (throws) throw Error("private payload"); return { error: { code: "23505", message: "private" } } } }
-      return { select() { return this }, update() { return this }, eq() { return this }, then: resolve => resolve({ error: null }), maybeSingle: async () => ({ data: { created_by: "owner", status: "접수" } }) }
+      return { select() { return this }, eq() { return this }, single: async () => ({ data: { created_by: "owner" } }) }
     } }
-    const api = load("src/features/applications/api/mutations.ts", {
+    const api = load("src/features/applications/api/adoption-workflow.ts", {
       "next/cache": { revalidatePath() {} }, "next/navigation": {},
       "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true, userId: "admin" }) },
-      "@/shared/lib/supabase/server": { createClient: async () => db },
+      "@/shared/lib/supabase/server": { createClient: async () => ({rpc:async()=>({error:null})}) },
       "@/shared/lib/supabase/admin": { createAdminClient: () => db },
       "@/features/operation-logs/server": { recordOperationError: async (...args) => records.push(args) },
       "@/features/push": { sendPushToUser: async () => {} },
-      "@/features/events/lib/date": {}, "@/features/events/types": {},
-      "../lib/volunteer-applicant": {}, "../lib/volunteer-operating-hours": {}, "@/shared/lib/validation": {},
+      "./adoption-notifications": { dispatchAdoptionSms: async () => undefined },
     })
     const form = new FormData()
-    form.set("status", "승인")
-    assert.equal((await api.updateAdoptionApplication("application", form)).id, "application")
+    form.set("action", "reject")
+    form.set("expected_updated_at", "2026-10-15T00:00:00Z")
+    form.set("reason", "상담 일정 불가")
+    assert.equal((await api.processAdoption("application", form)).id, "application")
     assert.equal(records.length, 1)
-    assert.equal(records[0][1], "adoptionInAppNotification")
+    assert.equal(records[0][1], "adoptionRejectionNotice")
   }
 })

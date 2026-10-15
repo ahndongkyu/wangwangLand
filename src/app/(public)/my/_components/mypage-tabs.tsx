@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/shared/lib/utils"
+import { adoptionStatusLabel } from "@/features/applications/lib/adoption-workflow"
 import type { ApplicationStatus } from "@/shared/types/database"
 import type { Donation } from "@/features/donations"
 
@@ -21,8 +22,10 @@ interface AdoptionApp {
   id: string
   status: ApplicationStatus
   submitted_at: string
-  dog: { name: string }[] | null
-  cat: { name: string }[] | null
+  completed_at: string | null
+  preferred_animal: string | null
+  dog: { name: string } | { name: string }[] | null
+  cat: { name: string } | { name: string }[] | null
 }
 
 interface LikedAnimal {
@@ -127,15 +130,15 @@ export function MyPageTabs({ volunteers, adoptions, donations, likedAnimals, myP
                 </Link>
               ))}
               {adoptions.map((a) => (
-                <Link key={a.id} href="/my/applications" className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none">
+                <Link key={a.id} href={`/my/applications/adoption/${a.id}`} className="flex items-center gap-3 px-5 py-4 transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-primary/15 motion-reduce:transition-none">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">
-                      입양 신청 — {a.dog?.[0]?.name ?? a.cat?.[0]?.name ?? "아이"}
+                      입양상담 — {(Array.isArray(a.dog) ? a.dog[0]?.name : a.dog?.name) ?? (Array.isArray(a.cat) ? a.cat[0]?.name : a.cat?.name) ?? a.preferred_animal ?? "상담 후 결정"}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(a.submitted_at)} 신청</p>
                   </div>
                   <span className={cn("shrink-0 rounded-md px-2.5 py-1 text-[11px] font-bold", STATUS_STYLE[a.status])}>
-                    {a.status}
+                    {adoptionStatusLabel(a.status,a.completed_at)}
                   </span>
                 </Link>
               ))}

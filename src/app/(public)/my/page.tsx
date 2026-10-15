@@ -85,7 +85,7 @@ async function MyActivity(userId: string) {
     listMyUpcomingEvents(),
     admin
       .from("adoption_applications")
-      .select("id, status, submitted_at, dog:dogs(name), cat:cats(name)")
+      .select("id, status, submitted_at, completed_at, preferred_animal, dog:dogs(name), cat:cats(name)")
       .eq("created_by", userId)
       .order("submitted_at", { ascending: false })
       .limit(20),
@@ -133,6 +133,8 @@ async function MyActivity(userId: string) {
     id: string
     status: ApplicationStatus
     submitted_at: string
+    completed_at: string | null
+    preferred_animal: string | null
     dog: { name: string }[] | null
     cat: { name: string }[] | null
   }>

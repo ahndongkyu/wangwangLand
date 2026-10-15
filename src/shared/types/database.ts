@@ -146,6 +146,20 @@ export interface Donation {
 }
 
 export interface AdoptionApplication {
+  confirmed_visit_at: string | null
+  approved_at: string | null
+  approved_by: string | null
+  rejection_reason: string | null
+  cancel_reason: string | null
+  completed_at: string | null
+  completed_by: string | null
+  adoption_date: string | null
+  actual_animal_kind: "dog" | "cat" | null
+  actual_animal_id: string | null
+  actual_animal_name: string | null
+  actual_adopter_name: string | null
+  actual_adopter_phone: string | null
+  qualification_answers: Record<string, boolean> | null
   id: string
   dog_id: string | null
   cat_id: string | null

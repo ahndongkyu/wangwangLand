@@ -28,7 +28,8 @@ function harness({ user = true, approved = true, banned = false, animalStatus = 
     from: () => ({ select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { status: approved ? "approved" : "pending", is_banned: banned } }) }),
   }
   const api = load("src/features/applications/api/mutations.ts", {
-    "next/cache": {}, "next/navigation": {}, "@/shared/lib/auth": {},
+    "next/cache": { revalidatePath() {} }, "next/navigation": {}, "@/shared/lib/auth": {},
+    "./adoption-notifications": { dispatchAdoptionSms: async () => undefined },
     "@/shared/lib/supabase/server": { createClient: async () => client },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from(table) {
       if (["dogs", "cats"].includes(table)) return { select() { return this }, eq(key, id) { lookups.push({ table, id }); return this }, maybeSingle: async () => ({ data: missing ? null : { status: animalStatus } }) }
@@ -113,6 +114,14 @@ test("adoption times preserve existing 17:50 option and reject invalid hours/min
   assert.ok((await h.submit(form())).id)
   for (const time of ["12:00", "18:00", "17:59", "99:99", ""]) assert.ok((await h.submit(form({ visit_available_time: time }))).error)
   assert.equal(h.inserts.length, 1)
+})
+test("application submission rejects impossible, past, absent and excessive visit dates without saving",async()=>{
+  for(const dates of [[],["2099-02-30"],["2020-10-15"],Array.from({length:31},(_,i)=>`2099-10-${String(i+1).padStart(2,"0")}`)]){
+    const h=harness(),data=form({visit_available_dates:null})
+    dates.forEach(date=>data.append("visit_available_dates",date))
+    assert.ok((await h.submit(data)).error)
+    assert.equal(h.inserts.length,0);assert.equal(h.pushes.length,0)
+  }
 })
 test("unauthenticated, unapproved, banned and failed saves do not send notifications", async () => {
   for (const options of [{ user: false }, { approved: false }, { banned: true }, { failure: true }]) {
