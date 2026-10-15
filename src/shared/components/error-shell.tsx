@@ -20,7 +20,7 @@ export function ErrorShell({ error, reset, homeHref, homeLabel }: Props) {
   useEffect(() => {
     console.error("[ErrorShell]", error)
     // 서버 오류는 instrumentation에서 별도로 기록된다.
-    if (!error.digest) reportBrowserError("boundary")
+    if (!error.digest) reportBrowserError("boundary", error)
   }, [error])
 
   return (

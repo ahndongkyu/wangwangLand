@@ -3,6 +3,8 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import vm from "node:vm"
 import ts from "typescript"
+import { load } from "./helpers/page-review-fixtures.mjs"
+const catalog = load("src/features/operation-logs/catalog.ts")
 
 test("notification constraint preserves comments and matches every declared application/event type", () => {
   const source = fs.readFileSync("src/features/notifications/api/queries.ts", "utf8")
@@ -19,6 +21,7 @@ test("notification constraint preserves comments and matches every declared appl
 function pushFixture({ subscriptions = [], statusCode, configured = true, queryError = false } = {}) {
   const records = [], sent = [], removed = []
   const imports = {
+    "@/features/operation-logs/catalog": catalog,
     "@/features/operation-logs/server": { recordOperationError: async (...args) => records.push(args) },
     "@/shared/lib/supabase/server": {},
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => ({
@@ -66,6 +69,7 @@ test("delivery outages, query failures and missing server keys remain visible", 
     await f.api.sendPushToUser({ title: "test", body: "test" }, "member")
     assert.equal(f.records.length, 1)
     assert.equal(f.records[0][1], step)
+    if (options.statusCode) assert.equal(catalog.safeErrorCode(f.records[0][2]), "HTTP_503")
     assert.equal(f.removed.length, 0)
   }
 })

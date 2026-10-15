@@ -1,4 +1,5 @@
 import { get } from "@vercel/blob"
+import { recordOperationError } from "@/features/operation-logs/server"
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/shared/lib/auth"
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
 
   const token = process.env.BLOB_PRIVATE_READ_WRITE_TOKEN
   if (!token) {
+    await recordOperationError("upload", "privateStorageConfiguration", undefined, "upload")
     return NextResponse.json({ error: "비공개 첨부파일 저장소가 설정되지 않았습니다." }, { status: 503 })
   }
   try {

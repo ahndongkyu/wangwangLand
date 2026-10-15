@@ -1,7 +1,7 @@
 import { recordOperationError } from "@/features/operation-logs/server"
-import { areas, type LogArea } from "@/features/operation-logs/catalog"
+import { areas, logPages, type LogArea } from "@/features/operation-logs/catalog"
 
-// 허용된 3종류 × 7영역만 키로 사용하므로 외부 입력으로 메모리가 늘어나지 않는다.
+// 종류·영역·페이지·코드 모두 허용 목록으로 제한한다.
 const recentReports = new Map<string, number>()
 
 export async function POST(request: Request) {
@@ -24,10 +24,12 @@ export async function POST(request: Request) {
     text += decoder.decode()
     const body = JSON.parse(text)
     if (!body || !["boundary", "unhandled", "upload"].includes(body.kind) || !areas.includes(body.area)) return new Response(null, { status: 400 })
-    const key = `${body.kind}:${body.area}`
+    const page = logPages.includes(body.page) ? body.page : "other"
+    const code = ["TypeError", "RangeError", "SyntaxError", "AbortError", "TimeoutError"].includes(body.code) ? body.code : "UNKNOWN"
+    const key = `${body.kind}:${body.area}:${page}:${code}`
     if (Date.now() - (recentReports.get(key) ?? 0) < 60000) return new Response(null, { status: 204 })
     recentReports.set(key, Date.now())
-    await recordOperationError("browser", body.kind, undefined, body.area as LogArea)
+    await recordOperationError("browser", `${body.kind}.${page}`, { name: code }, body.area as LogArea)
     return new Response(null, { status: 204 })
   } catch { return new Response(null, { status: 400 }) }
 }

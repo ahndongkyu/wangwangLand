@@ -8,6 +8,14 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { load } from "./helpers/page-review-fixtures.mjs"
 
 const catalog = load("src/features/operation-logs/catalog.ts")
+test("diagnostics classify pages and errors without retaining paths or sensitive strings", () => {
+  assert.equal(catalog.browserPage("/admin/applications/adoption/private-id?phone=secret"), "adoption")
+  assert.equal(catalog.browserPage("/unknown-person@example.test"), "other")
+  assert.equal(catalog.safeErrorCode({ statusCode: 403, body: "private token" }), "HTTP_403")
+  assert.equal(catalog.safeErrorCode({ code: "ETIMEDOUT" }), "ETIMEDOUT")
+  assert.equal(catalog.safeErrorCode({ code: "private-token" }), "UNKNOWN")
+  assert.equal(catalog.errorSummary("browser", "boundary.adoption"), "화면 표시 실패")
+})
 function runtime(file, imports, extra = {}) {
   const exports = {}
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
@@ -16,6 +24,24 @@ function runtime(file, imports, extra = {}) {
   })
   return exports
 }
+
+test("private upload configuration failure is recorded without a storage write", async () => {
+  for (const file of ["src/app/api/admin/expense-upload/route.ts", "src/app/api/admin/adoption-documents/route.ts"]) {
+    const records = []
+    const api = runtime(file, {
+      "@vercel/blob/client": { generateClientTokenFromReadWriteToken() { assert.fail("must not mint token") } },
+      "@vercel/blob": { put() { assert.fail("must not upload") } },
+      "next/server": { NextResponse: Response },
+      "@/shared/lib/auth": { requireAdmin: async () => ({ok:true}) },
+      "@/shared/lib/supabase/admin": {},
+      "@/features/operation-logs/server": { recordOperationError: async (...args) => records.push(args) },
+    }, {process:{env:{}}})
+    const response = await api.POST(new Request("https://example.test/api/upload", {method:"POST",headers:{origin:"https://example.test","content-type":"application/json"},body:JSON.stringify({pathname:"expense-reports/test.pdf"})}))
+    assert.equal(response.status, 503)
+    assert.equal(records[0][1], "privateStorageConfiguration")
+    assert.doesNotMatch(JSON.stringify(records), /test.pdf|token/)
+  }
+})
 
 test("logs keep only approved error codes, never raw messages, names, URLs or SQL details", () => {
   assert.equal(catalog.safeErrorCode({ code: "23505", message: "private phone", details: "private email" }), "23505")
@@ -78,7 +104,11 @@ test("browser reports reject cross-origin, oversized and arbitrary types; payloa
   assert.equal((await api.POST(request({ kind: "boundary", area: "public", message: "private ignored" }))).status, 204)
   assert.equal((await api.POST(request({ kind: "boundary", area: "public" }))).status, 204)
   assert.equal(records.length, 1)
-  assert.equal(JSON.stringify(records), '[["browser","boundary",null,"public"]]')
+  assert.equal(JSON.stringify(records), '[["browser","boundary.other",{"name":"UNKNOWN"},"public"]]')
+  await api.POST(request({kind:"unhandled",area:"application",page:"adoption",code:"TypeError",message:"secret"}))
+  assert.equal(JSON.stringify(records[1]), '["browser","unhandled.adoption",{"name":"TypeError"},"application"]')
+  await api.POST(request({kind:"unhandled",area:"admin",page:"private-id",code:"private-token"}))
+  assert.equal(JSON.stringify(records[2]), '["browser","unhandled.other",{"name":"UNKNOWN"},"admin"]')
 })
 
 test("browser listener throttles locally and does not retry failed logging requests", async () => {
@@ -91,7 +121,7 @@ test("browser listener throttles locally and does not retry failed logging reque
   api.reportBrowserError("boundary")
   await new Promise(resolve => setTimeout(resolve, 0))
   assert.equal(calls.length, 1)
-  assert.equal(calls[0][1].body, '{"kind":"boundary","area":"post"}')
+  assert.equal(calls[0][1].body, '{"kind":"boundary","area":"post","page":"notice","code":"UNKNOWN"}')
 })
 
 export async function renderLogs({ authorized = true, failure = false, rows = [], params = {} } = {}) {

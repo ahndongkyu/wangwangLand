@@ -10,7 +10,10 @@ export async function POST(request: Request) {
   if (!auth.ok) return Response.json({ error: auth.error }, { status: 403, headers })
   if (Number(request.headers.get("content-length")) > 3 * 1024 * 1024 + 16384) return Response.json({ error: "파일은 3MB 이하로 첨부해주세요." }, { status: 413, headers })
   const token = process.env.BLOB_PRIVATE_READ_WRITE_TOKEN
-  if (!token) return Response.json({ error: "비공개 첨부파일 저장소 설정이 필요합니다." }, { status: 503, headers })
+  if (!token) {
+    await recordOperationError("upload", "privateStorageConfiguration", undefined, "application")
+    return Response.json({ error: "비공개 첨부파일 저장소 설정이 필요합니다." }, { status: 503, headers })
+  }
   let uploaded: string | undefined
   try {
     const data = await request.formData()
@@ -44,7 +47,10 @@ export async function GET(request: Request) {
     const { data: file, error }=await createAdminClient().from("adoption_documents").select("pathname,filename,content_type").eq("id",id).maybeSingle()
     if(error || !file) return Response.json({error:"서류를 찾을 수 없습니다."},{status:404,headers})
     const token=process.env.BLOB_PRIVATE_READ_WRITE_TOKEN
-    if(!token) return Response.json({error:"저장소 설정이 필요합니다."},{status:503,headers})
+    if(!token) {
+      await recordOperationError("upload", "privateStorageConfiguration", undefined, "application")
+      return Response.json({error:"저장소 설정이 필요합니다."},{status:503,headers})
+    }
     const blob=await get(file.pathname,{access:"private",token})
     if(!blob?.stream) return Response.json({error:"서류를 찾을 수 없습니다."},{status:404,headers})
     const filename = encodeURIComponent(file.filename).replace(/['()*]/g,c=>`%${c.charCodeAt(0).toString(16)}`)

@@ -2,6 +2,7 @@
 
 import webpush from "web-push"
 import { recordOperationError } from "@/features/operation-logs/server"
+import { safeErrorCode } from "@/features/operation-logs/catalog"
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { SITE } from "@/shared/constants/site"
@@ -96,6 +97,7 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
   let sent = 0
   let failed = 0
   const expiredIds: string[] = []
+  const deliveryErrors = new Map<string, unknown>()
 
   await Promise.all(
     subs.map(async (sub) => {
@@ -114,13 +116,15 @@ export async function sendPushToAll(payload: PushPayload): Promise<{ sent: numbe
         const statusCode = (e as { statusCode?: number }).statusCode
         if (statusCode === 410 || statusCode === 404) {
           expiredIds.push(sub.id)
+        } else {
+          deliveryErrors.set(safeErrorCode(e), e)
         }
       }
     })
   )
 
   // 만료된 구독 정리
-  if (failed > expiredIds.length) await recordOperationError("push", "broadcastDelivery", undefined, "notification")
+  for (const error of deliveryErrors.values()) await recordOperationError("push", "broadcastDelivery", error, "notification")
   if (expiredIds.length > 0) {
     await admin.from("push_subscriptions").delete().in("id", expiredIds)
   }
@@ -184,7 +188,7 @@ async function sendPushInternal(
   if (!subs || subs.length === 0) return
 
   const expiredIds: string[] = []
-  let deliveryFailed = false
+  const deliveryErrors = new Map<string, unknown>()
 
   await Promise.all(
     subs.map(async (sub) => {
@@ -201,13 +205,13 @@ async function sendPushInternal(
         if (statusCode === 410 || statusCode === 404) {
           expiredIds.push(sub.id)
         } else {
-          deliveryFailed = true
+          deliveryErrors.set(safeErrorCode(e), e)
         }
       }
     })
   )
 
-  if (deliveryFailed) await recordOperationError("push", "automaticDelivery", undefined, "notification")
+  for (const error of deliveryErrors.values()) await recordOperationError("push", "automaticDelivery", error, "notification")
   if (expiredIds.length > 0) {
     await admin.from("push_subscriptions").delete().in("id", expiredIds)
   }

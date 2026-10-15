@@ -37,7 +37,15 @@ const stepLabels: Record<string, string> = {
   adoptionRejectionNotice: "입양상담 거절 알림 저장 실패",
 }
 export function errorSummary(operation: Operation, step: string) {
-  return stepLabels[step] ?? `${operations[operation]} 중 오류 발생`
+  return stepLabels[step] ?? stepLabels[step.split('.')[0]] ?? `${operations[operation]} 중 오류 발생`
+}
+// 실제 경로/식별자는 전송하지 않고 고정된 화면 분류만 사용한다.
+export const logPages = ["home", "admin", "volunteer", "adoption", "calendar", "notice", "expenses", "daily", "stories", "my", "login", "other"] as const
+export function browserPage(pathname: string): string {
+  const parts = pathname.split(/[?#]/, 1)[0].split('/').filter(Boolean)
+  if (!parts.length) return "home"
+  for (const page of logPages) if (page !== "admin" && page !== "other" && parts.includes(page)) return page
+  return parts[0] === "admin" ? "admin" : "other"
 }
 export const areas = ["public", "admin", "application", "calendar", "post", "upload", "notification"] as const
 export type LogArea = typeof areas[number]
@@ -62,6 +70,7 @@ export function safeErrorCode(error: unknown): string {
   if (!error || typeof error !== "object") return "UNKNOWN"
   const e = error as { code?: unknown; name?: unknown; statusCode?: unknown }
   if (typeof e.code === "string" && /^(?:PGRST\d{3}|(?:08|22|23|28|40|42|53|54|55|57|58|XX)[0-9A-Z]{3})$/.test(e.code)) return e.code
+  if (["ECONNRESET", "ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND", "EAI_AGAIN"].includes(String(e.code))) return String(e.code)
   if ([400, 401, 403, 408, 413, 429, 500, 502, 503, 504].includes(Number(e.statusCode))) return `HTTP_${Number(e.statusCode)}`
   if (["AbortError", "TimeoutError", "TypeError", "RangeError", "SyntaxError"].includes(String(e.name))) return String(e.name)
   return "UNKNOWN"
