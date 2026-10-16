@@ -24,7 +24,7 @@ export default async function AdoptionVisitPage({params}:{params:Promise<{id:str
     </section>
     {ready?<section className="mt-4 rounded-xl border border-border bg-card p-5"><h2 className="text-lg font-semibold">입양상담 방문 서류</h2><ol className="my-4 divide-y divide-border text-sm"><li className="py-3">상담 사전정보 · 입력한 내용 자동 반영</li><li className="py-3">입양 설문지 · 현장 작성</li><li className="py-3">입양 신청서 · 현장 작성·서명</li></ol><AdoptionDownload id={id}/><p className="mt-4 text-sm">설문지와 신청서의 작성·서명은 현장 상담 후 진행합니다.</p><p className="mt-2 text-xs text-muted-foreground">개인정보가 포함되어 있으니 보관에 유의해주세요. 입력 분량에 따라 페이지가 추가될 수 있습니다.</p></section>:!["반려","취소"].includes(app.status)&&<p className="mt-5 rounded-lg bg-secondary p-4 text-sm">방문 일정 승인 후 서류를 다운로드할 수 있습니다.</p>}
     <details className="mt-4 rounded-xl border border-border bg-card p-5"><summary className="cursor-pointer font-semibold">내 사전정보 확인</summary><dl className="mt-4 space-y-3 text-sm">{[
-      ["이름",app.applicant_name],["연락처",app.phone],["이메일",app.email],["주소",app.address],
+      ["이름",app.applicant_name],["연락처",app.phone],["주소",app.address],
       ["가족 구성원",app.family_size==null?null:`${app.family_size}명`],["어린이 동거",app.has_children==null?null:app.has_children?"있음":"없음"],
       ["주거 형태",app.housing_type],["소유 형태",app.ownership_type],["현재 반려동물",app.current_pets],["양육 경험",app.past_pet_experience],["입양 이유",app.reason],
       ["신청 당시 방문 가능일",app.visit_available_dates.join(", ")],["방문 가능 시간",app.visit_available_time],["개인정보 동의",app.privacy_agreed?"동의함":"동의 기록 없음"],

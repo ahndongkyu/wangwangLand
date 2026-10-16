@@ -67,7 +67,7 @@ export async function generateAdoptionPdf(app: AdoptionRow, fontBytes: Uint8Arra
   row("처음 희망한 아이",app.dog?.name ?? app.cat?.name ?? app.preferred_animal ?? "상담 후 결정")
   paragraph("희망한 아이는 상담 참고 정보이며, 실제 입양할 아이는 현장에서 결정합니다.",8)
   heading("01  신청자 정보")
-  row("이름",app.applicant_name);row("연락처",app.phone);row("이메일",app.email);row("주소",app.address)
+  row("이름",app.applicant_name);row("연락처",app.phone);row("주소",app.address)
   heading("02  가족과 생활 환경")
   row("가족 / 어린이 동거",`${app.family_size ?? "미입력"}명 / ${app.has_children == null ? "미입력" : app.has_children ? "있음" : "없음"}`)
   row("주거 형태 / 소유",`${app.housing_type ?? "미입력"} / ${app.ownership_type ?? "미입력"}`)
@@ -102,7 +102,7 @@ export async function generateAdoptionPdf(app: AdoptionRow, fontBytes: Uint8Arra
     ensure(37);const col=width/labels.length
     labels.forEach((label,i)=>draw(label,left+i*col+5,y,9,muted));y-=30;line(y+11)
   }
-  fields(["성명 / 성별","연락처"]);fields(["카페 닉네임","이메일"]);fields(["실거주 주소"])
+  fields(["성명 / 성별","연락처"]);fields(["카페 닉네임"]);fields(["실거주 주소"])
   heading("02  입양 동물 정보")
   fields(["동물종류/품종","이름"]);fields(["성별","중성화 여부"]);fields(["동물등록여부","등록번호"])
   heading("03  입양자 필수 준수 사항")

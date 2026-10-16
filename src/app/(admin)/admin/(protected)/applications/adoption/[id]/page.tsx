@@ -5,7 +5,7 @@ import { requireAdmin } from "@/shared/lib/auth"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { applicationReturnHref } from "@/features/applications/lib/admin-list"
 import { notFound } from "next/navigation"
-import { KeyRound, MessageSquare, Phone, User } from "lucide-react"
+import { MessageSquare, Phone, User } from "lucide-react"
 
 import {
   getAdoptionApplication,
@@ -17,23 +17,6 @@ export const dynamic = "force-dynamic"
 function yesNo(value: boolean | null) {
   if (value == null) return "—"
   return value ? "있음" : "없음"
-}
-
-function providerLabel(provider: string | null): string {
-  switch (provider) {
-    case "kakao":
-      return "카카오"
-    case "google":
-      return "구글"
-    case "naver":
-      return "네이버"
-    case "apple":
-      return "애플"
-    case "email":
-      return "이메일"
-    default:
-      return "—"
-  }
 }
 
 export default async function AdoptionApplicationDetailPage({
@@ -59,8 +42,6 @@ export default async function AdoptionApplicationDetailPage({
     : app.cat
       ? { kind: "고양이" as const, ...app.cat }
       : null
-
-  const isMember = !!app.created_by
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -163,15 +144,7 @@ export default async function AdoptionApplicationDetailPage({
               </a>
             }
           />
-          {isMember && (
-            <Row
-              icon={KeyRound}
-              label="가입 방법"
-              value={providerLabel(app.signup_provider)}
-            />
-          )}
           <Row label="주소" value={app.address} />
-          <Row label="이메일" value={app.email ?? "—"} />
         </Card>
 
         <Card title="가족 · 주거">

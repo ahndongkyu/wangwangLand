@@ -14,6 +14,13 @@ function load(file) {
   return exports
 }
 const workflow=load("src/features/applications/lib/adoption-workflow.ts")
+test("adoption views and PDFs omit email and signup method without removing contact details",()=>{
+  for(const file of ["src/app/(admin)/admin/(protected)/applications/adoption/[id]/page.tsx","src/app/(public)/my/applications/adoption/[id]/page.tsx","src/features/applications/lib/adoption-pdf.ts"]){
+    const source=fs.readFileSync(file,"utf8")
+    assert.doesNotMatch(source,/app\.email|signup_provider|가입 방법|이메일/)
+    for(const field of ["applicant_name","phone","address"])assert.ok(source.includes(`app.${field}`))
+  }
+})
 test("consultation statuses preserve legacy values without implying adoption completion",()=>{
   assert.equal(workflow.adoptionStatusLabel("접수"),"승인대기")
   assert.equal(workflow.adoptionStatusLabel("승인"),"승인")
