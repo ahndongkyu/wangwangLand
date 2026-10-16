@@ -4,6 +4,8 @@ import { recentMonthWindows } from "@/shared/lib/month-windows"
 
 import { createClient } from "@/shared/lib/supabase/server"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
+import { requireAdmin } from "@/shared/lib/auth"
+import { recordPrivacyAccess } from "@/shared/lib/privacy-audit"
 import {
   DEFAULT_HOME_FAVORITES,
   isHomeFavoriteKey,
@@ -50,30 +52,29 @@ export interface Profile {
 
 export async function getCurrentProfile(): Promise<Profile | null> {
   const supabase = await createClient()
-  // getSession()은 쿠키만 읽어 네트워크 호출 없음 → 동시 refresh 충돌 방지
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
 
   const { data } = await supabase
     .from("profiles")
     .select("id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at, notices_last_seen_at, daily_last_seen_at, stories_last_seen_at")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle()
 
-  return data ? { ...data, role: normalizeMemberRole(data.role) } as Profile : null
+  return data && data.is_banned === false ? { ...data, role: normalizeMemberRole(data.role) } as Profile : null
 }
 
 export async function listMyHomeFavorites(): Promise<HomeFavoriteKey[]> {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return DEFAULT_HOME_FAVORITES
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return DEFAULT_HOME_FAVORITES
 
   const { data, error } = await supabase
     .from("profiles")
     .select("favorite_menu_items")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle()
 
   if (error) return DEFAULT_HOME_FAVORITES
@@ -103,6 +104,8 @@ export interface ProfileDetail extends Profile {
 }
 
 export async function getProfileDetail(id: string): Promise<ProfileDetail | null> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return null
   const supabase = await createClient()
   const { data: profile } = await supabase
     .from("profiles")
@@ -110,6 +113,7 @@ export async function getProfileDetail(id: string): Promise<ProfileDetail | null
     .eq("id", id)
     .maybeSingle()
   if (!profile) return null
+  await recordPrivacyAccess(auth.userId, "member", id)
 
   // auth.users 의 email / provider 는 service role 만 조회 가능
   let email: string | null = null
@@ -143,6 +147,8 @@ export async function listProfiles({
   limit?: number
   offset?: number
 } = {}): Promise<PaginatedProfiles> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return { profiles: [], total: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0 }
   const supabase = await createClient()
 
   const isFiltered = !!status || !!searchQuery?.trim()

@@ -161,9 +161,9 @@ async function createRecurringEvents(
 ): Promise<ActionResult> {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const parsed = parseEventInput(formData)
   if ("error" in parsed) return parsed
@@ -216,7 +216,7 @@ async function createRecurringEvents(
         signup_enabled: parsed.signup_enabled,
         visibility: parsed.visibility,
         recurrence_group_id: groupId,
-        created_by: session.user.id,
+        created_by: user.id,
       }
     })
     .filter((r): r is NonNullable<typeof r> => r !== null)
@@ -326,9 +326,9 @@ async function createMultiDateEvents(opts: {
 async function createSingleEvent(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   // 봉사 신청에서 가져온 일정이면, 등록 완료 시 신청 status 도 승인 처리.
   const approveAppId =
@@ -340,7 +340,7 @@ async function createSingleEvent(formData: FormData): Promise<ActionResult> {
   // 신청에서 가져왔으면 source_application_* 자동 채움 + visibility=public (마스킹 표시).
   const insertPayload: Record<string, unknown> = {
     ...parsed,
-    created_by: session.user.id,
+    created_by: user.id,
   }
   if (approveAppId) {
     const auth = await requireAdmin()
@@ -525,9 +525,9 @@ export async function createSignup(
 ): Promise<ActionResult> {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const partySize = Math.max(
     1,
@@ -541,7 +541,7 @@ export async function createSignup(
     .from("event_signups")
     .select("id, status")
     .eq("event_id", eventId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .maybeSingle()
 
   if (existing) {
@@ -562,7 +562,7 @@ export async function createSignup(
       .from("event_signups")
       .insert({
         event_id: eventId,
-        user_id: session.user.id,
+        user_id: user.id,
         party_size: partySize,
         message,
       })
@@ -576,7 +576,7 @@ export async function createSignup(
   await dispatchEventNotification({
     eventId,
     type: "event_signup_confirmed",
-    targetUserId: session.user.id,
+    targetUserId: user.id,
   })
 
   revalidatePath(`/calendar/${eventId}`)
@@ -590,15 +590,15 @@ export async function cancelSignup(
 ): Promise<ActionResult> {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const { error } = await supabase
     .from("event_signups")
     .update({ status: "취소" })
     .eq("event_id", eventId)
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
 
   if (error) {
     console.error("[cancelSignup]", error)

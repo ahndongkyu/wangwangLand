@@ -1,4 +1,6 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { requireAdmin, getActiveMember } from "@/shared/lib/auth"
+import { recordPrivacyAccess } from "@/shared/lib/privacy-audit"
 import { recentMonthWindows } from "@/shared/lib/month-windows"
 import { sumApprovedVolunteerPeople } from "@/shared/lib/volunteer-stats"
 import type {
@@ -147,6 +149,8 @@ async function getSignupProvider(userId: string | null | undefined): Promise<str
 export async function getAdoptionApplication(
   id: string
 ): Promise<(AdoptionRow & { signup_provider: string | null }) | null> {
+  const auth = await requireAdmin()
+  if (!auth.ok) return null
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -161,6 +165,7 @@ export async function getAdoptionApplication(
     return null
   }
   if (!data) return null
+  await recordPrivacyAccess(auth.userId, "adoption", id)
 
   const signup_provider = await getSignupProvider(
     (data as AdoptionRow).created_by
@@ -177,6 +182,8 @@ export async function getVolunteerApplication(
     })
   | null
 > {
+  const auth = await requireAdmin()
+  if (!auth.ok) return null
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -191,6 +198,7 @@ export async function getVolunteerApplication(
     return null
   }
   if (!data) return null
+  await recordPrivacyAccess(auth.userId, "volunteer", id)
 
   const signup_provider = await getSignupProvider(
     (data as VolunteerApplication).created_by
@@ -216,6 +224,8 @@ export async function getMyEditableVolunteerApplication(
   id: string,
   userId: string
 ): Promise<VolunteerApplication | null> {
+  const member = await getActiveMember()
+  if (!member || member.id !== userId) return null
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 
@@ -237,6 +247,8 @@ export async function getMyEditableVolunteerApplication(
 export async function getMyApplicationSummary(
   userId: string
 ): Promise<MyApplicationSummary> {
+  const member = await getActiveMember()
+  if (!member || member.id !== userId) return { approved: 0, pending: 0 }
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
 
@@ -276,6 +288,7 @@ export async function listApplicationsByEmail(email: string): Promise<{
   volunteer: VolunteerApplication[]
 }> {
   if (!email) return { adoption: [], volunteer: [] }
+  if (!(await requireAdmin()).ok) return { adoption: [], volunteer: [] }
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
 

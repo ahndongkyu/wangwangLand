@@ -8,7 +8,8 @@ export async function getCalendarApplicationLinks(events: CalendarEvent[], path:
   const client = await createClient()
   const { data: { user } } = await client.auth.getUser()
   if (!user) return links
-  const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle()
+  const { data: profile } = await client.from("profiles").select("role,status,is_banned").eq("id", user.id).maybeSingle()
+  if (!profile || profile.status !== "approved" || profile.is_banned !== false) return links
   const staff = profile?.role === "staff" || profile?.role === "admin"
   const linked = events.filter(event => event.source_application_type === "volunteer" && event.source_application_id)
   if (!linked.length) return links

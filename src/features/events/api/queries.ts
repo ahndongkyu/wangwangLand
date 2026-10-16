@@ -1,4 +1,5 @@
 import { createClient } from "@/shared/lib/supabase/server"
+import { getActiveMember } from "@/shared/lib/auth"
 import { recordOperationError } from "@/features/operation-logs/server"
 import type {
   CalendarEvent,
@@ -31,7 +32,7 @@ export async function listEventsInRange({
   const supabase = await createClient()
 
   let q = supabase
-    .from("events")
+    .rpc("list_calendar_events_safe")
     .select("*")
     .order("starts_at", { ascending: true })
 
@@ -61,7 +62,7 @@ export async function listUpcomingEvents(
 ): Promise<EventWithSignupCount[]> {
   const supabase = await createClient()
   let q = supabase
-    .from("events")
+    .rpc("list_calendar_events_safe")
     .select("*")
     .eq("visibility", "public")
     .gte("ends_at", new Date().toISOString())
@@ -107,7 +108,7 @@ export async function getEventWithMySignup(
 ): Promise<EventWithMySignup | null> {
   const supabase = await createClient()
   const { data: event, error } = await supabase
-    .from("events")
+    .rpc("list_calendar_events_safe")
     .select("*")
     .eq("id", id)
     .maybeSingle()
@@ -120,16 +121,16 @@ if (error) {
   }
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   let my_signup: EventSignup | null = null
-  if (session?.user) {
+  if (user) {
     const { data: signup } = await supabase
       .from("event_signups")
       .select("*")
       .eq("event_id", id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .maybeSingle()
     my_signup = (signup as EventSignup) ?? null
   }
@@ -143,14 +144,14 @@ export async function listMyUpcomingSignups(): Promise<
 > {
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) return []
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
 
   const { data, error } = await supabase
     .from("event_signups")
     .select("*, event:events(*)")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .eq("status", "접수")
     .gte("event.ends_at", new Date().toISOString())
     .order("created_at", { ascending: false })
@@ -170,13 +171,10 @@ export async function listMyUpcomingSignups(): Promise<
  * 같은 이벤트가 양쪽에 있으면 중복 제거. 시작 시간 가까운 순 정렬.
  */
 export async function listMyUpcomingEvents(): Promise<CalendarEvent[]> {
+  const member = await getActiveMember()
+  if (!member) return []
   const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session?.user) return []
-
-  const userId = session.user.id
+  const userId = member.id
   const nowIso = new Date().toISOString()
 
   // 본인 봉사 신청 id 들 (RLS 가 막으므로 admin client 사용)

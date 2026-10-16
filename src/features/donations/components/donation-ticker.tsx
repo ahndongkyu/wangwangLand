@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Heart } from "lucide-react"
-import type { Donation } from "../api/queries"
+import type { PublicDonation as Donation } from "../api/queries"
 import { maskName } from "@/shared/lib/utils"
 
 interface Props {

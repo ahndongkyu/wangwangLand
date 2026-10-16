@@ -60,11 +60,11 @@ export async function updateSession(request: NextRequest) {
     // 로그인했어도 staff/admin 아니면 차단
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, status, is_banned")
       .eq("id", user.id)
       .maybeSingle()
 
-    if (!profile || !["staff", "admin"].includes(profile.role)) {
+    if (!profile || profile.status !== "approved" || profile.is_banned !== false || !["staff", "admin"].includes(profile.role)) {
       return redirectToLogin()
     }
   }

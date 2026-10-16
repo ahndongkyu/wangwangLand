@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/shared/lib/supabase/service"
+import { getActiveMember } from "@/shared/lib/auth"
 import { volunteerToday } from "../lib/volunteer-operating-hours"
 
 export interface VolunteerCountBreakdown {
@@ -9,6 +10,8 @@ export interface VolunteerCountBreakdown {
 
 /** 첫 희망 날짜가 지난 승인 신청 기록. 실제 참석 횟수나 등급이 아니다. */
 export async function getVolunteerCountBreakdown(userId: string): Promise<VolunteerCountBreakdown> {
+  const member = await getActiveMember()
+  if (!member || (member.id !== userId && !["admin", "staff"].includes(member.role))) return { total: 0, yearly: 0, monthly: 0 }
   const supabase = createServiceClient()
   const { data, error } = await supabase.from("volunteer_applications")
     .select("available_dates").eq("created_by", userId).eq("status", "승인")

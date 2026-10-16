@@ -91,7 +91,7 @@ test("homepage calendar actions expose only own applications to members and mana
   for (const role of [null, "member", "staff", "admin"]) {
     const calls = []
     const api = load("src/features/events/api/calendar-links.ts", {
-      "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: role ? { id: "user" } : null } }) }, from: () => ({ select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { role } }) }) }) },
+      "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: role ? { id: "user" } : null } }) }, from: () => ({ select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { role, status: "approved", is_banned: false } }) }) }) },
       "@/shared/lib/supabase/admin": {
         createAdminClient: () => ({
           from: table => {

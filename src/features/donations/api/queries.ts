@@ -1,8 +1,10 @@
 import { createClient } from "@/shared/lib/supabase/server"
 import { createServiceClient } from "@/shared/lib/supabase/service"
 import type { Donation, DonationStatus, DonationType } from "@/shared/types/database"
+import { maskName } from "@/shared/lib/utils"
 
 export type { Donation, DonationStatus, DonationType }
+export type PublicDonation = Pick<Donation, "id" | "type" | "amount" | "item_description" | "item_quantity" | "approved_at" | "is_anonymous" | "donor_name" | "display_name"> & { message: null }
 
 export interface ListDonationsOptions {
   status?: DonationStatus
@@ -64,11 +66,11 @@ export async function getDonation(id: string): Promise<Donation | null> {
 /** 홈/후원 페이지 슬라이더 — 승인된 최근 N건 (공개용, 서비스 롤로 RLS 우회) */
 export async function listRecentApprovedDonations(
   limit = 8
-): Promise<Donation[]> {
+): Promise<PublicDonation[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from("donations")
-    .select("*")
+    .select("id,type,amount,item_description,item_quantity,approved_at,is_anonymous,donor_name,display_name")
     .eq("status", "approved")
     .order("approved_at", { ascending: false })
     .limit(limit)
@@ -76,19 +78,19 @@ export async function listRecentApprovedDonations(
     console.error("[listRecentApprovedDonations]", error)
     return []
   }
-  return (data ?? []) as Donation[]
+  return (data ?? []).map(row => ({ ...row, message: null, donor_name: row.is_anonymous ? "익명" : maskName(row.display_name?.trim() || row.donor_name), display_name: null })) as PublicDonation[]
 }
 
 /** 마이페이지: 본인 후원 내역 (RLS 가 자동으로 본인 것만 반환) */
 export async function listMyDonations(): Promise<Donation[]> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return []
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
 
   const { data, error } = await supabase
     .from("donations")
     .select("*")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .order("donated_at", { ascending: false })
 
   if (error) {

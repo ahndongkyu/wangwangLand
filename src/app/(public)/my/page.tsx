@@ -63,10 +63,9 @@ async function MyActivity(userId: string) {
 
   const supabase = await createClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) redirect("/login")
-  if (session.user.id !== userId) redirect("/login")
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user || user.id !== userId) redirect("/login")
 
   const admin = createAdminClient()
 

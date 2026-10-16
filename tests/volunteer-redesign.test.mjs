@@ -33,7 +33,7 @@ function harness({ user = true, approved = true, blocked = false, failure = fals
     "next/cache": { revalidatePath() {} }, "next/navigation": {},
     "@/shared/lib/auth": {},
     "@/shared/lib/supabase/server": { createClient: async () => ({
-      auth: { getSession: async () => ({ data: { session: user ? { user: { id: "member" } } : null } }) },
+      auth: { getUser: async () => ({ data: { user: user ? { id: "member" } : null } }) },
       from: () => ({ select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { status: approved ? "approved" : "pending", is_banned: false } }) }),
     }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({

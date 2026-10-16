@@ -3,6 +3,9 @@ import { createAdminClient } from "@/shared/lib/supabase/admin"
 export async function GET(request: Request) {
   if (!process.env.CRON_SECRET || request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) return new Response(null, { status: 401 })
   try {
+    const { error: privacyError } = await createAdminClient().from("privacy_access_logs").delete()
+      .lt("occurred_at", new Date(Date.now() - 90 * 86400000).toISOString())
+    if (privacyError) return Response.json({ ok: false }, { status: 503 })
     const { error: eventError } = await createAdminClient().from("operation_error_events").delete()
       .lt("occurred_at", new Date(Date.now() - 90 * 86400000).toISOString())
     if (eventError) return Response.json({ ok: false }, { status: 503 })

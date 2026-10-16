@@ -21,7 +21,7 @@ function runtime(file, imports, extra = {}) {
   const exports = {}
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
     exports, Date, AbortSignal, Response, Request, TextDecoder, URL, crypto, setTimeout, clearTimeout, process: { env: {} }, console: { warn() {} }, ...extra,
-    require(name) { assert.ok(name in imports, name); return imports[name] },
+    require(name) { if(name === "@/shared/lib/privacy-audit" && !(name in imports)) return {recordPrivacyAccess:async()=>{}}; assert.ok(name in imports, name); return imports[name] },
   })
   return exports
 }
@@ -170,7 +170,7 @@ test("log rows disclose details, use aligned columns, and link SMS instead of co
 test("retention job requires cron secret and only deletes records last seen over 90 days ago", async () => {
   let deleted = false
   const api = runtime("src/app/api/cron/cleanup-operation-logs/route.ts", {
-    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: table => ({ delete: () => ({ lt: async (column, cutoff) => { assert.equal(column, table === "operation_error_events" ? "occurred_at" : "last_seen_at"); assert.ok(Date.now() - Date.parse(cutoff) >= 90 * 86400000); deleted = true; return { error: null } } }) }) }) },
+    "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: table => ({ delete: () => ({ lt: async (column, cutoff) => { assert.equal(column, table === "operation_error_logs" ? "last_seen_at" : "occurred_at"); assert.ok(Date.now() - Date.parse(cutoff) >= 90 * 86400000); deleted = true; return { error: null } } }) }) }) },
   }, { process: { env: { CRON_SECRET: "test-secret" } } })
   assert.equal((await api.GET(new Request("https://example.test"))).status, 401)
   assert.equal(deleted, false)

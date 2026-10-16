@@ -7,7 +7,7 @@ import {
   setMaintenanceMessage,
   setMaintenanceMode,
 } from "@/features/settings/api/mutations"
-import { DEFAULT_MAINTENANCE_MESSAGE } from "@/features/settings/api/queries"
+import { DEFAULT_MAINTENANCE_MESSAGE } from "@/features/settings/lib/defaults"
 import {
   datetimeLocalToIso,
   formatMaintenanceEta,

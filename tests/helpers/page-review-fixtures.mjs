@@ -73,7 +73,7 @@ export async function renderMyPage({ tab, edit, phone = "010-0000-0000", status 
     "@/features/events/lib/date": load("src/features/events/lib/date.ts"),
     "@/features/applications/api/volunteer-history": { getVolunteerCountBreakdown: async () => ({ total: 0, yearly: 0, monthly: 0 }) },
     "@/features/daily/lib/community-category": { communityType: () => "일상" },
-    "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: profile.id } } } }) } }) },
+    "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: profile.id } } }) } }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) },
     "./_components/mypage-tabs": { MyPageTabs: element("div", "신청 내역 · 내 글 · 후원 기록 · 관심 동물") },
   }).default
@@ -206,8 +206,9 @@ export async function renderMyApplications({ eventError = false } = {}) {
     return query
   } }
   const Page = load("src/app/(public)/my/applications/page.tsx", {
+    "@/shared/lib/auth": { getActiveMember: async () => ({ id: "member", role: "member" }) },
     ...base, "@/features/applications/lib/admin-list": filters, "@/features/applications/lib/volunteer-operating-hours": { volunteerToday: () => "2026-10-07" },
-    "./cancel-button": { CancelMyApplicationButton: element("button", "신청 취소") }, "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: "member" } } } }) } }) },
+    "./cancel-button": { CancelMyApplicationButton: element("button", "신청 취소") }, "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "member" } } }) } }) },
     "@/shared/lib/supabase/admin": { createAdminClient: () => admin }, "@/shared/components/ui/badge": { Badge: ({ children, ...props }) => React.createElement("span", props, children) },
     "@/features/staff-schedule": { listStaffOnDates: async () => ({}), StaffAvailabilityDisplay: element("p", "출근 예정 확인 중") },
   }).default

@@ -299,8 +299,7 @@ export async function submitVolunteerApplication(
   const activities: VolunteerActivity[] = []
 
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
 
   // 봉사 신청은 회원만 가능
   if (!user) return { error: "로그인 후 신청해주세요." }
@@ -399,8 +398,7 @@ export async function updateMyVolunteerApplication(
   const partyCheck = validateVolunteerParty(partyType, String(formData.get("party_size") ?? "1"))
   if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
   // 본인 신청 + 수정 가능 상태 검증
@@ -769,8 +767,8 @@ export async function cancelOwnVolunteerApplication(
   cancelReason: string
 ): Promise<SubmitResult> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const admin = createAdminClient()
 
@@ -780,7 +778,7 @@ export async function cancelOwnVolunteerApplication(
     .eq("id", id)
     .maybeSingle()
   if (!app) return { error: "신청을 찾을 수 없습니다." }
-  if (app.created_by !== session.user.id) return { error: "본인 신청만 취소할 수 있습니다." }
+  if (app.created_by !== user.id) return { error: "본인 신청만 취소할 수 있습니다." }
   if (app.status === "취소") return { error: "이미 취소된 신청입니다." }
 
   const reason = cancelReason.trim()
@@ -798,7 +796,7 @@ export async function cancelOwnVolunteerApplication(
     return { error: error.message }
   }
 
-  await notifyStaffCancellation(id, "volunteer", session.user.id)
+  await notifyStaffCancellation(id, "volunteer", user.id)
 
   revalidatePath("/my/applications")
   revalidatePath("/calendar")
@@ -817,8 +815,7 @@ export async function requestReschedule(
   formData: FormData
 ): Promise<SubmitResult> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
   const admin = createAdminClient()
@@ -913,8 +910,8 @@ export async function cancelOwnAdoptionApplication(
   cancelReason: string
 ): Promise<SubmitResult> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const admin = createAdminClient()
 
@@ -924,7 +921,7 @@ export async function cancelOwnAdoptionApplication(
     .eq("id", id)
     .maybeSingle()
   if (!app) return { error: "신청을 찾을 수 없습니다." }
-  if (app.created_by !== session.user.id) return { error: "본인 신청만 취소할 수 있습니다." }
+  if (app.created_by !== user.id) return { error: "본인 신청만 취소할 수 있습니다." }
   if (app.status === "취소") return { error: "이미 취소된 신청입니다." }
   if (app.completed_at) return { error: "입양 완료된 신청은 취소할 수 없습니다." }
 
@@ -944,7 +941,7 @@ export async function cancelOwnAdoptionApplication(
     return { error: error.message }
   }
 
-  await notifyStaffCancellation(id, "adoption", session.user.id)
+  await notifyStaffCancellation(id, "adoption", user.id)
   const { dispatchAdoptionSms } = await import("./adoption-notifications")
   const warning = await dispatchAdoptionSms(id)
 

@@ -1,4 +1,5 @@
 "use server"
+import { sanitizeRichText } from "@/shared/lib/sanitize-rich-text"
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -9,7 +10,7 @@ export async function createStoryAsUser(
   formData: FormData
 ): Promise<{ error: string | null }> {
   const title = (formData.get("title") as string ?? "").trim()
-  const content = (formData.get("content") as string ?? "").trim()
+  const content = sanitizeRichText(String(formData.get("content") ?? "")).trim()
   const images = (formData.get("images") as string ?? "")
     .split(",").map((s) => s.trim()).filter(Boolean)
 
@@ -18,13 +19,13 @@ export async function createStoryAsUser(
   if (images.length === 0) return { error: "사진을 최소 1장 추가해주세요." }
 
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return { error: "로그인이 필요합니다." }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("status, role, is_banned")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle()
 
   if (!profile || profile.status !== "approved" || profile.is_banned) {
@@ -38,7 +39,7 @@ export async function createStoryAsUser(
       content,
       images,
       published_at: new Date().toISOString(),
-      created_by: session.user.id,
+      created_by: user.id,
     })
     .select("id")
     .single()

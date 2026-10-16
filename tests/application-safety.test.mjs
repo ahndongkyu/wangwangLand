@@ -3,12 +3,14 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import vm from "node:vm"
 import ts from "typescript"
+import sanitizeHtml from "sanitize-html"
 
 function load(file, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   vm.runInNewContext(code, { exports, Date, FormData, console: { error() {} }, require(name) {
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
+    if (name === "@/shared/lib/sanitize-rich-text") return load("src/shared/lib/sanitize-rich-text.ts", { "sanitize-html": { default: sanitizeHtml } })
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     assert.ok(name in imports, `Unexpected dependency: ${name}`)
     return imports[name]

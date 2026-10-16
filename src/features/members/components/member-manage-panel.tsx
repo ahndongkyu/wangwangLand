@@ -98,6 +98,8 @@ export function MemberManagePanel({ profile, isTopAdmin = false }: Props) {
     })
   }
 
+  if (!isTopAdmin) return <p className="text-sm text-muted-foreground">회원 상태와 권한 변경은 관리자만 가능합니다.</p>
+
   return (
     <div className="space-y-5">
       {/* 권한 */}

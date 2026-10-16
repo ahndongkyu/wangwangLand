@@ -75,7 +75,7 @@ export async function listComments(
   const authorMap: Record<string, CommentAuthor> = {}
   if (authorIds.length > 0) {
     const profilesRes = await supabase
-      .from("profiles")
+      .from("public_profile_cards")
       .select("id, nickname, role, avatar_url")
       .in("id", authorIds)
     for (const p of profilesRes.data ?? []) {

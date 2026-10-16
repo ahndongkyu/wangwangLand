@@ -1,4 +1,5 @@
 "use server"
+import { sanitizeRichText } from "@/shared/lib/sanitize-rich-text"
 import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
@@ -73,7 +74,7 @@ function parseFormData(formData: FormData): NoticeInput {
   const titleBody = String(formData.get("title") ?? "").trim()
   const prefix = String(formData.get("notice_prefix") ?? "").trim()
   const title = prefix ? `[${prefix}] ${titleBody}` : titleBody
-  const content = String(formData.get("content") ?? "")
+  const content = sanitizeRichText(String(formData.get("content") ?? ""))
   return {
     title,
     content,

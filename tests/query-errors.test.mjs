@@ -4,7 +4,7 @@ import { load } from "./helpers/page-review-fixtures.mjs"
 
 function client(failTable, applications = []) {
   return {
-    auth: { getSession: async () => ({ data: { session: { user: { id: "owner" } } } }) },
+    auth: { getUser: async () => ({ data: { user: { id: "owner" } } }) },
     from(table) {
       const q = { then(resolve) { resolve({ data: table === "volunteer_applications" ? applications : [], count: 0, error: table === failTable ? { message: "unavailable" } : null }) } }
       for (const method of ["select", "eq", "neq", "order", "range", "not", "is", "in", "gte", "lt", "limit"]) q[method] = () => q
@@ -28,6 +28,7 @@ test("my upcoming events fail visibly if any of the three source queries fail", 
   for (const table of ["volunteer_applications", "events", "event_signups", null]) {
     const db = client(table, [{ id: "application" }])
     const api = load("src/features/events/api/queries.ts", {
+      "@/shared/lib/auth": { getActiveMember: async () => ({ id: "owner", role: "member" }) },
       "@/shared/lib/supabase/server": { createClient: async () => db },
       "@/shared/lib/supabase/admin": { createAdminClient: () => db },
     })

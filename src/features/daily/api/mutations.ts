@@ -1,4 +1,5 @@
 "use server"
+import { sanitizeRichText } from "@/shared/lib/sanitize-rich-text"
 import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
@@ -31,7 +32,7 @@ interface DailyInput {
 }
 
 function parseFormData(formData: FormData): DailyInput {
-  const content = String(formData.get("content") ?? "")
+  const content = sanitizeRichText(String(formData.get("content") ?? ""))
   const images = extractImagesFromHtml(content)
   const postedAt = String(formData.get("posted_at") ?? "").trim()
   const category = String(formData.get("category") ?? "").trim() || null

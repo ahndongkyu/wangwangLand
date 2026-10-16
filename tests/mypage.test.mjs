@@ -38,7 +38,7 @@ export async function renderMyPage({ confirmed = true, loggedIn = true } = {}) {
     events: confirmed ? [event] : [],
   }
   const client = {
-    auth: { getSession: async () => ({ data: { session: loggedIn ? { user: { id: "fixture-member" } } : null } }) },
+    auth: { getUser: async () => ({ data: { user: loggedIn ? { id: "fixture-member" } : null } }) },
     from(table) {
       assert.ok(table in data)
       const chain = { select() { return this }, eq() { return this }, in() { return this }, not() { return this }, order() { return this }, limit() { return this }, then(resolve, reject) { return Promise.resolve({ data: data[table], error: null }).then(resolve, reject) } }

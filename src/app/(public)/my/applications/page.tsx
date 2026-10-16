@@ -6,7 +6,7 @@ import { volunteerToday } from "@/features/applications/lib/volunteer-operating-
 import { ChevronDown } from "lucide-react"
 
 import { CancelMyApplicationButton } from "./cancel-button"
-import { createClient } from "@/shared/lib/supabase/server"
+import { getActiveMember } from "@/shared/lib/auth"
 import { Badge } from "@/shared/components/ui/badge"
 import { cn } from "@/shared/lib/utils"
 import { listStaffOnDates } from "@/features/staff-schedule"
@@ -60,12 +60,8 @@ function volunteerDateLabel(dates: string[], days: string[]): string {
 
 export default async function MyApplicationsPage({ searchParams }: { searchParams: Promise<{ application?: string }> }) {
   const selectedApplication = (await searchParams).application
-  const supabase = await createClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) redirect("/login?next=%2Fmy%2Fapplications")
+  const member = await getActiveMember()
+  if (!member) redirect("/login?next=%2Fmy%2Fapplications")
 
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
@@ -74,12 +70,12 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
     admin
       .from("adoption_applications")
       .select("id, status, submitted_at, admin_note, cancel_reason, preferred_animal, completed_at, dog:dogs(name), cat:cats(name)")
-      .eq("created_by", session.user.id)
+      .eq("created_by", member.id)
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
       .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, available_time, party_size, reschedule_dates, reschedule_time")
-      .eq("created_by", session.user.id)
+      .eq("created_by", member.id)
       .order("submitted_at", { ascending: false }),
   ])
 

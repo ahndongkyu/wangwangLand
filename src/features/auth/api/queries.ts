@@ -5,8 +5,7 @@ import type { Profile } from "@/features/members/api/queries"
 export async function getCurrentAdmin(): Promise<Profile | null> {
   const supabase = await createClient()
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
   const { data, error } = await supabase
@@ -21,5 +20,6 @@ export async function getCurrentAdmin(): Promise<Profile | null> {
     return null
   }
 
-  return data as Profile | null
+  if (!data || data.status !== "approved" || data.is_banned !== false) return null
+  return data as Profile
 }

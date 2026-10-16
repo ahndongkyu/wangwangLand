@@ -61,6 +61,8 @@ interface Props {
   privateUpload?: boolean
 }
 
+const showImageMenu = ({ editor }: { editor: Editor }) => editor.isActive("imageResize")
+
 export function RichTextEditor({
   name,
   defaultValue = "",
@@ -98,7 +100,7 @@ export function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, underline: false }),
       Underline,
       ImageResize.configure({ inline: false }),
       TiptapLink.configure({
@@ -291,7 +293,7 @@ export function RichTextEditor({
 
   // ── 이미지 이동 헬퍼 ──────────────────────────────────────────
   function moveImageUp() {
-    if (!editor) return
+    if (!editor || !editor.isActive("imageResize")) return
     const { state } = editor
     const { selection } = state
     const pos = selection.$anchor.pos
@@ -301,7 +303,7 @@ export function RichTextEditor({
     if (index === 0) return
     const prevNode = parent.child(index - 1)
     const curNode = parent.child(index)
-    const curNodeStart = $pos.before()
+    const curNodeStart = $pos.pos
     const prevNodeStart = curNodeStart - prevNode.nodeSize
     const tr = state.tr
     tr.delete(prevNodeStart, curNodeStart + curNode.nodeSize)
@@ -310,7 +312,7 @@ export function RichTextEditor({
   }
 
   function moveImageDown() {
-    if (!editor) return
+    if (!editor || !editor.isActive("imageResize")) return
     const { state } = editor
     const { selection } = state
     const pos = selection.$anchor.pos
@@ -320,7 +322,7 @@ export function RichTextEditor({
     if (index >= parent.childCount - 1) return
     const nextNode = parent.child(index + 1)
     const curNode = parent.child(index)
-    const curNodeStart = $pos.before()
+    const curNodeStart = $pos.pos
     const nextNodeEnd = curNodeStart + curNode.nodeSize + nextNode.nodeSize
     const tr = state.tr
     tr.delete(curNodeStart, nextNodeEnd)
@@ -359,7 +361,8 @@ export function RichTextEditor({
         ref={hiddenRef}
         type="hidden"
         name={name}
-        defaultValue={defaultValue}
+        value={editorHtml}
+        readOnly
       />
 
       {/* ── 임시저장 복원 배너 ──────────────────────────────────── */}
@@ -621,7 +624,7 @@ export function RichTextEditor({
       {/* ── 이미지 선택 시 플로팅 툴바 ──────────────────────── */}
       <BubbleMenu
         editor={editor}
-        shouldShow={({ editor: ed }) => (ed as Editor | null)?.isActive("image") ?? false}
+        shouldShow={showImageMenu}
       >
         <div className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-lg">
           <button

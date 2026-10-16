@@ -1,5 +1,16 @@
 import { createClient } from "@/shared/lib/supabase/server"
 
+/** 서비스 권한으로 본인 정보를 읽기 전에 반드시 검증한다. */
+export async function getActiveMember() {
+  const client = await createClient()
+  const { data: { user }, error } = await client.auth.getUser()
+  if (error || !user) return null
+  const { data: profile } = await client.from("profiles")
+    .select("role, status, is_banned").eq("id", user.id).maybeSingle()
+  if (!profile || profile.status !== "approved" || profile.is_banned !== false) return null
+  return { id: user.id, role: profile.role as string }
+}
+
 export type AdminCheckResult =
   | { ok: true; userId: string; role: "staff" | "admin" }
   | { ok: false; error: string }
@@ -20,10 +31,10 @@ export async function requireAdmin(): Promise<AdminCheckResult> {
 
   const { data: me } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status, is_banned")
     .eq("id", user.id)
     .maybeSingle()
-  if (!me || !["staff", "admin"].includes(me.role)) {
+  if (!me || me.status !== "approved" || me.is_banned !== false || !["staff", "admin"].includes(me.role)) {
     return { ok: false, error: "운영진 권한이 없습니다." }
   }
   return { ok: true, userId: user.id, role: me.role as "staff" | "admin" }

@@ -53,7 +53,7 @@ export async function listMyNotifications(): Promise<UserNotification[]> {
   const actorMap: Record<string, { nickname: string; role: string }> = {}
   if (actorIds.length > 0) {
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("public_profile_cards")
       .select("id, nickname, role")
       .in("id", actorIds)
     for (const p of profiles ?? []) actorMap[p.id] = { nickname: p.nickname, role: p.role }

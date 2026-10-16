@@ -32,7 +32,7 @@ test("own cancellation uses authenticated atomic RPC, never separate writes", as
         assert.equal(message.url, `/admin/applications/${type}/application`)
       } },
       "@/shared/lib/supabase/server": { createClient: async () => ({
-        auth: { getSession: async () => ({ data: { session: { user: { id: "owner" } } } }) },
+        auth: { getUser: async () => ({ data: { user: { id: "owner" } } }) },
         rpc: async (name, args) => { calls.push({ name, args }); return { error: null } },
       }) },
       "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from(table) {

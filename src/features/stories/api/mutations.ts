@@ -1,4 +1,5 @@
 "use server"
+import { sanitizeRichText } from "@/shared/lib/sanitize-rich-text"
 import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
@@ -29,7 +30,7 @@ interface StoryInput {
 }
 
 function parseFormData(formData: FormData): StoryInput {
-  const content = String(formData.get("content") ?? "").trim()
+  const content = sanitizeRichText(String(formData.get("content") ?? "")).trim()
   const images = extractImagesFromHtml(content)
   const dogIdRaw = String(formData.get("dog_id") ?? "").trim()
 

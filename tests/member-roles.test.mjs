@@ -3,11 +3,13 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import vm from "node:vm"
 import ts from "typescript"
+import sanitizeHtml from "sanitize-html"
 
 function load(file, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   vm.runInNewContext(code, { exports, Date, console, require(name) {
+    if (name === "@/shared/lib/sanitize-rich-text") return load("src/shared/lib/sanitize-rich-text.ts", { "sanitize-html": { default: sanitizeHtml } })
     assert.ok(name in imports, `Unexpected dependency: ${name}`)
     return imports[name]
   } })
@@ -39,7 +41,7 @@ for (const [file, name, url] of [
     ]) {
       let writes = 0
       const client = {
-        auth: { getSession: async () => ({ data: { session: { user: { id: "member" } } } }) },
+        auth: { getUser: async () => ({ data: { user: { id: "member" } } }) },
         from() {
           return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: profile }), insert() { writes++; return this }, single: async () => ({ data: { id: "post" } }) }
         },
@@ -69,7 +71,7 @@ test("role mutations cannot recreate full_member or run as an ordinary member", 
     const api = load("src/features/members/api/actions.ts", {
       "next/headers": {}, "../lib/login-return": load("src/features/members/lib/login-return.ts"),
       "@vercel/blob": {}, "next/cache": {}, "next/navigation": {},
-      "@/shared/lib/auth": { requireAdmin: async () => authorized ? { ok: true, role: "admin" } : { ok: false, error: "권한 없음" } },
+      "@/shared/lib/auth": { requireTopAdmin: async () => authorized ? { ok: true, role: "admin" } : { ok: false, error: "권한 없음" } },
       "@/shared/lib/member-role": roles,
       "@/shared/lib/supabase/server": {}, "@/shared/lib/supabase/service": {},
       "@/shared/lib/validation": {}, "@/shared/constants/home-navigation": {},

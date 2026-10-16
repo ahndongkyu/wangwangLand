@@ -1,6 +1,6 @@
 "use server"
 
-import { requireAdmin } from "@/shared/lib/auth"
+import { requireTopAdmin } from "@/shared/lib/auth"
 import { isAssignableMemberRole, type MemberRole } from "@/shared/lib/member-role"
 import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
@@ -111,8 +111,11 @@ export async function updateNickname(
 
   if (dup) return { error: "이미 사용 중인 닉네임입니다." }
 
+  const { data: existing } = await supabase.from("profiles").select("status,is_banned").eq("id", user.id).maybeSingle()
+  if (!existing || existing.is_banned !== false || existing.status === "rejected") return { error: "가입 정보를 변경할 수 없습니다." }
   const now = new Date().toISOString()
-  const { error } = await supabase
+  // 승인 상태는 브라우저 DB 권한으로 수정하지 않는다. 재검증한 본인 행만 변경한다.
+  const { data: savedProfile, error } = await createServiceClient()
     .from("profiles")
     .update({
       nickname,
@@ -126,8 +129,12 @@ export async function updateNickname(
       updated_at: now,
     })
     .eq("id", user.id)
+    .eq("is_banned", false)
+    .neq("status", "rejected")
+    .select("id")
+    .maybeSingle()
 
-  if (error) return { error: "저장에 실패했습니다." }
+  if (error || !savedProfile) return { error: "저장에 실패했습니다." }
 
   redirect("/")
 }
@@ -151,8 +158,7 @@ export async function updateProfile(
   const phone = formatKoreanPhone(phoneRaw)
 
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
   // 닉네임 중복 확인 — service role 로 RLS 우회
@@ -298,22 +304,9 @@ export async function approveMember(
   id: string,
   role: MemberRole
 ): Promise<{ error?: string }> {
-  const auth = await requireAdmin()
+  const auth = await requireTopAdmin()
   if (!auth.ok) return { error: auth.error }
   if (!isAssignableMemberRole(role)) return { error: "올바르지 않은 회원 권한입니다." }
-  // admin role 설정은 관리자만 가능
-  if (role === "admin") {
-    const { createClient } = await import("@/shared/lib/supabase/server")
-    const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) return { error: "로그인이 필요합니다." }
-    const { data: me } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle()
-    if (me?.role !== "admin") return { error: "관리자만 해당 권한을 부여할 수 있습니다." }
-  }
 
   // admin 이었던 회원을 다른 권한으로 재승인하면 admin 강등 → 마지막 admin 보호
   if (role !== "admin") {
@@ -337,6 +330,8 @@ export async function approveMember(
 export async function rejectMember(
   id: string
 ): Promise<{ error?: string }> {
+  const auth = await requireTopAdmin()
+  if (!auth.ok) return { error: auth.error }
   // admin 거절은 사실상 어드민 권한 박탈 → 마지막 admin 보호
   const guardError = await ensureNotLastAdmin(id)
   if (guardError) return { error: guardError }
@@ -358,6 +353,9 @@ export async function updateMemberStatus(
   id: string,
   status: "approved" | "rejected"
 ): Promise<{ error?: string }> {
+  const auth = await requireTopAdmin()
+  if (!auth.ok) return { error: auth.error }
+  if (!["approved", "rejected"].includes(status)) return { error: "올바르지 않은 상태입니다." }
   if (status === "rejected") {
     const guardError = await ensureNotLastAdmin(id)
     if (guardError) return { error: guardError }
@@ -380,6 +378,13 @@ export async function toggleMemberBan(
   id: string,
   is_banned: boolean
 ): Promise<{ error?: string }> {
+  const auth = await requireTopAdmin()
+  if (!auth.ok) return { error: auth.error }
+  if (typeof is_banned !== "boolean") return { error: "올바르지 않은 요청입니다." }
+  if (is_banned) {
+    const guardError = await ensureNotLastAdmin(id)
+    if (guardError) return { error: guardError }
+  }
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const admin = createAdminClient()
   const { error } = await admin
@@ -414,6 +419,7 @@ async function ensureNotLastAdmin(targetId: string): Promise<string | null> {
     .select("*", { count: "exact", head: true })
     .eq("role", "admin")
     .eq("status", "approved")
+    .eq("is_banned", false)
     .neq("id", targetId)
 
   if ((count ?? 0) === 0) {
@@ -427,22 +433,9 @@ export async function updateMemberRole(
   id: string,
   role: MemberRole
 ): Promise<{ error?: string }> {
-  const auth = await requireAdmin()
+  const auth = await requireTopAdmin()
   if (!auth.ok) return { error: auth.error }
   if (!isAssignableMemberRole(role)) return { error: "올바르지 않은 회원 권한입니다." }
-  // admin role 설정은 관리자만 가능
-  if (role === "admin") {
-    const { createClient } = await import("@/shared/lib/supabase/server")
-    const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) return { error: "로그인이 필요합니다." }
-    const { data: me } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle()
-    if (me?.role !== "admin") return { error: "관리자만 해당 권한을 부여할 수 있습니다." }
-  }
 
   // admin → 다른 권한 강등 시 마지막 admin 보호
   if (role !== "admin") {
@@ -469,10 +462,10 @@ export async function updateMemberRole(
  */
 export async function deleteAccount(): Promise<{ error?: string }> {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return { error: "로그인이 필요합니다." }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인이 필요합니다." }
 
-  const userId = session.user.id
+  const userId = user.id
 
   // 마지막 admin 보호
   const { data: me } = await supabase

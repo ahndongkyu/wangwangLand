@@ -8,6 +8,7 @@ function load(file, imports, env = {}) {
   const code = ts.transpileModule(fs.readFileSync(file,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText
   new Function("exports","require","process",code)(exports,name=>{
     if(name==="server-only")return {}
+    if(name==="@/shared/lib/privacy-audit" && !(name in imports))return {recordPrivacyAccess:async()=>{}}
     if(!(name in imports))throw Error(`Missing dependency ${name}`)
     return imports[name]
   },{env,cwd:()=>process.cwd()})

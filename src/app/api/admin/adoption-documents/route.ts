@@ -2,6 +2,7 @@ import { put, get, del } from "@vercel/blob"
 import { requireAdmin } from "@/shared/lib/auth"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { recordOperationError } from "@/features/operation-logs/server"
+import { recordPrivacyAccess } from "@/shared/lib/privacy-audit"
 
 const headers = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" }
 export async function POST(request: Request) {
@@ -55,6 +56,7 @@ export async function GET(request: Request) {
     }
     const blob=await get(file.pathname,{access:"private",token})
     if(!blob?.stream) return Response.json({error:"서류를 찾을 수 없습니다."},{status:404,headers})
+    await recordPrivacyAccess(auth.userId, "adoption_document", id!, "download")
     const filename = encodeURIComponent(file.filename).replace(/['()*]/g,c=>`%${c.charCodeAt(0).toString(16)}`)
     return new Response(blob.stream,{headers:{...headers,"Content-Type":file.content_type,"Content-Disposition":`attachment; filename*=UTF-8''${filename}`,"Content-Security-Policy":"sandbox"}})
   }catch(error){

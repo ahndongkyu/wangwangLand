@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, Banknote, Package } from "lucide-react"
 
-import type { Donation } from "../api/queries"
+import type { PublicDonation as Donation } from "../api/queries"
 import { maskName } from "@/shared/lib/utils"
 import { cn } from "@/shared/lib/utils"
 

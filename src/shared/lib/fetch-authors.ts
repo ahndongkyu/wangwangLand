@@ -13,7 +13,7 @@ export async function fetchAuthorMap(
   const uniqueIds = [...new Set(ids.filter(Boolean))] as string[]
   if (uniqueIds.length === 0) return {}
   const supabase = await createClient()
-  const { data } = await supabase.from("profiles").select("id, nickname, role").in("id", uniqueIds)
+  const { data } = await supabase.from("public_profile_cards").select("id, nickname, role").in("id", uniqueIds)
   const map: Record<string, AuthorInfo> = {}
   for (const profile of data ?? []) {
     map[profile.id] = { nickname: profile.nickname, role: normalizeMemberRole(profile.role) }
