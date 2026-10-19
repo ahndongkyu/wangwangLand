@@ -11,6 +11,7 @@ import {
 import { normalizeVolunteerGroupName } from "../lib/volunteer-applicant"
 import { VolunteerTimeField } from "./volunteer-time-field"
 import { VolunteerPreparationGuide } from "./volunteer-preparation-guide"
+import { VolunteerContactGuide } from "./volunteer-contact-guide"
 import { SITE } from "@/shared/constants/site"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
@@ -229,7 +230,7 @@ export function VolunteerForm({
           봉사 신청이 접수되었습니다
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          운영진이 확인 후 입력하신 연락처로 안내드리겠습니다.
+          함께해 주셔서 감사합니다. 운영진이 일정을 확인한 후 승인되면 문자로 안내드립니다.
           <br />
           승인 안내를 받으신 뒤 방문해 주세요.
         </p>
@@ -271,6 +272,19 @@ export function VolunteerForm({
           </div>
         )}
 
+        <div className="mt-5 space-y-4 text-left">
+          <section className="rounded-xl border border-border bg-card p-4 text-sm">
+            <h3 className="mb-3 font-semibold">신청하신 일정</h3>
+            <dl className="grid grid-cols-[4rem_minmax(0,1fr)] gap-2">
+              <dt className="text-muted-foreground">날짜</dt><dd>{selectedDates.join(", ")}</dd>
+              <dt className="text-muted-foreground">시간</dt><dd>{visitTime}</dd>
+              <dt className="text-muted-foreground">인원</dt><dd>{partyType === "individual" ? "1명 · 개인" : `${partySize}명 · 단체`}</dd>
+            </dl>
+          </section>
+          <VolunteerPreparationGuide showApprovalNotice={false} />
+          <VolunteerContactGuide />
+          <p className="text-sm text-muted-foreground">신청 내역과 준비물은 마이페이지에서 다시 확인하실 수 있습니다.</p>
+        </div>
         <a
           href="/my/applications"
           className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
@@ -497,10 +511,6 @@ export function VolunteerForm({
             onChange={(checked) => { setPreparationAcknowledged(checked); clearFieldError("preparation_acknowledged") }}
             label="준비물과 방문 안내를 확인했습니다." required invalid={Boolean(fieldErrors.preparation_acknowledged)} />
           <FieldError id="preparation_acknowledged-error" message={fieldErrors.preparation_acknowledged} />
-          <div className="py-4 text-xs leading-relaxed text-muted-foreground">
-            <p className="mb-1 text-sm font-medium text-foreground">쓰레기봉투 후원은 선택이에요</p>
-            가능하시다면 청소용 100L 쓰레기봉투 한 장도 도움이 됩니다. 필수 준비물이 아니니 부담 없이 마음이 닿을 때만 함께해 주세요.
-          </div>
           <div className="border-t border-border pt-4">
             <p className="mb-1 text-xs leading-relaxed text-muted-foreground">활동 중 물림·스크래치·알레르기 등의 위험이 있을 수 있습니다.</p>
             <CheckRow id="safety_acknowledged" checked={safetyAcknowledged}

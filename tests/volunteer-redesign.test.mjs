@@ -240,6 +240,7 @@ test("initial form shows the whole flow and unchecked required preparation, with
     "../lib/volunteer-operating-hours": hours, "../lib/volunteer-applicant": applicant,
     "./volunteer-time-field": { VolunteerTimeField: () => React.createElement("span", null, "時間") },
     "./volunteer-preparation-guide": load("src/features/applications/components/volunteer-preparation-guide.tsx", { "react/jsx-runtime": jsx }),
+    "./volunteer-contact-guide": { VolunteerContactGuide: () => React.createElement("section", null, "변경·문의 안내") },
     "@/shared/constants/site": { SITE: { sns: { kakaoChannel: "#" } } },
     "@/features/legal": { ConsentSection: () => React.createElement("span", null, "동의") },
     "@/shared/components/date-multi-picker": { DateMultiPicker: () => React.createElement("span", null, "달력") },
@@ -255,7 +256,7 @@ test("initial form shows the whole flow and unchecked required preparation, with
   assert.match(html, /name="preparation_acknowledged"/)
   assert.doesNotMatch(html, /name="activities"|다음<|희망 활동/)
   assert.doesNotMatch(html.match(/<input[^>]*name="preparation_acknowledged"[^>]*>/)[0], /checked/)
-  assert.match(html, /쓰레기봉투 후원은 선택/)
+  assert.match(html, /필수 준비물은 아니/)
 })
 
 test("a date selected before raising group size can still be deselected when blocked", () => {

@@ -4,6 +4,8 @@ import { applicationDate } from "@/features/applications/lib/admin-list"
 import { adoptionStatusLabel } from "@/features/applications/lib/adoption-workflow"
 import { volunteerToday } from "@/features/applications/lib/volunteer-operating-hours"
 import { ChevronDown } from "lucide-react"
+import { VolunteerPreparationGuide } from "@/features/applications/components/volunteer-preparation-guide"
+import { VolunteerContactGuide } from "@/features/applications/components/volunteer-contact-guide"
 
 import { CancelMyApplicationButton } from "./cancel-button"
 import { getActiveMember } from "@/shared/lib/auth"
@@ -199,11 +201,13 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                         {v.status === "일정변경요청" && <section className="rounded-lg border border-border p-4"><h3 className="text-sm font-semibold">일정변경 검토 중</h3><p className="mt-2 text-sm">{v.reschedule_dates?.map(date => applicationDate(date)).join(", ")} · {v.reschedule_time}</p><p className="mt-2 text-xs text-muted-foreground">승인 전까지 기존 확정 일정이 유지됩니다.</p></section>}
                         {/* 운영진 메모 */}
                         {v.admin_note && (
-                          <div className="rounded-lg bg-muted/40 px-4 py-3 text-sm text-foreground">
-                            <span className="font-semibold text-foreground">준비물 · 운영진 안내</span>
+                          <details className="rounded-lg bg-muted/40 px-4 py-3 text-sm text-foreground">
+                            <summary className="min-h-11 content-center cursor-pointer font-semibold">운영진 안내</summary>
                             <p className="mt-1.5 whitespace-pre-line leading-relaxed">{v.admin_note}</p>
-                          </div>
+                          </details>
                         )}
+                        <VolunteerPreparationGuide showApprovalNotice={["접수", "검토중"].includes(v.status)} />
+                        <VolunteerContactGuide />
 
                         {/* 날짜별 출근 예정 운영진 */}
                         {visitDates(v).length > 0 && (

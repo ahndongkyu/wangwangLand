@@ -206,6 +206,8 @@ export async function renderMyApplications({ eventError = false } = {}) {
     return query
   } }
   const Page = load("src/app/(public)/my/applications/page.tsx", {
+    "@/features/applications/components/volunteer-preparation-guide": { VolunteerPreparationGuide: element("section", "준비물") },
+    "@/features/applications/components/volunteer-contact-guide": { VolunteerContactGuide: element("section", "변경·문의 안내") },
     "@/shared/lib/auth": { getActiveMember: async () => ({ id: "member", role: "member" }) },
     ...base, "@/features/applications/lib/admin-list": filters, "@/features/applications/lib/volunteer-operating-hours": { volunteerToday: () => "2026-10-07" },
     "./cancel-button": { CancelMyApplicationButton: element("button", "신청 취소") }, "@/shared/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: "member" } } }) } }) },
