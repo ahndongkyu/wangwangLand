@@ -17,8 +17,12 @@ export function buildVolunteerSms(kind: VolunteerSmsKind, name: string, starts: 
     return `${local.toISOString().slice(0, 10).replaceAll("-", ".")}(${weekdays[local.getUTCDay()]}) ${local.toISOString().slice(11, 16)}`
   })
   if (!visits.length) throw new Error("확정 일정이 없는 승인 문자는 발송할 수 없습니다.")
+  if (kind === "rescheduled") return {
+    type: "LMS" as const,
+    text: `${name}님, 봉사 일정 변경이 확정되었습니다.\n변경일자: ${visits.join("\n")}`,
+  }
   return {
     type: "LMS" as const,
-    text: `[왕왕랜드 봉사 안내]\n${name}님, ${kind === "rescheduled" ? "봉사 일정 변경이 확정되었습니다.\n기존 일정 대신 아래 일정으로 방문해 주세요." : "봉사 신청이 승인되었습니다."}\n\n방문 일정: ${visits.join("\n")}\n참여 인원: ${partySize}명\n\n준비물과 신청 내역은 마이페이지에서 확인해 주세요.\n일정 변경이나 취소도 마이페이지에서 요청하실 수 있습니다.\n\n신청 내역 확인\nhttps://wangwangland.kr/my/applications`,
+    text: `[왕왕랜드 봉사 안내]\n${name}님, 봉사 신청이 승인되었습니다.\n\n방문 일정: ${visits.join("\n")}\n참여 인원: ${partySize}명\n\n준비물·신청 내역 확인과 일정 변경·취소 요청은 홈페이지에서 가능합니다.\nhttps://wangwangland.kr/my/applications\n\n그 외 문의는 카카오톡 채널로 부탁드립니다.\nhttp://pf.kakao.com/_iTmxbX/chat`,
   }
 }

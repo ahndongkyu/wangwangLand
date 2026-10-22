@@ -40,16 +40,24 @@ test('no SMS for no schedule, duplicate save, review, rejection or unconfirmed c
 })
 
 test('LMS includes correct Korean date, party size and application link', () => {
-  for (const mode of ['confirmed', 'rescheduled']) {
+  for (const mode of ['confirmed']) {
     const message = build(mode, '홍길동', ['2026-10-20T07:50:00Z'], 3)
     assert.equal(message.type, 'LMS')
     assert.ok(message.text.includes('2026.10.20(화) 16:50'))
     assert.ok(message.text.includes('참여 인원: 3명'))
-    assert.ok(message.text.endsWith('https://wangwangland.kr/my/applications'))
-    assert.ok(message.text.includes('마이페이지에서 요청하실 수 있습니다.'))
+    assert.ok(message.text.includes('https://wangwangland.kr/my/applications'))
+    assert.ok(message.text.endsWith('http://pf.kakao.com/_iTmxbX/chat'))
+    assert.ok(message.text.includes('일정 변경·취소 요청은 홈페이지에서 가능합니다.'))
   }
-  assert.ok(build('rescheduled', '홍길동', ['2026-10-20T07:50:00Z'], 3).text.includes('기존 일정 대신'))
+  assert.equal(build('rescheduled', '홍길동', ['2026-10-20T07:50:00Z'], 3).text, '홍길동님, 봉사 일정 변경이 확정되었습니다.\n변경일자: 2026.10.20(화) 16:50')
   assert.throws(() => build('confirmed', '홍길동', [], 3))
+})
+
+test('changed visits preserve every date, sorting and deduplication without extra copy', () => {
+  const message = build('rescheduled', '홍길동', ['2026-10-25T01:00:00Z', '2026-10-24T06:00:00Z', '2026-10-25T01:00:00Z'], 2)
+  assert.equal(message.text, '홍길동님, 봉사 일정 변경이 확정되었습니다.\n변경일자: 2026.10.24(토) 15:00\n2026.10.25(일) 10:00')
+  assert.equal(message.type, 'LMS')
+  assert.throws(() => build('rescheduled', '홍길동', [], 2))
 })
 
 test('cancellation is SMS within 90 bytes regardless of name or group length', () => {

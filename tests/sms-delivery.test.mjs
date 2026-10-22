@@ -173,8 +173,9 @@ test("approval template uses confirmed KST visits and the approved copy", () => 
   assert.equal(message.type, "LMS")
   assert.match(message.text, /2026\.10\.18\(일\) 13:00/)
   assert.match(message.text, /참여 인원: 3명/)
-  assert.match(message.text, /마이페이지에서 요청하실 수 있습니다/)
-  assert.match(message.text, /https:\/\/wangwangland.kr\/my\/applications$/)
+  assert.match(message.text, /일정 변경·취소 요청은 홈페이지에서 가능합니다/)
+  assert.match(message.text, /https:\/\/wangwangland.kr\/my\/applications/)
+  assert.match(message.text, /http:\/\/pf.kakao.com\/_iTmxbX\/chat$/)
   assert.throws(() => buildVolunteerSms("confirmed", "신청자", [], 1))
 })
 
