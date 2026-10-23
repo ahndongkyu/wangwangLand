@@ -19,6 +19,38 @@ function load(file, imports = {}) {
 }
 
 const hours = load("src/features/applications/lib/volunteer-operating-hours.ts")
+test("approval sends selected SMS or records skipped without preventing approval", async () => {
+  for (const mode of ["short", "full", "none", "invalid"]) {
+    const sends = [], logs = []
+    let approvals = 0
+    const admin = {
+      from(table) {
+        if (table === "sms_delivery_logs") return { insert: async row => { logs.push(row); return {} } }
+        return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { id: "app", status: "접수", created_by: null, applicant_name: "홍길동", phone: "010-0000-0000", available_dates: ["2099-10-10"], available_time: "10:00" } }) }
+      },
+      rpc: async () => { approvals++; return { data: 1, error: null } },
+    }
+    const api = load("src/features/applications/api/mutations.ts", {
+      "next/cache": { revalidatePath() {} }, "next/navigation": {},
+      "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true, userId: "staff" }) },
+      "@/shared/lib/supabase/server": {}, "@/shared/lib/supabase/admin": { createAdminClient: () => admin },
+      "@/features/events/lib/date": load("src/features/events/lib/date.ts"), "@/features/events/types": {},
+      "../lib/volunteer-applicant": { formatVolunteerApplicantName: name => name },
+      "../lib/volunteer-operating-hours": hours, "@/shared/lib/validation": {},
+      "@/features/sms": { sendSms: async (...args) => { sends.push(args); return { ok: true } } },
+    })
+    const form = new FormData()
+    form.set("status", "승인"); form.set("schedule_mode", "with_schedule"); form.set("sms_mode", mode)
+    const result = await api.updateVolunteerApplication("app", form)
+    assert.equal(approvals, mode === "invalid" ? 0 : 1)
+    if (mode === "invalid") { assert.ok(result.error); continue }
+    assert.equal(result.warning, undefined)
+    assert.equal(sends.length, mode === "none" ? 0 : 1)
+    assert.equal(logs.length, mode === "none" ? 1 : 0)
+    if (mode === "none") assert.equal(logs[0].state, "skipped")
+    else assert.equal(sends[0][2].messageType, mode === "short" ? "SMS" : "LMS")
+  }
+})
 const descriptions = load("src/features/events/lib/description.ts")
 test("retired activities are hidden in linked calendar descriptions without changing other notes", () => {
   const description = "희망 활동: 산책, 청소·정리\r\n요청 시간대: 10:00\r\n메모: 행사 지원\r\n준비물 안내"

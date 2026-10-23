@@ -17,7 +17,7 @@ import {
   normalizeVolunteerGroupName,
 } from "../lib/volunteer-applicant"
 import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
-import { buildVolunteerSms, volunteerSmsKind } from "../lib/volunteer-sms"
+import { buildVolunteerSms, buildShortVolunteerSms, getVolunteerSmsRecommendation, volunteerSmsKind } from "../lib/volunteer-sms"
 import {
   formatKoreanPhone,
   validateGroupPartySize,
@@ -563,11 +563,16 @@ export async function updateVolunteerApplication(
   const { data: prev } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, updated_at"
+      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, updated_at, submitted_at"
     )
     .eq("id", id)
     .maybeSingle()
   if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
+
+  const requestedSmsMode = formData.get("sms_mode")
+  if (requestedSmsMode !== null && !["short", "full", "none"].includes(String(requestedSmsMode))) return { error: "문자 발송 방식을 확인해 주세요." }
+  const freshSmsChoice = ["접수", "검토중"].includes(prev.status) && status === "승인"
+  const approvalSmsMode = freshSmsChoice ? requestedSmsMode ?? (await getVolunteerSmsRecommendation(admin, prev)).mode : "full"
 
   const isRescheduleRequest = prev.status === "일정변경요청"
   const rescheduleAccepted =
@@ -695,10 +700,24 @@ export async function updateVolunteerApplication(
   if (prev.phone && smsKind) {
     const volunteerApplicantName = formatVolunteerApplicantName(prev.applicant_name ?? "", prev.group_name)
     try {
-      const message = buildVolunteerSms(smsKind, volunteerApplicantName, scheduleStarts, prev.party_size ?? 1)
-      const { sendSms } = await import("@/features/sms")
-      const delivery = await sendSms(prev.phone, message.text, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName, messageType: message.type })
-      if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
+      if (smsKind === "confirmed" && approvalSmsMode === "none") {
+        const { error: skipError } = await admin.from("sms_delivery_logs").insert({
+          recipient_phone: prev.phone.replace(/\D/g, ""), recipient_name: volunteerApplicantName,
+          message: "운영진 선택으로 승인 문자 미발송", application_id: id, application_type: "volunteer",
+          created_by: auth.userId, state: "skipped",
+        })
+        if (skipError) {
+          warning = "승인은 완료했으나 문자 미발송 기록 저장에 실패했습니다."
+          await recordOperationError("sms", "skipLog", skipError, "application")
+        }
+      } else {
+        const message = smsKind === "confirmed" && approvalSmsMode === "short"
+          ? buildShortVolunteerSms(prev.applicant_name ?? "", scheduleStarts)
+          : buildVolunteerSms(smsKind, volunteerApplicantName, scheduleStarts, prev.party_size ?? 1)
+        const { sendSms } = await import("@/features/sms")
+        const delivery = await sendSms(prev.phone, message.text, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName, messageType: message.type })
+        if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`
+      }
     } catch (e) {
       warning = "문자 발송 결과를 확인하지 못했습니다. SMS 발송 내역을 확인해주세요."
       console.error("[sms volunteer-status]", e)

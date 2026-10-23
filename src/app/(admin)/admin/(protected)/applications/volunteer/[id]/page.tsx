@@ -10,6 +10,7 @@ import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { formatKoreanPhone } from "@/shared/lib/validation"
 import { cn } from "@/shared/lib/utils"
 import { DeleteEventButton } from "@/features/events/components/delete-event-button"
+import { getVolunteerSmsRecommendation } from "@/features/applications/lib/volunteer-sms"
 
 export const dynamic = "force-dynamic"
 const panel = "w-full min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5"
@@ -35,6 +36,8 @@ export default async function VolunteerApplicationDetailPage({ params, searchPar
   const detailHref = volunteerDetailHref(id, returnHref, selected?.id)
   const fresh = ["접수", "검토중"].includes(app.status) && !events.length
   const name = formatVolunteerApplicantName(app.applicant_name, app.group_name)
+  const smsRecommendation = ["접수", "검토중"].includes(app.status)
+    ? await getVolunteerSmsRecommendation(admin, app) : undefined
 
   return <div className="mx-auto w-full max-w-6xl px-4 py-3 md:px-6 md:py-8 [overflow-wrap:anywhere]">
     <Link href={returnHref} className="mb-3 hidden md:inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground">← {applicationBackLabel(returnHref)}</Link>
@@ -71,6 +74,7 @@ export default async function VolunteerApplicationDetailPage({ params, searchPar
       </div>
       <aside id="application-processing" className="order-2 min-w-0 scroll-mt-20 xl:min-w-[300px] xl:flex-[.95]">
         <ApplicationStatusForm compactVolunteer detailHref={detailHref} key={`${app.id}:${app.status}:${app.admin_note}:${app.approved_at}:${events.map(event => event.id + event.starts_at).join(",")}`} id={app.id} kind="volunteer" returnHref={returnHref} currentStatus={app.status} currentNote={app.admin_note} applicantName={name} partySize={app.party_size} currentCancelReason={app.cancel_reason} linkedEventCount={events.length} linkedEvents={events}
+          smsRecommendation={smsRecommendation} smsApplicantName={app.applicant_name}
           hint={{ availableDates: requestedDates, availableTime: app.status === "일정변경요청" ? app.reschedule_time : app.available_time }}
           rescheduleInfo={app.status === "일정변경요청" ? { dates: requestedDates, time: app.reschedule_time ?? null } : undefined}
         />

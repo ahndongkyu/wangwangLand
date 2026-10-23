@@ -11,6 +11,7 @@ function load(path, imports = {}) {
   vm.runInNewContext(code, { exports, URLSearchParams, FormData, console, require: name => {
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     if (name === "react/jsx-runtime") return jsx
+    if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     assert.ok(name in imports, `Missing import: ${name}`)
     return imports[name]
   } })
@@ -122,6 +123,50 @@ function formHarness(props = {}) {
   const submit = async () => { const form = nodes(render()).find(n => n.type === "form"); await form.props.onSubmit({ preventDefault() {} }); await Promise.resolve(); await Promise.resolve() }
   return { render, change, choose, confirm, submit, writes, errors, state }
 }
+test("approval SMS recommendation can be overridden and is submitted explicitly", async () => {
+  for (const mode of ["short", "full"]) {
+    const form = formHarness({ smsRecommendation: { mode } })
+    await form.submit()
+    assert.equal(form.writes[0].data.get("sms_mode"), mode)
+  }
+  const form = formHarness({ smsRecommendation: { mode: "short" } })
+  form.choose("sms-mode", 2)
+  await form.submit()
+  assert.equal(form.writes[0].data.get("sms_mode"), "none")
+  const changed = formHarness({ currentStatus: "일정변경요청", rescheduleInfo: { dates: ["2026-10-20"], time: "11:00" } })
+  assert.equal(nodes(changed.render()).some(n => n.props?.name === "sms-mode"), false)
+  await changed.submit()
+  assert.equal(changed.writes[0].data.get("sms_mode"), null)
+})
+
+test("SMS history filters same member, approved records, excluding self within prior 30 days", async () => {
+  const sms = load("src/features/applications/lib/volunteer-sms.ts")
+  const steps = []
+  const q = { maybeSingle: async () => ({ data: { submitted_at: "2026-10-01T00:00:00Z" } }) }
+  for (const method of ["select", "eq", "neq", "gte", "lt", "order", "limit"]) q[method] = (...args) => { steps.push([method, ...args]); return q }
+  const admin = { from: table => { assert.equal(table, "volunteer_applications"); return q } }
+  const app = { id: "current", created_by: "member", submitted_at: "2026-10-23T00:00:00Z" }
+  assert.equal((await sms.getVolunteerSmsRecommendation(admin, app)).mode, "short")
+  for (const expected of [["eq", "created_by", "member"], ["eq", "status", "승인"], ["neq", "id", "current"], ["gte", "submitted_at", "2026-09-23T00:00:00.000Z"], ["lt", "submitted_at", "2026-10-23T00:00:00.000Z"]]) assert.ok(steps.some(step => JSON.stringify(step) === JSON.stringify(expected)))
+  q.maybeSingle = async () => ({ data: null })
+  assert.equal((await sms.getVolunteerSmsRecommendation(admin, app)).mode, "full")
+  q.maybeSingle = async () => ({ error: new Error("offline") })
+  assert.equal((await sms.getVolunteerSmsRecommendation(admin, app)).failed, true)
+  assert.equal((await sms.getVolunteerSmsRecommendation(admin, { ...app, created_by: null })).mode, "full")
+  assert.equal((await sms.getVolunteerSmsRecommendation(admin, { ...app, submitted_at: "invalid" })).failed, true)
+})
+
+test("short approval SMS preserves visit time and falls back to LMS without truncating", () => {
+  const sms = load("src/features/applications/lib/volunteer-sms.ts")
+  const message = sms.buildShortVolunteerSms("홍길동", ["2026-10-25T05:00:00Z"])
+  assert.equal(message.type, "SMS")
+  assert.match(message.text, /26\.10\.25 14:00/)
+  const longName = "긴이름".repeat(30)
+  const long = sms.buildShortVolunteerSms(longName, ["2026-10-25T05:00:00Z"])
+  assert.equal(long.type, "LMS")
+  assert.ok(long.text.includes(longName))
+  assert.throws(() => sms.buildShortVolunteerSms("홍길동", []))
+})
 test("new volunteer approval is one click, preserves return filters and defaults to schedule creation", async () => {
   const form = formHarness()
   await form.submit()

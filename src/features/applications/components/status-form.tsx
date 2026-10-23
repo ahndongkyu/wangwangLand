@@ -10,6 +10,7 @@ import type { ApplicationStatus } from "@/shared/types/database"
 import { applicationDate, validDate } from "../lib/admin-list"
 import { approveVolunteerAndContinue } from "../api/processing"
 import { applicationBackLabel } from "../lib/detail-navigation"
+import { buildShortVolunteerSms, buildVolunteerSms, type VolunteerSmsMode, type VolunteerSmsRecommendation } from "../lib/volunteer-sms"
 
 const VOLUNTEER_DEFAULT_NOTE = "안녕하세요! 왕왕랜드 봉사에 함께해주셔서 진심으로 감사드립니다 🐾\n\n야외 견사에서 진행되는 활동이라, 편하게 움직일 수 있는 복장으로 와주시면 좋아요.\n\n• 오염되어도 괜찮은 헌옷과 편한 신발을 추천드려요. 장화도 좋아요!\n• 목장갑이 있다면 함께 챙겨와 주세요.\n• 먼지나 오물이 묻을 수 있어 아끼는 옷은 피해주시면 좋습니다.\n• 현장 물품 지원이 어려울 수 있는 점 너른 양해 부탁드립니다.\n\n그리고 가능하시다면 보호소 청소에 사용할 100L 쓰레기봉투 한 장을 후원해주셔도 큰 도움이 됩니다.\n\n물론 필수는 아니며, 부담 없이 마음이 닿으실 때만 함께해 주세요 🙏\n\n궁금한 점은 카카오톡 상담으로 편하게 문의해 주세요. 감사합니다^^"
 const STATUS_OPTIONS: ApplicationStatus[] = ["접수", "검토중", "승인", "반려", "취소"]
@@ -30,16 +31,19 @@ interface Props {
   partySize?: number
   compactVolunteer?: boolean
   detailHref?: string
+  smsRecommendation?: VolunteerSmsRecommendation
+  smsApplicantName?: string
 }
 
 export function ApplicationStatusForm({
   id, kind, currentStatus, currentNote, applicantName, hint, linkedEventCount = 0,
   linkedEvents = [], rescheduleInfo, approvalInfo, returnHref = "/admin/applications",
-  currentCancelReason, partySize, compactVolunteer = false, detailHref,
+  currentCancelReason, partySize, compactVolunteer = false, detailHref, smsRecommendation, smsApplicantName,
 }: Props) {
   const reschedule = kind === "volunteer" && currentStatus === "일정변경요청"
   const [editing, setEditing] = useState(reschedule || !["승인", "반려", "취소"].includes(currentStatus))
   const freshVolunteer = kind === "volunteer" && ["접수", "검토중"].includes(currentStatus)
+  const [smsMode, setSmsMode] = useState<VolunteerSmsMode>(smsRecommendation?.mode ?? "full")
   const [status, setStatus] = useState<ApplicationStatus>(reschedule || freshVolunteer ? "승인" : currentStatus)
   const [advanced, setAdvanced] = useState(false)
   const [decision, setDecision] = useState<"accept" | "reject">("accept")
@@ -61,6 +65,11 @@ export function ApplicationStatusForm({
   const needsConfirmation = (addsSchedule && !quickApproval && !reschedule) || removesSchedule
   const validSchedule = dates.length > 0 && dates.every(validDate) && !!time && /^([01]\d|2[0-3]):[0-5]\d$/.test(time)
   const newDates = dates.filter(date => !linkedEvents.some(event => Date.parse(event.starts_at) === Date.parse(date + "T" + time + ":00+09:00")))
+  const showSmsChoice = freshVolunteer && addsSchedule
+  const previewStarts = validSchedule ? dates.map(date => `${date}T${time}:00+09:00`) : []
+  const smsPreview = showSmsChoice && previewStarts.length && smsMode !== "none"
+    ? smsMode === "short" ? buildShortVolunteerSms(smsApplicantName ?? applicantName, previewStarts)
+      : buildVolunteerSms("confirmed", applicantName, previewStarts, partySize ?? 1) : null
   function changeStatus(next: ApplicationStatus) {
     drafts.current[status] = adminNote
     setStatus(next)
@@ -78,11 +87,12 @@ export function ApplicationStatusForm({
     formData.set("admin_note", adminNote)
     formData.set("cancel_reason", cancelReason)
     formData.set("schedule_mode", reschedule ? "with_schedule" : approvalMode)
+    if (showSmsChoice) formData.set("sms_mode", smsMode)
     if (reschedule && decision === "reject") formData.set("reject_reschedule", "true")
     await save(() => continueNext && quickApproval ? approveVolunteerAndContinue(id, formData, returnHref) : kind === "volunteer" ? updateVolunteerApplication(id, formData) : updateAdoptionApplication(id, formData),
       reschedule ? (decision === "accept" ? "변경 일정으로 승인했습니다." : "기존 일정을 유지했습니다.") : addsSchedule ? "승인 완료 · 캘린더에 일정이 등록되었습니다." : "신청 처리 내용이 저장되었습니다.", continueNext && quickApproval ? undefined : compactVolunteer ? detailHref : returnHref)
   }
-  const actionLabel = reschedule ? (decision === "accept" ? "승인 및 일정 교체" : "변경 거절 · 기존 일정 유지") : addsSchedule ? "승인 및 일정 등록" : "저장"
+  const actionLabel = reschedule ? (decision === "accept" ? "승인 및 일정 교체" : "변경 거절 · 기존 일정 유지") : showSmsChoice ? smsMode === "none" ? "문자 없이 승인" : `승인 및 ${smsMode === "short" ? "간단" : "상세"} 문자 발송` : addsSchedule ? "승인 및 일정 등록" : "저장"
   return <section className="w-full min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
     <div className={`${compactVolunteer ? "mb-2" : "mb-4"} flex items-center justify-between gap-3`}>
       <h2 className="text-base font-semibold">{compactVolunteer && !editing ? "처리 내역" : "신청 처리"}</h2>
@@ -143,6 +153,18 @@ export function ApplicationStatusForm({
       </fieldset>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <div className={`space-y-2 ${compactVolunteer && (quickApproval || reschedule) ? "order-1" : "border-t border-border pt-4"}`}>
+        {showSmsChoice && <fieldset disabled={busy} className="mb-4 min-w-0 space-y-3">
+          <legend className="mb-2 text-sm font-semibold">승인 문자</legend>
+          <div className="rounded-lg bg-muted/50 p-3 text-sm">
+            <p>{smsRecommendation?.failed ? "승인 이력 조회 실패 · 상세 안내 기본 선택" : smsRecommendation?.previousSubmittedAt ? "최근 30일 승인 이력 있음 · 간단 안내 자동 선택" : "최근 30일 승인 이력 없음 · 상세 안내 자동 선택"}</p>
+            {smsRecommendation?.previousSubmittedAt && <p className="mt-1 text-xs text-muted-foreground">이전 신청: {applicationDate(smsRecommendation.previousSubmittedAt)}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">이번 접수일 직전 30일 내 동일 회원의 승인된 신청 기준입니다.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">{(["short", "full", "none"] as const).map(mode => <label key={mode} className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-2 text-sm has-checked:border-primary has-checked:bg-primary/5"><input type="radio" name="sms-mode" checked={smsMode === mode} onChange={() => setSmsMode(mode)} className="accent-primary" />{mode === "short" ? "간단" : mode === "full" ? "상세" : "미발송"}</label>)}</div>
+          {smsMode === "none" ? <p className="text-xs text-muted-foreground">운영진 선택으로 미발송 기록이 남습니다.</p> : smsPreview && <details><summary className="min-h-11 cursor-pointer py-3 text-sm">발송 문구 미리보기 · {smsPreview.type}</summary><p className="whitespace-pre-wrap rounded-lg bg-muted/50 p-3 text-sm [overflow-wrap:anywhere]">{smsPreview.text}</p></details>}
+          {smsMode === "short" && smsPreview?.type === "LMS" && <p className="text-xs text-primary">이름 또는 일정이 길어 단문 한도를 초과했습니다. 장문(LMS)으로 발송됩니다.</p>}
+          <p className="text-xs text-muted-foreground">문자 선택과 관계없이 승인·캘린더 등록·홈페이지 알림은 처리됩니다.</p>
+        </fieldset>}
         {compactVolunteer && quickApproval && !validSchedule && <p role="alert" className="text-sm text-destructive">등록할 날짜와 시간을 확인해 주세요.</p>}
         <Button type="submit" disabled={busy || (compactVolunteer && quickApproval && !validSchedule)} className="min-h-12 w-full whitespace-normal">{pending ? "저장 중…" : actionLabel}</Button>
         {compactVolunteer && quickApproval && <p className="text-xs leading-5 text-muted-foreground">확인한 일정 {dates.length}건을 캘린더에 등록하고 기본 안내를 함께 저장합니다.</p>}
