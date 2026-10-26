@@ -16,6 +16,7 @@ function load(file, imports = {}) {
   vm.runInNewContext(code, { exports, FormData, Date, console: { error() {} }, require(name) {
     if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
+    if (name === "../lib/volunteer-operating-hours") return load("src/features/applications/lib/volunteer-operating-hours.ts")
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     assert.ok(name in imports, name)
     return imports[name]
@@ -39,7 +40,7 @@ function harness({ user = true, approved = true, banned = false, animalStatus = 
       return { insert(value) { inserts.push(value); return this }, select() { return this }, single: async () => ({ data: failure ? null : { id: "application" }, error: failure ? { message: "save failed" } : null }) }
     } }) },
     "@/features/events/lib/date": {}, "@/features/events/types": {},
-    "../lib/volunteer-applicant": {}, "../lib/volunteer-operating-hours": {},
+    "../lib/volunteer-applicant": {}, "../lib/volunteer-operating-hours": load("src/features/applications/lib/volunteer-operating-hours.ts"),
     "@/shared/lib/validation": validation,
     "@/features/push": { sendPushToStaff: async v => pushes.push(v) },
   })
@@ -51,7 +52,7 @@ function form(overrides = {}) {
     animal_mode: "consult", applicant_name: "테스트", phone: "01012345678", address: "인천광역시 중구",
     reason: "아이와 평생 가족으로 함께하고 싶습니다.", current_pets: "없음", past_pet_experience: "없음",
     family_size: "2", has_children: "false", housing_type: "아파트", ownership_type: "자가",
-    visit_available_dates: "2099-10-10", visit_available_time: "17:50",
+    visit_available_dates: "2099-10-10", visit_available_time: "16:00",
     adult: "on", family_consent: "on", readiness: "on", privacy_agreed: "on", terms_agreed: "on", ...overrides,
   })) if (value !== null) data.append(key, value)
   return data
@@ -111,11 +112,11 @@ test("adoption checks enforced on server including conditional landlord consent"
     assert.ok((await h.submit(form({ ownership_type, landlord_consent: "on" }))).id)
   }
 })
-test("adoption times preserve existing 17:50 option and reject invalid hours/minutes", async () => {
+test("adoption accepts half-hour slots through 16:00 and rejects excluded hours/minutes", async () => {
   const h = harness()
-  assert.ok((await h.submit(form())).id)
-  for (const time of ["12:00", "18:00", "17:59", "99:99", ""]) assert.ok((await h.submit(form({ visit_available_time: time }))).error)
-  assert.equal(h.inserts.length, 1)
+  for (const time of ["11:00", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]) assert.ok((await h.submit(form({ visit_available_time: time }))).id)
+  for (const time of ["10:00", "10:30", "11:30", "12:00", "12:30", "13:10", "16:30", "17:00", "17:50", "18:00", "17:59", "99:99", ""]) assert.ok((await h.submit(form({ visit_available_time: time }))).error)
+  assert.equal(h.inserts.length, 8)
 })
 test("application submission rejects impossible, past, absent and excessive visit dates without saving",async()=>{
   for(const dates of [[],["2099-02-30"],["2020-10-15"],Array.from({length:31},(_,i)=>`2099-10-${String(i+1).padStart(2,"0")}`)]){

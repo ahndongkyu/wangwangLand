@@ -39,7 +39,7 @@ export function VolunteerTimeField({
       .filter((time) => time.startsWith(`${nextHour}:`))
       .map((time) => time.slice(3))
     if (!nextHour || !nextMinuteOptions.includes(minute)) {
-      onMinuteChange("")
+      onMinuteChange(nextMinuteOptions[0] ?? "")
     }
   }
 
@@ -52,7 +52,7 @@ export function VolunteerTimeField({
       <div className="flex items-center gap-2">
         <select
           id="available_hour"
-          value={hour}
+          value={hourOptions.includes(hour) ? hour : ""}
           onChange={(event) => handleHourChange(event.target.value)}
           disabled={selectedDates.length === 0}
           required={required}
@@ -64,11 +64,6 @@ export function VolunteerTimeField({
           <option value="">
             {selectedDates.length === 0 ? "날짜 먼저 선택" : "시 선택"}
           </option>
-          {hasInvalidValue && !hourOptions.includes(hour) && (
-            <option value={hour} disabled>
-              {hour}시 (운영시간 외)
-            </option>
-          )}
           {hourOptions.map((option) => (
             <option key={option} value={option}>
               {Number(option)}시
@@ -78,7 +73,7 @@ export function VolunteerTimeField({
         <span className="text-sm font-semibold text-muted-foreground">:</span>
         <select
           id="available_minute"
-          value={minute}
+          value={minuteOptions.includes(minute) ? minute : ""}
           onChange={(event) => onMinuteChange(event.target.value)}
           disabled={!hour || selectedDates.length === 0}
           required={required}
@@ -88,11 +83,6 @@ export function VolunteerTimeField({
           className="h-11 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-3 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30"
         >
           <option value="">분 선택</option>
-          {hasInvalidValue && !minuteOptions.includes(minute) && (
-            <option value={minute} disabled>
-              {minute}분 (운영시간 외)
-            </option>
-          )}
           {minuteOptions.map((option) => (
             <option key={option} value={option}>
               {option}분
@@ -100,10 +90,11 @@ export function VolunteerTimeField({
           ))}
         </select>
       </div>
-      <input type="hidden" name="available_time" value={value} />
+      <input type="hidden" name="available_time" value={hasInvalidValue ? "" : value} />
+      {hasInvalidValue && <p className="text-xs text-muted-foreground">변경할 방문 시간을 현재 신청 가능한 시간 중에서 다시 선택해 주세요.</p>}
       {selectedDates.length > 0 ? (
         <p id="available_time-hint" className="text-xs leading-relaxed text-muted-foreground">
-          신청 가능 시간: {VOLUNTEER_APPLICATION_TIME_LABEL}
+          방문 시작 가능시간: {VOLUNTEER_APPLICATION_TIME_LABEL}
           {selectedDates.length > 1 && (
             <span className="mt-0.5 block font-medium text-foreground/80">
               선택한 모든 날짜에 같은 방문 시간이 적용됩니다.

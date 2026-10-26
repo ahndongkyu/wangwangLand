@@ -18,7 +18,7 @@ import {
   formatVolunteerApplicantName,
   normalizeVolunteerGroupName,
 } from "../lib/volunteer-applicant"
-import { validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
+import { ADOPTION_TIME_OPTIONS, validateVolunteerSchedule } from "../lib/volunteer-operating-hours"
 import { buildVolunteerSms, buildShortVolunteerSms, getVolunteerSmsRecommendation, volunteerSmsKind } from "../lib/volunteer-sms"
 import {
   formatKoreanPhone,
@@ -164,8 +164,8 @@ export async function submitAdoptionApplication(
   if (visitAvailableDates.length === 0 || visitAvailableDates.some((date) => !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
     return { error: "방문 가능한 날짜를 하나 이상 선택해 주세요." }
   }
-  if (!/^(10|11|13|14|15|16|17):(00|10|20|30|40|50)$/.test(visitAvailableTime)) {
-    return { error: "방문 가능한 시간을 선택해 주세요." }
+  if (!ADOPTION_TIME_OPTIONS.includes(visitAvailableTime)) {
+    return { error: "입양상담은 오전 11시 또는 오후 13~16시 사이에 30분 단위로 신청해 주세요.", field: "visit_hour" }
   }
   if (visitAvailableDates.length > 30 || visitAvailableDates.some(date => {
     const instant = new Date(`${date}T${visitAvailableTime}:00+09:00`)

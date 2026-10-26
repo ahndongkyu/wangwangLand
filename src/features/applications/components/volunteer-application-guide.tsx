@@ -32,7 +32,7 @@ export function VolunteerApplicationGuide({ className }: { className?: string })
               {VOLUNTEER_APPLICATION_TIME_LABEL}
             </p>
             <p className="mt-1 text-xs leading-relaxed">
-              12:00~13:00는 점심시간으로 현장 안내가 어렵습니다.
+              보호소 운영 09:00~18:00 · 점심시간 12:00~13:00. 충분한 활동 시간을 위해 방문 시작은 16:00까지 신청받습니다.
             </p>
           </div>
         </div>

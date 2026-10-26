@@ -7,6 +7,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react"
 import { submitAdoptionApplication } from "../api/mutations"
+import { ADOPTION_APPLICATION_TIME_LABEL, getAdoptionTimeOptions } from "../lib/volunteer-operating-hours"
 import { searchAdoptionAnimals, type AdoptionAnimal } from "../api/adoption-animals"
 import { ConsentSection } from "@/features/legal"
 import { AddressSearchInput } from "@/shared/components/address-search-input"
@@ -49,6 +50,10 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
   const submitting = useRef(false)
   const feedbackRef = useRef<HTMLDivElement>(null)
   const invalidReason = reasonTouched && reason.trim().length < 10
+  const timeOptions = getAdoptionTimeOptions(dates)
+  const hourOptions = [...new Set(timeOptions.map(time => time.slice(0, 2)))]
+  const minuteOptions = timeOptions.filter(time => time.startsWith(`${hour}:`)).map(time => time.slice(3))
+  const visitTime = timeOptions.includes(`${hour}:${minute}`) ? `${hour}:${minute}` : ""
 
   useEffect(() => {
     if (mode !== "select" || animal || !query.trim()) return
@@ -86,6 +91,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
     if (reason.trim().length < 10) return fail("입양 이유를 10자 이상 작성해 주세요.", "reason")
     if (!event.currentTarget.reportValidity()) return
     if (!dates.length) return fail("희망 방문일을 하나 이상 선택해 주세요.", "visit-dates")
+    if (!visitTime) return fail("신청 가능한 방문 시작시간을 선택해 주세요.", "visit_hour")
     submitting.current = true
     startTransition(async () => {
       try {
@@ -159,7 +165,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
       </Field></Section>
       <Section title="희망 방문 일정"><p className="mb-5 text-sm leading-6 text-muted-foreground">가능한 날짜를 선택해 주세요. 방문 일정은 상담 후 확정됩니다.</p><div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_180px]">
         <div id="visit-dates" tabIndex={-1} className="min-w-0 scroll-mt-24"><p className="mb-2 text-sm font-medium">희망 방문일<Required /></p><DateMultiPicker name="visit_available_dates" onChange={setDates} /><p className="mt-2 text-xs text-muted-foreground">여러 날짜를 선택할 수 있습니다.</p></div>
-        <Field id="visit_hour" label="희망 시간" required><div className="flex gap-2"><select id="visit_hour" required aria-label="희망 방문 시" value={hour} onChange={e => setHour(e.target.value)} className={control}><option value="">시</option>{[10, 11, 13, 14, 15, 16, 17].map(value => <option key={value} value={value}>{value}시</option>)}</select><select aria-label="희망 방문 분" value={minute} onChange={e => setMinute(e.target.value)} disabled={!hour} className={control}>{["00", "10", "20", "30", "40", "50"].map(value => <option key={value} value={value}>{value}분</option>)}</select></div><input type="hidden" name="visit_available_time" value={hour ? `${hour}:${minute}` : ""} /></Field>
+        <Field id="visit_hour" label="희망 시간" required><div className="flex gap-2"><select id="visit_hour" required aria-label="희망 방문 시" disabled={!dates.length} value={hourOptions.includes(hour) ? hour : ""} onChange={e => { const next = e.target.value; setHour(next); const minutes = timeOptions.filter(time => time.startsWith(`${next}:`)).map(time => time.slice(3)); if (!minutes.includes(minute)) setMinute(minutes[0] ?? "") }} className={control}><option value="">{dates.length ? "시 선택" : "날짜 먼저 선택"}</option>{hourOptions.map(value => <option key={value} value={value}>{value}시</option>)}</select><select required aria-label="희망 방문 분" value={minuteOptions.includes(minute) ? minute : ""} onChange={e => setMinute(e.target.value)} disabled={!hourOptions.includes(hour)} className={control}><option value="">분 선택</option>{minuteOptions.map(value => <option key={value} value={value}>{value}분</option>)}</select></div><input type="hidden" name="visit_available_time" value={visitTime} /><p className="mt-2 text-xs leading-relaxed text-muted-foreground">방문 시작 가능시간: {ADOPTION_APPLICATION_TIME_LABEL}<br />보호소 운영 09:00~18:00 · 점심시간 12:00~13:00</p></Field>
       </div></Section>
       <Section title="신청 전 확인"><p className="mb-3 rounded-lg bg-secondary/40 p-4 text-sm leading-6 text-muted-foreground">입양 신청은 확정이 아닙니다. 상담과 만남을 통해 아이와 가족에게 맞는 결정을 함께합니다.</p>
         <Check name="adult">만 19세 이상의 성인이며, 직접 입양을 신청합니다.</Check>

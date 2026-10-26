@@ -107,11 +107,11 @@ test("KST today handles midnight, month and year boundaries", () => {
   ]) assert.equal(hours.volunteerToday(new Date(instant)), expected)
 })
 
-test("past dates fail while today/future dates retain strict 17:00 cutoff", () => {
+test("past dates fail while today/future dates retain strict 16:00 cutoff", () => {
   const now = new Date("2026-10-01T15:00:00Z")
   for (const dates of [["2026-10-01"], ["2026-10-01", "2026-10-03"]]) assert.match(hours.validateVolunteerSchedule(dates, "10:00", now), /지난 날짜/)
   for (const date of ["2026-10-02", "2026-10-03"]) {
-    for (const time of ["10:00", "11:00", "13:00", "17:00"]) assert.equal(hours.validateVolunteerSchedule([date], time, now), null)
+    for (const time of ["10:00", "10:30", "11:00", "13:00", "16:00"]) assert.equal(hours.validateVolunteerSchedule([date], time, now), null)
     for (const time of ["09:50", "11:10", "12:00", "17:10", "17:50"]) assert.ok(hours.validateVolunteerSchedule([date], time, now))
   }
   for (const date of ["2026-02-30", "2026-13-01", "invalid"]) assert.ok(hours.validateVolunteerSchedule([date], "10:00", now))

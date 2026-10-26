@@ -458,7 +458,7 @@ export function VolunteerForm({
                 onHourChange={(value) => { setVisitHour(value); clearFieldError("available_time") }}
                 onMinuteChange={(value) => { setVisitMinute(value); clearFieldError("available_time") }}
                 error={fieldErrors.available_time} required />
-              <p className="text-xs leading-relaxed text-muted-foreground">12:00~13:00는 점심시간으로 현장 안내가 어렵습니다.</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">보호소 운영 09:00~18:00 · 점심시간 12:00~13:00. 충분한 활동 시간을 위해 방문 시작은 16:00까지 신청받습니다.</p>
             </div>
           </div>
             {/* 선택된 날짜에 출근 예정인 운영진 안내 */}

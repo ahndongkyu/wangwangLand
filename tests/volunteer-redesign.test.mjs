@@ -74,7 +74,7 @@ function form(overrides = {}) {
   const data = new FormData()
   for (const [key, value] of Object.entries({
     party_type: "individual", applicant_name: "테스트", phone: "01012345678", party_size: "1",
-    available_dates: "2099-10-10", available_time: "17:00", preparation_acknowledged: "on",
+    available_dates: "2099-10-10", available_time: "16:00", preparation_acknowledged: "on",
     safety_acknowledged: "on", privacy_agreed: "on", terms_agreed: "on", ...overrides,
     expected_updated_at: "2026-10-08T00:00:00+00:00",
   })) if (value !== null) data.append(key, value)
@@ -97,7 +97,7 @@ test("personal submission keeps dates and stores no new activity preferences", a
   assert.equal(h.inserts[0].group_name, null)
   assert.equal(h.inserts[0].activities.length, 0)
   assert.equal(h.inserts[0].available_dates.length, 2)
-  assert.equal(h.inserts[0].available_time, "17:00")
+  assert.equal(h.inserts[0].available_time, "16:00")
   assert.equal(h.pushes.length, 1)
   assert.equal("preparation_acknowledged" in h.inserts[0], false, "No new database column required")
 })
@@ -108,7 +108,7 @@ test("editing a historical application preserves activities and ignores retired 
     assert.equal(h.updates.length, 1)
     assert.equal("activities" in h.updates[0], false)
     assert.deepEqual(h.historical.activities, ["산책", "청소·정리"])
-    assert.equal(h.updates[0].available_time, "17:00")
+    assert.equal(h.updates[0].available_time, "16:00")
   }
 })
 test("group sizes and optional group names retain existing rules", async () => {

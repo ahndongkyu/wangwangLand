@@ -1,6 +1,8 @@
-const TIME_STEP_MINUTES = 10
+const TIME_STEP_MINUTES = 30
 
-export const VOLUNTEER_APPLICATION_TIME_LABEL = "10:00~11:00 / 13:00~17:00"
+export const VOLUNTEER_APPLICATION_TIME_LABEL = "10:00~11:00 / 13:00~16:00 (30분 단위)"
+export const ADOPTION_APPLICATION_TIME_LABEL = "11:00 / 13:00~16:00 (30분 단위)"
+export const ADOPTION_TIME_OPTIONS = ["11:00", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]
 
 interface TimeWindow {
   start: string
@@ -9,7 +11,7 @@ interface TimeWindow {
 
 const REGULAR_TIME_WINDOWS: TimeWindow[] = [
   { start: "10:00", end: "11:00" },
-  { start: "13:00", end: "17:00" },
+  { start: "13:00", end: "16:00" },
 ]
 
 function timeToMinutes(time: string): number {
@@ -54,11 +56,19 @@ export function isValidVolunteerDate(date: string): boolean {
 
 /** 유효한 날짜를 선택했을 때 가능한 방문 시간을 반환합니다. */
 export function getVolunteerTimeOptions(dates: string[], now = new Date()): string[] {
+  return availableTimeOptions(REGULAR_TIME_OPTIONS, dates, now)
+}
+
+export function getAdoptionTimeOptions(dates: string[], now = new Date()): string[] {
+  return availableTimeOptions(ADOPTION_TIME_OPTIONS, dates, now)
+}
+
+function availableTimeOptions(options: string[], dates: string[], now: Date): string[] {
   const uniqueDates = [...new Set(dates)]
   if (uniqueDates.length === 0 || uniqueDates.some((date) => !isValidVolunteerDate(date))) {
     return []
   }
-  return REGULAR_TIME_OPTIONS.filter((time) =>
+  return options.filter((time) =>
     uniqueDates.every((date) => new Date(`${date}T${time}:00+09:00`).getTime() > now.getTime())
   )
 }
@@ -76,7 +86,7 @@ export function validateVolunteerSchedule(dates: string[], time: string, now = n
     return "지난 날짜에는 봉사를 신청할 수 없습니다."
   }
   if (!REGULAR_TIME_OPTIONS.includes(time)) {
-    return "선택한 날짜의 운영시간 안에서 방문 예정 시간을 선택해주세요."
+    return "신청 가능한 방문 시작시간을 30분 단위로 선택해주세요."
   }
   if (dates.some((date) => new Date(`${date}T${time}:00+09:00`).getTime() <= now.getTime())) {
     return "이미 지난 시간에는 봉사를 신청할 수 없습니다. 방문 시간을 다시 선택해주세요."
