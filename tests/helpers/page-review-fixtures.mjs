@@ -17,6 +17,10 @@ export function load(path, imports = {}) {
     if (name === "../lib/volunteer-sms" || name === "@/features/applications/lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     if (name === "@/features/settings/components/delivery-card") return load("src/features/settings/components/delivery-card.tsx", base)
     if (name === "react") return React
+    if (name === "../lib/use-volunteer-revision" && !(name in imports)) return { useVolunteerRevision: () => ({ stale: false, unavailable: false }) }
+    if (name === "@/features/push/components/install-app" && !(name in imports)) return { InstallAppButton: () => null }
+    if (name === "@/features/push/components/logout-form" && !(name in imports)) return { LogoutForm: ({ children, className }) => React.createElement("form", { className }, children) }
+    if (name === "@/features/push/components/device-push-settings" && !(name in imports)) return { DevicePushSettings: () => React.createElement("section", null, "이 기기의 알림") }
     if (name === "react/jsx-runtime") return jsx
     if (name === "lucide-react") return icons
     if (!(name in imports)) throw Error(`Missing fixture import: ${name}`)

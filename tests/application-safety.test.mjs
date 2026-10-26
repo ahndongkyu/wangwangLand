@@ -21,6 +21,42 @@ function load(file, imports = {}) {
 }
 
 const hours = load("src/features/applications/lib/volunteer-operating-hours.ts")
+
+test("stale approval, rejection, cancellation and missing revisions cannot mutate or send messages", async () => {
+  for (const status of ["승인", "반려", "취소"]) for (const scenario of ["changed-status", "changed-note", "missing", "race", "fresh"]) {
+    let calls = 0
+    const latestStatus = scenario === "changed-status" ? "승인" : "접수"
+    const latestRevision = scenario === "changed-note" ? "new-version" : "old-version"
+    const admin = {
+      from(table) {
+        assert.ok(["volunteer_applications", "events"].includes(table), "No SMS or notification writes expected")
+        return { select() { return this }, eq() { return this },
+          maybeSingle: async () => ({ data: { id: "app", status: latestStatus, updated_at: latestRevision, created_by: null, phone: null } }),
+          then(resolve) { resolve({ count: 0, error: null }) },
+        }
+      },
+      rpc: async (name, input) => {
+        calls++
+        assert.equal(name, "process_volunteer_application_checked")
+        assert.equal(input.p_expected_updated_at, "old-version")
+        return scenario === "race" ? { error: { message: "처리 중 신청 상태나 내용이 변경되었습니다. 신청 내역을 새로 확인해주세요." } } : { data: 0, error: null }
+      },
+    }
+    const api = load("src/features/applications/api/mutations.ts", {
+      "next/cache": { revalidatePath() {} }, "next/navigation": {},
+      "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true, userId: "staff" }) },
+      "@/shared/lib/supabase/server": {}, "@/shared/lib/supabase/admin": { createAdminClient: () => admin },
+      "@/features/events/lib/date": {}, "@/features/events/types": {}, "../lib/volunteer-applicant": {},
+      "../lib/volunteer-operating-hours": hours, "@/shared/lib/validation": {},
+    })
+    const form = new FormData()
+    form.set("status", status); form.set("admin_note", "반려 사유"); form.set("cancel_reason", "취소 사유")
+    if (scenario !== "missing") { form.set("expected_status", "접수"); form.set("expected_updated_at", "old-version") }
+    const result = await api.updateVolunteerApplication("app", form)
+    assert.equal(!!result.conflict, scenario !== "fresh", `${status}/${scenario}`)
+    assert.equal(calls, ["race", "fresh"].includes(scenario) ? 1 : 0)
+  }
+})
 test("approval sends selected SMS or records skipped without preventing approval", async () => {
   for (const mode of ["short", "full", "none", "invalid"]) {
     const sends = [], logs = []
@@ -28,7 +64,7 @@ test("approval sends selected SMS or records skipped without preventing approval
     const admin = {
       from(table) {
         if (table === "sms_delivery_logs") return { insert: async row => { logs.push(row); return {} } }
-        return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { id: "app", status: "접수", created_by: null, applicant_name: "홍길동", phone: "010-0000-0000", available_dates: ["2099-10-10"], available_time: "10:00" } }) }
+        return { select() { return this }, eq() { return this }, maybeSingle: async () => ({ data: { id: "app", status: "접수", updated_at: "2026-10-08T00:00:00+00:00", created_by: null, applicant_name: "홍길동", phone: "010-0000-0000", available_dates: ["2099-10-10"], available_time: "10:00" } }) }
       },
       rpc: async () => { approvals++; return { data: 1, error: null } },
     }
@@ -43,6 +79,7 @@ test("approval sends selected SMS or records skipped without preventing approval
     })
     const form = new FormData()
     form.set("status", "승인"); form.set("schedule_mode", "with_schedule"); form.set("sms_mode", mode)
+    form.set("expected_status", "접수"); form.set("expected_updated_at", "2026-10-08T00:00:00+00:00")
     const result = await api.updateVolunteerApplication("app", form)
     assert.equal(approvals, mode === "invalid" ? 0 : 1)
     if (mode === "invalid") { assert.ok(result.error); continue }
@@ -186,6 +223,7 @@ test("volunteer approval retains append, approval-only keep and reschedule repla
     const form = new FormData()
     form.set("status", "승인")
     form.set("schedule_mode", mode)
+    form.set("expected_status", previousStatus); form.set("expected_updated_at", "2026-10-08T00:00:00+00:00")
     assert.equal((await api.updateVolunteerApplication("app", form)).id, "app")
     assert.equal(rpcInput.p_schedule_action, action)
     assert.equal(rpcInput.p_schedule_starts.length, action === "keep" ? 0 : 1)

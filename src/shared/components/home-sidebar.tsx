@@ -11,6 +11,8 @@ import {
 import type { Profile } from "@/features/members"
 import type { UserNotification } from "@/features/notifications/api/queries"
 import { signOut, updateHomeFavorites } from "@/features/members/api/actions"
+import { LogoutForm } from "@/features/push/components/logout-form"
+import { InstallAppButton } from "@/features/push/components/install-app"
 import {
   HOME_FAVORITE_OPTIONS,
   type HomeFavoriteKey,
@@ -184,7 +186,8 @@ export function HomeSidebar({
       </section>
 
       <SidebarMenu idPrefix={idPrefix} />
-      {profile && <form action={signOut}><button type="submit" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><LogOut className="size-4" aria-hidden />로그아웃</button></form>}
+      <InstallAppButton />
+      {profile && <LogoutForm action={signOut}><button type="submit" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><LogOut className="size-4" aria-hidden />로그아웃</button></LogoutForm>}
     </div>
   )
 

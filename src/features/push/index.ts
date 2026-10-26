@@ -1,5 +1,4 @@
 export { subscribePush, unsubscribePush, sendPushToAll, sendPushSystem, sendPushToStaff, sendPushToUser } from "./api/actions"
 export type { PushPayload } from "./api/actions"
-export { PushSubscribeButton } from "./components/push-subscribe-button"
+export { DevicePushSettings } from "./components/device-push-settings"
 export { ServiceWorkerRegister } from "./components/sw-register"
-export { AutoPushPrompt } from "./components/auto-push-prompt"

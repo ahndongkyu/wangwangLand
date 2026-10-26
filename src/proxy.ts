@@ -43,6 +43,8 @@ export async function proxy(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl
+  // 오프라인 안내는 세션이나 데이터베이스 연결 없이 제공합니다.
+  if (pathname === "/offline.html" || pathname === "/sw.js") return NextResponse.next()
 
   // 항상 통과: 어드민, API, 정적 파일, 점검 페이지 자체
   const bypass =

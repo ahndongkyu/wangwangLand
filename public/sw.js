@@ -1,12 +1,30 @@
 /* 왕왕랜드 Service Worker - 푸시 알림 처리 */
 
-self.addEventListener("install", () => {
-  // 새 SW 즉시 활성화
-  self.skipWaiting()
+const OFFLINE_CACHE = "wangwang-offline-v1"
+const OFFLINE_URL = "/offline.html"
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(OFFLINE_CACHE).then(async (cache) => {
+    await cache.add(new Request(OFFLINE_URL, { cache: "reload", credentials: "omit" }))
+    await self.skipWaiting()
+  }))
 })
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(Promise.all([
+    self.clients.claim(),
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("wangwang-offline-") && key !== OFFLINE_CACHE).map((key) => caches.delete(key)))),
+  ]))
+})
+
+// 개인 화면·API·문서는 캐시하지 않고, 전체 페이지의 네트워크 실패만 안내합니다.
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url)
+  if (event.request.method !== "GET" || event.request.mode !== "navigate" || url.origin !== self.location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/")) return
+  event.respondWith(fetch(event.request).catch(async () => {
+    const cache = await caches.open(OFFLINE_CACHE)
+    return await cache.match(OFFLINE_URL) || new Response("인터넷 연결을 확인한 뒤 다시 시도해 주세요.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })
+  }))
 })
 
 // 푸시 알림 수신
@@ -38,14 +56,18 @@ self.addEventListener("push", (event) => {
 // 알림 클릭 → 해당 URL로 이동
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
-  const url = event.notification.data?.url || "/"
+  let target = new URL("/", self.location.origin)
+  try {
+    const candidate = new URL(event.notification.data?.url || "/", self.location.origin)
+    if (candidate.origin === self.location.origin && !candidate.username && !candidate.password) target = candidate
+  } catch { /* 잘못된 주소는 홈으로 연결합니다. */ }
+  const url = target.href
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       // 이미 열린 탭이 있으면 포커스
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.navigate(url)
+        if (client.url === url && "focus" in client) {
           return client.focus()
         }
       }

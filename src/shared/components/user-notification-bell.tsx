@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { MessageSquare } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
@@ -193,6 +194,7 @@ export function UserNotificationBell({
               ))}
             </ul>
           )}
+          <Link href="/my?tab=settings#device-notifications" onClick={() => setOpen(false)} className="flex min-h-11 items-center justify-center border-t border-border px-4 text-sm text-foreground hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">알림 설정</Link>
         </div>
       )}
     </div>

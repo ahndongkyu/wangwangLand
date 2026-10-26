@@ -74,7 +74,7 @@ export default async function VolunteerApplicationDetailPage({ params, searchPar
       </div>
       <aside id="application-processing" className="order-2 min-w-0 scroll-mt-20 xl:min-w-[300px] xl:flex-[.95]">
         <ApplicationStatusForm compactVolunteer detailHref={detailHref} key={`${app.id}:${app.status}:${app.admin_note}:${app.approved_at}:${events.map(event => event.id + event.starts_at).join(",")}`} id={app.id} kind="volunteer" returnHref={returnHref} currentStatus={app.status} currentNote={app.admin_note} applicantName={name} partySize={app.party_size} currentCancelReason={app.cancel_reason} linkedEventCount={events.length} linkedEvents={events}
-          smsRecommendation={smsRecommendation} smsApplicantName={app.applicant_name}
+          currentUpdatedAt={app.updated_at} smsRecommendation={smsRecommendation} smsApplicantName={app.applicant_name}
           hint={{ availableDates: requestedDates, availableTime: app.status === "일정변경요청" ? app.reschedule_time : app.available_time }}
           rescheduleInfo={app.status === "일정변경요청" ? { dates: requestedDates, time: app.reschedule_time ?? null } : undefined}
         />

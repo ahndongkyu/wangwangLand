@@ -13,6 +13,7 @@ function load(path, imports = {}) {
     if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     if (name === "react/jsx-runtime") return jsx
+    if (name === "../lib/use-volunteer-revision") return { useVolunteerRevision: () => ({ stale: false, unavailable: false }) }
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     assert.ok(name in imports, `Missing import: ${name}`)
     return imports[name]
@@ -122,7 +123,7 @@ function formHarness(props = {}) {
   const change = (id, value) => nodes(render()).find(n => n.props?.id === id).props.onChange({ target: { value } })
   const choose = (name, index) => nodes(render()).filter(n => n.type === "input" && n.props.name === name)[index].props.onChange()
   const confirm = () => nodes(render()).find(n => n.props?.type === "checkbox").props.onChange({ target: { checked: true } })
-  const submit = async () => { const form = nodes(render()).find(n => n.type === "form"); await form.props.onSubmit({ preventDefault() {} }); await Promise.resolve(); await Promise.resolve() }
+  const submit = async () => { const form = nodes(render()).find(n => n.type === "form"); await form.props.onSubmit({ preventDefault() {} }); await new Promise(resolve => setImmediate(resolve)) }
   return { render, change, choose, confirm, submit, writes, errors, state }
 }
 test("approval SMS recommendation can be overridden and is submitted explicitly", async () => {
@@ -181,7 +182,7 @@ test("new volunteer approval is one click, preserves return filters and defaults
 test("approve and continue dispatches only one save and uses server-selected destination", async () => {
   const form = formHarness()
   await nodes(form.render()).find(node => node.props?.children === "승인 후 다음 접수 보기").props.onClick()
-  await Promise.resolve(); await Promise.resolve()
+  await new Promise(resolve => setImmediate(resolve))
   assert.equal(form.writes.length, 1)
   assert.equal(form.writes[0].next, true)
   assert.equal(form.writes[0].data.get("schedule_mode"), "with_schedule")

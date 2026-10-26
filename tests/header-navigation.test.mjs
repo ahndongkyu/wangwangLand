@@ -64,3 +64,16 @@ test("mobile menu uses a single full-width accessible dialog with safe-area spac
   assert.match(source, /closest\("a"\)/)
   assert.equal((source.match(/overflow-y-auto/g) ?? []).length, 1)
 })
+
+test("integrated admin navigation shares theme-aware surfaces on desktop and mobile", () => {
+  const sidebar = renderToStaticMarkup(el(AdminSidebar, props))
+  const header = renderToStaticMarkup(el(AdminHeader, props))
+  assert.match(sidebar, /self-stretch.*border-r border-border/)
+  assert.doesNotMatch(sidebar + header, /bg-admin-nav|text-admin-nav|border-white|text-white|shadow-sm/)
+  assert.match(sidebar, /open:bg-muted/)
+  assert.match(sidebar, /bg-accent font-semibold text-\[var\(--brand-action-hover\)\]/)
+  assert.match(sidebar, /focus-visible:ring-ring/)
+  const layout = fs.readFileSync("src/app/(admin)/admin/(protected)/layout.tsx", "utf8")
+  assert.match(layout, /md:min-h-\[calc\(100dvh-5rem\)\]/)
+  assert.doesNotMatch(layout, /overflow-y-auto|[" ]h-screen/)
+})

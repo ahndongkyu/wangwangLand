@@ -31,17 +31,19 @@ interface SubscribeInput {
   userAgent?: string
 }
 
-/** 구독 등록 (로그인/비로그인 모두) */
+/** 로그인한 회원의 기기 구독 등록 */
 export async function subscribePush(input: SubscribeInput): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인 후 알림을 설정해 주세요." }
+  if (!input.endpoint.startsWith("https://") || !input.p256dh || !input.auth) return { error: "올바른 알림 구독 정보가 아닙니다." }
 
   // upsert by endpoint
   const { error } = await supabase
     .from("push_subscriptions")
     .upsert(
       {
-        user_id: user?.id ?? null,
+        user_id: user.id,
         endpoint: input.endpoint,
         p256dh: input.p256dh,
         auth: input.auth,
@@ -49,11 +51,11 @@ export async function subscribePush(input: SubscribeInput): Promise<{ error?: st
         updated_at: new Date().toISOString(),
       },
       { onConflict: "endpoint" }
-    )
+    ).select("id").single()
 
   if (error) {
     console.error("[subscribePush]", error)
-    return { error: error.message }
+    return { error: "기기 알림 연결을 저장하지 못했습니다. 다시 시도해 주세요." }
   }
   return {}
 }
@@ -61,9 +63,20 @@ export async function subscribePush(input: SubscribeInput): Promise<{ error?: st
 /** 구독 해제 */
 export async function unsubscribePush(endpoint: string): Promise<{ error?: string }> {
   const supabase = await createClient()
-  const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint)
-  if (error) return { error: error.message }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "로그인 상태를 확인해 주세요." }
+  const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint).eq("user_id", user.id)
+  if (error) return { error: "알림 연결을 해제하지 못했습니다. 다시 시도해 주세요." }
   return {}
+}
+
+export async function getPushSubscriptionStatus(endpoint: string): Promise<{ subscribed: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { subscribed: false, error: "로그인 후 확인해 주세요." }
+  const { data, error } = await supabase.from("push_subscriptions").select("id").eq("endpoint", endpoint).eq("user_id", user.id).maybeSingle()
+  if (error) return { subscribed: false, error: "알림 연결 상태를 확인하지 못했습니다." }
+  return { subscribed: !!data }
 }
 
 /** 모든 구독자에게 푸시 발송 (운영진만) */

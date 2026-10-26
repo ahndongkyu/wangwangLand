@@ -10,10 +10,11 @@ test("my page separates activity and settings and preserves the old profile addr
   const activity = await renderMyPage()
   assert.match(activity, /다가오는 봉사/)
   assert.match(activity, /신청 내역 · 내 글 · 후원 기록 · 관심 동물/)
-  assert.doesNotMatch(activity, /회원 탈퇴|마케팅·알림 수신/)
+  assert.doesNotMatch(activity, /회원 탈퇴|공지·소식 수신|이 기기의 알림/)
   const settings = await renderMyPage({ tab: "settings" })
   assert.match(settings, /프로필 정보/)
-  assert.match(settings, /aria-label="마케팅·알림 수신 동의"/)
+  assert.match(settings, /aria-label="공지·소식 수신 동의"/)
+  assert.match(settings, /이 기기의 알림/)
   assert.match(settings, /로그아웃|회원 탈퇴/)
   assert.doesNotMatch(settings, /다가오는 봉사/)
   const page = load("src/app/(public)/profile/page.tsx", { "next/navigation": { redirect: href => { throw Error(href) } } }).default

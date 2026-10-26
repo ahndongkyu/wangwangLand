@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   outputFileTracingIncludes: { "/api/adoption/*/documents": ["./public/fonts/NanumGothic-*.ttf"] },
+  async headers() {
+    return ["/sw.js", "/offline.html"].map((source) => ({ source, headers: [{ key: "Cache-Control", value: "no-store" }] }))
+  },
   async redirects() {
     return [
       {

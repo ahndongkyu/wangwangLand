@@ -28,8 +28,8 @@ export function MarketingConsentToggle({ agreedAt }: Props) {
       }
       toast.success(
         next
-          ? "알림 수신에 동의했습니다. 권한 팝업이 뜨면 허용해주세요."
-          : "알림 수신을 해제했습니다."
+          ? "공지·소식 수신에 동의했습니다. 기기 알림 연결도 확인해 주세요."
+          : "공지·소식 수신 동의를 해제했습니다. 신청 관련 알림 설정은 유지됩니다."
       )
     })
   }
@@ -40,13 +40,13 @@ export function MarketingConsentToggle({ agreedAt }: Props) {
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-1.5 text-base font-semibold text-foreground">
             {agreed ? <Bell className="size-4 text-primary" /> : <BellOff className="size-4 text-muted-foreground" />}
-            마케팅·알림 수신
+            공지·소식 수신 동의
           </h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            새 공지·일상이 올라오면 푸시 알림으로 알려드려요. 언제든 해제할 수 있습니다.
+            새 공지·일상 등 소식을 받는 선택 동의입니다. 실제 수신을 위해 아래에서 기기 알림도 연결해 주세요.
             <br />
             <span className="text-[11px] text-muted-foreground/70">
-              iOS는 홈 화면에 추가한 후 알림이 작동합니다.
+              동의를 해제해도 신청 승인·일정 변경 알림은 별도로 유지됩니다.
             </span>
           </p>
         </div>
@@ -54,7 +54,7 @@ export function MarketingConsentToggle({ agreedAt }: Props) {
         <button
           type="button"
           role="switch"
-          aria-label="마케팅·알림 수신 동의"
+          aria-label="공지·소식 수신 동의"
           aria-checked={agreed}
           onClick={handleToggle}
           disabled={pending}

@@ -9,6 +9,9 @@ import ts from "typescript"
 
 const require = createRequire(import.meta.url)
 const imports = {
+  "@/features/push/components/install-app": { InstallAppButton: () => null },
+  "@/features/push/components/device-push-settings": { DevicePushSettings: () => null },
+  "@/features/push/components/logout-form": { LogoutForm: ({ children }) => React.createElement("form", null, children) },
   react: React,
   "react/jsx-runtime": require("react/jsx-runtime"),
   "lucide-react": require("lucide-react"),

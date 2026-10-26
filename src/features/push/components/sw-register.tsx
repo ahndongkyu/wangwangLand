@@ -9,7 +9,7 @@ export function ServiceWorkerRegister() {
     if (!("serviceWorker" in navigator)) return
 
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
+      .register("/sw.js", { scope: "/", updateViaCache: "none" })
       .catch((e) => console.error("[SW register]", e))
   }, [])
 

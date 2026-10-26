@@ -37,6 +37,7 @@ import type {
 
 export interface SubmitResult {
   error?: string
+  conflict?: boolean
   warning?: string
   field?: string
   id?: string
@@ -562,14 +563,20 @@ export async function updateVolunteerApplication(
   const admin = createAdminClient()
 
   // 상태 변경 전 신청 정보 조회 (RLS 우회 위해 admin client 사용)
-  const { data: prev } = await admin
+  const { data: prev, error: readError } = await admin
     .from("volunteer_applications")
     .select(
       "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, updated_at, submitted_at"
     )
     .eq("id", id)
     .maybeSingle()
-  if (!prev) return { error: "신청 정보를 찾을 수 없습니다." }
+  if (readError) return { error: "신청 상태를 확인하지 못했습니다. 저장하지 않았으니 잠시 후 다시 시도해 주세요." }
+  if (!prev) return { error: "신청 정보를 찾을 수 없습니다. 최신 내용을 확인해 주세요.", conflict: true }
+  const expectedStatus = String(formData.get("expected_status") ?? "")
+  const expectedUpdatedAt = String(formData.get("expected_updated_at") ?? "")
+  if (!expectedUpdatedAt || expectedStatus !== prev.status || expectedUpdatedAt !== prev.updated_at) {
+    return { error: "다른 담당자 또는 신청자가 내용을 변경했습니다. 최신 내용을 확인한 뒤 처리해 주세요.", conflict: true }
+  }
 
   const requestedSmsMode = formData.get("sms_mode")
   if (requestedSmsMode !== null && !["short", "full", "none"].includes(String(requestedSmsMode))) return { error: "문자 발송 방식을 확인해 주세요." }
@@ -640,11 +647,14 @@ export async function updateVolunteerApplication(
     p_schedule_starts: scheduleStarts,
     p_clear_reschedule: isRescheduleRequest,
     p_created_by: auth.userId,
-    p_expected_status: prev.status,
-    p_expected_updated_at: prev.updated_at,
+    p_expected_status: expectedStatus,
+    p_expected_updated_at: expectedUpdatedAt,
   })
 
   if (error) {
+    if (error.message?.includes("처리 중 신청 상태나 내용이 변경되었습니다") || error.message?.includes("신청을 찾을 수 없습니다")) {
+      return { error: "다른 담당자 또는 신청자가 내용을 변경했습니다. 최신 내용을 확인한 뒤 처리해 주세요.", conflict: true }
+    }
     console.error("[updateVolunteerApplication]", error)
     await recordOperationError("application", "updateVolunteerApplication", error, "application", { page: "/admin/applications/volunteer/[id]", targetType: "volunteer", targetId: id, action: status === "승인" ? "approve" : status === "취소" ? "cancel" : status === "반려" ? "reject" : "update" })
     return { error: "처리 중 오류가 발생했습니다. 상태와 일정은 변경되지 않았습니다." }

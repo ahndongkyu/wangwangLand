@@ -8,6 +8,9 @@ import { DeleteAccountButton, getCurrentProfile, MarketingConsentToggle } from "
 import { ProfileForm } from "@/features/members/components/profile-form"
 import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal"
 import { signOut } from "@/features/members/api/actions"
+import { DevicePushSettings } from "@/features/push/components/device-push-settings"
+import { InstallAppButton } from "@/features/push/components/install-app"
+import { LogoutForm } from "@/features/push/components/logout-form"
 import { listMyDonations } from "@/features/donations"
 import { listMyUpcomingEvents } from "@/features/events"
 import { formatKoreanDayLabel } from "@/features/events/lib/date"
@@ -53,7 +56,9 @@ export default async function MyPage({ searchParams }: { searchParams: Promise<{
       {settings ? <div className="space-y-5">
         <ProfileForm key={query.edit ?? "view"} profile={profile} startEditing={query.edit === "1"} />
         <MarketingConsentToggle agreedAt={profile.marketing_agreed_at} />
-        <section aria-label="계정 관리" className="flex items-center gap-6 border-t border-border pt-3 text-sm text-muted-foreground"><form action={signOut}><button type="submit" className="min-h-11 cursor-pointer hover:text-foreground">로그아웃</button></form><DeleteAccountButton /></section>
+        <DevicePushSettings />
+        <InstallAppButton />
+        <section aria-label="계정 관리" className="flex items-center gap-6 border-t border-border pt-3 text-sm text-muted-foreground"><LogoutForm action={signOut}><button type="submit" className="min-h-11 cursor-pointer hover:text-foreground">로그아웃</button></LogoutForm><DeleteAccountButton /></section>
       </div> : await MyActivity(profile.id)}
     </div>
   )

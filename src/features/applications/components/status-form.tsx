@@ -3,6 +3,7 @@ import { useOperatingContact } from "@/features/settings/components/operating-pr
 
 import Link from "next/link"
 import { useRef, useState, useTransition } from "react"
+import { useVolunteerRevision } from "../lib/use-volunteer-revision"
 import { deleteAdoptionApplication, deleteVolunteerApplication, updateAdoptionApplication, updateVolunteerApplication } from "../api/mutations"
 import { Button } from "@/shared/components/ui/button"
 import { Textarea } from "@/shared/components/ui/textarea"
@@ -20,6 +21,7 @@ interface Props {
   id: string
   kind: "adoption" | "volunteer"
   currentStatus: ApplicationStatus
+  currentUpdatedAt?: string
   currentNote: string | null
   applicantName: string
   hint?: { availableDates?: string[]; availableTime?: string | null }
@@ -37,7 +39,7 @@ interface Props {
 }
 
 export function ApplicationStatusForm({
-  id, kind, currentStatus, currentNote, applicantName, hint, linkedEventCount = 0,
+  id, kind, currentStatus, currentUpdatedAt, currentNote, applicantName, hint, linkedEventCount = 0,
   linkedEvents = [], rescheduleInfo, approvalInfo, returnHref = "/admin/applications",
   currentCancelReason, partySize, compactVolunteer = false, detailHref, smsRecommendation, smsApplicantName,
 }: Props) {
@@ -58,7 +60,8 @@ export function ApplicationStatusForm({
   const { save, pending, completed } = useSaveFeedback(setError)
   const [deleting, startDelete] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const busy = pending || completed || deleting
+  const revision = useVolunteerRevision(id, currentStatus, currentUpdatedAt, kind === "volunteer" && !pending && !completed && !deleting)
+  const busy = pending || completed || deleting || revision.stale || revision.unavailable
   const dates = [...new Set(reschedule ? rescheduleInfo?.dates ?? [] : hint?.availableDates ?? [])].sort()
   const time = reschedule ? rescheduleInfo?.time : hint?.availableTime
   const addsSchedule = kind === "volunteer" && status === "승인" && (reschedule ? decision === "accept" : approvalMode === "with_schedule")
@@ -86,19 +89,33 @@ export function ApplicationStatusForm({
     if (status === "취소" && !cancelReason.trim()) { setError("취소 사유를 입력해 주세요."); return }
     const formData = new FormData()
     formData.set("status", status)
+    if (kind === "volunteer") {
+      formData.set("expected_status", currentStatus)
+      formData.set("expected_updated_at", currentUpdatedAt ?? "")
+    }
     formData.set("admin_note", adminNote)
     formData.set("cancel_reason", cancelReason)
     formData.set("schedule_mode", reschedule ? "with_schedule" : approvalMode)
     if (showSmsChoice) formData.set("sms_mode", smsMode)
     if (reschedule && decision === "reject") formData.set("reject_reschedule", "true")
-    await save(() => continueNext && quickApproval ? approveVolunteerAndContinue(id, formData, returnHref) : kind === "volunteer" ? updateVolunteerApplication(id, formData) : updateAdoptionApplication(id, formData),
+    await save(async () => {
+      const result = await (continueNext && quickApproval ? approveVolunteerAndContinue(id, formData, returnHref) : kind === "volunteer" ? updateVolunteerApplication(id, formData) : updateAdoptionApplication(id, formData))
+      if (result.conflict) revision.markStale()
+      return result
+    },
       reschedule ? (decision === "accept" ? "변경 일정으로 승인했습니다." : "기존 일정을 유지했습니다.") : addsSchedule ? "승인 완료 · 캘린더에 일정이 등록되었습니다." : "신청 처리 내용이 저장되었습니다.", continueNext && quickApproval ? undefined : compactVolunteer ? detailHref : returnHref)
   }
   const actionLabel = reschedule ? (decision === "accept" ? "승인 및 일정 교체" : "변경 거절 · 기존 일정 유지") : showSmsChoice ? smsMode === "none" ? "문자 없이 승인" : `승인 및 ${smsMode === "short" ? "간단" : "상세"} 문자 발송` : addsSchedule ? "승인 및 일정 등록" : "저장"
   return <section className="w-full min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
+    {(revision.stale || revision.unavailable) && <div role="alert" className="mb-4 rounded-lg border border-border bg-secondary p-4 text-sm leading-6">
+      <p className="font-semibold">{revision.stale ? "신청 내용이 변경되었습니다." : "최신 상태를 확인하지 못했습니다."}</p>
+      <p>{revision.stale ? "다른 담당자의 처리 또는 신청자의 변경이 있어 처리를 잠갔습니다. 아래 정보는 이전 내용입니다." : "연결과 로그인 상태를 확인해 주세요. 확인될 때까지 처리를 잠시 잠갔습니다."}</p>
+      <p className="mt-1 text-muted-foreground">최신 내용을 불러오면 현재 작성 중인 내용은 초기화됩니다.</p>
+      <Button type="button" variant="outline" onClick={revision.reload} className="mt-3 min-h-11">최신 내용 확인</Button>
+    </div>}
     <div className={`${compactVolunteer ? "mb-2" : "mb-4"} flex items-center justify-between gap-3`}>
       <h2 className="text-base font-semibold">{compactVolunteer && !editing ? "처리 내역" : "신청 처리"}</h2>
-      {!editing && <Button type="button" variant="outline" onClick={() => setEditing(true)}>처리 수정</Button>}
+      {!editing && <Button type="button" variant="outline" disabled={busy} onClick={() => setEditing(true)}>처리 수정</Button>}
     </div>
     {!compactVolunteer && approvalInfo && <p className="mb-4 text-xs leading-6 text-muted-foreground break-all">승인 담당: {approvalInfo.nickname} · {applicationDate(approvalInfo.approvedAt, true)}</p>}
     {completed ? <p role="status" className="py-6 text-sm">저장되었습니다. 화면을 이동합니다.</p> : !editing ? <div className="space-y-2">

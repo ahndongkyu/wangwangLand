@@ -8,6 +8,7 @@ import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
 import { HeaderProfile } from "@/shared/components/header-profile"
 import { MobileHeaderMenu } from "@/shared/components/mobile-header-menu"
+import { LogoutForm } from "@/features/push/components/logout-form"
 
 type NavGroup = {
   label: string
@@ -42,8 +43,8 @@ export function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
   ]
 }
 
-const menuLinkClass = "relative flex min-h-11 items-center rounded-xl border border-transparent px-3 text-sm text-admin-nav-foreground transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-white/15 hover:bg-white/[0.08] hover:text-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-admin-nav motion-reduce:transition-none"
-const selectedClass = "border-white/15 bg-white/[0.08] font-semibold text-white before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-current"
+const menuLinkClass = "relative flex min-h-11 items-center rounded-lg border border-transparent px-3 text-sm text-foreground transition-[color,background-color,border-color] duration-200 hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+const selectedClass = "bg-accent font-semibold text-[var(--brand-action-hover)] hover:text-[var(--brand-action-hover)] before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-current"
 
 function AdminMenuContent({ isTopAdmin, logoutAction, onNavigate }: AdminHeaderProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
@@ -68,9 +69,9 @@ function AdminMenuContent({ isTopAdmin, logoutAction, onNavigate }: AdminHeaderP
       }}>
         <Link href="/admin" aria-current={isActive("/admin") ? "page" : undefined} className={cn(menuLinkClass, isActive("/admin") && selectedClass)}>대시보드</Link>
         {buildNavGroups(isTopAdmin).map(group => (
-          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.items.some(item => isActive(item.href))} className="group/menu rounded-xl transition-colors open:bg-white/[0.06] open:pb-2 motion-reduce:transition-none">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 text-sm font-semibold text-admin-nav-muted transition-colors hover:bg-white/[0.10] hover:text-white group-open/menu:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [&::-webkit-details-marker]:hidden">{group.label}<span aria-hidden className="hidden text-lg group-open/menu:inline">−</span></summary>
-            <ul className="mx-3 mt-1 grid gap-1 border-l border-white/15 pl-2">
+          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.items.some(item => isActive(item.href))} className="group/menu rounded-xl transition-colors open:bg-muted open:pb-2 motion-reduce:transition-none">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground group-open/menu:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none [&::-webkit-details-marker]:hidden">{group.label}<span aria-hidden className="hidden text-lg group-open/menu:inline">−</span></summary>
+            <ul className="mx-3 mt-1 grid gap-1 border-l border-border pl-2">
               {group.items.map(item => <li key={item.href}>
                 <Link href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={cn(menuLinkClass, isActive(item.href) && selectedClass)}>
                   {item.label}
@@ -81,14 +82,14 @@ function AdminMenuContent({ isTopAdmin, logoutAction, onNavigate }: AdminHeaderP
         ))}
       </nav>
     </div>
-    <form action={logoutAction} className="shrink-0 px-4 pb-4 pt-2">
-      <button type="submit" className={cn(menuLinkClass, "w-full justify-center text-admin-nav-muted")}>로그아웃</button>
-    </form>
+    <LogoutForm action={logoutAction} className="shrink-0 px-4 pb-4 pt-2">
+      <button type="submit" className={cn(menuLinkClass, "w-full justify-center text-muted-foreground")}>로그아웃</button>
+    </LogoutForm>
   </>
 }
 
 export function AdminSidebar(props: AdminHeaderProps) {
-  return <aside aria-label="관리자 사이드메뉴" className="hidden min-w-0 self-start flex-col rounded-[26px] border border-admin-nav-border bg-admin-nav shadow-sm md:flex">
+  return <aside aria-label="관리자 사이드메뉴" className="hidden min-w-0 self-stretch flex-col border-r border-border py-6 md:flex">
     <AdminMenuContent {...props} />
   </aside>
 }
@@ -102,7 +103,7 @@ export function AdminHeader(props: AdminHeaderProps) {
         <MobileHeaderMenu title="왕왕랜드 관리자 메뉴">
           <div className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3">{account}<ThemeToggle /></div>
           <div className="mt-2">{homeLink}</div>
-          <div className="mt-3 rounded-2xl bg-admin-nav"><AdminMenuContent {...props} /></div>
+          <div className="mt-3 text-foreground"><AdminMenuContent {...props} /></div>
         </MobileHeaderMenu>
       </div>
       <Link href="/admin" className="flex min-h-11 items-center whitespace-nowrap rounded-lg text-base font-semibold tracking-tight md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">왕왕랜드 관리자</Link>

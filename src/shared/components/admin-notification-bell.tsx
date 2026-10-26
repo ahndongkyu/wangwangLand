@@ -164,6 +164,7 @@ export function AdminNotificationBell({
               </li>
             ))}
           </ul>
+          <Link href="/my?tab=settings#device-notifications" onClick={() => setOpen(false)} className={cn("flex min-h-11 items-center justify-center border-t px-4 text-sm focus-visible:outline-2 focus-visible:outline-ring", surface === "admin-dark" ? "border-white/10 text-admin-nav-foreground hover:bg-white/[0.07]" : "border-border text-foreground hover:bg-secondary")}>알림 설정</Link>
         </div>
       )}
     </div>
