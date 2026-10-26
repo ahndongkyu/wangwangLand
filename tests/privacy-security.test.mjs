@@ -31,6 +31,7 @@ test("verified auth rejects guests, pending, rejected and banned staff; only adm
 test("member management actions reject unauthorized requests before creating privileged clients", async () => {
   let writes = 0
   const api = load("src/features/members/api/actions.ts", {
+    "@/features/legal/versions": {},
     "next/headers": {}, "next/cache": {}, "next/navigation": {}, "@vercel/blob": {},
     "../lib/login-return": {}, "@/shared/lib/member-role": {}, "@/shared/lib/validation": {}, "@/shared/constants/home-navigation": {},
     "@/shared/lib/auth": { requireTopAdmin: async () => ({ ok: false, error: "denied" }) },

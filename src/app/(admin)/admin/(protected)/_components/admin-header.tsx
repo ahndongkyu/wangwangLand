@@ -7,7 +7,6 @@ import { AdminNotificationBell } from "@/shared/components/admin-notification-be
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
 import { HeaderProfile } from "@/shared/components/header-profile"
-import { AdminLogo } from "@/shared/components/admin-logo"
 import { MobileHeaderMenu } from "@/shared/components/mobile-header-menu"
 
 type NavGroup = {
@@ -106,7 +105,7 @@ export function AdminHeader(props: AdminHeaderProps) {
           <div className="mt-3 rounded-2xl bg-admin-nav"><AdminMenuContent {...props} /></div>
         </MobileHeaderMenu>
       </div>
-      <Link href="/admin" className="flex min-h-11 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><AdminLogo /></Link>
+      <Link href="/admin" className="flex min-h-11 items-center whitespace-nowrap rounded-lg text-base font-semibold tracking-tight md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">왕왕랜드 관리자</Link>
       <div className="flex min-w-0 items-center justify-self-end gap-2">
         <div className="hidden md:block">{homeLink}</div>
         <div className="hidden md:block"><ThemeToggle /></div>

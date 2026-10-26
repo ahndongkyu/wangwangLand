@@ -31,6 +31,7 @@ test("public header preserves channel order and gates management link by role", 
     assert.match(html, /href="\/my"/)
     assert.match(html, /회원 알림 3/)
     assert.match(html, /w-\[132px\] lg:w-\[192px\]/)
+    assert.match(html, /aria-label="외부 채널 및 관리자" class="hidden items-center gap-3 lg:flex"/)
   }
 })
 test("guest header offers login without private account notifications", () => {
@@ -40,7 +41,8 @@ test("guest header offers login without private account notifications", () => {
 })
 test("administrator header owns profile, main site link and notifications", () => {
   const html = renderToStaticMarkup(el(AdminHeader, props))
-  assert.match(html, /data-logo="admin"/)
+  assert.match(html, /왕왕랜드 관리자/)
+  assert.doesNotMatch(html, /data-logo="admin"/)
   assert.match(html, /운영 알림 2/)
   assert.match(html, /href="\/my"/)
   assert.match(html, /메인 페이지/)

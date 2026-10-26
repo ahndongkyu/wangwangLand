@@ -1,6 +1,7 @@
 "use server"
 
 import { requireTopAdmin } from "@/shared/lib/auth"
+import { TERMS_VERSION, PRIVACY_VERSION } from "@/features/legal/versions"
 import { isAssignableMemberRole, type MemberRole } from "@/shared/lib/member-role"
 import { put } from "@vercel/blob"
 import { revalidatePath } from "next/cache"
@@ -275,27 +276,35 @@ export async function acceptAgreements(
 
   if (!termsOk) return { error: "이용약관 동의가 필요합니다." }
   if (!privacyOk) return { error: "개인정보 처리방침 동의가 필요합니다." }
+  if (termsVersion !== TERMS_VERSION || privacyVersion !== PRIVACY_VERSION) {
+    return { error: "약관 정보가 변경되었습니다. 페이지를 새로고침한 후 다시 동의해 주세요." }
+  }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "로그인이 필요합니다." }
 
   const now = new Date().toISOString()
-  const { error } = await supabase
+  const { data: saved, error } = await supabase
     .from("profiles")
     .update({
       terms_agreed_at: now,
-      terms_version: termsVersion,
+      terms_version: TERMS_VERSION,
       privacy_agreed_at: now,
-      privacy_version: privacyVersion,
+      privacy_version: PRIVACY_VERSION,
       // 마케팅: 체크면 시각 기록, 미체크면 null 로 명시 (이전 동의 철회 효과)
       marketing_agreed_at: marketingOk ? now : null,
       updated_at: now,
     })
     .eq("id", user.id)
+    .select("id, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version")
+    .maybeSingle()
 
-  if (error) return { error: "저장에 실패했습니다." }
+  if (error || !saved || saved.id !== user.id || !saved.terms_agreed_at || !saved.privacy_agreed_at || saved.terms_version !== TERMS_VERSION || saved.privacy_version !== PRIVACY_VERSION) {
+    return { error: "약관 동의가 저장되지 않았습니다. 다시 시도해 주세요. 반복되면 관리자에게 문의해 주세요." }
+  }
 
+  revalidatePath("/", "layout")
   redirect("/")
 }
 

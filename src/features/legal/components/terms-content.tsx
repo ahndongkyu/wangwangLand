@@ -3,8 +3,6 @@
  * /terms 페이지와 약관 동의 모달에서 공유 사용.
  * 'use client' 없이 plain JSX 라 server/client 양쪽에서 import 가능.
  */
-export const TERMS_VERSION = "2026-04-27"
-
 interface Props {
   /** 모달/임베드 환경에서 외곽 패딩·max-width 제거 */
   embedded?: boolean

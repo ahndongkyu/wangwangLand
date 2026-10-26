@@ -39,7 +39,7 @@ export function Header({ profile, mobileSidebar, pendingCounts, userNotification
 
   return <header className="sticky top-0 z-40 w-full border-b border-border bg-card/95 backdrop-blur">
     <div className="mx-auto grid h-16 max-w-[1440px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 md:px-8 lg:h-20 2xl:px-12">
-      <nav aria-label="외부 채널 및 관리자" className="hidden items-center lg:flex">{channelLinks}{adminLink}</nav>
+      <nav aria-label="외부 채널 및 관리자" className="hidden items-center gap-3 lg:flex">{channelLinks}{adminLink}</nav>
       <div className="justify-self-start lg:hidden">
         <MobileHeaderMenu title="왕왕랜드 메뉴">
           <div className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3">{account}<ThemeToggle /></div>

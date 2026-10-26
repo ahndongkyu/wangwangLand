@@ -1,4 +1,5 @@
-export { TermsContent, TERMS_VERSION } from "./components/terms-content"
-export { PrivacyContent, PRIVACY_VERSION } from "./components/privacy-content"
+export { TermsContent } from "./components/terms-content"
+export { PrivacyContent } from "./components/privacy-content"
+export { TERMS_VERSION, PRIVACY_VERSION } from "./versions"
 export { AgreementModal } from "./components/agreement-modal"
 export { ConsentSection } from "./components/consent-section"

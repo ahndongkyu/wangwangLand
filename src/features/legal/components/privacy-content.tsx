@@ -6,8 +6,6 @@ import { SITE } from "@/shared/constants/site"
  * 개인정보 처리방침 본문 컴포넌트.
  * /privacy 페이지와 약관 동의 모달에서 공유 사용.
  */
-export const PRIVACY_VERSION = "2026-04-27"
-
 interface Props {
   embedded?: boolean
 }
