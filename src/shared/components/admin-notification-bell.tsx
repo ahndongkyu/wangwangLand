@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Bell, Heart, HandHeart } from "lucide-react"
+import { MessageSquare, Heart, HandHeart } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 
@@ -36,9 +36,14 @@ export function AdminNotificationBell({
     function handler(e: MouseEvent | TouchEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
+    function closeOnEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("keydown", closeOnEscape)
     document.addEventListener("mousedown", handler)
     document.addEventListener("touchstart", handler as EventListener, { passive: true })
     return () => {
+      document.removeEventListener("keydown", closeOnEscape)
       document.removeEventListener("mousedown", handler)
       document.removeEventListener("touchstart", handler as EventListener)
     }
@@ -72,18 +77,18 @@ export function AdminNotificationBell({
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => hasItems && setOpen((v) => !v)}
+        onClick={() => setOpen((v) => !v)}
         className={cn(
           trigger
             ? "block w-full rounded-xl text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-            : "relative flex size-9 items-center justify-center rounded-full transition-colors",
+            : "relative flex size-11 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           hasItems
             ? trigger
               ? "hover:bg-secondary/60"
               : "text-foreground/70 hover:bg-secondary hover:text-foreground"
             : trigger
               ? "cursor-default"
-              : "cursor-default text-foreground/40",
+              : "text-foreground/70 hover:bg-secondary",
           triggerClassName
         )}
         aria-label={hasItems ? `처리 대기 알림 ${counts.total}건` : "대기 알림 없음"}
@@ -91,7 +96,7 @@ export function AdminNotificationBell({
       >
         {trigger ?? (
           <>
-            <Bell className={cn("size-5", hasItems && "animate-bell-ring")} />
+            <MessageSquare className="size-5" aria-hidden />
             {hasItems && (
               <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
                 {counts.total > 99 ? "99+" : counts.total}
@@ -101,7 +106,7 @@ export function AdminNotificationBell({
         )}
       </button>
 
-      {open && hasItems && (
+      {open && (
         <div
           className={cn(
             "z-50 overflow-hidden rounded-xl border shadow-lg",
@@ -132,6 +137,7 @@ export function AdminNotificationBell({
             </p>
           </div>
           <ul className="p-1">
+            {!hasItems && <li className="px-3 py-5 text-center text-sm text-muted-foreground">처리할 알림이 없습니다.</li>}
             {items.map((item) => (
               <li key={item.href}>
                 <Link

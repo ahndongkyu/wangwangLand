@@ -103,6 +103,9 @@ export default async function PublicLayout({
       <Header
         recentNotices={recentNotices}
         profile={profile}
+        pendingCounts={pendingCounts}
+        userNotifications={userNotifications}
+        unreadNotificationCount={unreadNotificationCount}
         mobileSidebar={
           <HomeSidebar
             key={`mobile-${homeFavorites.join("-")}`}

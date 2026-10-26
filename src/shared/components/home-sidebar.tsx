@@ -1,21 +1,16 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
 import {
-  ChevronRight,
   CirclePlus,
   LogOut,
-  User,
 } from "lucide-react"
 
 import type { Profile } from "@/features/members"
 import type { UserNotification } from "@/features/notifications/api/queries"
 import { signOut, updateHomeFavorites } from "@/features/members/api/actions"
-import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
-import { UserNotificationBell } from "@/shared/components/user-notification-bell"
 import {
   HOME_FAVORITE_OPTIONS,
   type HomeFavoriteKey,
@@ -35,9 +30,6 @@ interface Props {
 export function HomeSidebar({
   profile,
   initialFavorites,
-  pendingCounts,
-  userNotifications = [],
-  unreadNotificationCount = 0,
   variant = "desktop",
 }: Props) {
   const router = useRouter()
@@ -75,10 +67,6 @@ export function HomeSidebar({
   const selectedItems = favorites
     .map((key) => HOME_FAVORITE_OPTIONS.find((item) => item.key === key))
     .filter((item): item is (typeof HOME_FAVORITE_OPTIONS)[number] => !!item)
-  const hasSidebarNotification = pendingCounts
-    ? pendingCounts.total > 0
-    : unreadNotificationCount > 0
-
   function openEditor() {
     setDraft(favorites)
     setMessage(null)
@@ -167,40 +155,6 @@ export function HomeSidebar({
 
   const content = (
     <div className="space-y-8">
-      <section
-        className={cn(
-          "rounded-[22px] border border-border bg-card p-3 shadow-[0_10px_30px_rgba(88,76,68,0.08)] transition-[border-color,box-shadow] duration-200 hover:border-primary/30 hover:shadow-[0_14px_34px_rgba(88,76,68,0.13)] motion-reduce:transition-none",
-          hasSidebarNotification &&
-            "animate-profile-notification-glow border-primary/70"
-        )}
-      >
-        {profile ? (
-          <>
-            <Link href="/my" aria-label={`${profile.nickname} 마이페이지`} title={profile.nickname} className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-1 rounded-xl p-1 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <SidebarProfileIdentity profile={profile} />
-              <ChevronRight className="size-4 shrink-0 self-center text-muted-foreground" aria-hidden />
-            </Link>
-            {pendingCounts && pendingCounts.total > 0 ? (
-              <AdminNotificationBell counts={pendingCounts} inline trigger={<span>확인할 알림 {pendingCounts.total}건</span>} triggerClassName="mt-3 min-h-11 text-xs" />
-            ) : !pendingCounts && unreadNotificationCount > 0 ? (
-              <UserNotificationBell notifications={userNotifications} unreadCount={unreadNotificationCount} inline trigger={<span>새 알림 {unreadNotificationCount}건</span>} triggerClassName="mt-3 min-h-11 text-xs" />
-            ) : null}
-          </>
-        ) : (
-          <div className="text-center">
-            <p className="mt-2 text-sm font-semibold text-foreground">
-              로그인하고 함께해요
-            </p>
-            <Link
-              href="/login"
-              className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-brand-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
-            >
-              로그인
-            </Link>
-          </div>
-        )}
-      </section>
-
       <section aria-labelledby={`${idPrefix}favorite-menu-heading`}>
         <div className="flex min-h-6 items-center justify-between px-2">
           <h2
@@ -249,31 +203,6 @@ export function HomeSidebar({
     >
       {content}
     </aside>
-  )
-}
-
-function SidebarProfileIdentity({ profile }: { profile: Profile }) {
-  return (
-    <span className="flex min-w-0 items-center gap-2">
-      <span className="relative size-9 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
-        {profile.avatar_url ? (
-          <Image
-            src={profile.avatar_url}
-            alt={profile.nickname}
-            fill
-            sizes="36px"
-            className="object-cover"
-          />
-        ) : (
-          <User className="size-full p-2 text-primary" aria-hidden />
-        )}
-      </span>
-      <span className="min-w-0 flex-1 text-left">
-        <span className="block whitespace-normal break-all text-[13px] font-medium leading-5 text-foreground">
-          {profile.nickname}
-        </span>
-      </span>
-    </span>
   )
 }
 

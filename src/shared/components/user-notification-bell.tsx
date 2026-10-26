@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { Bell } from "lucide-react"
+import { MessageSquare } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
 import { cn } from "@/shared/lib/utils"
@@ -82,9 +82,14 @@ export function UserNotificationBell({
     function handler(e: MouseEvent | TouchEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
+    function closeOnEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("keydown", closeOnEscape)
     document.addEventListener("mousedown", handler)
     document.addEventListener("touchstart", handler as EventListener, { passive: true })
     return () => {
+      document.removeEventListener("keydown", closeOnEscape)
       document.removeEventListener("mousedown", handler)
       document.removeEventListener("touchstart", handler as EventListener)
     }
@@ -115,7 +120,7 @@ export function UserNotificationBell({
         className={cn(
           trigger
             ? "block w-full rounded-xl text-left outline-none transition-colors hover:bg-secondary/60 focus-visible:ring-2 focus-visible:ring-ring"
-            : "relative flex size-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground",
+            : "relative flex size-11 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           triggerClassName
         )}
         aria-label={unreadCount > 0 ? `알림 ${unreadCount}개` : "알림"}
@@ -123,9 +128,7 @@ export function UserNotificationBell({
       >
         {trigger ?? (
           <>
-            <Bell
-              className={cn("size-5", unreadCount > 0 && "animate-bell-ring")}
-            />
+            <MessageSquare className="size-5" aria-hidden />
             {unreadCount > 0 && (
               <span className="absolute right-0.5 top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 py-px text-[10px] font-bold leading-none text-destructive-foreground">
                 {unreadCount > 99 ? "99+" : unreadCount}

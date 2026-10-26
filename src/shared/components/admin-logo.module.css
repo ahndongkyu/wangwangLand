@@ -1,0 +1,28 @@
+.logo {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 220px;
+  aspect-ratio: 2110 / 361;
+  overflow: hidden;
+}
+.art, .wordmark {
+  position: absolute;
+  width: 102.94%;
+  max-width: none;
+  height: auto;
+  left: -1.42%;
+  top: -51.8%;
+}
+.wordmark {
+  aspect-ratio: 3 / 1;
+  background: #f6f2e9;
+  clip-path: inset(0 0 0 28%);
+  mask: url('/images/wangwang-logo-admin.png') center / 100% 100% no-repeat;
+}
+@media (min-width: 768px) {
+  .logo { width: 324px; }
+}
+@media (max-width: 374px) {
+  .logo { width: 188px; }
+}

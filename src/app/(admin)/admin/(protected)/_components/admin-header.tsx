@@ -1,24 +1,20 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { ChevronLeft, ChevronRight, Menu as MenuIcon, User, X } from "lucide-react"
-import { useState } from "react"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { AdminNotificationBell } from "@/shared/components/admin-notification-bell"
 import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
-import { SITE } from "@/shared/constants/site"
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/shared/components/ui/sheet"
-import { Button } from "@/shared/components/ui/button"
+import { HeaderProfile } from "@/shared/components/header-profile"
+import { AdminLogo } from "@/shared/components/admin-logo"
+import { MobileHeaderMenu } from "@/shared/components/mobile-header-menu"
 
 type NavGroup = {
   label: string
   items: { label: string; href: string }[]
 }
 
-const ROLE_LABEL: Record<string, string> = { admin: "관리자", staff: "운영진" }
 
 interface AdminHeaderProps {
   siteName: string
@@ -47,30 +43,10 @@ export function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
   ]
 }
 
-function getAdminMobileBackHref(pathname: string): string | null {
-  const segments = pathname.split("/").filter(Boolean)
-  if (segments[0] !== "admin" || segments.length < 3) return null
-
-  // 신청 상세 URL 중간 경로는 실제 페이지가 아니므로 신청 목록으로 이동한다.
-  if (segments[1] === "settings") return "/admin"
-  if (segments[1] === "applications") return "/admin/applications"
-
-  // 게시물 관리 수정 화면은 별도 상세 페이지가 없으므로 각 목록으로 이동한다.
-  if (
-    segments.at(-1) === "edit" &&
-    ["dogs", "cats", "notices", "expenses", "daily", "stories", "thanks"].includes(segments[1])
-  ) {
-    return `/admin/${segments[1]}`
-  }
-
-  return `/${segments.slice(0, -1).join("/")}`
-}
-
-
 const menuLinkClass = "relative flex min-h-11 items-center rounded-xl border border-transparent px-3 text-sm text-admin-nav-foreground transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-white/15 hover:bg-white/[0.08] hover:text-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-admin-nav motion-reduce:transition-none"
 const selectedClass = "border-white/15 bg-white/[0.08] font-semibold text-white before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-current"
 
-function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, logoutAction, pendingCounts, onNavigate }: AdminHeaderProps & { onNavigate?: () => void }) {
+function AdminMenuContent({ isTopAdmin, logoutAction, onNavigate }: AdminHeaderProps & { onNavigate?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isActive = (href: string) => {
@@ -85,28 +61,17 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
     if (pathname !== path && !pathname.startsWith(`${path}/`)) return false
     return !query || Array.from(new URLSearchParams(query).entries()).every(([key, value]) => searchParams.get(key) === value)
   }
-  const identity = <AdminSidebarProfileIdentity adminName={adminName} adminRole={adminRole} adminAvatarUrl={adminAvatarUrl} />
 
   return <>
-    <div className="admin-sidebar-scroll min-h-0 flex-1 overflow-y-auto p-4">
-      <section className={cn("rounded-[22px] border border-white/10 bg-white/[0.06] p-3", pendingCounts.total > 0 && "animate-profile-notification-glow")}>
-        {pendingCounts.total > 0 ? (
-          <AdminNotificationBell counts={pendingCounts} inline trigger={identity} triggerClassName="min-h-11 p-1 hover:bg-white/[0.08]" surface="admin-dark" />
-        ) : <div className="flex min-h-11 items-center p-1">{identity}</div>}
-        <Link href="/" target="_blank" rel="noopener noreferrer" onClick={onNavigate} className={cn(menuLinkClass, "mt-3 justify-between text-xs")}>
-          메인 페이지
-          <ChevronRight className="size-4 shrink-0 text-admin-nav-muted" aria-hidden />
-        </Link>
-      </section>
-
-      <nav className="mt-5 space-y-2" aria-label="관리자 메뉴" onClick={event => {
+    <div className="p-4">
+      <nav className="space-y-2" aria-label="관리자 메뉴" onClick={event => {
         if ((event.target as HTMLElement).closest("a")) onNavigate?.()
       }}>
         <Link href="/admin" aria-current={isActive("/admin") ? "page" : undefined} className={cn(menuLinkClass, isActive("/admin") && selectedClass)}>대시보드</Link>
         {buildNavGroups(isTopAdmin).map(group => (
-          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.items.some(item => isActive(item.href))} className="group/menu">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 text-sm font-semibold text-admin-nav-muted hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [&::-webkit-details-marker]:hidden">{group.label}<ChevronRight aria-hidden className="size-4 transition-transform group-open/menu:rotate-90 motion-reduce:transition-none" /></summary>
-            <ul className="mt-2 grid gap-1 pl-3">
+          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.items.some(item => isActive(item.href))} className="group/menu rounded-xl transition-colors open:bg-white/[0.06] open:pb-2 motion-reduce:transition-none">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 text-sm font-semibold text-admin-nav-muted transition-colors hover:bg-white/[0.10] hover:text-white group-open/menu:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [&::-webkit-details-marker]:hidden">{group.label}<span aria-hidden className="hidden text-lg group-open/menu:inline">−</span></summary>
+            <ul className="mx-3 mt-1 grid gap-1 border-l border-white/15 pl-2">
               {group.items.map(item => <li key={item.href}>
                 <Link href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={cn(menuLinkClass, isActive(item.href) && selectedClass)}>
                   {item.label}
@@ -124,52 +89,30 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
 }
 
 export function AdminSidebar(props: AdminHeaderProps) {
-  return <aside aria-label="관리자 사이드메뉴" className="fixed top-20 bottom-4 left-[max(1.5rem,calc((100vw-1440px)/2+1.5rem))] z-30 hidden w-[252px] lg:left-[max(2rem,calc((100vw-1440px)/2+2rem))] min-w-0 flex-col overflow-hidden rounded-[26px] border border-admin-nav-border bg-admin-nav shadow-sm md:flex">
+  return <aside aria-label="관리자 사이드메뉴" className="hidden min-w-0 self-start flex-col rounded-[26px] border border-admin-nav-border bg-admin-nav shadow-sm md:flex">
     <AdminMenuContent {...props} />
   </aside>
 }
 
-function AdminSidebarProfileIdentity({ adminName, adminRole, adminAvatarUrl }: Pick<AdminHeaderProps, "adminName" | "adminRole" | "adminAvatarUrl">) {
-  return <span className="flex min-w-0 w-full items-center gap-2">
-    <span className="relative size-9 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">
-      {adminAvatarUrl ? <Image src={adminAvatarUrl} alt="" fill sizes="36px" className="object-cover" /> : <User className="size-full p-2 text-admin-nav-foreground" aria-hidden />}
-    </span>
-    <span className="min-w-0 flex-1 text-left">
-      <span title={adminName} className="block whitespace-normal break-all text-[13px] font-medium leading-5 text-admin-nav-foreground">{adminName}</span>
-      <span className="mt-0.5 block text-xs text-admin-nav-muted">{ROLE_LABEL[adminRole] ?? adminRole}</span>
-    </span>
-  </span>
-}
-
-export function AdminMobileHeader(props: AdminHeaderProps) {
-  const pathname = usePathname()
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const mobileBackHref = getAdminMobileBackHref(pathname)
-  return <header className="border-b border-admin-nav-border bg-admin-nav text-admin-nav-foreground md:hidden">
-    <div className="flex h-16 items-center justify-between px-4">
-      {mobileBackHref ? <Link href={mobileBackHref} className="inline-flex min-h-11 items-center gap-0.5 text-sm font-medium" aria-label="이전 화면으로"><ChevronLeft className="size-6" aria-hidden /><span>뒤로</span></Link> : (
-        <Link href="/admin" className="flex items-center gap-2 whitespace-nowrap text-base font-bold">
-          <Image src={SITE.logo} alt="" width={28} height={28} className="size-7 rounded-full" />{props.siteName} 관리자
-        </Link>
-      )}
-      <div className="flex items-center gap-1 [&_button]:text-admin-nav-foreground [&_button:hover]:bg-white/10">
-        <ThemeToggle />
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger render={<Button variant="ghost" size="sm" className="size-11 p-0" aria-label="메뉴 열기" />}><MenuIcon className="size-5" aria-hidden /></SheetTrigger>
-          <SheetContent side="right" showCloseButton={false} className="flex w-[min(340px,90vw)] flex-col gap-0 bg-admin-nav p-0 text-admin-nav-foreground data-[side=right]:data-starting-style:translate-x-full data-[side=right]:data-ending-style:translate-x-full">
-            <SheetHeader className="sr-only"><SheetTitle>{props.siteName} 관리자</SheetTitle></SheetHeader>
-            <div className="flex shrink-0 items-center justify-between px-4 py-3.5">
-              <span className="text-sm font-semibold">{props.siteName} 관리자</span>
-              <SheetClose render={<button type="button" className="flex size-11 items-center justify-center rounded-xl hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70" aria-label="메뉴 닫기" />}><X className="size-4" aria-hidden /></SheetClose>
-            </div>
-            <AdminMenuContent {...props} onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
+export function AdminHeader(props: AdminHeaderProps) {
+  const account = <HeaderProfile name={props.adminName} avatarUrl={props.adminAvatarUrl} />
+  const homeLink = <Link href="/" className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">메인 페이지</Link>
+  return <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
+    <div className="mx-auto grid h-16 w-full max-w-[1440px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 md:flex md:h-20 md:justify-between md:px-6 lg:px-8">
+      <div className="justify-self-start md:hidden">
+        <MobileHeaderMenu title="왕왕랜드 관리자 메뉴">
+          <div className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3">{account}<ThemeToggle /></div>
+          <div className="mt-2">{homeLink}</div>
+          <div className="mt-3 rounded-2xl bg-admin-nav"><AdminMenuContent {...props} /></div>
+        </MobileHeaderMenu>
+      </div>
+      <Link href="/admin" className="flex min-h-11 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><AdminLogo /></Link>
+      <div className="flex min-w-0 items-center justify-self-end gap-2">
+        <div className="hidden md:block">{homeLink}</div>
+        <div className="hidden md:block"><ThemeToggle /></div>
+        <AdminNotificationBell counts={props.pendingCounts} />
+        <div className="hidden min-w-0 md:block">{account}</div>
       </div>
     </div>
   </header>
-}
-
-export function AdminHeader(props: AdminHeaderProps) {
-  return <AdminMobileHeader {...props} />
 }
