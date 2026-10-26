@@ -1,10 +1,13 @@
+"use client"
 import { Clock3, MessageCircle, Users } from "lucide-react"
 
-import { SITE } from "@/shared/constants/site"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
+
 import { cn } from "@/shared/lib/utils"
 import { VOLUNTEER_APPLICATION_TIME_LABEL } from "../lib/volunteer-operating-hours"
 
 export function VolunteerApplicationGuide({ className }: { className?: string }) {
+  const contact = useOperatingContact()
   return (
     <section
       aria-labelledby="volunteer-application-guide-title"
@@ -50,7 +53,7 @@ export function VolunteerApplicationGuide({ className }: { className?: string })
           신청 승인 결과는 문자로 안내드립니다. 승인 후 홈페이지의 봉사 안내와 준비물을 꼭 확인해 주세요.
         </p>
         <a
-          href={SITE.sns.kakaoChannel}
+          href={contact?.kakaoChannel || "/contact"}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#FEE500] px-4 py-2 text-sm font-bold text-[#2B2B2B] transition-colors hover:bg-[#F7DC00] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber-500/40"
@@ -64,6 +67,7 @@ export function VolunteerApplicationGuide({ className }: { className?: string })
 }
 
 export function LargeGroupInquiry({ className }: { className?: string }) {
+  const contact = useOperatingContact()
   return (
     <div
       className={cn(
@@ -76,7 +80,7 @@ export function LargeGroupInquiry({ className }: { className?: string }) {
         신청 전 카카오톡으로 가능한 일정과 인원을 문의해 주세요.
       </p>
       <a
-        href={SITE.sns.kakaoChannel}
+        href={contact?.kakaoChannel || "/contact"}
         target="_blank"
         rel="noopener noreferrer"
         className="mt-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md bg-[#FEE500] px-3 py-1.5 text-xs font-bold text-[#2B2B2B] transition-colors hover:bg-[#F7DC00] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber-500/40"

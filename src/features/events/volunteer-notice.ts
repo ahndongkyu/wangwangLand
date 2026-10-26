@@ -1,3 +1,4 @@
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
 import "server-only"
 import { createAdminClient } from "@/shared/lib/supabase/admin"
 import { buildVolunteerSms } from "@/features/applications/lib/volunteer-sms"
@@ -56,7 +57,8 @@ export async function notifyVolunteerVisitChanges(before: VolunteerVisitSnapshot
       if (JSON.stringify(starts) === JSON.stringify(app.starts)) continue
       // 일부 날짜 삭제는 전체 취소가 아니라 남은 확정 일정 안내다.
       const kind = starts.length === 0 ? "cancelled" : app.starts.length === 0 ? "confirmed" : "rescheduled"
-      const message = buildVolunteerSms(kind, app.applicant_name, starts, app.party_size)
+      const contact = kind === "confirmed" ? (await getOperatingInfo()).contact.data : null
+      const message = buildVolunteerSms(kind, app.applicant_name, starts, app.party_size, contact?.kakaoChannel || "")
       // 수정·삭제는 기존 일정 알림이 담당한다. 새 등록만 여기서 인앱/푸시를 보낸다.
       if (app.created_by && notifyInApp) {
         const { error } = await createAdminClient().from("notifications").insert({
@@ -69,6 +71,7 @@ export async function notifyVolunteerVisitChanges(before: VolunteerVisitSnapshot
         } catch { warning = "일정은 저장됐지만 푸시 알림 전송을 확인하지 못했습니다." }
       }
       if (app.phone) {
+        if (kind === "confirmed" && !contact) throw new Error("문자 문의 채널 설정을 확인하지 못했습니다.")
         const text = kind === "cancelled" ? message.text.replace("사유를", "내역을") : message.text
         const result = await sendSms(app.phone, text, {
           applicationId: app.id, applicationType: "volunteer", recipientName: app.applicant_name, messageType: message.type,

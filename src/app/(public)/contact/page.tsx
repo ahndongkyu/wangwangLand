@@ -1,3 +1,4 @@
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
 import type { Metadata } from "next"
 
 import { CopyButton } from "@/shared/components/copy-button"
@@ -8,7 +9,8 @@ export const metadata: Metadata = {
   description: `${SITE.name}의 위치와 연락처 안내.`,
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = (await getOperatingInfo()).contact.data
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 md:py-12">
       <header className="mb-10">
@@ -65,8 +67,8 @@ export default function ContactPage() {
       </section>
       <section className="mt-6 space-y-4 rounded-lg border border-border bg-card p-6">
         <h2 className="text-lg font-semibold">문의 방법</h2>
-        {SITE.sns.kakaoChannel && <a href={SITE.sns.kakaoChannel} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">카카오톡 상담</a>}
-        {SITE.contact.phones
+        {contact?.kakaoChannel && <a href={contact?.kakaoChannel} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">카카오톡 상담</a>}
+        {(contact ? [{label:"봉사 담당",number:contact.volunteerPhone},{label:"입양 담당",number:contact.adoptionPhone}] : [])
           .filter((p) => p.number)
           .map((p) => (
             <InfoRow

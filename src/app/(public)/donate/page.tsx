@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
+import { DeliveryCard } from "@/features/settings/components/delivery-card"
 import type { Metadata } from "next"
 import { Heart, Home, Stethoscope, UtensilsCrossed, type LucideIcon } from "lucide-react"
 
@@ -17,7 +19,8 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function DonatePage() {
-  const d = SITE.donation
+  const operating = await getOperatingInfo()
+  const d = operating.account.data
   const recentThanks = await listRecentApprovedDonations(8)
 
   return (
@@ -33,7 +36,7 @@ export default async function DonatePage() {
         </p>
       </header>
 
-      <section className="mb-6 rounded-xl border border-primary/25 bg-card p-5 sm:p-7">
+      {d ? <section className="mb-6 rounded-xl border border-primary/25 bg-card p-5 sm:p-7">
         <div className="mb-5 flex items-baseline justify-between gap-2">
           <h2 className="text-xl font-semibold text-foreground">계좌 후원</h2>
           <span className="text-xs text-muted-foreground">일시·정기 후원 공용</span>
@@ -65,43 +68,14 @@ export default async function DonatePage() {
           </p>
           <p className="mt-1.5 leading-relaxed text-muted-foreground">
             월 <span className="font-semibold text-foreground">
-              {d.regularMinimum.toLocaleString()}원
+              {SITE.donation.regularMinimum.toLocaleString()}원
             </span>부터 자유롭게 책정하실 수 있습니다. 위 {d.bankName} 계좌로
             자동이체를 등록해 주세요.
           </p>
         </div>
-      </section>
+      </section> : <p className="mb-6 text-sm">계좌 정보를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>}
 
-      <section className="mb-6 rounded-xl border border-border bg-card p-5 sm:p-7">
-        <h2 className="mb-3 text-xl font-semibold text-foreground">
-          후원품 택배
-        </h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          사료·간식·담요·장난감 등 후원물품은 아래 주소로 보내 주세요.
-        </p>
-        <div className="rounded-lg bg-background px-4 py-3 text-sm">
-          {d.parcelRecipient && (
-            <p className="mb-1 text-muted-foreground">
-              받는 사람:{" "}
-              <span className="font-semibold text-foreground">{d.parcelRecipient}</span>
-            </p>
-          )}
-          <div className="flex flex-wrap items-start gap-2">
-            <p className="flex-1 font-semibold text-foreground">
-              {d.parcelAddress}
-            </p>
-            <CopyButton
-              value={d.parcelAddressShort}
-              label="주소"
-            />
-          </div>
-          {d.parcelAddressNote && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              ※ {d.parcelAddressNote}
-            </p>
-          )}
-        </div>
-      </section>
+      <div className="mb-6"><DeliveryCard data={operating.delivery.data} /></div>
 
       {/* 후원 등록 안내 */}
       <section className="mb-6 rounded-xl border border-primary/40 bg-card p-6 text-center">

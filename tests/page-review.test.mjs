@@ -136,7 +136,7 @@ test("public guidance puts account and directions first and preserves expense ac
   assert.ok(donate.indexOf("계좌 후원") < donate.indexOf("후원금은 이렇게"))
   assert.match(donate, /href="\/expenses"/)
   assert.doesNotMatch(donate, /🌱|💛/)
-  const contact = renderContact()
+  const contact = await renderContact()
   assert.ok(contact.indexOf("보호소 주소") < contact.indexOf(">문의 방법</h2>"))
   assert.match(contact, /카카오톡 상담/)
 })

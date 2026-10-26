@@ -103,11 +103,12 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const operating = await getOperatingInfo()
   return (
     <html lang="ko" className={`${geistMono.variable} h-full`} suppressHydrationWarning>
       <head>
@@ -120,7 +121,7 @@ export default function RootLayout({
       <body className="min-h-full">
         <ThemeProvider>
           <ToastProvider>
-            <ConfirmProvider>{children}</ConfirmProvider>
+            <OperatingProvider contact={operating.contact.data}><ConfirmProvider>{children}</ConfirmProvider></OperatingProvider>
           </ToastProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
@@ -129,3 +130,5 @@ export default function RootLayout({
     </html>
   )
 }
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
+import { OperatingProvider } from "@/features/settings/components/operating-provider"

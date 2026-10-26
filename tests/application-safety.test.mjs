@@ -1,3 +1,4 @@
+import { operatingFixture } from "./helpers/operating-fixture.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import fs from "node:fs"
@@ -9,6 +10,7 @@ function load(file, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   vm.runInNewContext(code, { exports, Date, FormData, console: { error() {} }, require(name) {
+    if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     if (name === "@/shared/lib/sanitize-rich-text") return load("src/shared/lib/sanitize-rich-text.ts", { "sanitize-html": { default: sanitizeHtml } })
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }

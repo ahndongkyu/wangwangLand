@@ -30,52 +30,20 @@ interface AdminHeaderProps {
   pendingCounts: PendingCounts
 }
 
-function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
+export function buildNavGroups(isTopAdmin: boolean): NavGroup[] {
   return [
-    {
-      label: "아이들 관리",
-      items: [
-        { label: "강아지", href: "/admin/dogs" },
-        { label: "고양이", href: "/admin/cats" },
-      ],
-    },
-    {
-      label: "게시글 관리",
-      items: [
-        { label: "공지사항", href: "/admin/notices" },
-        { label: "지출 내역", href: "/admin/expenses" },
-        { label: "왕왕랜드 이야기", href: "/admin/community" },
-      ],
-    },
-    {
-      label: "신청 관리",
-      items: [
-        { label: "봉사 신청", href: "/admin/applications?type=volunteer" },
-        { label: "입양 신청", href: "/admin/applications?type=adoption" },
-        { label: "후원 내역", href: "/admin/donations" },
-      ],
-    },
-    {
-      label: "일정",
-      items: [
-        { label: "전체 일정", href: "/admin/calendar" },
-        { label: "운영진 일정", href: "/admin/schedule" },
-      ],
-    },
-    {
-      label: "회원",
-      items: [
-        { label: "회원", href: "/admin/members" },
-        ...(isTopAdmin
-          ? [{ label: "운영진", href: "/admin/admins" }]
-          : []),
-      ],
-    },
-    { label: "시스템 관리", items: [
-      { label: "홈페이지 관리", href: "/admin/settings" },
-      { label: "SMS 발송 내역", href: "/admin/sms" },
-      ...(isTopAdmin ? [{ label: "오류 로그", href: "/admin/logs" }] : []),
+    { label: "신청·일정 관리", items: [
+      { label: "봉사 신청", href: "/admin/applications?type=volunteer" },
+      { label: "입양 상담 신청", href: "/admin/applications?type=adoption" },
+      { label: "전체 일정", href: "/admin/calendar" }, { label: "운영진 일정", href: "/admin/schedule" },
     ] },
+    { label: "아이들 관리", items: [{ label: "강아지", href: "/admin/dogs" }, { label: "고양이", href: "/admin/cats" }] },
+    { label: "게시글 관리", items: [{ label: "공지사항", href: "/admin/notices" }, { label: "왕왕랜드 이야기", href: "/admin/community" }, { label: "지출 내역", href: "/admin/expenses" }] },
+    { label: "후원 관리", items: [{ label: "후원 내역", href: "/admin/donations" }] },
+    { label: "회원 관리", items: [{ label: "회원", href: "/admin/members" }, ...(isTopAdmin ? [{ label: "운영진", href: "/admin/admins" }] : [])] },
+    { label: "홈페이지 관리", items: [{ label: "사이트 사진", href: "/admin/settings/photos" }, { label: "홈 노출 아이들", href: "/admin/settings/animals" }, { label: "팝업", href: "/admin/settings/popups" }] },
+    { label: "운영 설정", items: [{ label: "배송 안내", href: "/admin/settings/delivery" }, { label: "연락처·SNS", href: "/admin/settings/contact" }, { label: "후원 계좌", href: "/admin/settings/account" }] },
+    { label: "시스템 관리", items: [{ label: "SMS 발송 내역", href: "/admin/sms" }, ...(isTopAdmin ? [{ label: "오류 로그", href: "/admin/logs" }, { label: "점검 모드", href: "/admin/settings/maintenance" }] : [])] },
   ]
 }
 
@@ -84,6 +52,7 @@ function getAdminMobileBackHref(pathname: string): string | null {
   if (segments[0] !== "admin" || segments.length < 3) return null
 
   // 신청 상세 URL 중간 경로는 실제 페이지가 아니므로 신청 목록으로 이동한다.
+  if (segments[1] === "settings") return "/admin"
   if (segments[1] === "applications") return "/admin/applications"
 
   // 게시물 관리 수정 화면은 별도 상세 페이지가 없으므로 각 목록으로 이동한다.
@@ -107,6 +76,11 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
   const isActive = (href: string) => {
     const [path, query] = href.split("?")
     if (path === "/admin") return pathname === path
+    if (path === "/admin/applications") {
+      if (pathname !== path && !pathname.startsWith(`${path}/`)) return false
+      const type = pathname.startsWith(`${path}/adoption/`) ? "adoption" : pathname.startsWith(`${path}/volunteer/`) ? "volunteer" : searchParams.get("type") ?? "volunteer"
+      return new URLSearchParams(query).get("type") === type
+    }
     if (path === "/admin/community" && ["/admin/daily", "/admin/stories", "/admin/thanks"].some(prefix => pathname === prefix || pathname.startsWith(`${prefix}/`))) return true
     if (pathname !== path && !pathname.startsWith(`${path}/`)) return false
     return !query || Array.from(new URLSearchParams(query).entries()).every(([key, value]) => searchParams.get(key) === value)
@@ -125,13 +99,13 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
         </Link>
       </section>
 
-      <nav className="mt-8 space-y-8" aria-label="관리자 메뉴" onClick={event => {
+      <nav className="mt-5 space-y-2" aria-label="관리자 메뉴" onClick={event => {
         if ((event.target as HTMLElement).closest("a")) onNavigate?.()
       }}>
         <Link href="/admin" aria-current={isActive("/admin") ? "page" : undefined} className={cn(menuLinkClass, isActive("/admin") && selectedClass)}>대시보드</Link>
         {buildNavGroups(isTopAdmin).map(group => (
-          <section key={group.label}>
-            <h2 className="px-2 text-xs font-bold tracking-wide text-admin-nav-muted">{group.label}</h2>
+          <details key={`${group.label}-${pathname}-${searchParams.toString()}`} open={group.items.some(item => isActive(item.href))} className="group/menu">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-lg px-3 text-sm font-semibold text-admin-nav-muted hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 [&::-webkit-details-marker]:hidden">{group.label}<ChevronRight aria-hidden className="size-4 transition-transform group-open/menu:rotate-90 motion-reduce:transition-none" /></summary>
             <ul className="mt-2 grid gap-1 pl-3">
               {group.items.map(item => <li key={item.href}>
                 <Link href={item.href} aria-current={isActive(item.href) ? "page" : undefined} className={cn(menuLinkClass, isActive(item.href) && selectedClass)}>
@@ -139,7 +113,7 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
                 </Link>
               </li>)}
             </ul>
-          </section>
+          </details>
         ))}
       </nav>
     </div>
@@ -150,7 +124,7 @@ function AdminMenuContent({ adminName, adminRole, adminAvatarUrl, isTopAdmin, lo
 }
 
 export function AdminSidebar(props: AdminHeaderProps) {
-  return <aside aria-label="관리자 사이드메뉴" className="sticky top-6 z-30 hidden h-[calc(100dvh-7rem)] w-full min-w-0 flex-col overflow-hidden rounded-[26px] border border-admin-nav-border bg-admin-nav shadow-sm md:flex">
+  return <aside aria-label="관리자 사이드메뉴" className="fixed top-20 bottom-4 left-[max(1.5rem,calc((100vw-1440px)/2+1.5rem))] z-30 hidden w-[252px] lg:left-[max(2rem,calc((100vw-1440px)/2+2rem))] min-w-0 flex-col overflow-hidden rounded-[26px] border border-admin-nav-border bg-admin-nav shadow-sm md:flex">
     <AdminMenuContent {...props} />
   </aside>
 }

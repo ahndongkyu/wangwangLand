@@ -1,4 +1,6 @@
 "use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
+
 
 import { HeaderLogo } from "@/shared/components/header-logo"
 import Link from "next/link"
@@ -49,6 +51,8 @@ export function Header({
   profile,
   mobileSidebar,
 }: HeaderProps) {
+  const contact = useOperatingContact()
+  const sns = contact ?? { kakaoChannel: "", naverCafe: "", instagram: "" }
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
   const mobileBackHref = getMobileBackHref(pathname)
@@ -91,24 +95,24 @@ export function Header({
               <span className="ml-1" aria-hidden>↗</span>
             </Link>
           )}
-          {SITE.sns.kakaoChannel && (
+          {sns.kakaoChannel && (
             <HeaderChannelLink
-              href={SITE.sns.kakaoChannel}
+              href={sns.kakaoChannel}
               label="카카오톡 문의"
               compactLabel="카카오톡"
             >
               <KakaoIcon />
             </HeaderChannelLink>
           )}
-          {SITE.sns.naverCafe && (
-            <HeaderChannelLink href={SITE.sns.naverCafe} label="네이버 카페">
+          {sns.naverCafe && (
+            <HeaderChannelLink href={sns.naverCafe} label="네이버 카페">
               <span className="inline-flex size-4 items-center justify-center rounded bg-[#03C75A] text-[10px] font-black text-white">
                 N
               </span>
             </HeaderChannelLink>
           )}
-          {SITE.sns.instagram && (
-            <HeaderChannelLink href={SITE.sns.instagram} label="인스타그램">
+          {sns.instagram && (
+            <HeaderChannelLink href={sns.instagram} label="인스타그램">
               <InstaIcon />
             </HeaderChannelLink>
           )}
@@ -190,12 +194,12 @@ export function Header({
               </div>
 
               {/* ── 하단 SNS ── */}
-              {(SITE.sns.kakaoChannel || SITE.sns.naverCafe || SITE.sns.instagram) && (
+              {(sns.kakaoChannel || sns.naverCafe || sns.instagram) && (
                 <div className="border-t border-border bg-secondary/60 px-4 py-3">
                   <div className="grid grid-cols-3 gap-2">
-                    {SITE.sns.kakaoChannel && (
+                    {sns.kakaoChannel && (
                       <a
-                        href={SITE.sns.kakaoChannel}
+                        href={sns.kakaoChannel}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setMobileOpen(false)}
@@ -205,9 +209,9 @@ export function Header({
                         카카오톡
                       </a>
                     )}
-                    {SITE.sns.naverCafe && (
+                    {sns.naverCafe && (
                       <a
-                        href={SITE.sns.naverCafe}
+                        href={sns.naverCafe}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setMobileOpen(false)}
@@ -217,9 +221,9 @@ export function Header({
                         네이버 카페
                       </a>
                     )}
-                    {SITE.sns.instagram && (
+                    {sns.instagram && (
                       <a
-                        href={SITE.sns.instagram}
+                        href={sns.instagram}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setMobileOpen(false)}

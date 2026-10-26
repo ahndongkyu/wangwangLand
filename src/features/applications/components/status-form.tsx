@@ -1,4 +1,5 @@
 "use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
 
 import Link from "next/link"
 import { useRef, useState, useTransition } from "react"
@@ -40,6 +41,7 @@ export function ApplicationStatusForm({
   linkedEvents = [], rescheduleInfo, approvalInfo, returnHref = "/admin/applications",
   currentCancelReason, partySize, compactVolunteer = false, detailHref, smsRecommendation, smsApplicantName,
 }: Props) {
+  const contact = useOperatingContact()
   const reschedule = kind === "volunteer" && currentStatus === "일정변경요청"
   const [editing, setEditing] = useState(reschedule || !["승인", "반려", "취소"].includes(currentStatus))
   const freshVolunteer = kind === "volunteer" && ["접수", "검토중"].includes(currentStatus)
@@ -69,7 +71,7 @@ export function ApplicationStatusForm({
   const previewStarts = validSchedule ? dates.map(date => `${date}T${time}:00+09:00`) : []
   const smsPreview = showSmsChoice && previewStarts.length && smsMode !== "none"
     ? smsMode === "short" ? buildShortVolunteerSms(smsApplicantName ?? applicantName, previewStarts)
-      : buildVolunteerSms("confirmed", applicantName, previewStarts, partySize ?? 1) : null
+      : buildVolunteerSms("confirmed", applicantName, previewStarts, partySize ?? 1, contact?.kakaoChannel || "문의 채널을 불러오지 못했습니다.") : null
   function changeStatus(next: ApplicationStatus) {
     drafts.current[status] = adminNote
     setStatus(next)

@@ -1,3 +1,4 @@
+import { operatingFixture } from "./helpers/operating-fixture.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -9,6 +10,7 @@ function load(path, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   vm.runInNewContext(code, { exports, URLSearchParams, FormData, console, require: name => {
+    if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if (name === "@/features/operation-logs/server") return { recordOperationError: async () => {} }
     if (name === "react/jsx-runtime") return jsx
     if (name === "../lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")

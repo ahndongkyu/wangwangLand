@@ -48,7 +48,7 @@ test("PDF embeds Korean and includes all three sections; long answers flow onto 
   const { generateAdoptionPdf }=load("src/features/applications/lib/adoption-pdf.ts")
   const font=fs.readFileSync("public/fonts/NanumGothic-Regular.ttf")
   const bold=fs.readFileSync("public/fonts/NanumGothic-Bold.ttf")
-  const normal=await generateAdoptionPdf(sample,font,bold)
+  const normal=await generateAdoptionPdf(sample,font,bold,"010-1111-2222")
   const pdf=await PDFDocument.load(normal)
   assert.equal(pdf.getPageCount(),3)
   fs.writeFileSync("/private/tmp/adoption-workflow-verified.pdf",normal)

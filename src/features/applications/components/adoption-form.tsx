@@ -1,4 +1,6 @@
 "use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
+
 import { useToast } from "@/shared/components/toast"
 
 import Image from "next/image"
@@ -25,6 +27,7 @@ interface Props {
 const control = "min-h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-ring"
 
 export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlreadyAgreed = false, unavailableAnimal = false }: Props) {
+  const contact = useOperatingContact()
   const toast = useToast()
   const [animal, setAnimal] = useState(initialAnimal)
   const [mode, setMode] = useState("select")
@@ -99,7 +102,7 @@ export function AdoptionForm({ initialAnimal = null, profilePhone = "", termsAlr
     <span className="text-sm font-semibold text-primary">승인대기</span>
     <h2 className="mt-2 text-xl font-semibold">입양상담 신청이 접수되었습니다</h2>
     <p className="mt-3 text-sm leading-6 text-muted-foreground">운영진이 방문 일정을 확인한 뒤 승인 문자를 보내드립니다.<br />승인 후 마이페이지에서 방문 서류를 내려받아 출력해 준비해주세요.<br />설문지와 신청서의 작성·서명은 현장 상담 후 진행합니다.</p>
-    <p className="mt-4 text-sm">입양담당팀장: <a href="tel:01054732827" className="underline">010-5473-2827</a></p>
+    {contact && <p className="mt-4 text-sm">입양담당팀장: <a href={`tel:${contact.adoptionPhone.replace(/\D/g, "")}`} className="underline">{contact.adoptionPhone}</a></p>}
     <Link href="/my/applications" className="mt-6 inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">신청 내역 확인하기</Link>
   </div>
 

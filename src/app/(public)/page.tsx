@@ -12,9 +12,7 @@ import { getCurrentProfile } from "@/features/members"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
 import { monthRange, todayKst, yearMonthKst } from "@/features/events/lib/date"
 import { listNotices } from "@/features/notices"
-import { BrandIcon } from "@/shared/components/brand-icon"
-import { CopyButton } from "@/shared/components/copy-button"
-import { SITE } from "@/shared/constants/site"
+import { HomeSupport } from "@/features/settings/components/home-support"
 import { getHomepageSettings } from "@/features/settings/api/homepage-queries"
 import { getCalendarApplicationLinks } from "@/features/events/api/calendar-links"
 import { validDate } from "@/features/applications/lib/admin-list"
@@ -97,37 +95,7 @@ export default async function HomePage({
         </div>
       </section>
 
-            <section
-              className="order-1 mt-5 grid gap-4 rounded-xl border border-border bg-card p-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center"
-              aria-label="후원 계좌 안내"
-            >
-              <span className="flex size-14 items-center justify-center rounded-2xl bg-accent">
-                <BrandIcon name="heart" size={32} decorative />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold text-foreground">
-                  보내주신 후원은 아이들을 돌보는 데 쓰입니다
-                </h2>
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  후원금은 구조 동물의 치료비와 생활비로 사용됩니다.
-                </p>
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card/80 px-4 py-3 text-sm text-foreground/80 sm:min-w-64 sm:text-base">
-                <span className="min-w-0">
-                  <span className="block whitespace-nowrap font-semibold">
-                    {SITE.donation.bankName} {SITE.donation.accountNumber}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground sm:text-sm">
-                    예금주: {SITE.donation.accountHolder}
-                  </span>
-                </span>
-                <CopyButton
-                  value={SITE.donation.accountNumber}
-                  label="후원 계좌번호"
-                  className="border-border bg-card text-primary hover:bg-primary/5"
-                />
-              </div>
-            </section>
+            <HomeSupport />
 
             <section className="order-2 mt-10" aria-labelledby="recent-community-heading">
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

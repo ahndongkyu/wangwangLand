@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/shared/components/ui/button"
 import { useToast } from "@/shared/components/toast"
@@ -10,10 +10,10 @@ import { DEFAULT_PHOTOS, eligibleAnimal, type ManagedAnimal, type SitePhotos } f
 import { clearUnavailableHomeAnimals, saveHomeAnimals, saveSitePhotos } from "../api/homepage-actions"
 
 const inputClass = "mt-2 min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
-export function HomepageManager({ initialPhotos, initialAutoFill, animals, maintenance, popups, loadError }: { initialPhotos: SitePhotos; initialAutoFill: boolean; animals: ManagedAnimal[]; maintenance: ReactNode; popups?: ReactNode; loadError: string | null }) {
+export function HomepageManager({ initialPhotos, initialAutoFill, animals, maintenance, popups, loadError, operating, section }: { initialPhotos: SitePhotos; initialAutoFill: boolean; animals: ManagedAnimal[]; maintenance: ReactNode; popups?: ReactNode; loadError: string | null; operating?: ReactNode; section?: "photos" | "animals" }) {
   const router = useRouter()
   const toast = useToast()
-  const [tab, setTab] = useState("photos")
+  const [tab, setTab] = useState<string>(section ?? "photos")
   const [photos, setPhotos] = useState(initialPhotos)
   const initialIds = animals.filter(a => a.is_pinned).sort((a,b) => (a.pin_order ?? 999) - (b.pin_order ?? 999)).map(a => a.id)
   const [ids, setIds] = useState(initialIds)
@@ -29,6 +29,12 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
   const [savedHome, setSavedHome] = useState(JSON.stringify({ ids: initialIds, autoFill: initialAutoFill }))
   const [removedPins, setRemovedPins] = useState<{ id: string; name: string; reason: string }[]>([])
   const [cleanupError, setCleanupError] = useState("")
+  const cleanupStarted = useRef(false)
+  useEffect(() => {
+    if (section !== "animals" || cleanupStarted.current) return
+    cleanupStarted.current = true
+    void cleanupPins()
+  })
   async function cleanupPins() {
     setBusy(true); setCleanupError("")
     try {
@@ -70,7 +76,10 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
     catch { setError("저장에 실패했습니다. 다시 시도해 주세요."); toast.error("저장에 실패했습니다. 다시 시도해 주세요.") } finally { setBusy(false) }
   }
   return <div className="[&_button]:min-h-11">
+    {section === "animals" && <Button variant="outline" disabled={busy} className="mb-4" onClick={cleanupPins}>노출 상태 확인 · 자동 고정 해제</Button>}
+    {!section && <>
     <nav aria-label="홈페이지 관리 분류" className="mb-6 flex flex-wrap gap-2">{[["photos","사이트 사진"],["animals","홈 노출 아이들"],["popups","팝업 관리"],["settings","사이트 설정"]].map(([value,label]) => <Button key={value} disabled={busy} type="button" variant={tab===value ? "default" : "outline"} aria-current={tab===value ? "page" : undefined} className="min-h-11" onClick={async () => { setTab(value); setMessage(""); setError(""); if (value === "animals") await cleanupPins() }}>{label}{(value === "photos" && photosDirty || value === "animals" && homeDirty) ? " · 변경됨" : ""}</Button>)}</nav>
+    </>}
     {loadError && <p role="alert" className="mb-5 rounded-lg bg-destructive/10 p-4 text-destructive">{loadError}</p>}
     {error && <p role="alert" className="mb-5 text-destructive">{error}</p>}
     <p role="status" className="mb-4 text-sm text-muted-foreground">{message}</p>
@@ -105,7 +114,7 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
       {ids.length > 4 && <div className="mt-3 rounded-xl border border-border bg-muted p-4"><p role="alert" className="text-sm">기존 고정 아이가 {ids.length}마리입니다. 홈은 앞의 4마리만 표시하므로, 고정 목록을 4마리 이하로 정리해야 새 아이를 추가하거나 교체할 수 있습니다.</p><p className="mt-2 text-sm text-muted-foreground">직접 고정 해제하거나 아래 버튼으로 현재 순서의 앞 4마리만 남겨 주세요. 저장 전에는 실제 설정이 바뀌지 않습니다.</p><Button className="mt-3" variant="outline" onClick={()=>{setIds(ids.slice(0,4));setReplacement(null)}}>현재 순서의 앞 4마리만 유지</Button></div>}
       {removedPins.length > 0 && <div role="status" className="mt-3 rounded-xl border border-border bg-muted/40 p-4 text-sm"><p className="font-semibold">노출 조건에 맞지 않는 아이의 고정을 자동 해제했습니다.</p><ul className="mt-2 space-y-1 break-words">{removedPins.map(animal => <li key={animal.id}>{animal.name} · {animal.reason}</li>)}</ul><p className="mt-2 text-muted-foreground">고정 해제는 저장되었습니다. 아이 정보는 삭제되지 않으며, 빈자리는 자동 채움 설정에 따릅니다.</p></div>}
       {cleanupError && <div role="alert" className="mt-3 rounded-xl border border-destructive/30 p-4 text-sm"><p className="text-destructive">{cleanupError}</p><Button variant="outline" className="mt-2" onClick={cleanupPins}>자동 해제 다시 시도</Button></div>}
-      {!cleanupError && selected.some(a => !eligibleAnimal(a)) && !busy && <p role="alert" className="mt-3 text-sm text-destructive">아이 정보가 변경되었습니다. 홈 노출 아이들 탭을 다시 눌러 최신 상태를 확인해 주세요.</p>}
+      {!cleanupError && selected.some(a => !eligibleAnimal(a)) && !busy && <p role="alert" className="mt-3 text-sm text-destructive">아이 정보가 변경되었습니다. 노출 상태 확인을 눌러 최신 상태를 확인해 주세요.</p>}
       <p className="mt-2 text-sm text-muted-foreground">고정 아이가 먼저 나오고 빈자리는 자동 채움 설정에 따릅니다. 대표사진 변경은 홈·목록·상세에 함께 반영됩니다.</p>
       <div className="my-5 grid grid-cols-2 gap-3 lg:grid-cols-4">{Array.from({length:4},(_,i)=>{const animal=preview[i]; return <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">{animal ? <><div className="relative aspect-[4/3]"><Image src={choices[animal.id] ?? animal.images[animal.thumbnail_index] ?? animal.images[0]} alt={animal.name} fill sizes="250px" className="object-cover"/></div><div className="p-3"><p className="font-semibold">{i+1}. {animal.name}</p><p className="mb-2 text-xs text-muted-foreground">{ids.includes(animal.id)?"고정":"자동 채움"}</p><AnimalPhotoPicker name={animal.name} images={animal.images} index={choices[animal.id] ? animal.images.indexOf(choices[animal.id]) : animal.thumbnail_index} draft onChoose={async image=>{setChoices(prev=>({...prev,[animal.id]:image})); return undefined}}/></div></> : <p className="flex aspect-[4/3] items-center justify-center p-4 text-sm text-muted-foreground">{i+1}. 빈자리</p>}</div>})}</div>
       <label className="mb-6 flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={autoFill} disabled={busy} onChange={e=>setAutoFill(e.target.checked)}/>빈자리는 사진이 있는 입양 대기 아이로 자동 채우기</label>
@@ -116,6 +125,6 @@ export function HomepageManager({ initialPhotos, initialAutoFill, animals, maint
       <div className="mt-5 rounded-xl border border-border bg-card p-4"><p role={error ? "alert" : "status"} className="mb-3 text-sm">{busy ? "저장 중입니다…" : error || (homeDirty ? "저장 전 변경사항이 있습니다." : message || "현재 저장된 노출 설정입니다.")}</p><div className="flex flex-wrap gap-2"><Button disabled={busy || !!loadError || !homeDirty || ids.length>4 || selected.some(a=>!eligibleAnimal(a))} onClick={()=>run(()=>saveHomeAnimals(ids,autoFill,choices),()=>{setSavedHome(JSON.stringify({ids,autoFill})); setChoices({});setReplacement(null)})}>{busy?"저장 중…":"노출·대표사진 저장"}</Button><Button variant="outline" disabled={busy||!homeDirty} onClick={()=>{const previous=JSON.parse(savedHome);setIds(previous.ids);setAutoFill(previous.autoFill);setChoices({});setReplacement(null);setError("");setMessage("")}}>변경 취소</Button></div></div>
     </fieldset>
     <div hidden={tab!=="popups"}>{popups}</div>
-    <div hidden={tab!=="settings"}>{maintenance ?? <p className="rounded-xl bg-muted p-5 text-sm">점검 설정은 최고 관리자만 변경할 수 있습니다.</p>}</div>
+    <div hidden={tab!=="settings"}>{operating}{maintenance ?? <p className="rounded-xl bg-muted p-5 text-sm">점검 설정은 최고 관리자만 변경할 수 있습니다.</p>}</div>
   </div>
 }

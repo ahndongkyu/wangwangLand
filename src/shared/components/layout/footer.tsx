@@ -1,16 +1,21 @@
+"use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
 import Link from "next/link"
 
 import { HeaderLogo } from "@/shared/components/header-logo"
 import { FOOTER_LEGAL, SITE } from "@/shared/constants/site"
 import { cn } from "@/shared/lib/utils"
 
-const socialLinks = [
-  { href: SITE.sns.kakaoChannel, label: "카카오톡 문의", icon: KakaoIcon },
-  { href: SITE.sns.naverCafe, label: "네이버 카페", icon: NaverIcon },
-  { href: SITE.sns.instagram, label: "인스타그램", icon: InstagramIcon },
-]
 
 export function Footer({ mobile = false }: { mobile?: boolean }) {
+  const contact = useOperatingContact()
+  const sns = contact ?? { kakaoChannel: "", naverCafe: "", instagram: "" }
+  const socialLinks = [
+  { href: sns.kakaoChannel, label: "카카오톡 문의", icon: KakaoIcon },
+  { href: sns.naverCafe, label: "네이버 카페", icon: NaverIcon },
+  { href: sns.instagram, label: "인스타그램", icon: InstagramIcon },
+]
+
   const reg = SITE.registration
   return (
     <footer className={cn(

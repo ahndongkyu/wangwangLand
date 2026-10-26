@@ -15,6 +15,7 @@ interface Props {
   className?: string
   /** "복사됨" 상태 유지 시간 (ms). 기본 1500 */
   resetMs?: number
+  textLabel?: string
 }
 
 export function CopyButton({
@@ -22,6 +23,7 @@ export function CopyButton({
   label,
   className,
   resetMs = 1500,
+  textLabel,
 }: Props) {
   const [copied, setCopied] = useState(false)
   const toast = useToast()
@@ -74,7 +76,7 @@ export function CopyButton({
       ) : (
         <Copy className="size-4" aria-hidden />
       )}
-      <span className="sr-only">{copied ? "복사됨" : "복사"}</span>
+      <span className={textLabel ? "ml-2 text-sm" : "sr-only"}>{copied ? "복사됨" : textLabel || "복사"}</span>
     </button>
   )
 }

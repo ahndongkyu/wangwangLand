@@ -1,4 +1,6 @@
 "use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
+
 import { useToast } from "@/shared/components/toast"
 
 import React, { useRef, useState, useTransition } from "react"
@@ -12,7 +14,6 @@ import { normalizeVolunteerGroupName } from "../lib/volunteer-applicant"
 import { VolunteerTimeField } from "./volunteer-time-field"
 import { VolunteerPreparationGuide } from "./volunteer-preparation-guide"
 import { VolunteerContactGuide } from "./volunteer-contact-guide"
-import { SITE } from "@/shared/constants/site"
 import { ConsentSection } from "@/features/legal"
 import { DateMultiPicker } from "@/shared/components/date-multi-picker"
 import { PhoneInput } from "@/shared/components/phone-input"
@@ -75,6 +76,7 @@ export function VolunteerForm({
   regularVolunteerDates = [],
   groupBlockThreshold = 5,
 }: Props) {
+  const contact = useOperatingContact()
   const toast = useToast()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -376,7 +378,7 @@ export function VolunteerForm({
                   인솔자 포함, 최대 30명
                 </p>
                 <FieldError id="party_size-error" message={fieldErrors.party_size} />
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">31명 이상은 <a href={SITE.sns.kakaoChannel} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">카카오톡으로 문의해 주세요.</a></p>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">31명 이상은 <a href={contact?.kakaoChannel || "/contact"} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">카카오톡으로 문의해 주세요.</a></p>
               </Field>
             ) : (
               <input type="hidden" name="party_size" value="1" />

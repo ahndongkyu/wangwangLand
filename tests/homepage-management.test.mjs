@@ -73,7 +73,7 @@ function managerHarness(pinnedCount, save = async()=>({ok:true}), cleanup = asyn
   const {HomepageManager}=load("src/features/settings/components/homepage-manager.tsx",{
     "react/jsx-runtime":jsxRuntime,
     "@/shared/components/toast": { useToast: () => ({ success() {}, error() {} }) },
-    react:{useEffect(){},useState(initial){const slot=cursor++;if(!(slot in state))state[slot]=initial;return [state[slot],value=>{state[slot]=typeof value==="function"?value(state[slot]):value}]}},
+    react:{useEffect(){},useRef(initial){const slot=cursor++;if(!(slot in state))state[slot]={current:initial};return state[slot]},useState(initial){const slot=cursor++;if(!(slot in state))state[slot]=initial;return [state[slot],value=>{state[slot]=typeof value==="function"?value(state[slot]):value}]}},
     "next/image":{default:"img"},"next/navigation":{useRouter:()=>({refresh(){}})},
     "@/shared/components/ui/button":{Button:"button"},"./animal-photo-picker":{AnimalPhotoPicker:"picker"},
     "../lib/homepage":model,"../api/homepage-actions":{clearUnavailableHomeAnimals:cleanup,saveSitePhotos:async()=>{writes++;return save()},saveHomeAnimals:async()=>{writes++;return {ok:true}}},

@@ -1,3 +1,4 @@
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { getAccessibleAdoption } from "@/features/applications/api/adoption-access"
@@ -18,7 +19,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (app.status !== "승인" || !app.confirmed_visit_at) return Response.json({ error: "방문 일정 승인 후 다운로드할 수 있습니다." }, { status: 409, headers })
     const font = await readFile(path.join(process.cwd(), "public/fonts/NanumGothic-Regular.ttf"))
     const bold = await readFile(path.join(process.cwd(), "public/fonts/NanumGothic-Bold.ttf"))
-    const bytes = await generateAdoptionPdf(app, font, bold)
+    const contact = (await getOperatingInfo()).contact.data
+    if (!contact) throw new Error("입양 담당 연락처를 불러오지 못했습니다.")
+    const bytes = await generateAdoptionPdf(app, font, bold, contact.adoptionPhone)
     return new Response(new Uint8Array(bytes), { headers: { ...headers, "Content-Type": "application/pdf", "Content-Disposition": "attachment; filename=adoption-visit-documents.pdf" } })
   } catch (error) {
     await recordOperationError("query", "adoptionPdf", error, "application", { targetType: "adoption", targetId: applicationId, action: "download" })

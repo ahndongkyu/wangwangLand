@@ -35,7 +35,7 @@ export function volunteerSmsKind(previous: string, next: string, createdSchedule
   return previous === "일정변경요청" ? "rescheduled" : "confirmed"
 }
 
-export function buildVolunteerSms(kind: VolunteerSmsKind, name: string, starts: string[], partySize: number) {
+export function buildVolunteerSms(kind: VolunteerSmsKind, name: string, starts: string[], partySize: number, kakaoChannel = "http://pf.kakao.com/_iTmxbX/chat") {
   if (kind === "cancelled") return {
     type: "SMS" as const,
     text: "[왕왕랜드]\n예정된 봉사가 취소되었습니다.\n마이페이지에서 사유를 확인해 주세요.",
@@ -52,6 +52,6 @@ export function buildVolunteerSms(kind: VolunteerSmsKind, name: string, starts: 
   }
   return {
     type: "LMS" as const,
-    text: `[왕왕랜드 봉사 안내]\n${name}님, 봉사 신청이 승인되었습니다.\n\n방문 일정: ${visits.join("\n")}\n참여 인원: ${partySize}명\n\n준비물·신청 내역 확인과 일정 변경·취소 요청은 홈페이지에서 가능합니다.\nhttps://wangwangland.kr/my/applications\n\n그 외 문의는 카카오톡 채널로 부탁드립니다.\nhttp://pf.kakao.com/_iTmxbX/chat`,
+    text: `[왕왕랜드 봉사 안내]\n${name}님, 봉사 신청이 승인되었습니다.\n\n방문 일정: ${visits.join("\n")}\n참여 인원: ${partySize}명\n\n준비물·신청 내역 확인과 일정 변경·취소 요청은 홈페이지에서 가능합니다.\nhttps://wangwangland.kr/my/applications\n\n그 외 문의는 카카오톡 채널로 부탁드립니다.\n${kakaoChannel}`,
   }
 }

@@ -1,3 +1,4 @@
+import { operatingFixture } from "./helpers/operating-fixture.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import fs from "node:fs"
@@ -7,6 +8,7 @@ function load(file, imports, env = {}) {
   const exports = {}
   const code = ts.transpileModule(fs.readFileSync(file,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText
   new Function("exports","require","process",code)(exports,name=>{
+    if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if(name==="server-only")return {}
     if(name==="@/shared/lib/privacy-audit" && !(name in imports))return {recordPrivacyAccess:async()=>{}}
     if(!(name in imports))throw Error(`Missing dependency ${name}`)

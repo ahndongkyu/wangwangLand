@@ -1,3 +1,4 @@
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
 import { SITE } from "@/shared/constants/site"
 
 /**
@@ -5,12 +6,13 @@ import { SITE } from "@/shared/constants/site"
  * AnimalShelter + Organization + LocalBusiness 멀티타입으로 매칭 최대화.
  * 홈 페이지 한 번만 삽입하면 전체 도메인 범주로 인식됨.
  */
-export function OrganizationJsonLd() {
+export async function OrganizationJsonLd() {
+  const channels = (await getOperatingInfo()).contact.data
   const phones = SITE.contact.phones
     .filter((p) => p.number)
     .map((p) => p.number)
 
-  const sameAs = [SITE.sns.naverCafe, SITE.sns.instagram, SITE.sns.youtube]
+  const sameAs = [channels?.naverCafe, channels?.instagram, SITE.sns.youtube]
     .filter(Boolean)
 
   const data = {

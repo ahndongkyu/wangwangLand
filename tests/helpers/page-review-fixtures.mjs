@@ -1,3 +1,4 @@
+import { operatingFixture } from "./operating-fixture.mjs"
 import { readFileSync } from "node:fs"
 import vm from "node:vm"
 import ts from "typescript"
@@ -11,8 +12,10 @@ export function load(path, imports = {}) {
   const exports = {}
   const code = ts.transpileModule(readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   vm.runInNewContext(code, { exports, Date, URL, URLSearchParams, FormData, process: { env: {} }, require: name => {
+    if (operatingFixture(name) && !(name in imports)) return operatingFixture(name)
     if (name === "@/features/operation-logs/server" && !(name in imports)) return { recordOperationError: async () => {} }
     if (name === "../lib/volunteer-sms" || name === "@/features/applications/lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
+    if (name === "@/features/settings/components/delivery-card") return load("src/features/settings/components/delivery-card.tsx", base)
     if (name === "react") return React
     if (name === "react/jsx-runtime") return jsx
     if (name === "lucide-react") return icons
@@ -122,7 +125,7 @@ export async function renderDonations(params = {}) {
 export async function renderDonate() {
   return renderToStaticMarkup(await load("src/app/(public)/donate/page.tsx", { ...base, "@/features/donations": donations }).default())
 }
-export function renderContact() { return renderToStaticMarkup(React.createElement(load("src/app/(public)/contact/page.tsx", base).default)) }
+export async function renderContact() { return renderToStaticMarkup(await load("src/app/(public)/contact/page.tsx", base).default()) }
 const filters = load("src/features/applications/lib/admin-list.ts")
 const scheduleTime = load("src/features/applications/components/application-schedule-time.tsx", { "../lib/admin-list": filters })
 export function renderCalendar({ wholeRow = true, linked = true, readOnly = true } = {}) {
@@ -144,8 +147,10 @@ export function renderApplicationList(params = {}, rows = []) {
   return renderToStaticMarkup(React.createElement(List, { filters: filters.parseApplicationFilters(params), rows, counts: {}, total: rows.length, error: "", eventsError: false }))
 }
 export async function renderHome() {
+  const support = await load("src/features/settings/components/home-support.tsx", { ...base, "../api/operating-queries": operatingFixture("@/features/settings/api/operating-queries"), "./delivery-card": load("src/features/settings/components/delivery-card.tsx", base) }).HomeSupport()
   const Page = load("src/app/(public)/page.tsx", {
     ...base,
+    "@/features/settings/components/home-support": { HomeSupport: () => support },
     "@/features/notices/components/notice-type-badge": { parseNoticePrefix: () => null, stripNoticePrefix: title => title },
     "@/features/comments": { fetchCommentCounts: async () => ({}) },
     "@/features/daily/api/community-queries": { listCommunityPosts: async () => ({ posts: [] }) },

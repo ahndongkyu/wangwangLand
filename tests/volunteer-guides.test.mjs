@@ -1,3 +1,4 @@
+import { operatingFixture } from "./helpers/operating-fixture.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import fs from "node:fs"
@@ -12,8 +13,8 @@ function component(file) {
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   }).outputText
-  new Function("exports", "require", code)(exports, name =>
-    name === "@/shared/constants/site" ? { SITE: { sns: { kakaoChannel: "https://example.com/channel" } } } : require(name))
+  new Function("exports", "require", code)(exports, name => operatingFixture(name) ?? (
+    name === "@/shared/constants/site" ? { SITE: { sns: { kakaoChannel: "https://example.com/channel" } } } : require(name)))
   return exports
 }
 const { VolunteerPreparationGuide } = component("src/features/applications/components/volunteer-preparation-guide.tsx")

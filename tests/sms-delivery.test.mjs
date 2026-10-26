@@ -160,8 +160,8 @@ test("SMS navigation belongs to system management for both member roles", () => 
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText, { exports, require: () => ({}) })
   for (const top of [true, false]) {
     const groups = exports.groups(top)
-    assert.ok(!groups.find(g => g.label === "회원").items.some(i => i.href === "/admin/sms"))
-    assert.deepEqual(Array.from(groups.find(g => g.label === "시스템 관리").items, i => i.label), ["홈페이지 관리", "SMS 발송 내역", ...(top ? ["오류 로그"] : [])])
+    assert.ok(!groups.find(g => g.label === "회원 관리").items.some(i => i.href === "/admin/sms"))
+    assert.deepEqual(Array.from(groups.find(g => g.label === "시스템 관리").items, i => i.label), ["SMS 발송 내역", ...(top ? ["오류 로그", "점검 모드"] : [])])
   }
   assert.equal(fs.existsSync("src/features/sms/diagnose.ts"), false)
   assert.equal(fs.existsSync("src/features/sms/diagnostic-panel.tsx"), false)

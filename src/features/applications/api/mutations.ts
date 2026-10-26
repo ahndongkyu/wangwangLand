@@ -1,4 +1,6 @@
 "use server"
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
+
 import { recordOperationError } from "@/features/operation-logs/server"
 
 import { revalidatePath } from "next/cache"
@@ -711,9 +713,11 @@ export async function updateVolunteerApplication(
           await recordOperationError("sms", "skipLog", skipError, "application")
         }
       } else {
+        const contact = smsKind === "confirmed" && approvalSmsMode !== "short" ? (await getOperatingInfo()).contact.data : null
+        if (smsKind === "confirmed" && approvalSmsMode !== "short" && !contact) throw new Error("문자 문의 채널 설정을 확인하지 못했습니다.")
         const message = smsKind === "confirmed" && approvalSmsMode === "short"
           ? buildShortVolunteerSms(prev.applicant_name ?? "", scheduleStarts)
-          : buildVolunteerSms(smsKind, volunteerApplicantName, scheduleStarts, prev.party_size ?? 1)
+          : buildVolunteerSms(smsKind, volunteerApplicantName, scheduleStarts, prev.party_size ?? 1, contact?.kakaoChannel)
         const { sendSms } = await import("@/features/sms")
         const delivery = await sendSms(prev.phone, message.text, { applicationId: id, applicationType: "volunteer", recipientName: volunteerApplicantName, messageType: message.type })
         if (!delivery.ok) warning = `${delivery.error} SMS 발송 내역을 확인해주세요.`

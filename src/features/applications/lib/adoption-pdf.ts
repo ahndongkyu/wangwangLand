@@ -5,7 +5,7 @@ import { adoptionQuestions, adoptionTerms } from "./adoption-document-content"
 import { ADOPTION_CONTACT, ADOPTION_CONTACT_LABEL, adoptionVisitLabel } from "./adoption-workflow"
 
 /** 텍스트를 이미지로 만들지 않아 검색/복사 가능하며 긴 답변은 페이지를 넘겨 보존한다. */
-export async function generateAdoptionPdf(app: AdoptionRow, fontBytes: Uint8Array, boldBytes = fontBytes) {
+export async function generateAdoptionPdf(app: AdoptionRow, fontBytes: Uint8Array, boldBytes = fontBytes, contactPhone = ADOPTION_CONTACT) {
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit)
   const font = await doc.embedFont(fontBytes, { subset: true })
@@ -82,7 +82,7 @@ export async function generateAdoptionPdf(app: AdoptionRow, fontBytes: Uint8Arra
     const labels: Record<string,string>={adult:"성인 확인",family_consent:"가족 전원 동의",readiness:"평생 양육 여건",terms_agreed:"이용약관 동의",landlord_consent:"임대인 동의"}
     row("신청 시 확인사항",Object.entries(app.qualification_answers).map(([k,v])=>`${labels[k] ?? k}: ${v ? "확인" : "미확인"}`).join(" / "))
   } else row("신청 시 확인사항","과거 신청으로 개별 확인 기록 없음")
-  paragraph(`서류를 함께 출력해 준비해주세요. 작성·서명은 현장 상담 후 진행합니다.\n${ADOPTION_CONTACT_LABEL}: ${ADOPTION_CONTACT}`,9)
+  paragraph(`서류를 함께 출력해 준비해주세요. 작성·서명은 현장 상담 후 진행합니다.\n${ADOPTION_CONTACT_LABEL}: ${contactPhone}`,9)
   newPage("입양 설문지")
   paragraph("현장 상담 후 작성해주세요.",9)
   adoptionQuestions.forEach((question,index)=>{

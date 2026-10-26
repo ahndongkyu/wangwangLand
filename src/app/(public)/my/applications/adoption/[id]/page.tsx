@@ -1,8 +1,9 @@
+import { getOperatingInfo } from "@/features/settings/api/operating-queries"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { getAccessibleAdoption } from "@/features/applications/api/adoption-access"
 import { AdoptionDownload } from "@/features/applications/components/adoption-download"
-import { adoptionStatusLabel, adoptionVisitLabel, ADOPTION_CONTACT, ADOPTION_CONTACT_LABEL } from "@/features/applications/lib/adoption-workflow"
+import { adoptionStatusLabel, adoptionVisitLabel, ADOPTION_CONTACT_LABEL } from "@/features/applications/lib/adoption-workflow"
 import { CancelMyApplicationButton } from "../../cancel-button"
 
 export const dynamic="force-dynamic"
@@ -10,6 +11,7 @@ export default async function AdoptionVisitPage({params}:{params:Promise<{id:str
   const {id}=await params
   const result=await getAccessibleAdoption(id)
   if(!result)notFound()
+  const contact=(await getOperatingInfo()).contact.data
   const app=result.application
   const ready=app.status==="승인"&&!!app.confirmed_visit_at
   return <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -29,7 +31,7 @@ export default async function AdoptionVisitPage({params}:{params:Promise<{id:str
       ["주거 형태",app.housing_type],["소유 형태",app.ownership_type],["현재 반려동물",app.current_pets],["양육 경험",app.past_pet_experience],["입양 이유",app.reason],
       ["신청 당시 방문 가능일",app.visit_available_dates.join(", ")],["방문 가능 시간",app.visit_available_time],["개인정보 동의",app.privacy_agreed?"동의함":"동의 기록 없음"],
     ].map(([label,value])=><div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words">{value||"미입력"}</dd></div>)}</dl></details>
-    <p className="my-5 text-sm">{ADOPTION_CONTACT_LABEL}: <a href={`tel:${ADOPTION_CONTACT}`} className="underline">{ADOPTION_CONTACT}</a></p>
+    {contact && <p className="my-5 text-sm">{ADOPTION_CONTACT_LABEL}: <a href={`tel:${contact.adoptionPhone}`} className="underline">{contact.adoptionPhone}</a></p>}
     {!app.completed_at&&["접수","검토중","승인"].includes(app.status)&&<CancelMyApplicationButton id={id} kind="adoption" triggerClassName="min-h-11 rounded-lg border border-border px-4 text-sm"/>}
     <p className="mt-4 text-xs text-muted-foreground">상담 방문 승인은 입양 확정을 의미하지 않습니다.</p>
   </main>

@@ -1,3 +1,5 @@
+"use client"
+import { useOperatingContact } from "@/features/settings/components/operating-provider"
 import { SITE } from "@/shared/constants/site"
 
 /**
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function PrivacyContent({ embedded = false }: Props) {
+  const channels = useOperatingContact()
   const reg = SITE.registration
   const contactEmail = SITE.contact.email || "운영진 이메일 미등록"
   const repPhone = SITE.contact.phones.find((p) => p.label === "대표")?.number || "대표 연락처 미등록"
@@ -366,7 +369,7 @@ export function PrivacyContent({ embedded = false }: Props) {
           <p>이메일: {contactEmail}</p>
           {reg.taxId && <p>고유번호: {reg.taxId}</p>}
           <p>
-            공식 카페: <a href={SITE.sns.naverCafe} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{SITE.sns.naverCafe}</a>
+            공식 카페: {channels?.naverCafe ? <a href={channels.naverCafe} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{channels.naverCafe}</a> : "연락처 페이지에서 확인해 주세요."}
           </p>
         </section>
       </div>
