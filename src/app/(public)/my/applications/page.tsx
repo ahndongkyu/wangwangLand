@@ -76,7 +76,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
       .order("submitted_at", { ascending: false }),
     admin
       .from("volunteer_applications")
-      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, available_time, party_size, reschedule_dates, reschedule_time")
+      .select("id, status, submitted_at, admin_note, cancel_reason, available_days, available_dates, available_time, party_size, reschedule_dates, reschedule_time, reschedule_party_size")
       .eq("created_by", member.id)
       .order("submitted_at", { ascending: false }),
   ])
@@ -106,6 +106,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
     party_size: number
     reschedule_dates: string[] | null
     reschedule_time: string | null
+    reschedule_party_size: number | null
   }>
 
   const activeVolunteers = volunteers.filter((v) => v.status !== "취소")
@@ -198,7 +199,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                           <h3 className="text-sm font-semibold">{confirmed.length ? "확정 봉사 일정" : "일정 안내"}</h3>
                           {confirmed.length ? <ul className="mt-3 space-y-2 text-sm">{confirmed.map(iso => <li key={iso}>{applicationDate(iso, true)}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">{eventRes.error ? "확정 일정을 불러오지 못했습니다." : v.status === "승인" ? "방문 전 운영진에게 확정 일정을 확인해주세요." : ["접수", "검토중"].includes(v.status) ? "운영진 확인 후 일정이 확정됩니다." : "등록된 확정 일정이 없습니다."}</p>}
                         </section>
-                        {v.status === "일정변경요청" && <section className="rounded-lg border border-border p-4"><h3 className="text-sm font-semibold">일정변경 검토 중</h3><p className="mt-2 text-sm">{v.reschedule_dates?.map(date => applicationDate(date)).join(", ")} · {v.reschedule_time}</p><p className="mt-2 text-xs text-muted-foreground">승인 전까지 기존 확정 일정이 유지됩니다.</p></section>}
+                        {v.status === "일정변경요청" && <section className="rounded-lg border border-border p-4"><h3 className="text-sm font-semibold">일정변경 검토 중</h3><p className="mt-2 text-sm">{v.reschedule_dates?.map(date => applicationDate(date)).join(", ")} · {v.reschedule_time} · 요청 {v.reschedule_party_size ?? v.party_size}명 (현재 {v.party_size}명)</p><p className="mt-2 text-xs text-muted-foreground">승인 전까지 기존 확정 일정이 유지됩니다.</p></section>}
                         {/* 운영진 메모 */}
                         {v.admin_note && (
                           <details className="rounded-lg bg-muted/40 px-4 py-3 text-sm text-foreground">

@@ -168,10 +168,15 @@ test("regular volunteer date limit and lookup failures apply to all three paths"
   }
 })
 
-test("reschedule uses saved party size and rejects malformed dates or concurrent changes", async () => {
+test("reschedule stores requested party size separately and rejects malformed dates or concurrent changes", async () => {
   const data = form({ party_size: "1", available_dates: JSON.stringify(["2099-10-10"]) })
   const group = harness({ status: "승인", partySize: 5, blocked: true })
-  assert.match((await group.reschedule("application", data)).error, /5명 이상/)
+  assert.equal((await group.reschedule("application", data)).id, "application")
+  assert.equal(group.updates[0].reschedule_party_size, 1)
+  assert.equal("party_size" in group.updates[0], false)
+  const larger = harness({ status: "승인", partySize: 1, blocked: true })
+  assert.match((await larger.reschedule("application", form({party_size:"5",available_dates:JSON.stringify(["2099-10-10"])}))).error,/5명 이상/)
+  for (const size of ["0", "31", "1.5", "abc"]) assert.ok((await harness({status:"승인"}).reschedule("application",form({party_size:size,available_dates:JSON.stringify(["2099-10-10"])}))).error)
   for (const dates of ['[null]', '[123]', '[{}]', '{}', 'invalid', '["2099-02-30"]']) {
     const h = harness({ status: "승인" })
     assert.ok((await h.reschedule("application", form({ available_dates: dates }))).error)
@@ -184,7 +189,7 @@ test("reschedule uses saved party size and rejects malformed dates or concurrent
 
 test("valid multi-date group requests check each KST date once", async () => {
   const h = harness({ status: "승인", partySize: 30 })
-  const data = form({ available_dates: JSON.stringify(["2099-10-10", "2099-10-11", "2099-10-10"]) })
+  const data = form({ party_size: "30", available_dates: JSON.stringify(["2099-10-10", "2099-10-11", "2099-10-10"]) })
   assert.equal((await h.reschedule("application", data)).id, "application")
   assert.deepEqual(h.dateChecks, ["2099-10-09T15:00:00.000Z", "2099-10-10T15:00:00.000Z"])
   assert.equal(h.updates[0].status, "일정변경요청")
@@ -265,6 +270,7 @@ test("a date selected before raising group size can still be deselected when blo
   const state = []
   let cursor = 0, selection
   const { DateMultiPicker } = load("src/shared/components/date-multi-picker.tsx", {
+    "@/shared/lib/use-application-date-limits": { useApplicationDateLimits: () => ({dates:[],pending:false,error:false}) },
     "react/jsx-runtime": jsx,
     react: {
       useMemo: (fn) => fn(),

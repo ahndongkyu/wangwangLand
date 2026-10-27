@@ -210,6 +210,7 @@ export interface VolunteerApplication {
   approved_at?: string | null
   reschedule_dates?: string[] | null
   reschedule_time?: string | null
+  reschedule_party_size?: number | null
 }
 
 /** 운영진 상주 일정 — 봉사자에게 그 날 누가 출근하는지 알리기 위한 데이터 */

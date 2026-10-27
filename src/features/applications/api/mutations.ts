@@ -566,7 +566,7 @@ export async function updateVolunteerApplication(
   const { data: prev, error: readError } = await admin
     .from("volunteer_applications")
     .select(
-      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, updated_at, submitted_at"
+      "id, applicant_name, group_name, party_size, activities, available_dates, available_time, message, created_by, status, phone, reschedule_dates, reschedule_time, reschedule_party_size, updated_at, submitted_at"
     )
     .eq("id", id)
     .maybeSingle()
@@ -655,6 +655,7 @@ export async function updateVolunteerApplication(
     if (error.message?.includes("처리 중 신청 상태나 내용이 변경되었습니다") || error.message?.includes("신청을 찾을 수 없습니다")) {
       return { error: "다른 담당자 또는 신청자가 내용을 변경했습니다. 최신 내용을 확인한 뒤 처리해 주세요.", conflict: true }
     }
+    if (error.message?.startsWith("신청 제한:")) return { error: error.message }
     console.error("[updateVolunteerApplication]", error)
     await recordOperationError("application", "updateVolunteerApplication", error, "application", { page: "/admin/applications/volunteer/[id]", targetType: "volunteer", targetId: id, action: status === "승인" ? "approve" : status === "취소" ? "cancel" : status === "반려" ? "reject" : "update" })
     return { error: "처리 중 오류가 발생했습니다. 상태와 일정은 변경되지 않았습니다." }
@@ -868,8 +869,8 @@ export async function requestReschedule(
   if (!expectedUpdatedAt || expectedUpdatedAt !== prev.updated_at) {
     return { error: "신청 내용이 변경되었습니다. 신청 내역을 새로 확인한 뒤 요청해주세요." }
   }
-  const partyCheck = validatePartySize(prev.party_size)
-  if (!partyCheck.valid) return { error: "기존 신청 인원을 확인할 수 없습니다. 운영진에게 문의해주세요." }
+  const partyCheck = validatePartySize(formData.get("party_size") ?? prev.party_size)
+  if (!partyCheck.valid) return { error: partyCheck.error, field: "party_size" }
 
   const datesRaw = String(formData.get("available_dates") ?? "").trim()
   const time = String(formData.get("available_time") ?? "").trim()
@@ -893,6 +894,7 @@ export async function requestReschedule(
       status: "일정변경요청",
       reschedule_dates: dates,
       reschedule_time: time,
+      reschedule_party_size: partyCheck.partySize!,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

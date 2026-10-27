@@ -233,11 +233,11 @@ export async function listMyUpcomingEvents(): Promise<CalendarEvent[]> {
  */
 export async function listRecurrenceGroupDates(
   groupId: string
-): Promise<{ id: string; starts_at: string }[]> {
+): Promise<{ id: string; starts_at: string; updated_at: string }[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("events")
-    .select("id, starts_at")
+    .select("id, starts_at, updated_at")
     .eq("recurrence_group_id", groupId)
     .order("starts_at", { ascending: true })
   if (error || !data) {
@@ -247,5 +247,5 @@ export async function listRecurrenceGroupDates(
     }
     return []
   }
-  return data as { id: string; starts_at: string }[]
+  return data as { id: string; starts_at: string; updated_at: string }[]
 }

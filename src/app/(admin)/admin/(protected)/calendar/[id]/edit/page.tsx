@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { getEventWithMySignup, listRecurrenceGroupDates } from "@/features/events"
 import { EventForm } from "@/features/events/components/event-form"
 import { eventEditReturnHref } from "@/features/applications/lib/detail-navigation"
+import { createClient } from "@/shared/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +18,9 @@ export default async function EditEventPage({
   const { id } = await params
   const event = await getEventWithMySignup(id)
   if (!event) notFound()
+  const client = await createClient()
+  const { data: settings, error } = await client.from("events").select("application_block").eq("id", id).single()
+  if (error) throw new Error("일정 제한 설정을 불러오지 못했습니다.")
   const returnHref = eventEditReturnHref((await searchParams).returnTo, id)
 
   const groupDates = event.recurrence_group_id
@@ -33,7 +37,7 @@ export default async function EditEventPage({
       <h1 className="mb-6 text-2xl font-bold text-foreground md:text-3xl">
         일정 수정
       </h1>
-      <EventForm event={event} groupDates={groupDates} returnHref={returnHref} />
+      <EventForm event={event} applicationBlock={settings.application_block} groupDates={groupDates} returnHref={returnHref} />
     </div>
   )
 }

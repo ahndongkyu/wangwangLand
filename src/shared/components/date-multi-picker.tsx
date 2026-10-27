@@ -4,8 +4,11 @@ import { useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils"
+import { useApplicationDateLimits } from "@/shared/lib/use-application-date-limits"
 
 interface Props {
+  applicationKind?: "volunteer" | "adoption"
+  partySize?: number
   /** 오류 발생 시 포커스·접근성 연결에 사용할 id. */
   id?: string
   /** form data 의 name. 다중 hidden input 으로 직렬화. */
@@ -84,9 +87,9 @@ export function DateMultiPicker({
   disabledDates = [],
   disabledTitle = "선택할 수 없는 날짜예요.",
   invalid = false,
+  applicationKind, partySize = 1,
 }: Props) {
   const today = todayKey()
-  const blockedSet = new Set(disabledDates)
   const initialYm = today.slice(0, 7)
   const maxYm = useMemo(
     () => shiftYm(initialYm, Math.max(0, monthsAhead - 1)),
@@ -94,6 +97,8 @@ export function DateMultiPicker({
   )
 
   const [ym, setYm] = useState<string>(initialYm)
+  const limits = useApplicationDateLimits(applicationKind, ym, partySize)
+  const blockedSet = new Set([...disabledDates, ...limits.dates])
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(defaultValue)
   )
@@ -110,6 +115,7 @@ export function DateMultiPicker({
 
   function toggle(key: string, isPast: boolean, isOtherMonth: boolean) {
     if (isOtherMonth) return
+    if (applicationKind && (limits.pending || limits.error) && !selected.has(key)) return
     if (!allowPast && isPast) return
     if (blockedSet.has(key) && !selected.has(key)) return
     const next = new Set(selected)
@@ -159,6 +165,9 @@ export function DateMultiPicker({
       </div>
 
       {/* 요일 라인 */}
+      {limits.pending && <p role="status" className="px-3 text-xs text-muted-foreground">신청 가능 날짜 확인 중…</p>}
+      {limits.error && <p role="alert" className="px-3 text-sm text-destructive">신청 가능 날짜를 확인하지 못했습니다. 새로고침해 주세요.</p>}
+      {applicationKind && !limits.pending && !limits.error && <p className="px-3 text-xs text-muted-foreground">휴무·행사 제한일은 선택할 수 없습니다. 제출 시 다시 확인합니다.</p>}
       <div className="grid grid-cols-7 px-2 pt-2 text-center text-[11px] font-medium text-muted-foreground">
         {WEEKDAYS.map((w, i) => (
           <span
@@ -183,7 +192,7 @@ export function DateMultiPicker({
           const dow = i % 7
           const isToday = key === today
           const isBlocked = !isOtherMonth && blockedSet.has(key)
-          const disabled = isOtherMonth || (!allowPast && isPast) || (isBlocked && !isSelected)
+          const disabled = isOtherMonth || (!allowPast && isPast) || ((isBlocked || limits.pending || limits.error) && !isSelected)
 
           return (
             <button

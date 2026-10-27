@@ -28,7 +28,8 @@ export async function prepareEventNotification(eventId: string, targetUserId?: s
   const admin = createAdminClient()
   const { data: event, error } = await admin.from("events")
     .select("title, source_application_type, source_application_id").eq("id", eventId).maybeSingle()
-  if (error || !event) throw new Error("일정 알림 정보를 확인할 수 없습니다.")
+  if (error) throw new Error("일정 알림 정보를 확인할 수 없습니다.")
+  if (!event) throw new Error("EVENT_REVISION_CONFLICT")
   const userIds = new Set<string>()
   if (targetUserId) {
     userIds.add(targetUserId)

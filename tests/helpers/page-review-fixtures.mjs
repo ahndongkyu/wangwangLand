@@ -17,6 +17,7 @@ export function load(path, imports = {}) {
     if (name === "../lib/volunteer-sms" || name === "@/features/applications/lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     if (name === "@/features/settings/components/delivery-card") return load("src/features/settings/components/delivery-card.tsx", base)
     if (name === "react") return React
+    if (name === "@/shared/lib/admin-list") return load("src/shared/lib/admin-list.ts")
     if (name === "../lib/use-volunteer-revision" && !(name in imports)) return { useVolunteerRevision: () => ({ stale: false, unavailable: false }) }
     if (name === "@/features/push/components/install-app" && !(name in imports)) return { InstallAppButton: () => null }
     if (name === "@/features/push/components/logout-form" && !(name in imports)) return { LogoutForm: ({ children, className }) => React.createElement("form", { className }, children) }
@@ -114,9 +115,10 @@ export async function renderMemberDetail({ staff = false, self = false } = {}) {
     "@/features/members/lib/list-navigation": load("src/features/members/lib/list-navigation.ts"),
     "@/features/auth": { AdminManagePanel: Panel, getCurrentAdmin: async () => ({ id: "me", role: "admin" }) },
     "@/features/members": { getProfileDetail: async () => profile, MemberManagePanel: element("div", "회원 권한·승인·차단") },
-    "@/features/daily": { listDailyPostsByUser: async () => [], countDailyPostsByUser: async () => 0 },
-    "@/features/stories": { listAdoptionStoriesByUser: async () => [], countAdoptionStoriesByUser: async () => 0 },
-    "@/features/applications": { listApplicationsByEmail: async () => ({ adoption: [], volunteer: [] }) },
+    "@/features/members/api/activity": { listMemberActivity: async () => ({ posts: [], total: 0, filteredTotal: 0, page: 1, totalPages: 1 }) },
+    "@/features/members/components/member-activity": load("src/features/members/components/member-activity.tsx", { ...base, "@/features/daily/lib/community-category": load("src/features/daily/lib/community-category.ts") }),
+    "@/features/daily/lib/community-category": load("src/features/daily/lib/community-category.ts"),
+    "@/features/applications": { listApplicationsByMemberId: async () => ({ adoption: [], volunteer: [] }) },
     "@/features/donations": { listDonationsByUser: async () => [], DonationStatusBadge },
     "@/shared/components/ui/badge": { Badge: element("span", "승인") },
   }).default
@@ -132,7 +134,7 @@ export async function renderDonate() {
 export async function renderContact() { return renderToStaticMarkup(await load("src/app/(public)/contact/page.tsx", base).default()) }
 const filters = load("src/features/applications/lib/admin-list.ts")
 const scheduleTime = load("src/features/applications/components/application-schedule-time.tsx", { "../lib/admin-list": filters })
-export function renderCalendar({ wholeRow = true, linked = true, readOnly = true } = {}) {
+export function renderCalendar({ wholeRow = true, linked = true, readOnly = true, volunteerVisits } = {}) {
   const date = load("src/features/events/lib/date.ts")
   const navigation = load("src/features/applications/lib/detail-navigation.ts", { "./admin-list": filters })
   const calendarNavigation = load("src/features/events/lib/navigation.ts", { "./date": date, "@/features/applications/lib/detail-navigation": navigation })
@@ -141,9 +143,10 @@ export function renderCalendar({ wholeRow = true, linked = true, readOnly = true
     "next/navigation": { useRouter: () => ({ push() {} }) },
     "../types": load("src/features/events/types.ts"), "../lib/date": date,
     "../lib/holidays": { getHolidayName: () => null }, "../lib/navigation": calendarNavigation,
+    "./visit-summary": load("src/features/events/components/visit-summary.tsx"),
   }).MonthGrid
   const event = { id: "event", title: "김소연", category: "volunteer", source_application_type: "volunteer", source_application_id: "application", starts_at: "2026-10-24T06:00:00Z", ends_at: "2026-10-24T06:00:00Z", all_day: false, location: null }
-  return renderToStaticMarkup(React.createElement(Grid, { yearMonth: "2026-10", events: [event], initialSelectedDate: "2026-10-24", readOnly, maskNames: true, applicationLinks: linked ? { event: { href: wholeRow ? "/admin/applications/volunteer/application" : "/my/applications?application=application", label: wholeRow ? "봉사 신청 상세 보기" : "내 신청 보기", wholeRow } } : {} }))
+  return renderToStaticMarkup(React.createElement(Grid, { yearMonth: "2026-10", events: [event], initialSelectedDate: "2026-10-24", readOnly, maskNames: true, volunteerVisits, applicationLinks: linked ? { event: { href: wholeRow ? "/admin/applications/volunteer/application" : "/my/applications?application=application", label: wholeRow ? "봉사 신청 상세 보기" : "내 신청 보기", wholeRow } } : {} }))
 }
 export function renderApplicationList(params = {}, rows = []) {
   const Badge = load("src/features/applications/components/application-detail-layout.tsx", base).ApplicationBadge

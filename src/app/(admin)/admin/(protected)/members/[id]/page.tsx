@@ -7,19 +7,15 @@ import {
   HandHeart,
   Handshake,
   Home,
-  PawPrint,
-  Pencil,
   User,
 } from "lucide-react"
 
 import { AdminManagePanel, getCurrentAdmin } from "@/features/auth"
 import { getProfileDetail, MemberManagePanel } from "@/features/members"
-import { listDailyPostsByUser, countDailyPostsByUser } from "@/features/daily"
-import {
-  listAdoptionStoriesByUser,
-  countAdoptionStoriesByUser,
-} from "@/features/stories"
-import { listApplicationsByEmail } from "@/features/applications"
+import { listMemberActivity } from "@/features/members/api/activity"
+import { MemberActivitySection } from "@/features/members/components/member-activity"
+import { COMMUNITY_TYPES, type CommunityType } from "@/features/daily/lib/community-category"
+import { listApplicationsByMemberId } from "@/features/applications"
 import {
   listDonationsByUser,
   DonationStatusBadge,
@@ -73,10 +69,12 @@ export default async function AdminMemberDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ returnTo?: string | string[] }>
+  searchParams: Promise<{ returnTo?: string | string[]; activityType?: string; activityPage?: string }>
 }) {
   const { id } = await params
-  const returnHref = memberListReturnHref((await searchParams).returnTo)
+  const query = await searchParams
+  const returnHref = memberListReturnHref(query.returnTo)
+  const activityType = COMMUNITY_TYPES.includes(query.activityType as CommunityType) ? query.activityType as CommunityType : undefined
 
   const me = await getCurrentAdmin()
   const isTopAdmin = me?.role === "admin"
@@ -87,20 +85,12 @@ export default async function AdminMemberDetailPage({
 
 
   const [
-    dailyPosts,
-    storiesPosts,
-    dailyCount,
-    storiesCount,
+    activity,
     apps,
     donations,
   ] = await Promise.all([
-    listDailyPostsByUser(id, 5),
-    listAdoptionStoriesByUser(id, 5),
-    countDailyPostsByUser(id),
-    countAdoptionStoriesByUser(id),
-    profile.email
-      ? listApplicationsByEmail(profile.email)
-      : Promise.resolve({ adoption: [], volunteer: [] }),
+    listMemberActivity(id, { category: activityType, page: Number(query.activityPage ?? 1) }).catch(() => null),
+    listApplicationsByMemberId(id),
     listDonationsByUser(id),
   ])
 
@@ -144,84 +134,16 @@ export default async function AdminMemberDetailPage({
       {/* ─── 활동 요약 ─── */}
       <SectionTitle icon={BarChart3}>활동 요약</SectionTitle>
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <Stat label="작성 일상" value={`${dailyCount}건`} />
-        <Stat label="작성 입양후기" value={`${storiesCount}건`} />
-        <Stat
-          label="신청 (입양/봉사)"
-          value={`${apps.adoption.length} / ${apps.volunteer.length}건`}
-        />
+        <Stat label="작성한 이야기" value={activity ? `${activity.total.toLocaleString()}건` : "확인 필요"} />
+        <Stat label="입양상담 신청" value={`${apps.adoption.length}건`} />
+        <Stat label="봉사 신청" value={`${apps.volunteer.length}건`} />
         <Stat
           label="후원 기록완료"
           value={`${approvedCash.toLocaleString()}원${approvedGoodsCount ? ` · 물품 ${approvedGoodsCount}` : ""}`}
         />
       </div>
 
-      {/* ─── 작성 일상 ─── */}
-      <SectionTitle
-        icon={Pencil}
-        linkLabel={dailyCount > 5 ? `전체 ${dailyCount}건` : undefined}
-        linkHref={`/admin/daily`}
-      >
-        작성 일상 (최근 5)
-      </SectionTitle>
-      {dailyPosts.length === 0 ? (
-        <Empty text="작성한 일상이 없습니다." />
-      ) : (
-        <ul className="mb-4 overflow-hidden rounded-xl border border-border bg-card">
-          {dailyPosts.map((p) => (
-            <li key={p.id} className="border-b border-border last:border-0">
-              <Link
-                href={`/admin/daily/${p.id}/edit`}
-                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-              >
-                <span className="truncate text-sm font-medium text-foreground">
-                  {p.title}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatShortDate(p.posted_at)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* ─── 작성 입양후기 ─── */}
-      <SectionTitle
-        icon={PawPrint}
-        linkLabel={storiesCount > 5 ? `전체 ${storiesCount}건` : undefined}
-        linkHref={`/admin/stories`}
-      >
-        작성 입양후기 (최근 5)
-      </SectionTitle>
-      {storiesPosts.length === 0 ? (
-        <Empty text="작성한 입양후기가 없습니다." />
-      ) : (
-        <ul className="mb-4 overflow-hidden rounded-xl border border-border bg-card">
-          {storiesPosts.map((s) => (
-            <li key={s.id} className="border-b border-border last:border-0">
-              <Link
-                href={`/admin/stories/${s.id}/edit`}
-                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-secondary/50"
-              >
-                <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {s.title}
-                  </span>
-                  {s.dog && (
-                    <span className="text-[11px] text-primary/80">
-                      {s.dog.name}
-                    </span>
-                  )}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {formatShortDate(s.created_at)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <MemberActivitySection activity={activity} memberId={id} category={activityType} returnHref={returnHref} />
 
       {/* ─── 입양 신청 ─── */}
       <SectionTitle icon={Home}>입양 신청</SectionTitle>

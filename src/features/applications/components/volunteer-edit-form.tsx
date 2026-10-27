@@ -44,6 +44,7 @@ export function VolunteerEditForm({
   const [error, setError] = useState<string | null>(null)
   const { save, pending, completed } = useSaveFeedback(setError)
   const isGroup = application.party_size > 1
+  const [requestedPartySize, setRequestedPartySize] = useState(String(isReschedule ? application.reschedule_party_size ?? application.party_size : application.party_size))
   const applicantParts = getVolunteerApplicantParts(
     application.applicant_name,
     application.group_name
@@ -85,6 +86,8 @@ export function VolunteerEditForm({
     if (scheduleError) return setError(scheduleError)
 
     if (isReschedule) {
+      const partyCheck = validatePartySize(String(fd.get("party_size") ?? ""))
+      if (!partyCheck.valid) return setError(partyCheck.error!)
       // 일정변경 요청 모드: dates를 JSON으로 직렬화
       fd.set("available_dates", JSON.stringify(selectedDates))
       fd.set("available_time", visitTime)
@@ -123,7 +126,7 @@ export function VolunteerEditForm({
     <form onSubmit={handleSubmit} className="space-y-5">
       {isReschedule && (
         <div className="rounded-lg border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-blue-800 dark:border-blue-800/40 dark:bg-blue-950/30 dark:text-blue-300">
-          희망 날짜와 시간을 선택해 일정변경을 요청하세요. 운영진 확인 후 확정됩니다.
+          날짜·시간·인원을 변경할 수 있습니다. 승인 전까지 기존 일정과 인원이 유지됩니다.
         </div>
       )}
 
@@ -173,6 +176,7 @@ export function VolunteerEditForm({
               max={30}
               required
               defaultValue={application.party_size ?? 1}
+              onChange={e => setRequestedPartySize(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
               {isGroup ? "인솔자 포함, 최대 30명" : "본인 포함 1명"}
@@ -182,10 +186,16 @@ export function VolunteerEditForm({
         </>
       )}
 
+      {isReschedule && <div className="space-y-1.5">
+        <Label htmlFor="reschedule-party-size">변경 요청 인원 (본인 포함)</Label>
+        <Input id="reschedule-party-size" name="party_size" type="number" min={1} max={30} required value={requestedPartySize} onChange={e => setRequestedPartySize(e.target.value)} />
+        <p className="text-xs text-muted-foreground">현재 {application.party_size}명 · 1~30명까지 요청 가능</p>
+      </div>}
       <div className="space-y-2">
         <Label>봉사 가능 날짜 *</Label>
         <DateMultiPicker
           name="available_dates"
+          applicationKind="volunteer" partySize={Number(requestedPartySize)}
           defaultValue={initialDates}
           onChange={handleDatesChange}
         />

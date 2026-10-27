@@ -30,7 +30,7 @@ export {
   getApplicationStats,
   listRecentApplications,
   getMonthlyVolunteerStats,
-  listApplicationsByEmail,
+  listApplicationsByMemberId,
 } from "./api/queries"
 export type {
   RecentApplication,

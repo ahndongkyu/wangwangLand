@@ -6,6 +6,7 @@ import { Lock } from "lucide-react"
 
 import { createEvent, updateEvent, type RecurrenceScope } from "../api/mutations"
 import { RecurringScopeDialog } from "./recurring-scope-dialog"
+import { EventConflictNotice } from "./event-conflict-notice"
 import { isoToLocalKstInput, todayKstDate } from "../lib/date"
 import { eventDescriptionForDisplay } from "../lib/description"
 import {
@@ -27,6 +28,7 @@ import { useSaveFeedback } from "@/shared/lib/use-save-feedback"
 import { cn } from "@/shared/lib/utils"
 
 interface Props {
+  applicationBlock?: string
   returnHref?: string
   /** 수정 모드면 기존 이벤트 */
   event?: CalendarEvent
@@ -45,7 +47,7 @@ interface Props {
     message: string | null
   }
   /** 수정 모드에서 이 일정이 반복 그룹이면, 같은 그룹 일정 목록 (범위 선택용) */
-  groupDates?: { id: string; starts_at: string }[]
+  groupDates?: { id: string; starts_at: string; updated_at: string }[]
 }
 
 const CATEGORIES: EventCategory[] = [
@@ -92,9 +94,11 @@ function pickContrast(hex: string): string {
   return lum > 0.6 ? "#1F1B16" : "#FFFFFF"
 }
 
-export function EventForm({ event, defaultDate, fromApplication, groupDates = [], returnHref = "/admin/calendar" }: Props) {
+export function EventForm({ event, applicationBlock = "none", defaultDate, fromApplication, groupDates = [], returnHref = "/admin/calendar" }: Props) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const revision = useRef({ event, groupDates })
   const { save, pending, completed } = useSaveFeedback(setError)
   const [scopeOpen, setScopeOpen] = useState(false)
   const pendingFormData = useRef<FormData | null>(null)
@@ -198,8 +202,17 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
 
   const isRecurringEdit = isEdit && groupDates.length > 1
 
+  async function guardedUpdate(data: FormData, scope: RecurrenceScope) {
+    const initial = revision.current
+    const expected = scope === "one" ? [initial.event!] : initial.groupDates.length ? initial.groupDates : [initial.event!]
+    const result = await updateEvent(initial.event!.id, data, scope, expected.map(({ id, updated_at }) => ({ id, updated_at: id === initial.event!.id ? initial.event!.updated_at : updated_at })))
+    if (result.conflict) setConflict(true)
+    return result
+  }
+
   async function handleSubmit(submitEvent: React.FormEvent<HTMLFormElement>) {
     submitEvent.preventDefault()
+    if (conflict || pending) return
     const formData = new FormData(submitEvent.currentTarget)
     // 반복 일정 수정 → 적용 범위 먼저 선택
     if (isRecurringEdit) {
@@ -208,14 +221,14 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
       return
     }
     await save(() => isEdit
-      ? updateEvent(event!.id, formData, "one")
+      ? guardedUpdate(formData, "one")
       : createEvent(formData), "일정이 저장되었습니다.", returnHref)
   }
 
   async function runScopedUpdate(scope: RecurrenceScope) {
     const fd = pendingFormData.current
-    if (!fd) return
-    await save(() => updateEvent(event!.id, fd, scope), "일정이 저장되었습니다.", returnHref)
+    if (!fd || conflict || pending) return
+    await save(() => guardedUpdate(fd, scope), "일정이 저장되었습니다.", returnHref)
     setScopeOpen(false)
   }
 
@@ -224,7 +237,7 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
   return (
     <>
     <form onSubmit={handleSubmit} className="space-y-5">
-      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+      {conflict ? <EventConflictNotice editing /> : error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
       {fromApplication && (
         <>
           <input
@@ -634,6 +647,14 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
       )}
 
       {/* 메모 */}
+      {category === "event" && <div className="space-y-1.5">
+        <Label htmlFor="application-block">이 날짜의 신청 제한</Label>
+        <select id="application-block" name="application_block" defaultValue={applicationBlock} className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base">
+          <option value="none">제한 없음</option><option value="volunteer">봉사 신청 제한</option><option value="adoption">입양상담 제한</option><option value="both">봉사·입양상담 모두 제한</option>
+        </select>
+        <p className="text-xs text-muted-foreground">날짜 전체에 적용됩니다. 기존 승인 일정은 자동 취소되지 않습니다.</p>
+      </div>}
+      {category === "closed" && <p className="rounded-lg bg-muted p-3 text-sm">휴무일은 봉사·입양상담 신청이 모두 제한됩니다. 기존 승인 일정은 별도로 확인해 주세요.</p>}
       <div className="space-y-1.5">
         <Label htmlFor="description">메모</Label>
         <Textarea
@@ -668,6 +689,7 @@ export function EventForm({ event, defaultDate, fromApplication, groupDates = []
       )}
 
       <FormFooter
+        disabled={conflict}
         pending={pending}
         submitLabel={
           isEdit

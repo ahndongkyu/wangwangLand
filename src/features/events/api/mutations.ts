@@ -16,6 +16,7 @@ import { INTERNAL_CATEGORIES, type EventCategory, type EventVisibility } from ".
 
 export interface ActionResult {
   error?: string
+  conflict?: boolean
   warning?: string
   id?: string
   /** 생성/수정/삭제된 건수 (반복 일괄 처리 시). */
@@ -24,12 +25,23 @@ export interface ActionResult {
 
 /** 반복 일정 일괄 처리 범위. */
 export type RecurrenceScope = "one" | "after" | "all"
+export type EventRevision = { id: string; updated_at: string }
+
+const EVENT_CONFLICT = { conflict: true, error: "다른 담당자가 일정을 변경했거나 삭제했습니다. 최신 일정을 확인한 뒤 다시 처리해 주세요." }
+
+function validRevisions(id: string, expected?: EventRevision[]): expected is EventRevision[] {
+  return Array.isArray(expected) && expected.length > 0 && expected.length <= 1000
+    && expected.some(row => row?.id === id)
+    && new Set(expected.map(row => row?.id)).size === expected.length
+    && expected.every(row => typeof row?.id === "string" && typeof row.updated_at === "string" && Number.isFinite(Date.parse(row.updated_at)))
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 어드민: 이벤트 CRUD
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface EventInput {
+  application_block?: string
   category: EventCategory
   custom_label?: string | null
   custom_color?: string | null
@@ -106,6 +118,7 @@ function parseEventInput(formData: FormData): EventInput | { error: string } {
 
   return {
     category,
+    application_block: category === "closed" ? "both" : category === "event" && ["volunteer", "adoption", "both"].includes(String(formData.get("application_block"))) ? String(formData.get("application_block")) : "none",
     custom_label,
     custom_color,
     title,
@@ -205,6 +218,7 @@ async function createRecurringEvents(
       if (!sIso || !eIso) return null
       return {
         category: parsed.category,
+        application_block: parsed.application_block,
         custom_label: parsed.custom_label,
         custom_color: parsed.custom_color,
         title: parsed.title,
@@ -409,7 +423,8 @@ async function resolveScopeIds(
     .select("recurrence_group_id, starts_at")
     .eq("id", id)
     .maybeSingle()
-  if (error || !ev) throw new Error("삭제할 일정을 확인할 수 없습니다.")
+  if (error) throw new Error("일정을 확인할 수 없습니다.")
+  if (!ev) throw new Error("EVENT_REVISION_CONFLICT")
   if (!ev?.recurrence_group_id) return [id]
   let q = admin
     .from("events")
@@ -425,49 +440,34 @@ async function resolveScopeIds(
 export async function updateEvent(
   id: string,
   formData: FormData,
-  scope: RecurrenceScope = "one"
+  scope: RecurrenceScope = "one",
+  expected?: EventRevision[]
 ): Promise<ActionResult> {
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
+  if (!validRevisions(id, expected)) return EVENT_CONFLICT
   const parsed = parseEventInput(formData)
   if ("error" in parsed) return parsed
 
   const admin = createAdminClient()
   let before
   try { before = await snapshotEventVisits(await resolveScopeIds(admin, id, scope)) }
-  catch { return { error: "기존 확정 일정을 확인하지 못했습니다. 다시 시도해주세요." } }
-  // 단건 수정
-  if (scope === "one") {
-    const supabase = await createClient()
-    const { data: updated, error } = await supabase.from("events").update(parsed).eq("id", id).select("id").maybeSingle()
-    if (error) {
-      console.error("[updateEvent]", error)
-      await recordOperationError("calendar", "updateEvent", error, "calendar", { targetType: "event", targetId: id, action: "update" })
-      return { error: error.message }
-    }
-    if (!updated) return { error: "수정할 일정이 없습니다. 새로고침 후 확인해주세요." }
-    await dispatchEventNotification({ eventId: id, type: "event_changed" })
-    revalidatePath("/admin/calendar")
-    revalidatePath(`/admin/calendar/${id}`)
-    revalidatePath("/calendar")
-    revalidatePath(`/calendar/${id}`)
-    const warning = await notifyVolunteerVisitChanges(before)
-    revalidatePath("/my/applications")
-    return { warning }
-  }
-
-  // 반복 일괄 수정 — 날짜는 각자 유지, 시간/제목/장소/메모/카테고리 등만 일괄 적용
-  const { data, error } = await admin.rpc("update_recurring_events_atomic", {
-    p_event_id: id, p_scope: scope, p_fields: parsed,
+  catch (error) { return error instanceof Error && error.message === "EVENT_REVISION_CONFLICT" ? EVENT_CONFLICT : { error: "기존 확정 일정을 확인하지 못했습니다. 다시 시도해주세요." } }
+  const { data, error } = await admin.rpc("mutate_event_checked", {
+    p_event_id: id, p_scope: scope, p_operation: "update", p_fields: parsed, p_expected: expected,
   })
   if (error) {
+    if (error.message?.includes("EVENT_REVISION_CONFLICT")) return EVENT_CONFLICT
+    if (error.message?.startsWith("신청 제한:")) return { error: error.message }
     console.error("[updateEvent recurring]", error)
     await recordOperationError("calendar", "updateEvent recurring", error, "calendar", { targetType: "event", targetId: id, action: "update" })
-    return { error: "반복 일정을 저장하지 못했습니다. 변경사항은 적용되지 않았습니다. 다시 시도해주세요." }
+    return { error: "일정을 저장하지 못했습니다. 변경사항은 적용되지 않았습니다. 관리자에게 문의해 주세요." }
   }
   const changedIds = (data ?? []) as string[]
   for (const eventId of changedIds) {
     await dispatchEventNotification({ eventId, type: "event_changed" })
+    revalidatePath(`/admin/calendar/${eventId}`)
+    revalidatePath(`/calendar/${eventId}`)
   }
 
   revalidatePath("/admin/calendar")
@@ -479,10 +479,12 @@ export async function updateEvent(
 
 export async function deleteEvent(
   id: string,
-  scope: RecurrenceScope = "one"
+  scope: RecurrenceScope = "one",
+  expected?: EventRevision[]
 ): Promise<ActionResult> {
   const auth = await requireAdmin()
   if (!auth.ok) return { error: auth.error }
+  if (!validRevisions(id, expected)) return EVENT_CONFLICT
   const admin = createAdminClient()
   let snapshots
   let before
@@ -490,18 +492,21 @@ export async function deleteEvent(
     const targetIds = await resolveScopeIds(admin, id, scope)
     snapshots = await Promise.all(targetIds.map((tid) => prepareEventNotification(tid)))
     before = await snapshotEventVisits(targetIds)
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "EVENT_REVISION_CONFLICT") return EVENT_CONFLICT
     return { error: "일정과 알림 수신자를 확인하지 못했습니다. 다시 시도해주세요." }
   }
 
-  const { data: deleted, error } = await admin.from("events").delete()
-    .in("id", snapshots.map((snapshot) => snapshot.eventId)).select("id")
+  const { data: deleted, error } = await admin.rpc("mutate_event_checked", {
+    p_event_id: id, p_scope: scope, p_operation: "delete", p_fields: {}, p_expected: expected,
+  })
   if (error) {
+    if (error.message?.includes("EVENT_REVISION_CONFLICT")) return EVENT_CONFLICT
     console.error("[deleteEvent]", error)
     await recordOperationError("calendar", "deleteEvent", error, "calendar", { targetType: "event", targetId: id, action: "delete" })
-    return { error: error.message }
+    return { error: "일정을 삭제하지 못했습니다. 변경사항은 적용되지 않았습니다. 관리자에게 문의해 주세요." }
   }
-  const deletedIds = new Set((deleted ?? []).map((event) => event.id))
+  const deletedIds = new Set<string>((deleted ?? []) as string[])
   for (const snapshot of snapshots) {
     if (deletedIds.has(snapshot.eventId)) {
       await dispatchEventNotification({ eventId: snapshot.eventId, type: "event_canceled", snapshot })

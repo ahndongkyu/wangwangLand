@@ -21,6 +21,7 @@ export interface MyApplicationSummary {
 
 interface ListOptions {
   status?: ApplicationStatus | "전체"
+  statuses?: ApplicationStatus[]
   /** 신청자/단체 이름·전화 통합 검색 (ilike) */
   query?: string
   /** 제출일 이상 (ISO 날짜 YYYY-MM-DD) */
@@ -88,6 +89,7 @@ export async function listAdoptionApplications({
 
 export async function listVolunteerApplications({
   status,
+  statuses,
   query: searchQuery,
   from,
   to,
@@ -105,7 +107,9 @@ export async function listVolunteerApplications({
     .order("submitted_at", { ascending: false })
     .range(offset, offset + limit - 1)
 
-  if (status && status !== "전체") {
+  if (statuses?.length) {
+    query = query.in("status", statuses)
+  } else if (status && status !== "전체") {
     query = query.eq("status", status)
   }
 
@@ -125,7 +129,7 @@ export async function listVolunteerApplications({
 
   if (error) {
     console.error("[listVolunteerApplications]", error)
-    return { rows: [], total: 0 }
+    throw new Error("봉사 신청 목록을 불러오지 못했습니다.", { cause: error })
   }
 
   return {
@@ -283,11 +287,11 @@ export async function getMyApplicationSummary(
 }
 
 /** 어드민 회원 상세에서 사용: 이메일 매칭으로 회원의 신청 내역 조회 */
-export async function listApplicationsByEmail(email: string): Promise<{
+export async function listApplicationsByMemberId(memberId: string): Promise<{
   adoption: AdoptionRow[]
   volunteer: VolunteerApplication[]
 }> {
-  if (!email) return { adoption: [], volunteer: [] }
+  if (!memberId) return { adoption: [], volunteer: [] }
   if (!(await requireAdmin()).ok) return { adoption: [], volunteer: [] }
   const { createAdminClient } = await import("@/shared/lib/supabase/admin")
   const supabase = createAdminClient()
@@ -296,15 +300,18 @@ export async function listApplicationsByEmail(email: string): Promise<{
     supabase
       .from("adoption_applications")
       .select("*, dog:dogs(id, name), cat:cats(id, name)")
-      .ilike("email", email)
+      .eq("created_by", memberId)
       .order("submitted_at", { ascending: false }),
     supabase
       .from("volunteer_applications")
       .select("*")
-      .ilike("email", email)
+      .eq("created_by", memberId)
       .order("submitted_at", { ascending: false }),
   ])
 
+  if (adoptionRes.error || volunteerRes.error) {
+    throw new Error("회원의 신청 이력을 불러오지 못했습니다.", { cause: adoptionRes.error || volunteerRes.error })
+  }
   return {
     adoption: (adoptionRes.data ?? []) as AdoptionRow[],
     volunteer: (volunteerRes.data ?? []) as VolunteerApplication[],

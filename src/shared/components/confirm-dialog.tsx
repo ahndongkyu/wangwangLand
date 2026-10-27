@@ -19,6 +19,7 @@ export interface ConfirmOptions {
   variant?: ConfirmVariant
   title: string
   description?: string
+  items?: string[]
   confirmText?: string
   cancelText?: string
   /** critical 변형: 유저가 입력해야 할 문구 (기본 "확인하겠습니다") */
@@ -119,7 +120,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <AlertDialog.Popup
             className={cn(
               "fixed left-1/2 top-1/2 z-50 w-[min(90vw,22rem)] -translate-x-1/2 -translate-y-1/2",
-              "rounded-2xl border border-border bg-card p-6 shadow-2xl",
+              "max-h-[calc(100dvh-32px)] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl",
               "transition-all duration-200",
               "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
               "data-[ending-style]:scale-95 data-[ending-style]:opacity-0"
@@ -180,6 +181,9 @@ function ConfirmBody({
           {opts.description}
         </AlertDialog.Description>
       )}
+      {opts.items && <ul aria-label="삭제 대상" className="mt-4 max-h-48 list-disc space-y-2 overflow-y-auto break-words rounded-lg bg-muted py-3 pl-7 pr-3 text-sm">
+        {opts.items.map((item, index) => <li key={index}>{item}</li>)}
+      </ul>}
 
       {/* critical: 문구 입력 */}
       {variant === "critical" && (
@@ -214,7 +218,7 @@ function ConfirmBody({
       <div className="mt-5 flex gap-2">
         <AlertDialog.Close
           onClick={() => onResult(false)}
-          className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          className="min-h-11 flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
         >
           {cancelText}
         </AlertDialog.Close>
@@ -223,7 +227,7 @@ function ConfirmBody({
           onClick={handleConfirm}
           disabled={confirmDisabled}
           className={cn(
-            "flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+            "min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
             cfg.confirmCls
           )}
         >

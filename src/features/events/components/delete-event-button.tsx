@@ -1,34 +1,45 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 
 import { deleteEvent, type RecurrenceScope } from "../api/mutations"
 import { RecurringScopeDialog } from "./recurring-scope-dialog"
+import { EventConflictNotice } from "./event-conflict-notice"
 import { useToast } from "@/shared/components/toast"
 
 interface Props {
   returnHref?: string
   id: string
+  updatedAt: string
   /** 반복 일정이면 같은 그룹 일정 목록 (id, starts_at). 단건이면 빈 배열/미전달. */
-  groupDates?: { id: string; starts_at: string }[]
+  groupDates?: { id: string; starts_at: string; updated_at: string }[]
   /** 현재 일정 시작 ISO (반복 범위 계산용) */
   currentStartsAt?: string
 }
 
-export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", returnHref = "/admin/calendar" }: Props) {
+export function DeleteEventButton({ id, updatedAt, groupDates = [], currentStartsAt = "", returnHref = "/admin/calendar" }: Props) {
   const toast = useToast()
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
   const [scopeOpen, setScopeOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+  const [conflict, setConflict] = useState(false)
+  const running = useRef(false)
+  const revision = useRef({ id, updated_at: updatedAt, groupDates })
 
   const isRecurring = groupDates.length > 1
 
   function runDelete(scope: RecurrenceScope) {
+    if (running.current || conflict) return
+    running.current = true
     startTransition(async () => {
-      const res = await deleteEvent(id, scope)
+      try {
+      const initial = revision.current
+      const expected = scope === "one" || !initial.groupDates.length ? [initial] : initial.groupDates
+      const res = await deleteEvent(id, scope, expected.map(({ id, updated_at }) => ({ id, updated_at: id === initial.id ? initial.updated_at : updated_at })))
       if (res?.error) {
+        if (res.conflict) setConflict(true)
         toast.error(res.error)
         setConfirming(false)
         setScopeOpen(false)
@@ -42,8 +53,13 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", r
       )
       router.push(returnHref)
       router.refresh()
+      } catch {
+        toast.error("삭제 결과를 확인하지 못했습니다. 최신 일정을 확인해 주세요.")
+      } finally { running.current = false }
     })
   }
+
+  if (conflict) return <EventConflictNotice />
 
   // 반복 일정 — 범위 선택 다이얼로그
   if (isRecurring) {
@@ -51,8 +67,9 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", r
       <>
         <button
           type="button"
+          disabled={pending}
           onClick={() => setScopeOpen(true)}
-          className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+          className="min-h-11 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
         >
           일정 삭제
         </button>
@@ -74,8 +91,9 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", r
     return (
       <button
         type="button"
+        disabled={pending}
         onClick={() => setConfirming(true)}
-        className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+        className="min-h-11 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
       >
         일정 삭제
       </button>
@@ -95,6 +113,7 @@ export function DeleteEventButton({ id, groupDates = [], currentStartsAt = "", r
       <button
         type="button"
         onClick={() => setConfirming(false)}
+        disabled={pending}
         className="min-h-11 px-2 text-muted-foreground hover:underline"
       >
         취소

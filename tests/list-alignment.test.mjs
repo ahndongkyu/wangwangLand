@@ -24,14 +24,16 @@ test("application and donation metadata remain centered only at desktop breakpoi
   assert.match(donations, /lg:text-center/)
 })
 
-test("admin post lists center metadata but keep titles left aligned", () => {
+test("admin post adapters use the same responsive list and no per-row overflow menu", () => {
   for (const type of ["notices", "daily", "stories"]) {
     const source = readFileSync(`src/features/${type}/components/admin-${type}-table.tsx`, "utf8")
-    assert.match(source, /<table className="[^"]*text-center/)
-    assert.match(source, /text-left">제목/)
-    assert.match(source, /max-w-xs text-left/)
-    assert.match(source, /text-center">작성일/)
+    assert.match(source, /<AdminContentList/)
+    assert.doesNotMatch(source, /AdminPostActions|min-w-\[600px\]|window.confirm/)
   }
+  const shared = readFileSync("src/shared/components/admin-content-list.tsx", "utf8")
+  assert.match(shared, /text-center">작성일/)
+  assert.match(shared, /text-right">조회/)
+  assert.match(shared, /formatShortDate\(row.date\)/)
 })
 
 test("SMS statuses never treat provider acceptance or unknown codes as delivery completion", () => {

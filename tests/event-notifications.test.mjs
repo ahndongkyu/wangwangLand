@@ -19,9 +19,10 @@ test("recurring edits use one atomic RPC and notify only committed IDs", async (
     })
     const form = new FormData()
     form.set("title", "행사"); form.set("category", "event"); form.set("starts_at", "2026-10-20T15:30")
-    const result = await api.updateEvent("anchor", form, scope)
+    const result = await api.updateEvent("anchor", form, scope, [{ id: "anchor", updated_at: "2026-10-20T00:00:00Z" }])
     assert.equal(calls.length, 1)
-    assert.equal(calls[0].name, "update_recurring_events_atomic")
+    assert.equal(calls[0].name, "mutate_event_checked")
+    assert.equal(calls[0].args.p_operation, "update")
     assert.equal(calls[0].args.p_scope, scope)
     assert.equal(calls[0].args.p_fields.starts_at, "2026-10-20T06:30:00.000Z")
     assert.deepEqual(sent, fail ? [] : ["one", "two"])
@@ -91,10 +92,10 @@ test("deletion sends only after successful deletion and only for returned delete
       crypto: {}, "next/cache": { revalidatePath() {} },
       "@/shared/lib/auth": { requireAdmin: async () => ({ ok: true }) },
       "@/shared/lib/supabase/server": {},
-      "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from() { return {
-        delete() { calls.push("delete"); return this }, in() { return this },
-        select: async () => ({ data: mode === "missing" ? [] : [{ id: "event" }], error: mode === "failure" ? { message: "failed" } : null }),
-      } } }) },
+      "@/shared/lib/supabase/admin": { createAdminClient: () => ({ rpc: async () => {
+        calls.push("delete")
+        return { data: mode === "missing" ? [] : ["event"], error: mode === "failure" ? { message: "EVENT_REVISION_CONFLICT" } : null }
+      } }) },
       "../notify": {
         prepareEventNotification: async (eventId) => {
           calls.push("prepare")
@@ -106,7 +107,7 @@ test("deletion sends only after successful deletion and only for returned delete
       "../lib/date": {}, "../lib/recurrence": {}, "../types": {},
       "../volunteer-notice": { snapshotEventVisits: async () => [], notifyVolunteerVisitChanges: async () => undefined },
     })
-    const result = await api.deleteEvent("event")
+    const result = await api.deleteEvent("event", "one", [{ id: "event", updated_at: "2026-10-20T00:00:00Z" }])
     if (mode === "success") {
       assert.deepEqual(calls, ["prepare", "delete", "send"])
       assert.equal(result.count, 1)

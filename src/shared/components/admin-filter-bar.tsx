@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { ADMIN_LIST } from "@/shared/lib/admin-list"
 
 export interface FilterOption {
   label: string
@@ -41,9 +42,10 @@ export function AdminFilterBar({ filters }: Props) {
         return (
           <select
             key={filter.name}
+            aria-label={filter.defaultLabel}
             value={current}
             onChange={(e) => handleChange(filter.name, e.target.value)}
-            className="h-9 w-40 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className={`${ADMIN_LIST.control} w-full sm:w-40`}
           >
             <option value="">{filter.defaultLabel}</option>
             {filter.options.map((opt) => (

@@ -87,6 +87,7 @@ export default async function AdminEventDetailPage({
           </Link>
           <DeleteEventButton
             id={id}
+            updatedAt={event.updated_at}
             groupDates={groupDates}
             currentStartsAt={event.starts_at}
           />

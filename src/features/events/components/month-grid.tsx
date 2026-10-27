@@ -24,6 +24,8 @@ import {
 import { getHolidayName } from "../lib/holidays"
 import { cn } from "@/shared/lib/utils"
 import { calendarEventHref, calendarReturnHref } from "../lib/navigation"
+import type { VisitSummary } from "../lib/visit-summary"
+import { VisitSummaryPanel } from "./visit-summary"
 
 interface Props {
   yearMonth: string
@@ -36,6 +38,7 @@ interface Props {
   returnPath?: string
   categoryFilter?: string
   applicationLinks?: Record<string, { href: string; label: string; wholeRow?: boolean }>
+  volunteerVisits?: Record<string, VisitSummary> | null
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"]
@@ -49,6 +52,7 @@ export function MonthGrid({
   readOnly = false,
   initialSelectedDate,
   returnPath = hrefBase, categoryFilter, applicationLinks = {},
+  volunteerVisits,
 }: Props) {
   const router = useRouter()
   const days = monthGridDays(yearMonth)
@@ -264,6 +268,10 @@ export function MonthGrid({
               <X className="size-3.5" />
             </button>
           </div>
+          {volunteerVisits !== undefined && <VisitSummaryPanel
+            summary={volunteerVisits === null ? null : volunteerVisits[selectedKey] ?? { visits: 0, people: 0, unknown: 0 }}
+            past={selectedKey < dateKey(new Date())}
+          />}
           <ul className="divide-y divide-border">
             {selectedEvents.length === 0 && <li className="px-4 py-5 text-sm text-muted-foreground">등록된 일정이 없습니다.</li>}
             {selectedEvents.map((ev) => {

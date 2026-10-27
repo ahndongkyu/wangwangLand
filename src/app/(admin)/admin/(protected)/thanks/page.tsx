@@ -2,22 +2,17 @@ import Link from "next/link"
 
 import { listDonationThanks } from "@/features/thanks"
 import { Pagination } from "@/shared/components/pagination"
-import { PostListRow } from "@/shared/components/post-list-row"
+import { AdminContentList } from "@/shared/components/admin-content-list"
+import { deleteDonationThanks } from "@/features/thanks/api/mutations"
+import { fetchAuthorMap } from "@/shared/lib/fetch-authors"
 import { SearchBox } from "@/shared/components/search-box"
 import { EmptyState } from "@/shared/components/empty-state"
 import { buttonVariants } from "@/shared/components/ui/button"
-import { cn, stripHtml } from "@/shared/lib/utils"
+import { cn } from "@/shared/lib/utils"
 
 export const dynamic = "force-dynamic"
 
 const PAGE_SIZE = 20
-
-function excerpt(content: string | null | undefined, max = 80): string | null {
-  if (!content) return null
-  const plain = stripHtml(content)
-  if (!plain) return null
-  return plain.length > max ? plain.slice(0, max) + "…" : plain
-}
 
 export default async function AdminThanksPage({
   searchParams,
@@ -37,6 +32,7 @@ export default async function AdminThanksPage({
   })
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const authors = await fetchAuthorMap(posts.map(post => post.created_by))
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
@@ -68,35 +64,12 @@ export default async function AdminThanksPage({
         />
       ) : (
         <>
-          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-            {posts.map((p) => {
-              const isPublished = p.published_at !== null
-              return (
-                <li key={p.id}>
-                  <PostListRow
-                    href={`/admin/thanks/${p.id}/edit`}
-                    title={p.title}
-                    subTitle={p.donor_display_name ?? p.donation_summary ?? undefined}
-                    thumbnail={p.images[p.thumbnail_index] ?? p.images[0] ?? null}
-                    excerpt={excerpt(p.content)}
-                    date={p.published_at ?? p.created_at}
-                    viewCount={p.view_count}
-                    statusBadge={
-                      isPublished ? (
-                        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          공개
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                          임시저장
-                        </span>
-                      )
-                    }
-                  />
-                </li>
-              )
-            })}
-          </ul>
+          <AdminContentList deleteAction={deleteDonationThanks} rows={posts.map(post => ({
+            id: post.id, title: post.title, href: `/admin/thanks/${post.id}/edit`, category: "후원",
+            author: post.created_by ? authors[post.created_by]?.nickname ?? "—" : "—",
+            date: post.created_at, views: post.view_count, status: post.published_at ? "공개" : "임시저장",
+            detail: post.donor_display_name ?? post.donation_summary ?? undefined,
+          }))} />
 
           <Pagination
             currentPage={pageNum}

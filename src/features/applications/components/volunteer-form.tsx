@@ -443,6 +443,7 @@ export function VolunteerForm({
             <div className="min-w-0 space-y-2">
               <p className="text-sm font-medium">가능한 날짜 <span className="text-destructive">*</span></p>
               <DateMultiPicker id="available_dates" name="available_dates" onChange={handleDatesChange}
+                applicationKind="volunteer" partySize={partyType === "group" ? Number(partySize) : 1}
                 invalid={Boolean(fieldErrors.available_dates)} disabledDates={blockedDates}
                 disabledTitle={`정기봉사일 — ${groupBlockThreshold}명 이상 단체는 신청할 수 없어요.`} />
               <p className="text-xs leading-relaxed text-muted-foreground">가능한 날짜를 여러 개 선택할 수 있어요.<br />운영진이 확인 후 방문 일정을 조율합니다.</p>

@@ -21,6 +21,7 @@ const getCachedStatusCounts = unstable_cache(
       admin.from("profiles").select("id", { count: "exact", head: true }).eq("status", "approved"),
       admin.from("profiles").select("id", { count: "exact", head: true }).eq("status", "rejected"),
     ])
+    if (p.error || a.error || r.error) throw new Error("회원 현황을 불러오지 못했습니다.", { cause: p.error || a.error || r.error })
     return {
       pendingCount: p.count ?? 0,
       approvedCount: a.count ?? 0,
@@ -151,54 +152,41 @@ export async function listProfiles({
   if (!auth.ok) return { profiles: [], total: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0 }
   const supabase = await createClient()
 
-  const isFiltered = !!status || !!searchQuery?.trim()
-
-  // 필터 적용 시에만 메인 쿼리에 exact count (필터된 결과의 페이지 매김용).
-  // 필터 없을 땐 캐시된 status counts 합으로 total 계산 → 메인 쿼리 부담 ↓
-  let query = supabase
-    .from("profiles")
-    .select(
-      "id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at",
-      isFiltered ? { count: "exact" } : undefined
-    )
-
-  if (sort === "name") {
-    query = query.order("nickname", { ascending: true })
-  } else if (sort === "joined") {
-    query = query.order("created_at", { ascending: false })
+  const fields = "id, nickname, avatar_url, phone, role, status, is_banned, created_at, terms_agreed_at, terms_version, privacy_agreed_at, privacy_version, marketing_agreed_at"
+  const term = searchQuery?.trim().replace(/[%,()]/g, "")
+  function makeQuery(group?: Profile["status"], head = false) {
+    let query = supabase.from("profiles").select(fields, { count: "exact", head })
+    if (group) query = query.eq("status", group)
+    if (term) query = query.or(`nickname.ilike.%${term}%,phone.ilike.%${term}%`)
+    return query
+  }
+  let data: Profile[] = []
+  let total = 0
+  if (sort === "status" && !status) {
+    // 상태 문자열의 사전순 대신 업무 우선순위로 페이지 범위를 계산한다.
+    const groups = ["pending", "approved", "rejected"] as const
+    const counts = await Promise.all(groups.map(group => makeQuery(group, true)))
+    for (const result of counts) if (result.error) throw new Error("회원 목록을 불러오지 못했습니다.", { cause: result.error })
+    total = counts.reduce((sum, result) => sum + (result.count ?? 0), 0)
+    let skip = offset
+    let remaining = limit
+    for (let i = 0; i < groups.length && remaining > 0; i++) {
+      const count = counts[i].count ?? 0
+      if (skip >= count) { skip -= count; continue }
+      const take = Math.min(remaining, count - skip)
+      const result = await makeQuery(groups[i]).order("created_at", { ascending: false }).order("id", { ascending: true }).range(skip, skip + take - 1)
+      if (result.error) throw new Error("회원 목록을 불러오지 못했습니다.", { cause: result.error })
+      data.push(...(result.data ?? []) as Profile[])
+      remaining -= take
+      skip = 0
+    }
   } else {
-    // status: pending 먼저, 그 다음 가입일 최신순
-    query = query
-      .order("status", { ascending: true })
-      .order("created_at", { ascending: false })
+    const result = await makeQuery(status).order(sort === "name" ? "nickname" : "created_at", { ascending: sort === "name" }).order("id", { ascending: true }).range(offset, offset + limit - 1)
+    if (result.error) throw new Error("회원 목록을 불러오지 못했습니다.", { cause: result.error })
+    data = (result.data ?? []) as Profile[]
+    total = result.count ?? 0
   }
-
-  if (status) {
-    query = query.eq("status", status)
-  }
-
-  if (searchQuery && searchQuery.trim()) {
-    const term = searchQuery.trim().replace(/[%,]/g, "")
-    // 닉네임 또는 핸드폰번호 부분 일치
-    query = query.or(`nickname.ilike.%${term}%,phone.ilike.%${term}%`)
-  }
-
-  query = query.range(offset, offset + limit - 1)
-
-  const [mainRes, cachedCounts] = await Promise.all([
-    query,
-    getCachedStatusCounts(),
-  ])
-
-  const { data, count, error } = mainRes
-  if (error) {
-    console.error("[listProfiles]", error)
-    return { profiles: [], total: 0, pendingCount: 0, approvedCount: 0, rejectedCount: 0 }
-  }
-
-  const total = isFiltered
-    ? count ?? 0
-    : cachedCounts.pendingCount + cachedCounts.approvedCount + cachedCounts.rejectedCount
+  const cachedCounts = await getCachedStatusCounts()
 
   return {
     profiles: (data ?? []).map(profile => ({ ...profile, role: normalizeMemberRole(profile.role) })) as Profile[],
