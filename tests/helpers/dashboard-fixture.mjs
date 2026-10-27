@@ -22,7 +22,12 @@ const MonthNav = load("src/features/events/components/month-nav.tsx", { ...base,
 export const fixtureStats = {
   volunteer: { 접수: 2, 검토중: 1, 일정변경요청: 1, 승인: 384, 반려: 4, 취소: 20, total: 412 },
   adoption: { 접수: 1, 검토중: 0, 일정변경요청: 0, 승인: 61, 반려: 4, 취소: 10, total: 76 },
-  monthly: load("src/shared/lib/month-windows.ts").recentMonthWindows(3).map((window, i) => ({ month: window.month, label: window.label, volunteer: [51, 60, 48][i], adoption: [12, 10, 9][i] })),
+  comparison: {
+    asOf: "2026-10-27T03:00:00.000Z", previousUntil: "2026-09-27T03:00:00.000Z", cappedAtMonthEnd: false,
+    volunteer: { current: 48, previous: 40, percent: 20 },
+    adoption: { current: 9, previous: 12, percent: -25 },
+  },
+  monthly: load("src/shared/lib/month-windows.ts").recentMonthWindows(5).map((window, i) => ({ month: window.month, label: window.label, volunteer: [43, 55, 51, 60, 48][i], adoption: [8, 11, 12, 10, 9][i] })),
 }
 export async function renderDashboard({ params = {}, stats = fixtureStats, fail = false, authorized = true, empty = false } = {}) {
   const day = dates.dateKey(new Date())
