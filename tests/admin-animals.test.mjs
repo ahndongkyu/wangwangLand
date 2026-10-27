@@ -17,6 +17,62 @@ function load(path, imports = {}, globals = {}) {
 }
 const filters = load("src/features/animals/lib/admin-filters.ts")
 
+function mobileFilterHarness(kind = "dogs", params = {}, pending = false) {
+  const calls = []
+  const component = load("src/features/animals/components/animal-mobile-filters.tsx", {
+    react: {
+      useEffect: () => {},
+      useRef: () => ({ current: { close: () => calls.push("close"), showModal: () => calls.push("open"), querySelector: () => ({ reset: () => calls.push("reset") }) } }),
+      useTransition: () => [pending, fn => fn()],
+    },
+    "next/navigation": { useRouter: () => ({ push: (href, options) => calls.push({ href, scroll: options.scroll }) }) },
+    "../lib/admin-filters": filters,
+  }, { FormData: class { constructor(values) { this.values = values } entries() { return Object.entries(this.values) } } })
+  const tree = component.AnimalMobileFilters({ kind, filters: filters.parseAnimalFilters(kind, params) })
+  return { tree, all: nodes(tree), calls }
+}
+
+test("mobile animal filters combine conditions only on Apply and preserve search/status", () => {
+  const view = mobileFilterHarness("dogs", { q: "보리", status: "보호중", page: "4" })
+  assert.equal(view.calls.length, 0)
+  const form = view.all.find(node => node.type === "form")
+  form.props.onSubmit({ preventDefault() {}, currentTarget: { size: "중", gender: "암컷", neutered: "false", sort: "name", pageSize: "50" } })
+  const navigation = view.calls.find(call => call.href)
+  const url = new URL(navigation.href, "https://example.test")
+  for (const [key, expected] of Object.entries({ q: "보리", status: "보호중", size: "중", gender: "암컷", neutered: "false", sort: "name", pageSize: "50" })) assert.equal(url.searchParams.get(key), expected)
+  assert.equal(url.searchParams.has("page"), false)
+  assert.equal(navigation.scroll, false)
+  assert.equal(view.calls.at(-1), "close")
+})
+
+test("mobile filter reset retains search/status but resets advanced conditions and pagination", () => {
+  const view = mobileFilterHarness("dogs", { q: "보리", status: "입양완료", gender: "암컷", sort: "name", pageSize: "100", page: "4" })
+  view.all.find(node => node.type === "button" && node.props.children === "조건 초기화").props.onClick()
+  const url = new URL(view.calls.find(call => call.href).href, "https://example.test")
+  assert.deepEqual([...url.searchParams.keys()].sort(), ["q", "status"])
+  assert.equal(url.searchParams.get("status"), "입양완료")
+})
+
+test("closing filter does not apply drafts; reopening resets to applied values", () => {
+  const view = mobileFilterHarness()
+  view.all.find(node => node.type === "button" && node.props.children === "닫기").props.onClick()
+  view.all.find(node => node.props?.["aria-haspopup"] === "dialog").props.onClick()
+  assert.deepEqual(view.calls, ["close", "reset", "open"])
+  assert.match(view.tree.props.className, /md:hidden/)
+  assert.match(view.all.find(node => node.type === "dialog").props.className, /max-h-\[85dvh\].*overflow-y-auto/)
+})
+
+test("cats exclude dog-only filters and pending state prevents duplicate navigation", () => {
+  const cats = mobileFilterHarness("cats", { size: "중", sort: "pinned" })
+  assert.equal(cats.all.some(node => node.type === "select" && node.props.name === "size"), false)
+  assert.equal(cats.all.some(node => node.type === "option" && node.props.value === "pinned"), false)
+  const busy = mobileFilterHarness("dogs", {}, true)
+  assert.match(busy.all.find(node => node.props?.role === "status").props.children, /불러오는 중/)
+  assert.equal(busy.all.find(node => node.props?.type === "submit").props.disabled, true)
+  busy.all.find(node => node.type === "form").props.onSubmit({ preventDefault() {}, currentTarget: {} })
+  assert.equal(busy.calls.length, 0)
+})
+
 test("animal filters normalize malformed URLs and preserve valid filters", () => {
   for (const page of ["0", "-1", "Infinity", "1.5", "1000001", ["2"]]) {
     const parsed = filters.parseAnimalFilters("dogs", { page, status: "invalid", size: ["중"], pageSize: "19" })

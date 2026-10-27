@@ -9,6 +9,7 @@ import { cn } from "@/shared/lib/utils"
 import { QuickAnimalPhoto } from "@/features/settings/components/animal-photo-picker"
 import { AnimalRowMenu, AnimalStatusSelect } from "./animal-row-controls"
 import { AnimalQuerySelect } from "./animal-query-select"
+import { AnimalMobileFilters } from "./animal-mobile-filters"
 import { ANIMAL_GENDERS, ANIMAL_SIZES, ANIMAL_STATUSES, animalFilterParams, animalListHref, type AnimalKind, type parseAnimalFilters } from "../lib/admin-filters"
 
 export function AdminAnimalList({ kind, animals, total, filters, canDelete }: {
@@ -29,7 +30,8 @@ export function AdminAnimalList({ kind, animals, total, filters, canDelete }: {
       {(["dogs", "cats"] as const).map(value => <Link key={value} href={`/admin/${value}`} aria-current={kind === value ? "page" : undefined} className={cn("inline-flex min-h-11 items-center border-b-2 px-1 pb-3 text-sm transition-colors hover:text-foreground", kind === value ? "border-primary font-semibold text-foreground" : "border-transparent text-muted-foreground")}>{value === "dogs" ? "강아지" : "고양이"}</Link>)}
     </nav>
     <div className="mb-4"><SearchBox placeholder="이름, 품종으로 찾기" className="max-w-xl [&_input]:min-h-11" /></div>
-    <details key={detailCount ? "filtered" : "default"} open={detailCount > 0} className="mb-4 rounded-xl border border-border bg-card px-4">
+    <AnimalMobileFilters kind={kind} filters={filters} />
+    <details key={detailCount ? "filtered" : "default"} open={detailCount > 0} className="mb-4 hidden rounded-xl border border-border bg-card px-4 md:block">
       <summary className="cursor-pointer py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">상세 필터{detailCount > 0 && <span className="ml-2 text-primary">{detailCount}개 적용</span>}</summary>
       <div className="flex flex-wrap gap-4 border-t border-border py-4">
         {kind === "dogs" && <AnimalQuerySelect label="크기" name="size" value={filters.size} options={options(ANIMAL_SIZES)} />}
@@ -43,7 +45,7 @@ export function AdminAnimalList({ kind, animals, total, filters, canDelete }: {
     </nav>
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <p role="status" className="text-sm text-muted-foreground">{hasFilters ? "검색 결과" : "전체"} <strong className="font-semibold text-foreground">{total.toLocaleString()}</strong>마리{animals.length > 0 && <span className="ml-2 text-xs">· {(filters.page - 1) * filters.pageSize + 1}–{(filters.page - 1) * filters.pageSize + animals.length} 표시</span>}</p>
-      <div className="flex flex-wrap gap-3"><AnimalQuerySelect label="정렬" name="sort" value={filters.sort} options={[{ value: "latest", label: "최근 수정순" }, { value: "name", label: "이름순" }, ...(kind === "dogs" ? [{ value: "pinned", label: "고정순" }] : [])]} /><AnimalQuerySelect label="표시" name="pageSize" value={String(filters.pageSize)} options={[20, 50, 100].map(n => ({ value: String(n), label: `${n}개` }))} /></div>
+      <div className="hidden flex-wrap gap-3 md:flex"><AnimalQuerySelect label="정렬" name="sort" value={filters.sort} options={[{ value: "latest", label: "최근 수정순" }, { value: "name", label: "이름순" }, ...(kind === "dogs" ? [{ value: "pinned", label: "고정순" }] : [])]} /><AnimalQuerySelect label="표시" name="pageSize" value={String(filters.pageSize)} options={[20, 50, 100].map(n => ({ value: String(n), label: `${n}개` }))} /></div>
     </div>
     <div className="rounded-xl border border-border bg-card">
       <div aria-hidden className="hidden grid-cols-[minmax(0,1.6fr)_120px_minmax(80px,0.7fr)_220px] gap-4 rounded-t-xl bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid"><span>아이 정보</span><span className="text-center">보호 상태</span><span className="text-center">보호 위치</span><span className="text-center">관리</span></div>
