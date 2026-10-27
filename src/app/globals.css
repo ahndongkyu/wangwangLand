@@ -398,6 +398,16 @@
   animation: pending-glow 2.4s ease-in-out infinite;
 }
 
+/* 신청이 남아 있는 개별 카드의 테두리만 강조한다. */
+@keyframes dashboard-border-glow {
+  0%, 100% { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent); }
+  50% { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent); }
+}
+.dashboard-pending-border { animation: dashboard-border-glow 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-pending-border { animation: none; border-color: var(--primary); }
+}
+
 /* 프로필 카드 알림 — 종 아이콘 대신 카드 외곽으로 새 알림을 표시 */
 @keyframes profile-notification-glow {
   0%, 100% {

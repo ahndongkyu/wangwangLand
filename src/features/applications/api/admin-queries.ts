@@ -28,6 +28,7 @@ export async function getAdminApplicationList(filters: ApplicationFilters) {
       ? client.from("volunteer_applications").select("*", { count: "exact" })
       : client.from("adoption_applications").select("*, dog:dogs(id, name), cat:cats(id, name)", { count: "exact" })
     if (filters.status === "처리 필요") q = q.in("status", statuses)
+    else if (filters.status === "승인 대기") q = q.in("status", ["접수", "검토중"])
     else if (filters.status === "반려·취소") q = q.in("status", ["반려", "취소"])
     else if (filters.status !== "전체") q = q.eq("status", filters.status)
     // PostgREST 논리 구문 문자를 제거하고 사용자 검색어를 값으로만 사용합니다.

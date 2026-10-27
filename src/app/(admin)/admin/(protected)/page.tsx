@@ -1,501 +1,81 @@
 import Link from "next/link"
-import {
-  BarChart3,
-  CalendarDays,
-  ClipboardList,
-  Clock,
-  Inbox,
-  PenSquare,
-} from "lucide-react"
-
-import {
-  countPendingApplications,
-  formatVolunteerApplicantName,
-  getApplicationStats,
-  listRecentApplications,
-  getMonthlyVolunteerStats,
-} from "@/features/applications"
-import { getMonthlyMemberStats } from "@/features/members"
+import { getDashboardStats } from "@/features/applications/api/dashboard"
 import { getApprovedVolunteerPeople } from "@/features/applications/api/queries"
-import { listNotices } from "@/features/notices"
-import { listDailyPosts } from "@/features/daily"
-import { listAdoptionStories } from "@/features/stories"
+import { applicationHref, validDate } from "@/features/applications/lib/admin-list"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
-import {
-  monthRange as eventMonthRange,
-  todayKst,
-  yearMonthKst,
-} from "@/features/events/lib/date"
-import { AdminTrendChart } from "@/shared/components/admin-trend-chart"
-import { AdminStatusChart } from "@/shared/components/admin-status-chart"
+import { getDashboardVisits } from "@/features/events/api/dashboard-visits"
+import { getVolunteerVisitSummary } from "@/features/events/api/visit-summary"
+import { dateKey, formatTimeKst, monthRange, yearMonthKst } from "@/features/events/lib/date"
+import { getEventTitle } from "@/features/events/types"
+import { requireAdmin } from "@/shared/lib/auth"
 import { BrandIcon } from "@/shared/components/brand-icon"
-import { Badge } from "@/shared/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card"
-import { cn } from "@/shared/lib/utils"
-import { recentMonthWindows } from "@/shared/lib/month-windows"
-import type { ApplicationStatus } from "@/shared/types/database"
+import { createClient } from "@/shared/lib/supabase/server"
+import { recordOperationError } from "@/features/operation-logs/server"
+import { DashboardStatistics } from "./_components/dashboard-stats"
 
 export const dynamic = "force-dynamic"
+const shortcuts = [
+  { href: "/admin/calendar/new", icon: "calendar", label: "새 일정", desc: "봉사·행사·휴무" },
+  { href: "/admin/notices/new", icon: "notification", label: "공지 작성", desc: "새 소식 게시" },
+  { href: "/admin/daily/new", icon: "camera", label: "이야기 작성", desc: "활동 기록" },
+  { href: "/admin/stories/new", icon: "heart", label: "후기 작성", desc: "입양 후기" },
+] as const
 
-const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
-
-function statsMonthRange(d: Date) {
-  const window = recentMonthWindows(1, d)[0]
-  return { from: window.firstDay, to: window.lastDay }
-}
-
-function statusBadgeColor(status: ApplicationStatus) {
-  switch (status) {
-    case "접수":
-      return "bg-primary/20 text-primary"
-    case "검토중":
-      return "bg-amber-500/20 text-amber-700"
-    case "승인":
-      return "bg-emerald-600/20 text-emerald-700"
-    case "반려":
-      return "bg-muted text-muted-foreground"
-  }
-}
-
-function deltaBadge(current: number, prev: number) {
-  if (prev === 0 && current === 0) return null
-  if (prev === 0) {
-    return (
-      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
-        신규
-      </span>
-    )
-  }
-  const diff = current - prev
-  const pct = Math.round((diff / prev) * 100)
-  const up = diff >= 0
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-        up
-          ? "bg-emerald-500/15 text-emerald-700"
-          : "bg-rose-500/15 text-rose-700"
-      )}
-    >
-      {up ? "▲" : "▼"} {Math.abs(pct)}%
-    </span>
-  )
-}
-
-export default async function AdminDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ ym?: string; date?: string }>
-}) {
+export default async function AdminDashboardPage({ searchParams }: { searchParams: Promise<{ ym?: string; date?: string }> }) {
+  const auth = await requireAdmin()
+  if (!auth.ok) return <p role="alert">관리자 권한이 필요합니다.</p>
   const params = await searchParams
   const now = new Date()
-  const thisMonth = statsMonthRange(now)
-  const prevMonth = statsMonthRange(new Date(new Date(recentMonthWindows(1, now)[0].from).getTime() - 1))
-  const calendarYearMonth =
-    params.ym && YM_RE.test(params.ym)
-      ? params.ym
-      : yearMonthKst(todayKst())
-  const calendarRange = eventMonthRange(calendarYearMonth)
-
-  const [
-    calendarEvents,
-    pendingCounts,
-    appStats,
-    recentApps,
-    monthlyVolunteerStats,
-    monthlyMemberStats,
-    noticesCount,
-    dailyCount,
-    storiesCount,
-    approvedPeople,
-  ] = await Promise.all([
-    listEventsInRange({
-      from: calendarRange.from,
-      to: calendarRange.to,
-      includeInternal: true,
-    }),
-    countPendingApplications(),
-    getApplicationStats({
-      monthFrom: thisMonth.from,
-      monthTo: thisMonth.to,
-      prevMonthFrom: prevMonth.from,
-      prevMonthTo: prevMonth.to,
-    }),
-    listRecentApplications(5),
-    getMonthlyVolunteerStats(7),
-    getMonthlyMemberStats(7),
-    listNotices({ includeDrafts: true, limit: 1 }).then((r) => r.total),
-    listDailyPosts({ limit: 1 }).then((r) => r.total),
-    listAdoptionStories({ includeDrafts: true, limit: 1 }).then((r) => r.total),
-    getApprovedVolunteerPeople(),
+  const today = dateKey(now)
+  const currentMonth = yearMonthKst(now)
+  const yearMonth = params.ym && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.ym) ? params.ym : currentMonth
+  const range = monthRange(yearMonth)
+  const todayFrom = new Date(`${today}T00:00:00+09:00`).toISOString()
+  const todayTo = new Date(Date.parse(todayFrom) + 86400000).toISOString()
+  const calendarPromise = listEventsInRange({ ...range, includeInternal: true })
+  const visitsPromise = (yearMonth === currentMonth ? calendarPromise.then(events => events.filter(event => dateKey(new Date(event.starts_at)) === today)) : listEventsInRange({ from: todayFrom, to: todayTo, includeInternal: true })).then(getDashboardVisits)
+  const [events, stats, approvedPeople, visits] = await Promise.all([
+    calendarPromise.catch(() => null), getDashboardStats(now).catch(() => null),
+    getApprovedVolunteerPeople().catch(() => null), visitsPromise.catch(() => null),
   ])
+  const client = await createClient()
+  const [volunteerVisits, conflictResult] = await Promise.all([
+    events ? getVolunteerVisitSummary(events).catch(() => null) : Promise.resolve(null),
+    client.rpc("application_calendar_conflicts", { p_from: range.from, p_to: range.to }),
+  ])
+  if (conflictResult.error) await recordOperationError("query", "dashboardCalendarConflicts", conflictResult.error, "admin")
+  const conflicts = (conflictResult.data ?? []) as Array<{ event_id: string; reason: string }>
+  const pending = [
+    { label: "봉사 신청", hint: "접수·검토중", type: "volunteer", status: "승인 대기", count: stats ? stats.volunteer.접수 + stats.volunteer.검토중 : null },
+    { label: "입양 상담", hint: "접수·검토중", type: "adoption", status: "승인 대기", count: stats ? stats.adoption.접수 + stats.adoption.검토중 : null },
+    { label: "일정 변경", hint: "변경 요청", type: "volunteer", status: "일정변경요청", count: stats ? stats.volunteer.일정변경요청 : null },
+  ]
+  const volunteer = visits?.filter(event => event.kind === "volunteer")
+  const adoption = visits?.filter(event => event.kind === "adoption")
+  const selectedDate = params.date && validDate(params.date) && params.date.startsWith(yearMonth) ? params.date : yearMonth === currentMonth ? today : `${yearMonth}-01`
 
-  const monthLabel = now.toLocaleDateString("ko-KR", { month: "long", timeZone: "Asia/Seoul" })
-  const totalPending = pendingCounts.adoption + pendingCounts.volunteer
-  const newMembersThis = monthlyMemberStats.at(-1)?.rescued ?? 0
-  const newMembersPrev = monthlyMemberStats.at(-2)?.rescued ?? 0
-
-  return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-8 md:px-0 md:py-0">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground md:text-3xl">오늘의 운영 현황</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          왕왕랜드 운영 현황 ·{" "}
-          {now.toLocaleDateString("ko-KR", {
-            year: "numeric",
-            timeZone: "Asia/Seoul",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-      </header>
-
-      {/* 2. 월간 봉사·행사 일정 */}
-      <section className="mb-8">
-        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-            <CalendarDays className="size-4" aria-hidden />
-            봉사·행사 일정
-          </h2>
-          <div className="flex items-center gap-3 text-xs font-semibold">
-            <Link href="/admin/calendar/new" className="text-primary hover:underline">
-              새 일정 등록
-            </Link>
-            <Link href="/admin/calendar" className="text-primary hover:underline">
-              전체 캘린더 →
-            </Link>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-secondary/30 p-3 shadow-sm sm:p-5">
-          <MonthNav yearMonth={calendarYearMonth} basePath="/admin" />
-          <MonthGrid
-            key={`${calendarYearMonth}-${params.date ?? ""}`}
-            yearMonth={calendarYearMonth}
-            events={calendarEvents}
-            hrefBase="/admin/calendar"
-            addHrefBase="/admin/calendar/new"
-            returnPath="/admin"
-            initialSelectedDate={params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : yearMonthKst(now) === calendarYearMonth ? new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10) : `${calendarYearMonth}-01`}
-          />
-        </div>
-      </section>
-
-      {/* 1. 자주 하는 작업 — 매일 가장 자주 쓰는 4가지 */}
-      <section className="order-1 mb-8">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-          <PenSquare className="size-4" aria-hidden />
-          자주 하는 작업
-        </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <QuickLink
-            href="/admin/calendar/new"
-            icon="calendar"
-            label="새 일정"
-            desc="봉사·행사·휴무"
-          />
-          <QuickLink
-            href="/admin/notices/new"
-            icon="notification"
-            label="공지 작성"
-            desc="새 소식 게시"
-          />
-          <QuickLink
-            href="/admin/daily/new"
-            icon="camera"
-            label="이야기 작성"
-            desc="활동 기록"
-          />
-          <QuickLink
-            href="/admin/stories/new"
-            icon="heart"
-            label="후기 작성"
-            desc="입양 후기"
-          />
-        </div>
-      </section>
-
-      {/* 3. 처리 대기 + 최근 신청 — 운영진이 즉시 액션해야 하는 항목 */}
-      <section className="order-2 mb-8 grid gap-4 md:grid-cols-2">
-        <Card
-          className={cn(
-            totalPending > 0 && "border-primary animate-pending-glow"
-          )}
-        >
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <Inbox className="size-4 text-muted-foreground" aria-hidden />
-              확인이 필요한 신청
-              {totalPending > 0 && (
-                <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-                  {totalPending}
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
-            <Link
-              href="/admin/applications?type=volunteer&status=접수"
-              className="flex flex-col rounded-md border border-border bg-background p-3 transition-colors hover:border-primary/50"
-            >
-              <span className="text-[11px] text-muted-foreground">봉사</span>
-              <span className="mt-0.5 text-lg font-bold text-foreground">
-                {pendingCounts.volunteer}
-              </span>
-            </Link>
-            <Link
-              href="/admin/applications?type=adoption&status=접수"
-              className="flex flex-col rounded-md border border-border bg-background p-3 transition-colors hover:border-primary/50"
-            >
-              <span className="text-[11px] text-muted-foreground">입양</span>
-              <span className="mt-0.5 text-lg font-bold text-foreground">
-                {pendingCounts.adoption}
-              </span>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <Clock className="size-4 text-muted-foreground" aria-hidden />
-              최근 신청
-              <Link
-                href="/admin/applications"
-                className="ml-auto text-xs font-normal text-primary hover:underline"
-              >
-                전체 →
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1.5">
-            {recentApps.length === 0 ? (
-              <p className="py-4 text-center text-xs text-muted-foreground">
-                최근 신청이 없습니다.
-              </p>
-            ) : (
-              recentApps.map((app) => (
-                <Link
-                  key={`${app.type}-${app.id}`}
-                  href={`/admin/applications/${app.type}/${app.id}`}
-                  className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-secondary/40"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-foreground/70">
-                      {app.type === "adoption" ? "입양" : "봉사"}
-                    </span>
-                    <span className="truncate text-foreground">
-                      {formatVolunteerApplicantName(
-                        app.applicant_name,
-                        app.group_name
-                      )}
-                    </span>
-                    <Badge
-                      className={cn(
-                        "shrink-0 border-0 text-[10px] font-semibold",
-                        statusBadgeColor(app.status)
-                      )}
-                    >
-                      {app.status}
-                    </Badge>
-                  </div>
-                  <span className="shrink-0 text-[11px] text-muted-foreground">
-                    {new Date(app.submitted_at).toLocaleString("ko-KR", {
-                      timeZone: "Asia/Seoul",
-                      month: "numeric",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    })}
-                  </span>
-                </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* 4. 이번 달 현황 — 통계 (작게) */}
-      <section className="order-3 mb-8">
-        <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
-          <ClipboardList className="size-4" aria-hidden />
-          {monthLabel} 현황
-        </h2>
-        <p className="mb-4 text-xs leading-relaxed text-muted-foreground">이번 달은 현재까지의 수치이며, 전월은 지난달 전체 수치입니다. 봉사 신청은 인원이 아닌 신청 건수이고, 승인 상태는 실제 참석을 의미하지 않습니다.</p>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <MonthCard
-            label="누적 게시글 (전체 기간)"
-            value={noticesCount + dailyCount + storiesCount}
-            extra={
-              <span className="text-[10px] text-muted-foreground/70">
-                공지·이야기·기존 후기 합계
-              </span>
-            }
-            href="/admin/notices"
-          />
-          <MonthCard
-            label="이번 달 가입 회원"
-            value={newMembersThis}
-            prev={newMembersPrev}
-            href="/admin/members"
-            suffix="명"
-          />
-          <MonthCard
-            label="봉사 신청"
-            value={appStats.volunteer.thisMonth}
-            prev={appStats.volunteer.lastMonth}
-            href="/admin/applications?type=volunteer"
-          />
-          <MonthCard
-            label="입양 신청"
-            value={appStats.adoption.thisMonth}
-            prev={appStats.adoption.lastMonth}
-            href="/admin/applications?type=adoption"
-          />
-        </div>
-      </section>
-
-      <section className="order-4 mb-8 grid gap-4 md:grid-cols-2" aria-label="신청 처리 상태 통계">
-        <div className="rounded-xl border border-border bg-card p-5 md:col-span-2">
-          <h3 className="text-sm font-medium text-muted-foreground">누적 승인 봉사 인원</h3>
-          <p className="mt-2 text-3xl font-bold tabular-nums">{approvedPeople.toLocaleString()}<span className="ml-1 text-sm font-normal">명</span></p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">현재 승인 상태인 신청의 동반 인원 합계입니다. 같은 사람의 반복 신청을 포함하며, 실제 참석 인원이나 고유 봉사자 수는 아닙니다.</p>
-        </div>
-        <AdminStatusChart title="봉사 신청 처리 상태" counts={appStats.volunteer.allTime} />
-        <AdminStatusChart title="입양 신청 처리 상태" counts={appStats.adoption.allTime} />
-      </section>
-
-      {/* 완료된 최근 6개월 추이 */}
-      <section className="order-4 mb-8 grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
-              월별 봉사 신청 건수
-              <Link
-                href="/admin/applications?type=volunteer"
-                className="ml-auto text-xs font-normal text-primary hover:underline"
-              >
-                목록 →
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-muted-foreground">신청일 기준 · 진행 중인 이번 달 제외</p>
-            <AdminTrendChart data={monthlyVolunteerStats.slice(0, -1)} valueLabel="건" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <BarChart3 className="size-4 text-muted-foreground" aria-hidden />
-              월별 가입 회원 수
-              <Link
-                href="/admin/members"
-                className="ml-auto text-xs font-normal text-primary hover:underline"
-              >
-                목록 →
-              </Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-muted-foreground">가입일 기준 · 진행 중인 이번 달 제외</p>
-            <AdminTrendChart data={monthlyMemberStats.slice(0, -1)} valueLabel="명" />
-          </CardContent>
-        </Card>
-      </section>
-    </div>
-  )
-}
-
-function MonthCard({
-  label,
-  value,
-  prev,
-  suffix,
-  extra,
-  href,
-  highlight,
-}: {
-  label: string
-  value: number
-  prev?: number
-  suffix?: string
-  extra?: React.ReactNode
-  href?: string
-  highlight?: boolean
-}) {
-  const card = (
-    <Card
-      className={cn(
-        "h-full transition-colors",
-        href && "hover:border-primary/50",
-        highlight && value > 0 && "border-primary"
-      )}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-          <span>{label}</span>
-          {prev !== undefined && deltaBadge(value, prev)}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-baseline gap-1.5">
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        {suffix && <p className="text-xs text-muted-foreground">{suffix}</p>}
-        {extra}
-        {prev !== undefined && (
-          <p className="text-xs text-muted-foreground">전월 {prev}{suffix ?? "건"}</p>
-        )}
-      </CardContent>
-    </Card>
-  )
-  return href ? (
-    <Link href={href} className="block">
-      {card}
-    </Link>
-  ) : (
-    card
-  )
-}
-
-function QuickLink({
-  href,
-  icon,
-  label,
-  desc,
-  highlight,
-}: {
-  href: string
-  icon: Parameters<typeof BrandIcon>[0]["name"]
-  label: string
-  desc: string
-  highlight?: boolean
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "group flex flex-col items-start gap-2 rounded-lg border bg-card p-4 transition-colors",
-        highlight
-          ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
-          : "border-border hover:border-primary/40 hover:bg-secondary"
-      )}
-    >
-      <span
-        className={cn(
-          "flex size-9 items-center justify-center rounded-lg transition-colors",
-          highlight
-            ? "bg-primary/20 group-hover:bg-primary/30"
-            : "bg-primary/10 group-hover:bg-primary/20"
-        )}
-      >
-        <BrandIcon name={icon} size={20} decorative />
-      </span>
-      <div>
-        <p className="text-sm font-semibold text-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground">{desc}</p>
+  return <div className="mx-auto w-full min-w-0 max-w-6xl space-y-6 px-4 py-5 md:space-y-8 md:px-0 md:py-0">
+    <header><h1 className="text-xl font-bold sm:text-2xl">오늘의 운영 현황</h1><p className="mt-1 text-xs text-muted-foreground sm:text-sm">{now.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "long", day: "numeric", weekday: "long" })}</p></header>
+    <section aria-labelledby="dashboard-shortcuts"><h2 id="dashboard-shortcuts" className="mb-3 text-base font-semibold">자주 하는 작업</h2>
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">{shortcuts.map(item => <Link key={item.href} href={item.href} className="flex min-h-16 items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/50 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring sm:p-4"><span className="hidden size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 sm:flex"><BrandIcon name={item.icon} size={20} decorative /></span><span><span className="block text-sm font-semibold">{item.label}</span><span className="mt-0.5 block text-xs text-muted-foreground">{item.desc}</span></span></Link>)}</div>
+    </section>
+    <section aria-labelledby="dashboard-pending"><h2 id="dashboard-pending" className="mb-3 text-base font-semibold">처리할 신청</h2>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">{pending.map(item => <Link key={item.label} href={applicationHref({ type: item.type, status: item.status })} data-pending={item.count !== null && item.count > 0 ? "true" : "false"} className={`min-w-0 rounded-xl border bg-card p-3 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring sm:p-5 ${item.count !== null && item.count > 0 ? "dashboard-pending-border border-primary/70" : "border-border"}`}><h3 className="text-xs font-medium sm:text-sm">{item.label}</h3><p className="my-2 text-2xl font-bold tabular-nums sm:text-3xl">{item.count === null ? "—" : item.count.toLocaleString("ko-KR")}<span className="ml-1 text-xs font-normal text-muted-foreground">건</span></p><p className="text-[11px] text-muted-foreground sm:text-xs">{item.hint}</p></Link>)}</div>
+      {!stats && <p role="alert" className="mt-2 text-sm text-destructive">신청 건수를 불러오지 못했습니다. 목록에서 확인해 주세요.</p>}
+    </section>
+    <section aria-labelledby="dashboard-today" className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5"><h2 id="dashboard-today" className="text-base font-semibold">오늘 방문 예정</h2><Link href={`/admin/calendar?ym=${currentMonth}&date=${today}`} className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">일정 보기</Link></div>
+      {visits === null ? <p role="alert" className="p-4 text-sm text-destructive">오늘 방문 일정을 불러오지 못했습니다. 새로고침해 주세요.</p> : <>
+        <p className="px-4 py-3 text-xs text-muted-foreground sm:px-5">봉사 {volunteer!.length}건 · {volunteer!.some(event => event.people === null) ? "인원 확인 필요" : `${volunteer!.reduce((sum, event) => sum + (event.people ?? 0), 0)}명`}<span className="mx-3" aria-hidden> / </span>입양 상담 {adoption!.length}건</p>
+        {visits.length === 0 ? <p className="px-4 pb-5 text-sm text-muted-foreground sm:px-5">오늘 예정된 봉사·입양 상담이 없습니다.</p> : <ul className="divide-y divide-border">{visits.map(event => <li key={event.id}><Link href={`/admin/applications/${event.kind}/${event.source_application_id}`} className="grid min-h-14 grid-cols-[5rem_minmax(0,1fr)_auto] items-center gap-2 px-4 py-3 text-sm transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring sm:gap-4 sm:px-5"><time className="text-xs tabular-nums" dateTime={event.starts_at}>{event.all_day ? "종일" : formatTimeKst(event.starts_at)}</time><span className="min-w-0 break-words font-medium">{getEventTitle(event)}</span><span className="text-xs text-muted-foreground">{event.kind === "volunteer" ? `봉사${event.people !== null ? ` · ${event.people}명` : ""}` : "입양 상담"}</span></Link></li>)}</ul>}
+      </>}
+    </section>
+    <section aria-labelledby="dashboard-calendar"><div className="mb-3 flex items-center justify-between gap-3"><h2 id="dashboard-calendar" className="text-base font-semibold">월간 일정</h2><Link href="/admin/calendar" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 캘린더</Link></div>
+      <div className="rounded-xl border border-border bg-card p-3 sm:p-5"><MonthNav yearMonth={yearMonth} basePath="/admin" />
+        {conflictResult.error ? <p role="alert" className="mb-3 text-sm text-destructive">신청 제한일과 겹치는 일정을 확인하지 못했습니다.</p> : conflicts.length > 0 && <Link href={`/admin/calendar?ym=${yearMonth}`} className="mb-3 flex min-h-11 items-center rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">휴무·행사와 겹치는 확정 일정 {conflicts.length}건 확인</Link>}
+        {events === null ? <p role="alert" className="py-6 text-sm text-destructive">일정을 불러오지 못했습니다. 새로고침해 주세요.</p> : <MonthGrid key={`${yearMonth}-${selectedDate}`} yearMonth={yearMonth} events={events} hrefBase="/admin/calendar" addHrefBase="/admin/calendar/new" returnPath="/admin" initialSelectedDate={selectedDate} volunteerVisits={volunteerVisits} />}
       </div>
-    </Link>
-  )
+    </section>
+    <DashboardStatistics stats={stats} approvedPeople={approvedPeople} />
+  </div>
 }

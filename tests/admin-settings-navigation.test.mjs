@@ -8,7 +8,9 @@ import { operatingSnapshot } from "./helpers/operating-fixture.mjs"
 const route = "src/app/(admin)/admin/(protected)/settings/[section]/page.tsx"
 function fixture(role = "admin") {
   const calls = []
-  const component = name => props => React.createElement("div", { "data-section": props.section }, name)
+  const component = name => function SettingsFixture(props) {
+    return React.createElement("div", { "data-section": props.section }, name)
+  }
   const Page = load(route, {
     "next/navigation": { notFound() { throw Error("404") } },
     "@/features/auth": { getCurrentAdmin: async () => role ? { role } : null },

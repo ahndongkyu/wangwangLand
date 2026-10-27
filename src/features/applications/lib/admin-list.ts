@@ -1,7 +1,7 @@
 import type { ApplicationStatus } from "@/shared/types/database"
 
 export type ApplicationKind = "volunteer" | "adoption"
-export type ApplicationFilter = ApplicationStatus | "처리 필요" | "전체" | "반려·취소"
+export type ApplicationFilter = ApplicationStatus | "처리 필요" | "승인 대기" | "전체" | "반려·취소"
 export type AdminApplicationParams = Record<string, string | string[] | undefined>
 export const APPLICATION_STATUSES: ApplicationStatus[] = ["접수", "검토중", "일정변경요청", "승인", "반려", "취소"]
 export function validDate(value: string) {
@@ -10,7 +10,7 @@ export function validDate(value: string) {
 export function parseApplicationFilters(params: AdminApplicationParams) {
   const value = (key: string) => typeof params[key] === "string" ? params[key] as string : ""
   const type: ApplicationKind = value("type") === "adoption" ? "adoption" : "volunteer"
-  const candidates: ApplicationFilter[] = ["처리 필요", "전체", "반려·취소", ...APPLICATION_STATUSES]
+  const candidates: ApplicationFilter[] = ["처리 필요", "승인 대기", "전체", "반려·취소", ...APPLICATION_STATUSES]
   const status = candidates.find(s => s === value("status") && !(type === "adoption" && s === "일정변경요청")) ?? "처리 필요"
   const from = value("from"), to = value("to")
   const dateBy = value("dateBy") === "activity" ? "activity" as const : "submitted" as const
