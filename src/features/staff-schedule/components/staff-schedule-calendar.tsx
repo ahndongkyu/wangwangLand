@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from "lucide-react"
 
 import { Button } from "@/shared/components/ui/button"
@@ -13,7 +14,7 @@ import type { StaffAvailabilityWithUser, StaffOption } from "../api/queries"
 import { isPermanentStaffId } from "../permanent-staff"
 
 interface Props {
-  /** 현재 표시 중인 월 시작일 (서버에서 결정, 페이지 새로고침으로 월 이동) */
+  /** 현재 표시 중인 월 시작일 (서버에서 결정, 클라이언트 탐색으로 월 이동) */
   monthStart: string // YYYY-MM-01
   items: StaffAvailabilityWithUser[]
   staff: StaffOption[]
@@ -60,6 +61,8 @@ function shiftMonth(monthStart: string, delta: number): string {
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"]
 
 export function StaffScheduleCalendar({ monthStart, items, staff, currentUserId }: Props) {
+  const router = useRouter()
+  const [isNavigating, startNavigation] = useTransition()
   const { weeks, year, month } = useMemo(() => buildMonthGrid(monthStart), [monthStart])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
@@ -73,9 +76,14 @@ export function StaffScheduleCalendar({ monthStart, items, staff, currentUserId 
     return map
   }, [items])
 
+  function navigate(href: string) {
+    if (isNavigating) return
+    setSelectedDate(null)
+    startNavigation(() => router.push(href, { scroll: false }))
+  }
+
   function handleNav(delta: number) {
-    const next = shiftMonth(monthStart, delta)
-    window.location.href = `/admin/schedule?month=${next}`
+    navigate(`/admin/schedule?month=${shiftMonth(monthStart, delta)}`)
   }
 
   return (
@@ -85,18 +93,19 @@ export function StaffScheduleCalendar({ monthStart, items, staff, currentUserId 
         <h2 className="text-lg font-semibold">
           {year}년 {month}월
         </h2>
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" onClick={() => handleNav(-1)} aria-label="이전 달">
+        <div className="flex items-center gap-1" aria-busy={isNavigating}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11 min-w-11" disabled={isNavigating} onClick={() => handleNav(-1)} aria-label="이전 달">
             <ChevronLeft className="size-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => (window.location.href = "/admin/schedule")}>
+          <Button type="button" variant="outline" size="sm" className="min-h-11 min-w-11" disabled={isNavigating} onClick={() => navigate("/admin/schedule")}>
             오늘
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleNav(1)} aria-label="다음 달">
+          <Button type="button" variant="outline" size="sm" className="min-h-11 min-w-11" disabled={isNavigating} onClick={() => handleNav(1)} aria-label="다음 달">
             <ChevronRight className="size-4" />
           </Button>
         </div>
       </div>
+      <span role="status" className="sr-only">{isNavigating ? "일정을 불러오는 중입니다." : ""}</span>
 
       {/* 캘린더 그리드 */}
       <div className="overflow-hidden rounded-lg border border-border bg-card">
