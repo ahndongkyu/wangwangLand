@@ -179,7 +179,7 @@ test("approval template uses confirmed KST visits and the approved copy", () => 
   assert.throws(() => buildVolunteerSms("confirmed", "신청자", [], 1))
 })
 
-test("SMS history renders delivery status, content, application link and distinct query errors", async () => {
+test("SMS history renders delivery status and detail links without message bodies", async () => {
   for (const failed of [false, true]) {
     const page = load("src/app/(admin)/admin/(protected)/sms/page.tsx", {
       "@/features/sms/auto-refresh": { SmsAutoRefresh: () => null },
@@ -201,19 +201,16 @@ test("SMS history renders delivery status, content, application link and distinc
     } else {
       assert.match(html, />완료<\/span>/)
       assert.match(html, /26\.10\.08 09:00/)
-      assert.match(html, /<details/)
-      assert.match(html, /문자 본문/)
-      assert.match(html, /\/admin\/applications\/volunteer\/app/)
+      assert.doesNotMatch(html, /<details/)
+      assert.doesNotMatch(html, /문자 본문/)
+      assert.match(html, /\/admin\/sms\/log\?page=1/)
       assert.match(html, /\/admin\/sms\?page=2/)
-      assert.match(html, /name="sms-history"/)
       assert.doesNotMatch(html, /<details[^>]*\sopen(?:=""|\s|>)/)
       assert.match(html, /<span>수신자<\/span><span class="text-center">전화번호<\/span><span class="text-center">발송 일시<\/span><span class="text-center">발송 상태<\/span>/)
-      const summary = html.match(/<summary[^>]*>([\s\S]*?)<\/summary>/)[1]
-      const labels = ["수신자 ", "전화번호 ", "발송 일시 ", "발송 상태 ", "펼치기"]
+      const summary = html.match(/<a href="\/admin\/sms\/log[^>]*>([\s\S]*?)<\/a>/)[1]
+      const labels = ["수신자 ", "전화번호 ", "발송 일시 ", "발송 상태 ", "상세"]
       const positions = labels.map(label => summary.indexOf(label))
       assert.ok(positions.every((position, index) => position >= 0 && (index === 0 || position > positions[index - 1])))
-      assert.match(summary, /group-open:hidden/)
-      assert.match(summary, /group-open:inline/)
     }
   }
 })

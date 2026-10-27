@@ -26,8 +26,8 @@ export default async function SmsHistoryPage({ searchParams }: { searchParams: P
   return <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
     <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div><h1 className="text-2xl font-bold md:text-3xl">SMS 발송 내역</h1>
-        <p className="mt-2 text-sm text-muted-foreground">홈페이지에서 보낸 문자와 전달 결과를 확인하세요. 이 기능 적용 이후 요청부터 기록됩니다.</p>
-        <p className="mt-1 text-sm text-muted-foreground">접수와 전달 완료는 다릅니다. 결과 미확인 상태에서는 중복 발송에 주의하세요.</p>
+        <p className="mt-2 hidden text-sm text-muted-foreground md:block">홈페이지에서 보낸 문자와 전달 결과를 확인하세요. 이 기능 적용 이후 요청부터 기록됩니다.</p>
+        <p className="mt-1 hidden text-sm text-muted-foreground md:block">접수와 전달 완료는 다릅니다. 결과 미확인 상태에서는 중복 발송에 주의하세요.</p>
       </div>
       <SmsAutoRefresh />
     </header>
@@ -36,26 +36,21 @@ export default async function SmsHistoryPage({ searchParams }: { searchParams: P
     <div className="@container">
     {logs.length > 0 && <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_8rem_9rem_8rem_3.5rem] gap-3 border-b border-border bg-muted/50 px-4 py-3 text-xs text-muted-foreground @min-[640px]:grid">
-        <span>수신자</span><span className="text-center">전화번호</span><span className="text-center">발송 일시</span><span className="text-center">발송 상태</span><span className="text-right">펼치기</span>
+        <span>수신자</span><span className="text-center">전화번호</span><span className="text-center">발송 일시</span><span className="text-center">발송 상태</span><span className="text-right">상세</span>
       </div>
       {logs.map(row => {
       const report = reports[row.provider_message_id]
       const code = report?.statusCode
       const status = smsStatusPresentation(row.state, code)
-      return <details key={row.id} name="sms-history" className="group border-b border-border last:border-b-0">
-        <summary className="grid min-h-16 cursor-pointer list-none grid-cols-[minmax(0,1fr)_minmax(0,8rem)] items-center gap-x-3 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring group-open:bg-muted/50 [&::-webkit-details-marker]:hidden @min-[640px]:grid-cols-[minmax(0,1fr)_8rem_9rem_8rem_3.5rem] @min-[640px]:gap-y-0">
+      return <div key={row.id} className="border-b border-border last:border-b-0">
+        <Link href={`/admin/sms/${row.id}?page=${page}`} className="grid min-h-16 cursor-pointer list-none grid-cols-[minmax(0,1fr)_minmax(0,8rem)] items-center gap-x-3 gap-y-1 px-4 py-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring group-open:bg-muted/50 [&::-webkit-details-marker]:hidden @min-[640px]:grid-cols-[minmax(0,1fr)_8rem_9rem_8rem_3.5rem] @min-[640px]:gap-y-0">
           <span className="col-start-1 row-start-1 min-w-0 break-words font-medium @min-[640px]:col-auto @min-[640px]:row-auto"><span className="sr-only">수신자 </span>{row.recipient_name || "수신자"}</span>
           <span className="col-start-1 row-start-2 min-w-0 break-all text-xs tabular-nums text-muted-foreground @min-[640px]:col-auto @min-[640px]:row-auto @min-[640px]:text-center"><span className="sr-only">전화번호 </span>{row.recipient_phone}</span>
           <span className="col-start-1 row-start-3 text-xs tabular-nums text-muted-foreground @min-[640px]:col-auto @min-[640px]:row-auto @min-[640px]:text-center"><span className="sr-only">발송 일시 </span><time dateTime={row.created_at}>{formatShortDateTime(row.created_at)}</time></span>
           <span className="col-start-2 row-start-1 min-w-0 break-words text-right text-xs font-medium @min-[640px]:col-auto @min-[640px]:row-auto @min-[640px]:text-center"><span className="sr-only">발송 상태 </span><span className={`inline-flex min-h-7 min-w-14 items-center justify-center rounded-md px-2 py-1 ${status.className}`}>{status.label}</span></span>
-          <span className="col-start-2 row-span-2 row-start-2 text-right text-xs text-primary @min-[640px]:col-auto @min-[640px]:row-span-1 @min-[640px]:row-auto"><span className="group-open:hidden">펼치기</span><span className="hidden group-open:inline">접기</span></span>
-        </summary>
-        <div className="border-t border-border p-4 sm:px-6">
-          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{row.message}</p>
-          {(code || report?.reason || row.error_message) && <p className="mt-3 break-words text-sm text-muted-foreground">{report?.reason || row.error_message}{code ? ` (${code})` : ""}</p>}
-          {row.application_id && ["volunteer", "adoption"].includes(row.application_type) && <Link href={`/admin/applications/${row.application_type}/${row.application_id}`} className="mt-2 inline-flex min-h-11 items-center text-sm text-primary hover:underline">관련 신청 보기</Link>}
-        </div>
-      </details>
+          <span className="col-start-2 row-span-2 row-start-2 text-right text-xs text-primary @min-[640px]:col-auto @min-[640px]:row-span-1 @min-[640px]:row-auto">상세</span>
+        </Link>
+      </div>
     })}</div>}
     </div>
     <nav aria-label="발송 내역 페이지" className="mt-6 flex items-center justify-center gap-6 text-sm">

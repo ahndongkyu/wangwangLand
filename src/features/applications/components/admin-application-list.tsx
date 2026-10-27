@@ -1,3 +1,4 @@
+import { AdminMobileFilter } from "@/shared/components/admin-mobile-filter"
 import Link from "next/link"
 import { Pagination } from "@/shared/components/pagination"
 import { formatKoreanPhone } from "@/shared/lib/validation"
@@ -28,18 +29,22 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
       <input type="hidden" name="type" value={filters.type} />
       <div className="grid min-w-0 grid-cols-1 items-end gap-2 xl:grid-cols-[minmax(0,1fr)_130px_145px_145px_auto]">
         <div className="col-span-1 flex min-w-0 items-end gap-2 xl:col-span-1"><label className="min-w-0 flex-1 text-xs text-muted-foreground"><span className="sr-only xl:not-sr-only xl:mb-2 xl:block">{volunteer ? "이름·단체명·전화번호" : "이름·전화번호"}</span><input key={filters.q} name="q" defaultValue={filters.q} placeholder={volunteer ? "이름·단체명·전화번호 검색" : "이름·전화번호 검색"} className={`${control} w-full`} /></label><button type="submit" className="min-h-11 shrink-0 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-brand-action-hover xl:hidden">검색</button></div>
+        <AdminMobileFilter label="조회 기간 설정">
         <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">날짜 기준</span><select key={filters.dateBy} name="dateBy" defaultValue={filters.dateBy} className={`${control} w-full`}><option value="submitted">신청일</option><option value="activity">{volunteer ? "봉사 희망일" : "방문 희망일"}</option></select></label>
         <div className="grid min-w-0 grid-cols-2 gap-2 xl:col-span-2">
           <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">시작일</span><input key={filters.from} type="date" name="from" defaultValue={filters.from} className={`${control} application-date-input w-full max-w-full`} /></label>
           <label className="min-w-0 text-xs text-muted-foreground"><span className="mb-2 block">종료일</span><input key={filters.to} type="date" name="to" defaultValue={filters.to} className={`${control} application-date-input w-full max-w-full`} /></label>
         </div>
         <div className="hidden gap-2 xl:flex"><button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-brand-action-hover">검색</button><Link href={href({ from: "", to: "", dateBy: "submitted", q: "" })} className="inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground">초기화</Link></div>
+        <button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm text-primary-foreground md:hidden">필터 적용</button>
+        </AdminMobileFilter>
       </div>
       {filters.dateBy === "activity" && <p className="mt-2 text-xs leading-5 text-muted-foreground">희망 일정은 시작일·종료일을 모두 선택해야 하며 최대 1년까지 조회합니다.{volunteer ? " 일정변경 요청은 변경 희망일로 조회합니다." : ""}</p>}
       <div className="mt-3 flex items-center justify-between gap-3 xl:hidden"><div className="hidden md:block" /><div className="contents md:hidden"><ApplicationStatusFilter value={filters.status} statuses={statuses} adoption={!volunteer} className={`${control} max-w-[65%]`} /></div><Link href={href({ from: "", to: "", dateBy: "submitted", q: "" })} className="inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground hover:text-foreground">초기화</Link></div>
     </form>
     <nav aria-label="처리 상태" className="mb-5 hidden flex-wrap gap-1.5 md:flex">{["처리 필요", ...(filters.status === "승인 대기" ? ["승인 대기"] : []), "전체", ...statuses, "승인", "반려·취소"].map(status => <Link key={status} href={href({ status })} aria-current={status === filters.status ? "true" : undefined} className={`inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-medium transition-colors ${status === filters.status ? "bg-foreground text-background" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>{statusLabel(status)}</Link>)}</nav>
     <div className="mb-2 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground"><p role="status">{statusLabel(filters.status)} <strong className="text-foreground">{total.toLocaleString()}건</strong></p><p>{filters.dateBy === "submitted" ? "신청일 기준" : "희망 일정 기준"} · 접수 최신순</p></div>
+    {eventsError && <p role="alert" className="mb-3 text-sm text-destructive xl:hidden">연결된 일정 조회에 실패했습니다. 상세페이지에서 확정 일정을 확인해 주세요.</p>}
     {error ? <p role="alert" className="rounded-xl border border-destructive/30 bg-card p-5 text-sm text-destructive">{error}</p> : <div className="overflow-hidden rounded-xl border border-border bg-card">
       <div aria-hidden className={`hidden ${listColumns} gap-4 bg-muted/50 px-5 py-3 text-xs text-muted-foreground xl:grid`}>
         <span>신청정보</span>
@@ -74,14 +79,14 @@ export function AdminApplicationList({ filters, rows, counts, total, error, even
             <p className="sr-only">{volunteer ? "희망 일정" : "희망하는 아이 · 방문 일정"}</p>
             {a && <p title={animalName} className="mb-1 truncate text-sm font-medium">{animalName}</p>}
             <ApplicationScheduleTime date={dates[0]} time={time} fallbackDate={v?.available_days?.length ? `${v.available_days.join(", ")}요일` : undefined} />
-            {dates.length > 1 && <details className="relative z-10 mt-1 text-xs text-muted-foreground"><summary className="cursor-pointer py-1">외 {dates.length - 1}일 · 전체 날짜</summary><ul className="space-y-1 pt-1">{dates.slice(1).map(date => <li key={date}><ApplicationScheduleTime date={date} time={time} /></li>)}</ul></details>}
-            {v?.message && <p className="mt-1 text-xs text-muted-foreground">신청 메모 있음</p>}
+            {dates.length > 1 && <p className="mt-1 text-xs text-muted-foreground">외 {dates.length - 1}일</p>}
+            {v?.message && <p className="mt-1 hidden text-xs text-muted-foreground xl:block">신청 메모 있음</p>}
           </div>
-          <div className="col-span-2 col-start-1 row-start-3 flex min-w-0 justify-between gap-2 xl:col-span-1 xl:block text-xs text-muted-foreground xl:col-auto xl:row-auto xl:text-center">
+          <div className="col-span-2 col-start-1 row-start-3 hidden min-w-0 justify-between gap-2 xl:col-span-1 xl:block text-xs text-muted-foreground xl:col-auto xl:row-auto xl:text-center">
             <p className="sr-only">신청일시</p>
             <span className="xl:hidden">{formatKoreanPhone(row.phone)}</span><time dateTime={row.submitted_at} className="tabular-nums"><span className="xl:block">{applicationDate(row.submitted_at)}</span>{" "}<span className="xl:mt-1 xl:block">{submittedTime}</span></time>
           </div>
-          <div className="col-start-2 row-start-1 text-right xl:col-auto xl:row-auto xl:text-center">{a ? <span className="inline-block rounded-lg bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{a.completed_at ? "입양 완료" : a.status === "반려" ? "거절" : statusLabel(a.status)}</span> : <ApplicationBadge status={row.status} />}{v && <p className={`mt-2 text-xs ${row.status === "승인" && row.linkedCount === 0 ? "font-medium text-primary" : "text-muted-foreground"}`}>{eventsError ? "일정 조회 실패" : row.linkedCount ? `캘린더 등록 ${row.linkedCount}건` : "일정 미등록"}</p>}</div>
+          <div className="col-start-2 row-start-1 text-right xl:col-auto xl:row-auto xl:text-center">{a ? <span className="inline-block rounded-lg bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{a.completed_at ? "입양 완료" : a.status === "반려" ? "거절" : statusLabel(a.status)}</span> : <ApplicationBadge status={row.status} />}{v && <p className={`mt-2 hidden text-xs xl:block ${row.status === "승인" && row.linkedCount === 0 ? "font-medium text-primary" : "text-muted-foreground"}`}>{eventsError ? "일정 조회 실패" : row.linkedCount ? `캘린더 등록 ${row.linkedCount}건` : "일정 미등록"}</p>}</div>
           <Link href={detail} aria-label={`${row.applicant_name} 신청 확인`} className="relative z-10 col-start-2 row-start-3 hidden xl:inline-flex min-h-11 items-center justify-center self-end rounded-lg border border-border px-3 text-xs font-medium hover:bg-muted xl:col-auto xl:row-auto xl:self-center">확인</Link>
         </li>
       })}</ul>

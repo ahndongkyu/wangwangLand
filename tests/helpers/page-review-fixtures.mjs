@@ -17,6 +17,7 @@ export function load(path, imports = {}) {
     if (name === "../lib/volunteer-sms" || name === "@/features/applications/lib/volunteer-sms") return load("src/features/applications/lib/volunteer-sms.ts")
     if (name === "@/features/settings/components/delivery-card") return load("src/features/settings/components/delivery-card.tsx", base)
     if (name === "react") return React
+    if (name === "@/shared/components/admin-mobile-filter") return load("src/shared/components/admin-mobile-filter.tsx", { "next/navigation": { usePathname: () => "/admin", useSearchParams: () => new URLSearchParams() } })
     if (name === "@/shared/lib/admin-list") return load("src/shared/lib/admin-list.ts")
     if (name === "../lib/use-volunteer-revision" && !(name in imports)) return { useVolunteerRevision: () => ({ stale: false, unavailable: false }) }
     if (name === "@/features/push/components/install-app" && !(name in imports)) return { InstallAppButton: () => null }
@@ -100,7 +101,7 @@ export async function renderStaff() {
   const Page = load("src/app/(admin)/admin/(protected)/admins/page.tsx", { ...base, "@/features/auth": { getCurrentAdmin: async () => ({ id: "me", role: "admin" }) }, "@/features/members": { AdminMembersTable: Table }, "@/shared/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) } }).default
   return renderToStaticMarkup(await Page())
 }
-export async function renderMemberDetail({ staff = false, self = false } = {}) {
+export async function renderMemberDetail({ staff = false, self = false, section } = {}) {
   const profile = { ...profiles[0], id: self ? "me" : "member", role: staff ? "staff" : "member", signup_provider: "kakao", terms_agreed_at: null, privacy_agreed_at: null, marketing_agreed_at: null }
   const Panel = load("src/features/auth/components/admin-manage-row.tsx", {
     ...base,
@@ -122,7 +123,7 @@ export async function renderMemberDetail({ staff = false, self = false } = {}) {
     "@/features/donations": { listDonationsByUser: async () => [], DonationStatusBadge },
     "@/shared/components/ui/badge": { Badge: element("span", "승인") },
   }).default
-  return renderToStaticMarkup(await Page({ params: Promise.resolve({ id: profile.id }), searchParams: Promise.resolve({ returnTo: staff ? "/admin/admins" : "/admin/members?q=모임&page=3" }) }))
+  return renderToStaticMarkup(await Page({ params: Promise.resolve({ id: profile.id }), searchParams: Promise.resolve({ returnTo: staff ? "/admin/admins" : "/admin/members?q=모임&page=3", section }) }))
 }
 export async function renderDonations(params = {}) {
   const Page = load("src/app/(admin)/admin/(protected)/donations/page.tsx", { ...base, "@/features/donations": donations }).default

@@ -1,3 +1,4 @@
+import { AdminMobileFilter } from "@/shared/components/admin-mobile-filter"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { CalendarDays, Inbox } from "lucide-react"
@@ -73,7 +74,7 @@ export default async function AdminCalendarPage({
             <CalendarDays className="size-6 text-primary" aria-hidden />
             일정 관리
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 hidden text-sm text-muted-foreground md:block">
             봉사·행사·휴무 일정을 등록·수정합니다.
           </p>
         </div>
@@ -82,7 +83,7 @@ export default async function AdminCalendarPage({
         </Link>
       </header>
 
-      <nav aria-label="봉사 신청 처리 바로가기" className="mb-5 flex flex-wrap gap-2">
+      <nav aria-label="봉사 신청 처리 바로가기" className="mb-5 hidden flex-wrap gap-2 md:flex">
         {[["처리 필요", `처리 필요 ${pendingTotal}건`], ["접수", "새 접수"], ["검토중", "검토 중"], ["일정변경요청", "일정변경 요청"]].map(([status, label]) => (
           <Link key={status} href={`/admin/applications?type=volunteer&status=${encodeURIComponent(status)}`} className="inline-flex min-h-11 items-center rounded-lg border border-border bg-card px-3 text-sm transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">{label}</Link>
         ))}
@@ -97,12 +98,12 @@ export default async function AdminCalendarPage({
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CategoryFilter
+        <AdminMobileFilter label="일정 분류"><CategoryFilter
           active={categories}
           basePath="/admin/calendar"
           searchParams={{ ym: yearMonth }}
           categories={VALID_CATS}
-        />
+        /></AdminMobileFilter>
         <MonthShareButton yearMonth={yearMonth} />
       </div>
 
@@ -124,9 +125,10 @@ export default async function AdminCalendarPage({
         />
       </div>
 
+      <Link href="/admin/applications?type=volunteer&status=처리 필요" className="mt-4 flex min-h-12 items-center justify-between rounded-xl border border-border bg-card px-4 text-sm md:hidden"><span>처리 대기 봉사 신청</span><span>{pendingTotal}건 · 확인</span></Link>
       {/* 처리 대기 봉사 신청 → 캘린더에 등록 */}
       {pendingApps.length > 0 && (
-        <section className="mt-6 rounded-lg border border-border bg-card">
+        <section className="mt-6 hidden rounded-lg border border-border bg-card md:block">
           <header className="flex items-center justify-between border-b border-border bg-secondary/40 px-4 py-2.5">
             <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               <Inbox className="size-4 text-muted-foreground" aria-hidden />

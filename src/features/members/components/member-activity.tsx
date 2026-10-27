@@ -4,11 +4,12 @@ import type { MemberActivity } from "../api/activity"
 import { ADMIN_LIST } from "@/shared/lib/admin-list"
 import { cn, formatShortDate } from "@/shared/lib/utils"
 
-export function MemberActivitySection({ activity, memberId, category, returnHref }: {
-  activity: MemberActivity | null; memberId: string; category?: CommunityType; returnHref: string
+export function MemberActivitySection({ activity, memberId, category, returnHref, section }: {
+  activity: MemberActivity | null; memberId: string; category?: CommunityType; returnHref: string; section?: string
 }) {
   const href = (type?: CommunityType, page = 1) => {
     const query = new URLSearchParams({ returnTo: returnHref })
+    if (section) query.set("section", section)
     if (type) query.set("activityType", type)
     if (page > 1) query.set("activityPage", String(page))
     return `/admin/members/${encodeURIComponent(memberId)}?${query}#member-activity`

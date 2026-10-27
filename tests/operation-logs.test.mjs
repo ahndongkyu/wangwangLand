@@ -158,12 +158,13 @@ test("log page refuses staff before reading; DB failure is distinct from no fail
   assert.match((await renderLogs()).html, /정상 동작을 보장하는 의미는 아닙니다/)
 })
 
-test("log rows disclose details, use aligned columns, and link SMS instead of copying message content", async () => {
+test("log rows navigate to details and keep aligned columns without technical information", async () => {
   const row = { id: "id", operation: "sms", step: "failed", code: "UNKNOWN", area: "notification", status: "open", occurrences: 3, recurrences: 1, first_seen_at: "2026-10-08T04:00:00Z", last_seen_at: "2026-10-08T05:00:00Z" }
   const { html } = await renderLogs({ rows: [row] })
-  assert.match(html, /<details/)
+  assert.doesNotMatch(html, /<details/)
   assert.match(html, /재발/)
-  assert.match(html, /href="\/admin\/sms"/)
+  assert.match(html, /href="\/admin\/logs\/id\?status=all/)
+  assert.doesNotMatch(html, /UNKNOWN/)
   assert.equal((html.match(/grid-cols-\[9rem_minmax\(0,1fr\)_4rem_6rem_3.5rem\]/g) ?? []).length, 2)
 })
 

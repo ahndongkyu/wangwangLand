@@ -69,11 +69,15 @@ export default async function AdminMemberDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ returnTo?: string | string[]; activityType?: string; activityPage?: string }>
+  searchParams: Promise<{ returnTo?: string | string[]; activityType?: string; activityPage?: string; section?: string }>
 }) {
   const { id } = await params
   const query = await searchParams
   const returnHref = memberListReturnHref(query.returnTo)
+  const sections = { applications: "신청 내역", posts: "작성한 이야기", donations: "후원 내역", agreements: "약관 동의 정보", manage: "회원 관리" }
+  const section = Object.hasOwn(sections, query.section ?? "") ? query.section as keyof typeof sections : undefined
+  const sectionHref = (value?: string) => `/admin/members/${id}?${new URLSearchParams({ returnTo: returnHref, ...(value ? { section: value } : {}) })}`
+  const sectionClass = (value: string) => section === value ? "" : section ? "hidden" : "hidden md:block"
   const activityType = COMMUNITY_TYPES.includes(query.activityType as CommunityType) ? query.activityType as CommunityType : undefined
 
   const me = await getCurrentAdmin()
@@ -104,8 +108,8 @@ export default async function AdminMemberDetailPage({
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       <nav className="mb-4 text-sm text-muted-foreground">
-        <Link href={returnHref} className="inline-flex min-h-11 items-center hover:text-foreground">
-          ← {returnHref === "/admin/admins" ? "운영진 관리" : "회원 관리"}
+        <Link href={section ? sectionHref() : returnHref} className="inline-flex min-h-11 items-center hover:text-foreground">
+          ← {section ? "회원 상세" : returnHref === "/admin/admins" ? "운영진 관리" : "회원 관리"}
         </Link>
       </nav>
 
@@ -120,9 +124,9 @@ export default async function AdminMemberDetailPage({
         </div>
         <span className={cn("rounded-md px-2.5 py-1 text-xs font-semibold", profile.is_banned ? "bg-destructive/15 text-destructive" : STATUS_COLOR[profile.status])}>{profile.is_banned ? "차단됨" : STATUS_LABEL[profile.status]}</span>
       </header>
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className={cn("grid items-start gap-5", !section && "xl:grid-cols-[minmax(0,1fr)_300px]")}>
         <div className="contents xl:flex xl:min-w-0 xl:flex-col xl:gap-5">
-        <section className="order-1 rounded-xl border border-border bg-card p-5">
+        <section className={cn("order-1 rounded-xl border border-border bg-card p-5", section && "hidden")}>
           <h2 className="mb-4 text-base font-semibold">기본 정보</h2>
           <dl className="grid grid-cols-[76px_minmax(0,1fr)] gap-x-3 gap-y-3 text-sm">
             <dt className="text-muted-foreground">전화번호</dt><dd className="tabular-nums">{profile.phone ? formatKoreanPhone(profile.phone) : "미등록"}</dd>
@@ -130,7 +134,19 @@ export default async function AdminMemberDetailPage({
             <dt className="text-muted-foreground">가입일</dt><dd>{formatJoinedAt(profile.created_at)}</dd>
           </dl>
         </section>
-        <div className="order-3 min-w-0 space-y-5">
+        {!section && <div className="order-2 min-w-0 md:hidden">
+          <section className="rounded-xl border border-border bg-card p-4">
+            <h2 className="mb-2 font-semibold">최근 신청</h2>
+            {[...apps.volunteer.map(a => ({ id: a.id, type: "volunteer", label: "봉사", status: a.status, date: a.submitted_at })), ...apps.adoption.map(a => ({ id: a.id, type: "adoption", label: "입양 상담", status: a.status, date: a.submitted_at }))]
+              .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 1).map(a => <Link key={a.id} href={`/admin/applications/${a.type}/${a.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-2 text-sm hover:text-primary"><span>{a.label} · {a.status}</span><span>{formatShortDate(a.date)}</span></Link>)}
+            {!apps.volunteer.length && !apps.adoption.length && <p className="text-sm text-muted-foreground">신청 내역이 없습니다.</p>}
+          </section>
+          <nav aria-label="회원 상세 내역" className="mt-4 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+            {Object.entries(sections).map(([key, label]) => <Link key={key} href={sectionHref(key)} className="flex min-h-14 items-center justify-between gap-3 px-4 text-sm hover:bg-muted"><span>{label}</span><span className="text-muted-foreground">상세</span></Link>)}
+          </nav>
+        </div>}
+        <div className={cn("order-3 min-w-0 space-y-5", section === "manage" && "hidden")}>
+      <div className={section ? "hidden" : "hidden md:block"}>
       {/* ─── 활동 요약 ─── */}
       <SectionTitle icon={BarChart3}>활동 요약</SectionTitle>
       <div className="mb-4 grid grid-cols-2 gap-3">
@@ -143,9 +159,13 @@ export default async function AdminMemberDetailPage({
         />
       </div>
 
-      <MemberActivitySection activity={activity} memberId={id} category={activityType} returnHref={returnHref} />
+      </div>
+      <div className={sectionClass("posts")}>
+      <MemberActivitySection section={section} activity={activity} memberId={id} category={activityType} returnHref={returnHref} />
 
       {/* ─── 입양 신청 ─── */}
+      </div>
+      <div className={sectionClass("applications")}>
       <SectionTitle icon={Home}>입양 신청</SectionTitle>
       {apps.adoption.length === 0 ? (
         <Empty text="입양 신청 내역이 없습니다." />
@@ -211,6 +231,8 @@ export default async function AdminMemberDetailPage({
       )}
 
       {/* ─── 후원 내역 ─── */}
+      </div>
+      <div className={sectionClass("donations")}>
       <SectionTitle icon={HandHeart}>후원 내역</SectionTitle>
       {donations.length === 0 ? (
         <Empty text="후원 내역이 없습니다." />
@@ -240,17 +262,18 @@ export default async function AdminMemberDetailPage({
           ))}
         </ul>
       )}
-          <details className="rounded-xl border border-border bg-card p-5">
-            <summary className="min-h-11 content-center text-sm font-semibold">약관 동의 정보</summary>
+      </div>
+          <section className={cn("rounded-xl border border-border bg-card p-5", sectionClass("agreements"))}>
+            <h2 className="min-h-11 content-center text-sm font-semibold">약관 동의 정보</h2>
             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
               <AgreementItem label="이용약관" agreedAt={profile.terms_agreed_at} version={profile.terms_version} required />
               <AgreementItem label="개인정보 처리방침" agreedAt={profile.privacy_agreed_at} version={profile.privacy_version} required />
               <AgreementItem label="마케팅 수신" agreedAt={profile.marketing_agreed_at} />
             </dl>
-          </details>
+          </section>
         </div>
         </div>
-        <section className="order-2 rounded-xl border border-border bg-card p-5">
+        <section className={cn("order-2 rounded-xl border border-border bg-card p-5", sectionClass("manage"))}>
           <h2 className="mb-4 text-base font-semibold">{staffContext ? "운영진" : "회원"} 관리</h2>
           {staffContext ? <AdminManagePanel profile={profile} currentProfileId={me!.id} /> : <MemberManagePanel profile={profile} isTopAdmin={isTopAdmin} />}
         </section>

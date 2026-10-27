@@ -1,3 +1,4 @@
+import { AdminMobileFilter } from "@/shared/components/admin-mobile-filter"
 import type { Metadata } from "next"
 
 import { listProfiles } from "@/features/members"
@@ -75,17 +76,17 @@ export default async function AdminMembersPage({
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">회원 관리</h1>
-          <p className="mt-2 text-sm text-muted-foreground">회원 정보를 확인하고, 상세 화면에서 권한과 이용 상태를 관리하세요.</p>
+          <p className="mt-2 hidden text-sm text-muted-foreground md:block">회원 정보를 확인하고, 상세 화면에서 권한과 이용 상태를 관리하세요.</p>
           <p className="mt-2 text-sm text-muted-foreground">검색 결과 <span className="font-medium tabular-nums text-foreground">{total}명</span></p>
         </div>
       </header>
 
-      <section aria-label="전체 회원 현황" className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[{ label: "전체 회원", value: "", count: pendingCount + approvedCount + rejectedCount }, { label: "가입 완료", value: "approved", count: approvedCount }, { label: "가입 미완료", value: "pending", count: pendingCount }, { label: "거절", value: "rejected", count: rejectedCount }].map(s => <Link key={s.label} href={statusHref(s.value)} aria-current={filterStatus === s.value ? "page" : undefined} className={`rounded-xl border bg-card p-4 transition-colors hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-ring ${filterStatus === s.value ? "border-primary/40" : "border-border"}`}><p className="text-xs text-muted-foreground">{s.label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{s.count}<span className="ml-1 text-sm font-normal text-muted-foreground">명</span></p></Link>)}
+      <section aria-label="전체 회원 현황" className="mb-4 flex flex-wrap gap-2 md:grid md:grid-cols-2 lg:grid-cols-4">
+        {[{ label: "전체 회원", value: "", count: pendingCount + approvedCount + rejectedCount }, { label: "가입 완료", value: "approved", count: approvedCount }, { label: "가입 미완료", value: "pending", count: pendingCount }, { label: "거절", value: "rejected", count: rejectedCount }].map(s => <Link key={s.label} href={statusHref(s.value)} aria-current={filterStatus === s.value ? "page" : undefined} className={`flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 py-2 md:block md:p-4 transition-colors hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-ring ${filterStatus === s.value ? "border-primary/40" : "border-border"}`}><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-sm font-semibold tabular-nums md:mt-2 md:text-2xl">{s.count}<span className="ml-1 text-sm font-normal text-muted-foreground">명</span></p></Link>)}
       </section>
       <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4">
         <SearchBox placeholder="닉네임 또는 전화번호 검색" className="w-full sm:w-72" />
-        <AdminFilterBar
+        <AdminMobileFilter label="상태 · 정렬 필터"><AdminFilterBar
           filters={[
             {
               name: "status",
@@ -98,7 +99,7 @@ export default async function AdminMembersPage({
               options: SORT_FILTERS,
             },
           ]}
-        />
+        /></AdminMobileFilter>
       </div>
 
       {profiles.length === 0 ? (

@@ -10,8 +10,8 @@ import { formatShortDateTime } from "@/shared/lib/utils"
 const roles: Record<string, string> = { admin: "관리자", staff: "운영진", member: "회원", anonymous: "비로그인", unknown: "확인 불가" }
 const actions: Record<string, string> = { approve: "승인", reject: "거절", complete: "입양 완료", cancel: "취소", upload: "업로드", download: "다운로드", create: "등록", update: "수정", delete: "삭제" }
 const control = "inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
-export function EventHistory({ logId }: { logId: string }) {
-  const [result, setResult] = useState<EventResult | null>(null)
+export function EventHistory({ logId, initialResult = null }: { logId: string; initialResult?: EventResult | null }) {
+  const [result, setResult] = useState<EventResult | null>(initialResult)
   const [page, setPage] = useState(1)
   const [pending, setPending] = useState(false)
   async function load(next: number) {

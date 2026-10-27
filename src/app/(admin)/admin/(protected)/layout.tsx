@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
+import { AdminListPosition } from "@/shared/components/admin-list-position"
 import { getCurrentAdmin, logout } from "@/features/auth"
 import { getPendingCounts } from "@/shared/lib/pending-counts"
 import { SITE } from "@/shared/constants/site"
@@ -27,6 +29,7 @@ export default async function AdminProtectedLayout({
 
   return (
     <div data-admin-scope className="min-h-screen bg-background">
+      <Suspense><AdminListPosition /></Suspense>
       <AdminHeader {...sharedProps} pendingCounts={pendingCounts} />
       <div className="mx-auto grid w-full max-w-[1440px] min-w-0 items-start md:min-h-[calc(100dvh-5rem)] md:grid-cols-[252px_minmax(0,1fr)] md:gap-6 md:px-6 lg:gap-8 lg:px-8">
         <AdminSidebar {...sharedProps} pendingCounts={pendingCounts} />

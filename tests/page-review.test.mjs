@@ -41,8 +41,10 @@ test("application schedule labels split date and time and keep timestamps in Kor
     assert.match(html, />15:00<\/dd>/)
   }
   const html = renderApplicationList({}, [{ id: "sample", applicant_name: "예시", phone: "010-0000-0000", status: "접수", submitted_at: "2026-10-08T07:00:00Z", party_size: 2, available_dates: ["2026-10-17", "2026-10-18"], available_time: "14:00", linkedCount: 0 }])
-  assert.equal((html.match(/>날짜:<\/dt>/g) || []).length, 2)
-  assert.equal((html.match(/>시간:<\/dt>/g) || []).length, 2)
+  assert.equal((html.match(/>날짜:<\/dt>/g) || []).length, 1)
+  assert.equal((html.match(/>시간:<\/dt>/g) || []).length, 1)
+  assert.match(html, /외 1일/)
+  assert.doesNotMatch(html, /<details/)
   assert.match(html, />26\.10\.17<\/dd>/)
 })
 
@@ -106,7 +108,8 @@ test("member details retain information and management in independent desktop co
   assert.match(html, /회원 권한·승인·차단/)
   assert.match(html, /contents xl:flex/)
   assert.doesNotMatch(html, /row-span-/)
-  assert.match(html, /<details[^>]*>.*약관 동의 정보/s)
+  assert.match(html, /section=agreements/)
+  assert.doesNotMatch(html, /<details/)
   assert.match(html, /href="\/admin\/members\?page=3&amp;q=/)
 })
 test("staff detail preserves role and confirmed removal controls; own role stays disabled", async () => {
