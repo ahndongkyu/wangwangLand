@@ -24,7 +24,6 @@ export function DashboardStatistics({ stats, approvedPeople }: { stats: Dashboar
             </div>
           })}
         </div>
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">접수일 기준 · 전월 같은 날짜·시각까지 비교 (한국 시간){stats.comparison.cappedAtMonthEnd ? " · 전월에 같은 날짜가 없어 말일까지 비교" : ""}</p>
         <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-10">
           <div className="min-w-0">
             <h3 className="mb-2 text-sm font-semibold">신청 상태별 현황</h3>

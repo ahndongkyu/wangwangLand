@@ -4,7 +4,6 @@ import { getApprovedVolunteerPeople } from "@/features/applications/api/queries"
 import { applicationHref, validDate } from "@/features/applications/lib/admin-list"
 import { listEventsInRange, MonthGrid, MonthNav } from "@/features/events"
 import { getDashboardVisits } from "@/features/events/api/dashboard-visits"
-import { getVolunteerVisitSummary } from "@/features/events/api/visit-summary"
 import { dateKey, formatTimeKst, monthRange, yearMonthKst } from "@/features/events/lib/date"
 import { getEventTitle } from "@/features/events/types"
 import { requireAdmin } from "@/shared/lib/auth"
@@ -39,10 +38,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     getApprovedVolunteerPeople().catch(() => null), visitsPromise.catch(() => null),
   ])
   const client = await createClient()
-  const [volunteerVisits, conflictResult] = await Promise.all([
-    events ? getVolunteerVisitSummary(events).catch(() => null) : Promise.resolve(null),
-    client.rpc("application_calendar_conflicts", { p_from: range.from, p_to: range.to }),
-  ])
+  const conflictResult = await client.rpc("application_calendar_conflicts", { p_from: range.from, p_to: range.to })
   if (conflictResult.error) await recordOperationError("query", "dashboardCalendarConflicts", conflictResult.error, "admin")
   const conflicts = (conflictResult.data ?? []) as Array<{ event_id: string; reason: string }>
   const pending = [
@@ -67,7 +63,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 id="dashboard-today" className="text-base font-semibold">오늘 방문 예정</h2><Link href={`/admin/calendar?ym=${currentMonth}&date=${today}`} className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">일정 보기</Link></div>
       {visits === null ? <p role="alert" className="rounded-xl border border-border bg-card p-4 text-sm text-destructive">오늘 방문 일정을 불러오지 못했습니다. 새로고침해 주세요.</p> : <div className="grid gap-3 sm:grid-cols-2 sm:gap-4" data-dashboard-visit-columns>
         {[{ kind: "volunteer", label: "봉사", rows: volunteer! }, { kind: "adoption", label: "입양 상담", rows: adoption! }].map(group => <div key={group.kind} data-visit-card={group.kind} className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h3 className="text-sm font-semibold">{group.label}</h3><p className="text-xs text-muted-foreground">{group.rows.length}건{group.kind === "volunteer" && <> · {group.rows.some(event => event.people === null) ? "인원 확인 필요" : `${group.rows.reduce((sum, event) => sum + (event.people ?? 0), 0)}명`}</>}</p></div>
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2"><h3 className="text-sm font-semibold">{group.label}</h3><p className="text-xs text-muted-foreground">신청 {group.rows.length}건{group.kind === "volunteer" && <> / {group.rows.some(event => event.people === null) ? "인원 확인 필요" : `인원 ${group.rows.reduce((sum, event) => sum + (event.people ?? 0), 0)}명`}</>}</p></div>
           {group.rows.length === 0 ? <p className="py-4 text-sm text-muted-foreground">오늘 예정된 {group.label} 일정이 없습니다.</p> : <ul className="divide-y divide-border/60">{group.rows.map(event => <li key={event.id}><Link href={`/admin/applications/${event.kind}/${event.source_application_id}`} className="grid min-h-14 grid-cols-[4rem_minmax(0,1fr)_auto] items-center gap-2 rounded-lg px-2 py-3 text-sm transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"><time className="text-xs tabular-nums" dateTime={event.starts_at}>{event.all_day ? "종일" : formatTimeKst(event.starts_at)}</time><span className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{getEventTitle(event)}</span>{event.kind === "volunteer" && <span className="text-xs text-muted-foreground">{event.people === null ? "인원 확인" : `${event.people}명`}</span>}</Link></li>)}</ul>}
         </div>)}
       </div>}
@@ -75,7 +71,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
     <section aria-labelledby="dashboard-calendar"><div className="mb-3 flex items-center justify-between gap-3"><h2 id="dashboard-calendar" className="text-base font-semibold">월간 일정</h2><Link href="/admin/calendar" className="inline-flex min-h-11 items-center text-xs text-primary hover:underline">전체 캘린더</Link></div>
       <div className="rounded-xl border border-border bg-card p-3 sm:p-5"><MonthNav yearMonth={yearMonth} basePath="/admin" />
         {conflictResult.error ? <p role="alert" className="mb-3 text-sm text-destructive">신청 제한일과 겹치는 일정을 확인하지 못했습니다.</p> : conflicts.length > 0 && <Link href={`/admin/calendar?ym=${yearMonth}`} className="mb-3 flex min-h-11 items-center rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">휴무·행사와 겹치는 확정 일정 {conflicts.length}건 확인</Link>}
-        {events === null ? <p role="alert" className="py-6 text-sm text-destructive">일정을 불러오지 못했습니다. 새로고침해 주세요.</p> : <MonthGrid key={`${yearMonth}-${selectedDate}`} yearMonth={yearMonth} events={events} hrefBase="/admin/calendar" addHrefBase="/admin/calendar/new" returnPath="/admin" initialSelectedDate={selectedDate} volunteerVisits={volunteerVisits} />}
+        {events === null ? <p role="alert" className="py-6 text-sm text-destructive">일정을 불러오지 못했습니다. 새로고침해 주세요.</p> : <MonthGrid key={`${yearMonth}-${selectedDate}`} yearMonth={yearMonth} events={events} hrefBase="/admin/calendar" addHrefBase="/admin/calendar/new" returnPath="/admin" initialSelectedDate={selectedDate} />}
       </div>
     </section>
     <DashboardStatistics stats={stats} approvedPeople={approvedPeople} />
