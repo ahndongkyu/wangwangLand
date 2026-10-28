@@ -8,6 +8,7 @@ import type { PendingCounts } from "@/shared/lib/pending-counts"
 import { cn } from "@/shared/lib/utils"
 import { HeaderProfile } from "@/shared/components/header-profile"
 import { MobileHeaderMenu } from "@/shared/components/mobile-header-menu"
+import { MobileHeaderTitle } from "@/shared/components/mobile-header-title"
 import { LogoutForm } from "@/features/push/components/logout-form"
 
 type NavGroup = {
@@ -98,20 +99,23 @@ export function AdminHeader(props: AdminHeaderProps) {
   const account = <HeaderProfile name={props.adminName} avatarUrl={props.adminAvatarUrl} />
   const homeLink = <Link href="/" className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">메인 페이지</Link>
   return <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-    <div className="mx-auto grid h-16 w-full max-w-[1440px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 md:flex md:h-20 md:justify-between md:px-6 lg:px-8">
-      <div className="justify-self-start md:hidden">
-        <MobileHeaderMenu title="왕왕랜드 관리자 메뉴">
-          <div className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3">{account}<ThemeToggle /></div>
-          <div className="mt-2">{homeLink}</div>
-          <div className="mt-3 text-foreground"><AdminMenuContent {...props} /></div>
-        </MobileHeaderMenu>
+    <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-2 px-4 md:h-20 md:px-6 lg:px-8">
+      <div className="min-w-0 flex-1 md:hidden">
+        <MobileHeaderTitle><Link href="/admin" className="flex min-h-11 items-center rounded-lg text-base font-semibold tracking-tight focus-visible:ring-2 focus-visible:ring-ring">왕왕랜드 관리자</Link></MobileHeaderTitle>
       </div>
-      <Link href="/admin" className="flex min-h-11 items-center whitespace-nowrap rounded-lg text-base font-semibold tracking-tight md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">왕왕랜드 관리자</Link>
-      <div className="flex min-w-0 items-center justify-self-end gap-2">
+      <Link href="/admin" className="hidden min-h-11 items-center whitespace-nowrap rounded-lg text-base font-semibold tracking-tight md:flex md:text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">왕왕랜드 관리자</Link>
+      <div className="flex shrink-0 items-center justify-self-end gap-2">
         <div className="hidden md:block">{homeLink}</div>
         <div className="hidden md:block"><ThemeToggle /></div>
         <AdminNotificationBell counts={props.pendingCounts} />
         <div className="hidden min-w-0 md:block">{account}</div>
+        <div className="md:hidden">
+          <MobileHeaderMenu title="왕왕랜드 관리자 메뉴">
+            <div className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3">{account}<ThemeToggle /></div>
+            <div className="mt-2">{homeLink}</div>
+            <div className="mt-3 text-foreground"><AdminMenuContent {...props} /></div>
+          </MobileHeaderMenu>
+        </div>
       </div>
     </div>
   </header>

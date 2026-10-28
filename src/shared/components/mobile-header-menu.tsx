@@ -10,7 +10,7 @@ export function MobileHeaderMenu({ title, children }: { title: string; children:
   const [open, setOpen] = useState(false)
   return <Sheet open={open} onOpenChange={setOpen}>
     <SheetTrigger render={<Button variant="ghost" className="size-11 p-0" aria-label="메뉴 열기" />}><Menu aria-hidden className="size-5" /></SheetTrigger>
-    <SheetContent side="left" showCloseButton={false} className="gap-0 overflow-y-auto bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] data-[side=left]:w-full data-[side=left]:sm:max-w-none">
+    <SheetContent side="right" showCloseButton={false} className="gap-0 overflow-y-auto bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] data-[side=right]:w-full data-[side=right]:sm:max-w-none">
       <div className="flex shrink-0 items-center justify-between">
         <SheetHeader className="p-0"><SheetTitle>{title}</SheetTitle></SheetHeader>
         <SheetClose render={<Button variant="ghost" className="size-11 p-0" aria-label="메뉴 닫기" />}><X aria-hidden className="size-5" /></SheetClose>

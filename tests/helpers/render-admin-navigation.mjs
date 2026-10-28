@@ -10,6 +10,7 @@ const { AdminSidebar } = load("src/app/(admin)/admin/(protected)/_components/adm
   "@/shared/components/header-profile": { HeaderProfile: () => null },
   "@/shared/components/admin-logo": { AdminLogo: () => null },
   "@/shared/components/mobile-header-menu": { MobileHeaderMenu: passthrough },
+  "@/shared/components/mobile-header-title": { MobileHeaderTitle: passthrough },
   "@/shared/components/admin-notification-bell": { AdminNotificationBell: () => null },
   "@/shared/lib/utils": { cn: (...args) => args.filter(Boolean).join(" ") },
   "@/shared/constants/site": { SITE: { name: "왕왕랜드" } },

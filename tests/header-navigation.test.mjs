@@ -14,6 +14,7 @@ const imports = {
   "@/shared/components/admin-logo": { AdminLogo: () => el("span", { "data-logo": "admin" }) },
   "@/shared/components/header-profile": { HeaderProfile: ({ name }) => el("a", { href: name ? "/my" : "/login" }, name ?? "로그인") },
   "@/shared/components/mobile-header-menu": { MobileHeaderMenu: ({ children }) => el("section", { "data-menu": "mobile" }, children) },
+  "@/shared/components/mobile-header-title": { MobileHeaderTitle: ({ children }) => children },
   "@/shared/components/theme-toggle": { ThemeToggle: () => el("button", null, "테마") },
   "@/shared/components/admin-notification-bell": { AdminNotificationBell: ({ counts }) => el("button", null, `운영 알림 ${counts.total}`) },
   "@/shared/components/user-notification-bell": { UserNotificationBell: ({ unreadCount }) => el("button", null, `회원 알림 ${unreadCount}`) },
@@ -59,7 +60,7 @@ test("administrator sidebar scrolls with the page and opens the active group", (
 test("mobile menu uses a single full-width accessible dialog with safe-area spacing", () => {
   const source = fs.readFileSync("src/shared/components/mobile-header-menu.tsx", "utf8")
   assert.match(source, /SheetTitle/)
-  assert.match(source, /data-\[side=left\]:w-full/)
+  assert.match(source, /data-\[side=right\]:w-full/)
   assert.match(source, /env\(safe-area-inset-bottom\)/)
   assert.match(source, /closest\("a"\)/)
   assert.equal((source.match(/overflow-y-auto/g) ?? []).length, 1)
