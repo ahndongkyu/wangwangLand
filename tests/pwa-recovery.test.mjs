@@ -55,3 +55,8 @@ test("successful private pages remain network-only", async () => {
   assert.equal(await (await response).text(), "private page")
   assert.deepEqual(w.cached, [])
 })
+test("global layout does not display network status banners", () => {
+  const layout = readFileSync("src/app/layout.tsx", "utf8")
+  assert.doesNotMatch(layout, /NetworkStatus|network-status/)
+  assert.match(layout, /<ServiceWorkerRegister/)
+})

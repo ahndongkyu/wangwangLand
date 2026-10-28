@@ -8,7 +8,6 @@ import { ToastProvider } from "@/shared/components/toast"
 import { SITE } from "@/shared/constants/site"
 import { ServiceWorkerRegister } from "@/features/push"
 import { InstallAppProvider } from "@/features/push/components/install-app"
-import { NetworkStatus } from "@/features/push/components/network-status"
 import { BrowserErrorListener } from "@/features/operation-logs/browser-listener"
 import "./globals.css"
 
@@ -123,7 +122,7 @@ export default async function RootLayout({
       <body className="min-h-full">
         <ThemeProvider>
           <ToastProvider>
-            <InstallAppProvider><NetworkStatus /><OperatingProvider contact={operating.contact.data}><ConfirmProvider>{children}</ConfirmProvider></OperatingProvider></InstallAppProvider>
+            <InstallAppProvider><OperatingProvider contact={operating.contact.data}><ConfirmProvider>{children}</ConfirmProvider></OperatingProvider></InstallAppProvider>
           </ToastProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
