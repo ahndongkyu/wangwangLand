@@ -1,5 +1,5 @@
 "use client"
-import { useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { processAdoption } from "../api/adoption-workflow"
 import { searchAdoptionAnimals, type AdoptionAnimal } from "../api/adoption-animals"
@@ -10,15 +10,19 @@ import { AdoptionDownload } from "./adoption-download"
 
 export interface AdoptionDocument { id:string;kind:string;filename:string;created_at:string }
 const input="mt-1 min-h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-base"
+type AnimalSearchState={query:string;status:"idle"|"loading"|"results"|"error";animals:AdoptionAnimal[];error:string}
 export function AdoptionProcessing({ app, documents }: { app:AdoptionRow;documents:AdoptionDocument[] }) {
   const router=useRouter(),toast=useToast()
   const [pending,start]=useTransition()
   const [error,setError]=useState("")
   const errorRef=useRef<HTMLParagraphElement>(null)
+  const searchRequestId=useRef(0)
   function showError(message:string){setError(message);requestAnimationFrame(()=>{errorRef.current?.focus();errorRef.current?.scrollIntoView({block:"center",behavior:"smooth"})})}
   const [search,setSearch]=useState("")
-  const [searching,setSearching]=useState(false)
-  const [animals,setAnimals]=useState<AdoptionAnimal[]>([])
+  const [searchState,setSearchState]=useState<AnimalSearchState>({query:"",status:"idle",animals:[],error:""})
+  const animals=searchState.query===search.trim()?searchState.animals:[]
+  const searching=searchState.query===search.trim()&&searchState.status==="loading"
+  const searchError=searchState.query===search.trim()?searchState.error:""
   const [animal,setAnimal]=useState<AdoptionAnimal|null>(null)
   const [mode,setMode]=useState("approve")
   const [uploading,setUploading]=useState(false)
@@ -31,7 +35,22 @@ export function AdoptionProcessing({ app, documents }: { app:AdoptionRow;documen
       router.refresh()
     }catch{showError("처리 결과를 확인하지 못했습니다. 새로고침 후 상태를 먼저 확인해주세요.")}})
   }
-  async function find(){setSearching(true);setError("");try{const result=await searchAdoptionAnimals(search);setAnimals(result.animals);if(result.error)setError(result.error)}catch{setError("아이를 검색하지 못했습니다.")}finally{setSearching(false)}}
+  useEffect(()=>{
+    const requestId=++searchRequestId.current
+    const query=search.trim()
+    if(!query)return
+
+    const timer=setTimeout(async()=>{
+      try{
+        const result=await searchAdoptionAnimals(query)
+        if(requestId!==searchRequestId.current)return
+        setSearchState({query,status:result.error?"error":"results",animals:result.animals,error:result.error??""})
+      }catch{
+        if(requestId===searchRequestId.current)setSearchState({query,status:"error",animals:[],error:"아이를 검색하지 못했습니다. 잠시 후 다시 시도해 주세요."})
+      }
+    },300)
+    return()=>clearTimeout(timer)
+  },[search])
   const kinds=new Set(documents.map(d=>d.kind))
   return <div className="space-y-4">
     <section className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -53,8 +72,9 @@ export function AdoptionProcessing({ app, documents }: { app:AdoptionRow;documen
     </section>
     {app.status==="승인"&&!app.completed_at&&<section className="rounded-xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-semibold">실제 입양 완료</h2><p className="mt-2 text-sm text-muted-foreground">현장 상담·서명 및 아이 인계 후 처리해주세요. 최초 희망 아이는 그대로 보존됩니다.</p>
-      <div className="mt-3 flex gap-2"><label className="min-w-0 flex-1"><span className="text-sm">실제 입양한 아이 검색</span><input value={search} onChange={e=>setSearch(e.target.value)} className={input}/></label><button type="button" onClick={find} disabled={searching} className="mt-6 min-h-11 rounded-lg border px-3">{searching?"검색 중":"검색"}</button></div>
-      <ul className="mt-2 space-y-1">{animals.map(a=><li key={a.kind+a.id}><button type="button" aria-pressed={animal?.id===a.id&&animal?.kind===a.kind} onClick={()=>setAnimal(a)} className="min-h-11 w-full rounded-lg border border-border px-3 text-left aria-pressed:border-primary aria-pressed:bg-primary/10">{a.name} · {a.kind==="dog"?"강아지":"고양이"}</button></li>)}</ul>
+      <label className="mt-3 block min-w-0"><span className="text-sm">실제 입양한 아이 검색</span><input value={search} onChange={e=>{const value=e.target.value;const query=value.trim();setSearch(value);setAnimal(null);setSearchState({query,status:query?"loading":"idle",animals:[],error:""})}} placeholder="이름을 입력하면 후보가 표시됩니다" autoComplete="off" aria-autocomplete="list" aria-controls="adoption-animal-results" aria-describedby="adoption-animal-search-status" className={input}/></label>
+      <p id="adoption-animal-search-status" role="status" aria-live="polite" className="mt-2 min-h-5 text-xs text-muted-foreground">{searching?"아이를 찾고 있습니다…":searchError|| (search.trim()&&!animals.length?"일치하는 보호 중 아이가 없습니다.":"")}</p>
+      {animals.length>0&&<ul id="adoption-animal-results" aria-label="아이 검색 결과" className="mt-1 max-h-64 space-y-1 overflow-y-auto rounded-lg border border-border p-2">{animals.map(a=><li key={a.kind+a.id}><button type="button" aria-pressed={animal?.id===a.id&&animal?.kind===a.kind} onClick={()=>setAnimal(a)} className="min-h-11 w-full rounded-lg border border-border px-3 text-left aria-pressed:border-primary aria-pressed:bg-primary/10">{a.name} · {a.kind==="dog"?"강아지":"고양이"}</button></li>)}</ul>}
       {animal&&<p className="mt-2 text-sm text-primary">선택: {animal.name}</p>}
       <form onSubmit={e=>{e.preventDefault();submit(new FormData(e.currentTarget))}} className="mt-3"><fieldset disabled={pending} className="space-y-3">
         <input type="hidden" name="action" value="complete"/><input type="hidden" name="animal_kind" value={animal?.kind??""}/><input type="hidden" name="animal_id" value={animal?.id??""}/>

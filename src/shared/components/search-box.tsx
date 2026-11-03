@@ -14,9 +14,7 @@ interface Props {
 }
 
 export function SearchBox(props: Props) {
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  return <SearchBoxInput key={`${pathname}?${searchParams.toString()}`} {...props} />
+  return <SearchBoxInput {...props} />
 }
 
 function SearchBoxInput({
@@ -27,23 +25,32 @@ function SearchBoxInput({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const searchParamsString = searchParams.toString()
   const initial = searchParams.get(paramName) ?? ""
   const [value, setValue] = useState(initial)
   const [, startTransition] = useTransition()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const currentLocation = useRef({ pathname, searchParams: searchParamsString })
+
+  useEffect(() => {
+    currentLocation.current = { pathname, searchParams: searchParamsString }
+    if (document.activeElement !== inputRef.current) setValue(initial)
+  }, [initial, pathname, searchParamsString])
 
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
   }, [])
 
   function navigate(next: string) {
-    const params = new URLSearchParams(searchParams.toString())
+    const { pathname: currentPathname, searchParams: currentSearchParams } = currentLocation.current
+    const params = new URLSearchParams(currentSearchParams)
     if (next.trim()) params.set(paramName, next.trim())
     else params.delete(paramName)
     params.delete("page")
     const qs = params.toString()
     startTransition(() => {
-      router.push(qs ? `${pathname}?${qs}` : pathname)
+      router.replace(qs ? `${currentPathname}?${qs}` : currentPathname, { scroll: false })
     })
   }
 
@@ -71,6 +78,7 @@ function SearchBoxInput({
     <div className={cn("relative", className)}>
       <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
+        ref={inputRef}
         type="search"
         name={paramName}
         value={value}
